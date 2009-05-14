@@ -1,0 +1,194 @@
+#!/usr/bin/python
+"""
+Derdraw by cmang (http://cmang.org)
+
+contains class drawing
+
+some methods and variables:
+drawing.open() - Open a file
+drawing.filename - name of file
+drawing.save()
+drawing.safeQuit() - check and see if file has been modified since
+        last save.  Ask the user if they want to save (and trim
+        trailing lank lines). Call save. Quit.
+drawing.content[x][y] - 2d array of ' '
+drawing.realxy[x, y] - xy position on screen
+drawing.xy[x, y] - "virtual" xy position in drawing.content[][]
+drawing.max[x=80, y=22]
+drawing.drawRuler() - draw thing at the top
+drawing.mainLoop() - 
+drawing.trimBlanks() - trim any blank lines at the end of drawing.content
+drawing.redraw() - refresh the screen.  should be triggered by ctrl-l
+drawing.new() - initialize blank drawing.content[x][y]
+drawing.showHelp() - show the help screen
+"""
+
+import os.path,curses,sys
+
+class drawing():
+    """Drawing class - contains methods for opening, handling, saving, etc."""
+    def __init__(self):
+        self.stdscr = curses.initscr()
+        self.xy = [1, 1]     # cursor position x/y - was "curs"
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(1)
+        longstring = self.drawRuler(-1)
+        #self.max = {'x':80, 'y':22}
+        self.maxX = 80
+        self.maxY = 24
+        self.new()
+
+    def drawRuler(self, col):
+        longstring = ''
+        for y in range(1,9):
+            for x in range(1,10):
+                col += 1
+                self.stdscr.addstr(0, col, str(x))
+                longstring += str(x)
+            col += 1
+            self.stdscr.addstr(0, col, str(y), curses.A_BOLD)
+            longstring += str(y)
+        return longstring
+
+    def notify(self, message):
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, message)
+        self.stdscr.getch()
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.refresh()
+
+    def mainLoop(self):
+        self.metaKey = 0
+        while 1:
+            self.stdscr.addstr(self.maxY, 1, str(self.xy))
+            self.stdscr.addstr(self.maxY, 50, "META-H or CTRL-G for Help")
+            self.stdscr.move(self.xy[0], self.xy[1] - 1)
+            self.stdscr.refresh()
+            c = self.stdscr.getch()
+            self.stdscr.addstr(self.maxY, 1, "         ")
+            self.stdscr.addstr(self.maxY, 10, "         ")
+            if self.metaKey == 1:
+                # Try for meta-keys, then set metaKey to 0
+                if c == 111:                # alt-o
+                    self.open()
+                elif c == 115:                 # alt-s, save
+                    self.save()
+                elif c == 113:                 # alt-q, quit
+                    self.safeQuit()
+                elif c == 104:                # alt-h, help
+                    self.showHelp()
+                self.metaKey = 0
+                c = None
+            #if c == 27: self.safeQuit()    # 27 = ^[, used for meta-key
+            if c == 27: self.metaKey = 1
+            if c == 24: self.safeQuit()     # ctrl-x
+            elif c == 15:               # ctrl-o
+                self.open()
+                c = None
+            elif c == 23:               # ctrl-w
+                self.save()
+                c = None
+            elif c == 12:               # ctrl-l
+                self.refresh()
+                c = None
+            elif c == 10:               # enter
+                if self.xy[0] < self.maxX - 1:
+                    self.xy = [self.xy[0] + 1, 1]
+            elif c == 263:              # backspace
+                if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
+            elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
+                self.xy[1] = 1
+            elif c in [5, curses.KEY_END]:      # ctrl-e or end
+                self.xy[1] = self.maxX
+            elif c in [curses.KEY_F1, 7]:            # F1 means help
+                self.showHelp()
+            elif c == curses.KEY_LEFT:
+                if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
+            elif c == curses.KEY_RIGHT:
+                if self.xy[1] < self.maxX: self.xy[1] = self.xy[1] + 1
+            elif c == curses.KEY_UP:
+                if self.xy[0] > 1: self.xy[0] = self.xy[0] - 1
+            elif c == curses.KEY_DOWN:
+                if self.xy[0] < self.maxY - 1: self.xy[0] = self.xy[0] + 1
+            elif c <= 255 and c >= 32:      # normal printable character
+                self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
+                #self.content[self.xy[1] - 1][self.xy[0]] = chr(c)
+                self.content[self.xy[0]][self.xy[1] - 1] = chr(c)
+                if self.xy[1] < self.maxX:
+                    self.xy[1] = self.xy[1] + 1
+            if (c != None): self.stdscr.addstr(self.maxY, 10, str(c))
+            longstring = self.drawRuler(-1)
+            self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
+
+    def safeQuit(self):
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.echo()
+        curses.endwin()
+        quit()
+
+    def open(self):
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)     # clear status line
+        self.stdscr.move(self.maxY, 0)
+        self.stdscr.addstr(self.maxY, 0, "Enter file name to open:  ")
+        curses.echo()
+        filename = self.stdscr.getstr()
+        filename = os.path.expanduser(filename)
+        try:
+            f = open(filename, 'r')
+        except:
+            self.notify("Could not open file for reading.")
+            return None
+        # here we add the stuff to load the file into self.content[][]
+        f.close()
+
+    
+    def save(self):
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)     # clear status line
+        self.stdscr.move(self.maxY, 0)
+        self.stdscr.addstr(self.maxY, 0, "Enter file name to save as:  ")
+        curses.echo()
+        filename = self.stdscr.getstr()
+        filename = os.path.expanduser(filename)
+        # Check and see if file exists. If it does, make backup pablodraw-style.
+        # Or just ask if you would like to overwrite.  haven't decided yet.
+        # For now just skip the checking.
+        try:
+            f = open(filename, 'w')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)")
+            return None
+
+        outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.content).rstrip('\n')                 
+        f.write(outBuffer + '\n\n')
+
+        f.close()
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, "*Saved* (Press any key to continue)")
+        self.stdscr.getch()
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+
+    def new(self):
+        """ Iinitialize drawing.content[x][y]"""
+        self.content = []
+        for x in range(0, self.maxY):
+            self.content.append([])
+            for y in range(0, self.maxX):
+                self.content[x].append(' ')
+    
+    def showHelp(self):
+        helpStrings = ['META-O: Open', 'META-S: Save', 'META-Q: Quit', 'META is the same as Alt and Esc on most systems.']
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, "CTRL-W: Save, CTRL-X: Exit  (Press any key to continue)")
+        self.stdscr.getch()
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+
+    def refresh(self):
+        """Refresh the screen"""
+        pass
+
+if (__name__ == "__main__"):
+    doodle = drawing()
+    doodle.mainLoop()
+
