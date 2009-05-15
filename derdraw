@@ -35,8 +35,8 @@ class drawing():
         self.stdscr.keypad(1)
         longstring = self.drawRuler(-1)
         self.maxX = 80
-        self.maxY = 24
-        #self.maxY,self.maxX = self.stdscr.getmaxyx()
+        self.maxY = 23
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         self.new()
 
     def drawRuler(self, col):
@@ -62,13 +62,13 @@ class drawing():
         self.metaKey = 0
         while 1:
             self.stdscr.addstr(self.maxY, 1, str(self.xy))
-            self.stdscr.addstr(self.maxY, 60, "CTRL-G for Help")
-            #self.stdscr.addstr(self.maxY, self.maxX - sizeof("CRTL-G for Help"), "CTRL-G for Help.")
+            #self.stdscr.addstr(self.maxY, 60, "CTRL-G for Help")
+            self.stdscr.addstr(self.maxY, self.maxX - len("CRTL-G for Help. "), "CTRL-G for Help.")
             self.stdscr.move(self.xy[0], self.xy[1] - 1)
             self.stdscr.refresh()
             c = self.stdscr.getch()
-            self.stdscr.addstr(self.maxY, 1, "         ")
-            self.stdscr.addstr(self.maxY, 10, "         ")
+            self.stdscr.addstr(self.maxY, 0, " " * 10)
+            #self.stdscr.addstr(self.maxY, 10, "         ")
             if self.metaKey == 1:
                 # Try for meta-keys, then set metaKey to 0
                 if c == 111:                # alt-o
@@ -83,6 +83,14 @@ class drawing():
                 elif c == 104:                # alt-h, help
                     self.showHelp()
                     c = None
+                elif c == curses.KEY_LEFT:      # alt-left - erase/pop current column
+                    self.altLeft()
+                elif c == curses.KEY_RIGHT:     # alt-right - insert column
+                    self.altRight()
+                elif c == curses.KEY_UP:        # alt-up - erase line
+                    self.altUp()
+                elif c == curses.KEY_DOWN:      # alt-down - insert line
+                    self.altDown()
                 self.metaKey = 0
                 c = None
             #if c == 27: self.safeQuit()    # 27 = ^[, used for meta-key
@@ -140,6 +148,7 @@ class drawing():
         curses.echo()
         shortfile = self.stdscr.getstr()
         curses.noecho()
+        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
         filename = os.path.expanduser(shortfile)
         try:
             f = open(filename, 'r')
@@ -156,7 +165,7 @@ class drawing():
         for x in range(linecount, self.maxY):   # clear out rest of contents.
              self.content[x] = list(" " * self.maxX)
         self.refresh()      # so we can see the new ascii in memory.
-        self.notify("Loaded " + shortfile)
+        #self.notify("Loaded " + shortfile)
 
     
     def save(self):
@@ -204,7 +213,7 @@ class drawing():
         """Refresh the screen"""
         linenum = 0
         for line in self.content:
-            for colnum in range(self.maxX):    # maxX = sizeof(line), or should be
+            for colnum in range(len(line)):    # maxX = len(line), or should be
                 self.stdscr.addstr(linenum, colnum, line[colnum])
             linenum += 1
         #self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
@@ -213,6 +222,33 @@ class drawing():
         self.stdscr.refresh()
         pass
 
+    def altLeft(self):
+        """Erase column at position of cursor"""
+        for x in range(len(self.content)):         # Pop current column from every
+            self.content[x].pop(self.xy[1])     # line & add a blank
+            self.content[x].append(' ')         # at the end of each line.
+        self.refresh()
+
+    def altRight(self):
+        """Insert column at position of cursor"""
+        for x in range(len(self.content)):
+            self.content[x].insert(self.xy[1], ' ')
+            self.content[x].pop()
+        self.refresh()
+
+    def altUp(self):
+        """delete current line"""
+        self.content.pop(self.xy[0])
+        self.content.append([])
+        self.content[len(self.content) - 1] = list(' ' * self.maxX)
+        self.refresh()
+
+    def altDown(self):
+        """Insert new line"""
+        self.content.insert(self.xy[0], list(' ' * self.maxX))
+        self.content.pop()
+        self.refresh()
+            
 if (__name__ == "__main__"):
     doodle = drawing()
     doodle.mainLoop()
