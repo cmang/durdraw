@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Derdraw by cmang (http://cmang.org)
+Derdraw by cmang (http://cmang.org) - Ascii art doodling program
 
 contains class drawing
 
@@ -34,9 +34,9 @@ class drawing():
         curses.cbreak()
         self.stdscr.keypad(1)
         longstring = self.drawRuler(-1)
-        #self.max = {'x':80, 'y':22}
         self.maxX = 80
         self.maxY = 24
+        #self.maxY,self.maxX = self.stdscr.getmaxyx()
         self.new()
 
     def drawRuler(self, col):
@@ -62,7 +62,8 @@ class drawing():
         self.metaKey = 0
         while 1:
             self.stdscr.addstr(self.maxY, 1, str(self.xy))
-            self.stdscr.addstr(self.maxY, 50, "META-H or CTRL-G for Help")
+            self.stdscr.addstr(self.maxY, 60, "CTRL-G for Help")
+            #self.stdscr.addstr(self.maxY, self.maxX - sizeof("CRTL-G for Help"), "CTRL-G for Help.")
             self.stdscr.move(self.xy[0], self.xy[1] - 1)
             self.stdscr.refresh()
             c = self.stdscr.getch()
@@ -72,16 +73,20 @@ class drawing():
                 # Try for meta-keys, then set metaKey to 0
                 if c == 111:                # alt-o
                     self.open()
+                    c = None
                 elif c == 115:                 # alt-s, save
                     self.save()
+                    c = None
                 elif c == 113:                 # alt-q, quit
                     self.safeQuit()
+                    c = None
                 elif c == 104:                # alt-h, help
                     self.showHelp()
+                    c = None
                 self.metaKey = 0
                 c = None
             #if c == 27: self.safeQuit()    # 27 = ^[, used for meta-key
-            if c == 27: self.metaKey = 1
+            if c == 27: self.metaKey = 1; c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o
                 self.open()
@@ -133,15 +138,25 @@ class drawing():
         self.stdscr.move(self.maxY, 0)
         self.stdscr.addstr(self.maxY, 0, "Enter file name to open:  ")
         curses.echo()
-        filename = self.stdscr.getstr()
-        filename = os.path.expanduser(filename)
+        shortfile = self.stdscr.getstr()
+        curses.noecho()
+        filename = os.path.expanduser(shortfile)
         try:
             f = open(filename, 'r')
         except:
             self.notify("Could not open file for reading.")
             return None
         # here we add the stuff to load the file into self.content[][]
+        linecount = 1
+        for line in f:
+            inBuffer = list(line.strip('\n').ljust(self.maxX)) # Returns line as 80 column list of chars
+            self.content[linecount] = inBuffer
+            linecount += 1
         f.close()
+        for x in range(linecount, self.maxY):   # clear out rest of contents.
+             self.content[x] = list(" " * self.maxX)
+        self.refresh()      # so we can see the new ascii in memory.
+        self.notify("Loaded " + shortfile)
 
     
     def save(self):
@@ -150,6 +165,7 @@ class drawing():
         self.stdscr.addstr(self.maxY, 0, "Enter file name to save as:  ")
         curses.echo()
         filename = self.stdscr.getstr()
+        curses.noecho()
         filename = os.path.expanduser(filename)
         # Check and see if file exists. If it does, make backup pablodraw-style.
         # Or just ask if you would like to overwrite.  haven't decided yet.
@@ -162,7 +178,6 @@ class drawing():
 
         outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.content).rstrip('\n')                 
         f.write(outBuffer + '\n\n')
-
         f.close()
         self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
         self.stdscr.addstr(self.maxY, 0, "*Saved* (Press any key to continue)")
@@ -180,12 +195,22 @@ class drawing():
     def showHelp(self):
         helpStrings = ['META-O: Open', 'META-S: Save', 'META-Q: Quit', 'META is the same as Alt and Esc on most systems.']
         self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
-        self.stdscr.addstr(self.maxY, 0, "CTRL-W: Save, CTRL-X: Exit  (Press any key to continue)")
+        #self.stdscr.addstr(self.maxY, 0, "CTRL-W: Save, CTRL-X: Exit  (Press any key to continue)")
+        self.stdscr.addstr(self.maxY, 0, "ALT-O: Open, ALT-S: Save, ALT-Q: Quit  (Press any key to continue)")
         self.stdscr.getch()
         self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
 
     def refresh(self):
         """Refresh the screen"""
+        linenum = 0
+        for line in self.content:
+            for colnum in range(self.maxX):    # maxX = sizeof(line), or should be
+                self.stdscr.addstr(linenum, colnum, line[colnum])
+            linenum += 1
+        #self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
+        for x in range(linenum, self.maxY):
+            self.stdscr.addstr(x, 0, " " * self.maxX)
+        self.stdscr.refresh()
         pass
 
 if (__name__ == "__main__"):
