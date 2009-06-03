@@ -24,18 +24,30 @@ drawing.showHelp() - show the help screen
 """
 
 import os.path,curses,sys
+from time import sleep
 
 class drawing():
     """Drawing class - contains methods for opening, handling, saving, etc."""
     def __init__(self):
+        derlogo = '''
+       __                __
+     _|  |__ __ _____ __|  |_____ _____ __ __ __
+    / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
+   /_____|_____|__|__|_____|__|___\____|________| |  Durr....
+   \_____________________________________________\|  v 0.1
+
+'''
+        print derlogo
+        sleep(3)
+        self.maxX = 79
+        self.maxY = 23
         self.stdscr = curses.initscr()
         self.xy = [1, 1]     # cursor position x/y - was "curs"
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(1)
-        longstring = self.drawRuler(-1)
-        self.maxX = 80
-        self.maxY = 23
+        self.testWindowSize()
+        self.drawRuler(-1)
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         self.new()
 
@@ -58,15 +70,40 @@ class drawing():
         self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
         self.stdscr.refresh()
 
+    def testWindowSize(self):
+        """Test to see if window is too small for program to operate, and
+        go into small window mode if necessary"""
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx() # test size
+        if self.realmaxY < self.maxY or self.realmaxX < self.maxX:
+            self.smallWindowMode()   # go into small window loop.stdscr
+
+    def smallWindowMode(self):
+        """Clear the screen, draw a small message near 0,0 that the window
+        is too small.  Keep doing so until the screen is resized larger."""
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        while (self.realmaxY < self.maxY or self.realmaxX < self.maxX):
+            self.stdscr.addstr(0, 0, "Window is too small.")
+            self.stdscr.addstr(1, 0, "Please enlarge to 80x24 or larger.")
+            self.stdscr.refresh()
+            #sleep(1)
+            self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        self.stdscr.refresh()
+        self.refresh()
+        self.testWindowSize()
+
     def mainLoop(self):
         self.metaKey = 0
         while 1:
+            self.testWindowSize()
             self.stdscr.addstr(self.maxY, 1, str(self.xy))
             #self.stdscr.addstr(self.maxY, 60, "CTRL-G for Help")
             self.stdscr.addstr(self.maxY, self.maxX - len("CRTL-G for Help. "), "CTRL-G for Help.")
             self.stdscr.move(self.xy[0], self.xy[1] - 1)
             self.stdscr.refresh()
             c = self.stdscr.getch()
+            self.testWindowSize()
             self.stdscr.addstr(self.maxY, 0, " " * 10)
             #self.stdscr.addstr(self.maxY, 10, "         ")
             if self.metaKey == 1:
@@ -142,13 +179,13 @@ class drawing():
         quit()
 
     def open(self):
-        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)     # clear status line
+        self.stdscr.addstr(self.maxY, 0, " " * (self.maxX-1))     # clear status line
         self.stdscr.move(self.maxY, 0)
         self.stdscr.addstr(self.maxY, 0, "Enter file name to open:  ")
         curses.echo()
         shortfile = self.stdscr.getstr()
         curses.noecho()
-        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, " " * (self.maxX - 1))
         filename = os.path.expanduser(shortfile)
         try:
             f = open(filename, 'r')
@@ -188,10 +225,10 @@ class drawing():
         outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.content).rstrip('\n')                 
         f.write(outBuffer + '\n\n')
         f.close()
-        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, " " * (self.maxX-1))
         self.stdscr.addstr(self.maxY, 0, "*Saved* (Press any key to continue)")
         self.stdscr.getch()
-        self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
+        self.stdscr.addstr(self.maxY, 0, " " * (self.maxX-1))
 
     def new(self):
         """ Iinitialize drawing.content[x][y]"""
@@ -209,30 +246,34 @@ class drawing():
         self.stdscr.getch()
         self.stdscr.addstr(self.maxY, 0, " " * self.maxX)
 
-    def refresh(self):
+    def refresh(self):          # Why doesn't this always work right?
         """Refresh the screen"""
         linenum = 0
         for line in self.content:
-            for colnum in range(len(line)):    # maxX = len(line), or should be
-                self.stdscr.addstr(linenum, colnum, line[colnum])
+            #for colnum in range(len(line)):    # maxX = len(line), or should be
+            for colnum in range(self.maxX):
+                self.stdscr.addstr(linenum, colnum, str(line[colnum]))
             linenum += 1
         #self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
         for x in range(linenum, self.maxY):
             self.stdscr.addstr(x, 0, " " * self.maxX)
         self.stdscr.refresh()
+
+    def refresh2(self):
+        """Refresh the Screen - rewrite"""
         pass
 
-    def altLeft(self):
+    def altLeft(self):          # This causes ghost characters when refresh()
         """Erase column at position of cursor"""
         for x in range(len(self.content)):         # Pop current column from every
-            self.content[x].pop(self.xy[1])     # line & add a blank
+            self.content[x].pop(self.xy[1] - 1)     # line & add a blank
             self.content[x].append(' ')         # at the end of each line.
         self.refresh()
 
     def altRight(self):
         """Insert column at position of cursor"""
         for x in range(len(self.content)):
-            self.content[x].insert(self.xy[1], ' ')
+            self.content[x].insert(self.xy[1] - 1, ' ')
             self.content[x].pop()
         self.refresh()
 
@@ -243,7 +284,7 @@ class drawing():
         self.content[len(self.content) - 1] = list(' ' * self.maxX)
         self.refresh()
 
-    def altDown(self):
+    def altDown(self):          # This causes ghost characters when refresh()
         """Insert new line"""
         self.content.insert(self.xy[0], list(' ' * self.maxX))
         self.content.pop()
