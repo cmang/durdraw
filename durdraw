@@ -1,70 +1,28 @@
 #!/usr/bin/python
+
 """
 Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
 
-contains class drawing
+PLANS AND MISC NOTES:
 
-some methods and variables:
-drawing.open() - Open a file
-drawing.filename - name of file
-drawing.save()
-drawing.safeQuit() - check and see if file has been modified since
-        last save.  Ask the user if they want to save (and trim
-        trailing lank lines). Call save. Quit.
-drawing.content[x][y] - 2d array of ' '
-drawing.realxy[x, y] - xy position on screen
-drawing.xy[x, y] - "virtual" xy position in drawing.content[][]
-drawing.max[x=80, y=22]
-drawing.drawRuler() - draw thing at the top
-drawing.mainLoop() - 
-drawing.trimBlanks() - trim any blank lines at the end of drawing.content
-drawing.redraw() - refresh the screen.  should be triggered by ctrl-l
-drawing.new() - initialize blank drawing.content[x][y]
-drawing.showHelp() - show the help screen
-"""
-
-""" PLAN:
-UI class draws a UI, has main exectuion loop.  Deals with movies and UI. (maybe separate ncurses later?)
-    - it would be a good idea to separate UI from Terminal type (ncurses code), so you could have an HTML5 terminal (or opengl, potentially)
-    ! Reworking is painful. Separate the right things the first time.
-Have a movie class
-
-* Have an array of frames (a movie, or animation sequence) you can add or remove frames (Drawings.. should it be Frames instead?) to.  
-    + eg: movie.addFrame() and movie.addFrameClone() to clone the previous frame.
-    + movie.addFrame() will push a Frame() onto a list/stack/whatever.
-    + Design so it's easy to load multpile movies at once?
-! Ctrl-left/ctrl-right to switch frames, esc-p to play
-* esc-o for options. Incl: Framerate, Canvas size and resolution, Working directory, Save as default
-    + Bonuts points: Save animations as a single .dur file, include options in there hidden behind escape characters (similar to ACiD Sauce)
-        ^ Separate frames with escape characters that redraw the canvas size, so if you 'cat' it in an ANSI terminal, it's animated
-    + .durdrawrc file?
-* Have font handling system - can choose Putty/windows fonts, DOS fonts, xterm, monaco-ish, custom?
-* Default canvas size (80x25) and resolution, also customizable 
-* select/copy/cut/paste should be straightforward to add. 
-* Undo/redo stack?  esc-u and esc-r .. maybe also ctrl-u and ctl-r
-
-Save file format:
-* first few bits are file format version, so if it completely changes later, backwrads compatibility is easier
-* option/metadata are first 32 bytes?
-* Needs to include: FPS, canvas size (not really needed)
-* comma separated values for config/options line?
-* separate each frame with vt100 clearscreen escape character.
+Save file formats:
+* .dur is pickled python objects (config and movie)
+* add vt100 format?:
+* separate each frame with vt100 clearscreen or cursor move escape character, so you can cat animation.
 * useful excape characters (vt100):
     Esc[2J  Clear entire screen ED2
     Esc[2K  Clear entire line   EL2
 http://ascii-table.com/ansi-escape-sequences-vt-100.php
-^ Will be useful for vt100 format, but right now just saved as pickled python objects. (dirty)
 
 Next:
 * Clipboard/select/cut/paste/flip
 * ANSI colors (extra dimensions in x/y array, or just another table completely, for color fg/bg)
 * ANSI extended characters
 * Animated Gif export, how: save as ansi/ascii (to memory?), ansi2png, stitch png's together as gif
+   ^ Have font handling system - can choose Putty/windows fonts, DOS fonts, xterm, monaco-ish, custom?
 * Mov (or MPG, or other FPS-synced) format export
 * undo/redo?
 """
-
-
 
 import argparse,os.path,pickle,sys,time
 import curses
@@ -158,8 +116,6 @@ class Movie():
 class UserInterface():
     """ Draws user interface, has main UI loop. """
     def __init__(self):
-        #self.maxX = 79
-        #self.maxY = 23
         self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
@@ -174,8 +130,6 @@ class UserInterface():
         self.testWindowSize()
         self.drawRuler(-1)
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
-       
-        #self.new()
 
     def drawRuler(self, col):
         longstring = ''
@@ -284,7 +238,6 @@ class UserInterface():
             self.testWindowSize()
             try:    # in case self.stdscr.addstr() returns ERR <- still doesn't catch it or fix problem
                 self.stdscr.addstr(self.mov.sizeY, 0, " " * 10)
-                #self.stdscr.addstr(self.mov.sizeY, 10, "         ")
                 if c == 203: self.notify('Whaaaaat???')
                 if self.metaKey == 1:
                     # Try for meta-keys, then set metaKey to 0
@@ -376,7 +329,6 @@ class UserInterface():
                     self.notify("Shift-left, select mode")
                 elif c <= 255 and c >= 32:      # normal printable character
                     self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
-                    #self.mov.currentFrame.content[self.xy[1] - 1][self.xy[0]] = chr(c)
                     self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
                     if self.xy[1] < self.mov.sizeX:
                         self.xy[1] = self.xy[1] + 1
@@ -386,7 +338,6 @@ class UserInterface():
                     self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
                 self.refresh()
                 longstring = self.drawRuler(-1)
-                #self.stdscr.addstr(self.mov.sizeY, 10, " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ' )' )
                 self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
             #except Exception, err:
             except curses.error:
@@ -561,8 +512,6 @@ class UserInterface():
 
 '''
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
-        #self.stdscr.addstr(self.mov.sizeY, 0, "CTRL-W: Save, CTRL-X: Exit  (Press any key to continue)")
-        #self.stdscr.addstr(self.mov.sizeY, 0, "ALT-O: Open, ALT-S: Save, ALT-Q: Quit  (Press any key to continue)")
         self.stdscr.addstr(0, 0, helpScreenText)
         self.stdscr.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
         self.stdscr.getch()
@@ -573,11 +522,9 @@ class UserInterface():
         """Refresh the screen"""
         linenum = 0
         for line in self.mov.currentFrame.content:
-            #for colnum in range(len(line)):    # maxX = len(line), or should be
             for colnum in range(self.mov.sizeX):
                 self.stdscr.addstr(linenum, colnum, str(line[colnum]))
             linenum += 1
-        #self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
         for x in range(linenum, self.mov.sizeY):
             self.stdscr.addstr(x, 0, " " * self.mov.sizeX)
         # draw statusbar should be in here?
@@ -621,8 +568,7 @@ class UserInterface():
         # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
         # then ask the user what to do with it - copy, move, cut
         self.blockStartPoint =  [self.xy[0],  self.xy[1]]
-        #self.stdscr.addstr(linenum, colnum, str(line[colnum])) # line is a string
-        self.notify("Excellent.")
+        self.notify("Excellent. (not yet implemented)")
 
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
@@ -648,4 +594,3 @@ if (__name__ == "__main__"):
     ui.refresh()
     ui.drawRuler(-1)    # why does this stupid thing take a paramater?  why does it even exist?
     ui.mainLoop()
-    print ' '  # at this point we've printed the help screen and are exiting - never entering mainloop.
