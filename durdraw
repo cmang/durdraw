@@ -1,0 +1,651 @@
+#!/usr/bin/python
+"""
+Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
+
+contains class drawing
+
+some methods and variables:
+drawing.open() - Open a file
+drawing.filename - name of file
+drawing.save()
+drawing.safeQuit() - check and see if file has been modified since
+        last save.  Ask the user if they want to save (and trim
+        trailing lank lines). Call save. Quit.
+drawing.content[x][y] - 2d array of ' '
+drawing.realxy[x, y] - xy position on screen
+drawing.xy[x, y] - "virtual" xy position in drawing.content[][]
+drawing.max[x=80, y=22]
+drawing.drawRuler() - draw thing at the top
+drawing.mainLoop() - 
+drawing.trimBlanks() - trim any blank lines at the end of drawing.content
+drawing.redraw() - refresh the screen.  should be triggered by ctrl-l
+drawing.new() - initialize blank drawing.content[x][y]
+drawing.showHelp() - show the help screen
+"""
+
+""" PLAN:
+UI class draws a UI, has main exectuion loop.  Deals with movies and UI. (maybe separate ncurses later?)
+    - it would be a good idea to separate UI from Terminal type (ncurses code), so you could have an HTML5 terminal (or opengl, potentially)
+    ! Reworking is painful. Separate the right things the first time.
+Have a movie class
+
+* Have an array of frames (a movie, or animation sequence) you can add or remove frames (Drawings.. should it be Frames instead?) to.  
+    + eg: movie.addFrame() and movie.addFrameClone() to clone the previous frame.
+    + movie.addFrame() will push a Frame() onto a list/stack/whatever.
+    + Design so it's easy to load multpile movies at once?
+! Ctrl-left/ctrl-right to switch frames, esc-p to play
+* esc-o for options. Incl: Framerate, Canvas size and resolution, Working directory, Save as default
+    + Bonuts points: Save animations as a single .dur file, include options in there hidden behind escape characters (similar to ACiD Sauce)
+        ^ Separate frames with escape characters that redraw the canvas size, so if you 'cat' it in an ANSI terminal, it's animated
+    + .durdrawrc file?
+* Have font handling system - can choose Putty/windows fonts, DOS fonts, xterm, monaco-ish, custom?
+* Default canvas size (80x25) and resolution, also customizable 
+* select/copy/cut/paste should be straightforward to add. 
+* Undo/redo stack?  esc-u and esc-r .. maybe also ctrl-u and ctl-r
+
+Save file format:
+* first few bits are file format version, so if it completely changes later, backwrads compatibility is easier
+* option/metadata are first 32 bytes?
+* Needs to include: FPS, canvas size (not really needed)
+* comma separated values for config/options line?
+* separate each frame with vt100 clearscreen escape character.
+* useful excape characters (vt100):
+    Esc[2J  Clear entire screen ED2
+    Esc[2K  Clear entire line   EL2
+http://ascii-table.com/ansi-escape-sequences-vt-100.php
+^ Will be useful for vt100 format, but right now just saved as pickled python objects. (dirty)
+
+Next:
+* Clipboard/select/cut/paste/flip
+* ANSI colors (extra dimensions in x/y array, or just another table completely, for color fg/bg)
+* ANSI extended characters
+* Animated Gif export, how: save as ansi/ascii (to memory?), ansi2png, stitch png's together as gif
+* Mov (or MPG, or other FPS-synced) format export
+* undo/redo?
+"""
+
+
+
+import argparse,os.path,pickle,sys,time
+import curses
+from copy import copy, deepcopy
+
+class Frame():
+    """Frame class - single canvas size frame of animation. a traditional drawing.
+    """
+    def __init__(self, sizeX, sizeY):
+        """ Iinitialize drawing.content[x][y]"""
+        self.content = []
+        self.sizeX = sizeX
+        self.sizeY = sizeY
+        for x in range(0, sizeY):
+            self.content.append([])
+            for y in range(0, sizeX):
+                self.content[x].append(' ')
+
+class Options():
+    """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
+    def __init__(self):         # default options
+        self.framerate = 2.0
+        self.sizeX = 79
+        self.sizeY = 23
+        self.saveFileFormat = 1 # save file format version number
+
+
+class Movie():
+    """ Contains an array of Frames, options to add, remove, copy them """
+    def __init__(self, opts, stdscr):
+        self.frameCount = 0  # total number of frames
+        self.currentFrameNumber = 0
+        self.sizeX = opts.sizeX
+        self.sizeY = opts.sizeY
+        self.frames = []
+        self.stdscr = stdscr;
+        self.addFrame()
+        self.currentFrameNumber = self.frameCount
+        self.currentFrame = self.frames[self.currentFrameNumber - 1] 
+
+    def addFrame(self):
+        newFrame = Frame(self.sizeX, self.sizeY)
+        self.frames.append(newFrame)
+        self.frameCount += 1
+
+    def cloneNewFrame(self):    # clone current frame onto a new frame
+        newFrame = Frame(self.sizeX, self.sizeY)
+        self.frames.append(newFrame)
+        newFrame.content = deepcopy(self.currentFrame.content)
+        self.frameCount += 1
+
+    def deleteCurrentFrame(self):
+        self.stdscr.addstr(self.sizeY, 10, "Are you sure you want to delete the current frame? (Y/N)   ");
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if (c == 121):  # 'y'
+                prompting = False
+                if (self.frameCount == 1):
+                    del self.frames[self.currentFrameNumber - 1]
+                    # deleted the last frame, so make a blank one
+                    newFrame = Frame(self.sizeX, self.sizeY)
+                    self.frames.append(newFrame)
+                    self.currentFrame = self.frames[self.currentFrameNumber - 1]
+                else:
+                    del self.frames[self.currentFrameNumber - 1]
+                    self.frameCount -= 1
+                    if (self.currentFrameNumber != 1):
+                        self.currentFrameNumber -= 1
+                    self.currentFrame = self.frames[self.currentFrameNumber - 1]
+            if (c == 110):  # 'n'
+                prompting = False
+        self.stdscr.addstr(self.sizeY, 10, "                                                          ");
+    
+    def nextFrame(self):
+        if (self.currentFrameNumber == self.frameCount):    # if at last frame..
+            self.currentFrameNumber = 1     # cycle back to the beginning
+            self.currentFrame = self.frames[self.currentFrameNumber - 1] # -1 bcuz frame 1 = self.frames[0]
+        else:
+            self.currentFrameNumber += 1
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+    def prevFrame(self):
+        if (self.currentFrameNumber == 1):
+            self.currentFrameNumber = self.frameCount
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
+        else:
+            self.currentFrameNumber -= 1
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+class UserInterface():
+    """ Draws user interface, has main UI loop. """
+    def __init__(self):
+        #self.maxX = 79
+        #self.maxY = 23
+        self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
+        # initialize screen and draw the 'canvas'
+        self.stdscr = curses.initscr()
+        curses.start_color()    # Yeayuhhh
+        self.mov = Movie(self.opts, self.stdscr) # initialize a new movie to work with
+        self.xy = [1, 1]     # cursor position x/y - was "curs"
+        curses.noecho()
+        #curses.cbreak()
+        curses.raw()
+        curses.nonl()
+        self.stdscr.keypad(1)
+        self.testWindowSize()
+        self.drawRuler(-1)
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+       
+        #self.new()
+
+    def drawRuler(self, col):
+        longstring = ''
+        for y in range(1,9):
+            for x in range(1,10):
+                col += 1
+                self.stdscr.addstr(0, col, str(x))
+                longstring += str(x)
+            col += 1
+            self.stdscr.addstr(0, col, str(y), curses.A_BOLD)
+            longstring += str(y)
+        return longstring
+
+    def notify(self, message):
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        self.stdscr.addstr(self.mov.sizeY, 0, message)
+        self.stdscr.getch()
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        self.stdscr.refresh()
+
+    def testWindowSize(self):
+        """Test to see if window is too small for program to operate, and
+        go into small window mode if necessary"""
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx() # test size
+        if (self.realmaxY < self.mov.sizeY) or (self.realmaxX < self.mov.sizeX):
+            self.smallWindowMode()   # go into small window loop.stdscr
+
+    def smallWindowMode(self):
+        """Clear the screen, draw a small message near 0,0 that the window
+        is too small.  Keep doing so until the screen is resized larger."""
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        while (self.realmaxY < self.mov.sizeY or self.realmaxX < self.mov.sizeX):
+            self.stdscr.addstr(0, 0, "Window is too small.")
+            self.stdscr.addstr(1, 0, "Please enlarge to 80x24 or larger.")
+            self.stdscr.refresh()
+            #time.sleep(1)
+            self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        self.stdscr.refresh()
+        self.refresh()
+        self.testWindowSize()
+
+    def clearCanvas(self, prompt = False):
+        prompting = prompt
+        clearing = True  # assume we are clearing unless we prompt and say "n"
+        if prompting:
+            self.stdscr.nodelay(0) # wait for input when calling getch
+            self.stdscr.addstr(self.mov.sizeY, 0, "                                                  ")
+            self.stdscr.addstr(self.mov.sizeY, 0, "Are you sure you want to claear the canvas? (Y/N) " )
+            while (prompting):
+                c = self.stdscr.getch()
+                if (c == 121):   # 121 = y
+                    claering = True
+                    prompting = False
+                elif (c == 110): # 110 = n
+                    clearing = False
+                    prompting = False
+            self.stdscr.addstr(self.mov.sizeY, 0, "                                                  ")
+        if clearing:
+            self.mov = Movie(self.opts, self.stdscr) # initialize a new movie
+
+    def animLoop(self): # ghetto fab sleep fps loop from http://stackoverflow.com/questions/2660919/python-animation-timing.. replace this with a 'game loop' that monitors time for appropriate increment, with a short sleep so it doesn't hog the cpu
+        self.stdscr.nodelay(1) # do not wait for input when calling getch
+        last_time = time.time()
+        self.stdscr.addstr(0, 0, " " * (self.mov.sizeX + 1))   # clear first line/ruler bar
+        curses.curs_set(0)  # hide cursor
+        playing = True
+        while (playing):
+            # catch keyboard input - to change framerate or stop playing animation
+            # get keyboard input, returns -1 if none available
+            c = self.stdscr.getch()
+            if (c != -1):   # -1 means no keys are pressed.
+                # up or down to change framerate, otherwise stop playing
+                if (c == curses.KEY_UP):  # up key - increase fps
+                    self.opts.framerate += 1
+                elif (c == curses.KEY_DOWN):    # down key - decrese fps
+                    if (self.opts.framerate != 1.0):
+                        self.opts.framerate -= 1
+                else:
+                    playing = False # press any key to stop
+            # draw animation
+            self.mov.nextFrame()
+            self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
+            self.refresh()
+            # next few lines pause.
+            new_time = time.time()
+            # see how many milliseconds we have to sleep for
+            # then divide by 1000.0 since time.sleep() uses seconds
+            sleep_time = ((1000.0 / self.opts.framerate) - (new_time - last_time)) / 1000.0
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            last_time = new_time
+        self.stdscr.nodelay(0) # back to wait for input when calling getch
+        curses.curs_set(1)  # make cursor visible again
+
+    def mainLoop(self):
+        self.metaKey = 0
+        while 1:
+            self.testWindowSize()
+            self.stdscr.addstr(self.mov.sizeY, 1, str(self.xy))
+            self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len("CRTL-G for Help. "), "CTRL-G for Help.")
+            self.stdscr.move(self.xy[0], self.xy[1] - 1)
+            self.stdscr.refresh()
+            c = self.stdscr.getch()
+            self.testWindowSize()
+            try:    # in case self.stdscr.addstr() returns ERR <- still doesn't catch it or fix problem
+                self.stdscr.addstr(self.mov.sizeY, 0, " " * 10)
+                #self.stdscr.addstr(self.mov.sizeY, 10, "         ")
+                if c == 203: self.notify('Whaaaaat???')
+                if self.metaKey == 1:
+                    # Try for meta-keys, then set metaKey to 0
+                    if c == 111:                # alt-o - open
+                        self.open()
+                        c = None
+                    elif c == 115:                 # alt-s - save
+                        self.save()
+                        c = None
+                    elif c == 113:                 # alt-q - quit
+                        self.safeQuit()
+                        c = None
+                    elif c == 104:                # alt-h - help
+                        self.showHelp()
+                        c = None
+                    elif c == curses.KEY_LEFT:      # alt-left - erase/pop current column
+                        self.delCol()
+                    elif c == curses.KEY_RIGHT:     # alt-right - insert column
+                        self.addCol()
+                    elif (c == 98):      # alt-left - erase/pop current column
+                        self.delCol()
+                    elif (c == 102):     # alt-right - insert column
+                        self.addCol()
+                    elif c == curses.KEY_UP:        # alt-up - erase line
+                        self.delLine()
+                    elif c == curses.KEY_DOWN:      # alt-down - insert line
+                        self.addLine()
+                    elif (c == 109):    # alt-m - mark block
+                        self.markSelection()
+                    elif (c == 99):     # alt-c - clear canvas
+                        self.clearCanvas(prompt = True)
+                    # Animation Keystrokes
+                    elif (c == 107):          # esc-k - next frame
+                        self.mov.nextFrame()
+                        self.refresh()  
+                    elif (c == 106):          # esc-j or alt-j - previous frame
+                        self.mov.prevFrame()
+                        self.refresh()
+                    elif (c == 110) or (c == 14):          # esc-n - clone to new frame
+                        self.mov.cloneNewFrame()
+                        self.refresh()
+                    elif (c == 100):      # esc-d - delete current frame
+                        self.mov.deleteCurrentFrame()
+                        self.refresh()
+                    elif (c == 112):    # esc-p - start playing, any key exits
+                        self.animLoop()
+                    else: self.notify("keystroke: %d" % c)
+                    self.metaKey = 0
+                    c = None
+                #if c == 27: self.safeQuit()    # 27 = ^[, used for meta-key
+                if c == 27: self.metaKey = 1; c = None
+                if c == 24: self.safeQuit()     # ctrl-x
+                elif c == 15:               # ctrl-o - open
+                    self.open()
+                    c = None
+                elif c == 23:               # ctrl-w - save
+                    self.save()
+                    c = None
+                elif c == 12:               # ctrl-l - refresh
+                    self.refresh()
+                    c = None
+                elif c == 13:               # enter (10 if we don't do curses.nonl())
+                    if self.xy[0] < self.mov.sizeX - 1:
+                        self.xy = [self.xy[0] + 1, 1]
+                elif c == 263:              # backspace
+                    if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
+                elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
+                    self.xy[1] = 1
+                elif c in [5, curses.KEY_END]:      # ctrl-e or end
+                    self.xy[1] = self.mov.sizeX
+                elif c in [curses.KEY_F1, 7]:            # F1 means help
+                    self.showHelp()
+                    c = None
+                elif c == curses.KEY_LEFT:
+                    if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
+                elif c == curses.KEY_RIGHT:
+                    if self.xy[1] < self.mov.sizeX: self.xy[1] = self.xy[1] + 1
+                elif c == curses.KEY_UP:
+                    if self.xy[0] > 1: self.xy[0] = self.xy[0] - 1
+                elif c == curses.KEY_DOWN:
+                    if self.xy[0] < self.mov.sizeY - 1: self.xy[0] = self.xy[0] + 1
+                #elif c == curses.KEY_HOME:  # 339 = home
+                elif c == 339:  # 339 = home
+                    self.xy[1] = 1
+                #elif c == curses.KEY_END:   # 338 = end
+                elif c == 338:   # 338 = end
+                    self.xy[1] = self.mov.sizeX
+                elif c == curses.KEY_SLEFT:  # not working yet, in osx iterm at least
+                    self.notify("Shift-left, select mode")
+                elif c <= 255 and c >= 32:      # normal printable character
+                    self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
+                    #self.mov.currentFrame.content[self.xy[1] - 1][self.xy[0]] = chr(c)
+                    self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
+                    if self.xy[1] < self.mov.sizeX:
+                        self.xy[1] = self.xy[1] + 1
+                if (c != None):
+                    self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
+                if (c == None):
+                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
+                self.refresh()
+                longstring = self.drawRuler(-1)
+                #self.stdscr.addstr(self.mov.sizeY, 10, " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ' )' )
+                self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
+            #except Exception, err:
+            except curses.error:
+                self.smallWindowMode()
+
+    def safeQuit(self):
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.stdscr.addstr(self.mov.sizeY, 0, "                                               ")
+        self.stdscr.addstr(self.mov.sizeY, 0, "Are you sure you want to Quit? (Y/N) " )
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if (c == 121):   # 121 = y
+                exiting = True
+                prompting = False
+            elif (c == 110): # 110 = n
+                exiting = False
+                prompting = False
+            #elif (c == 27): # 27 = esc = cancel
+            #    exiting = False
+            #    return None
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * 50)
+        if (exiting):
+            curses.nocbreak()
+            self.stdscr.keypad(0)
+            curses.echo()
+            curses.endwin()
+            quit()
+
+    def open(self):
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))     # clear status line
+        self.stdscr.move(self.mov.sizeY, 0)
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.stdscr.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR, [ESC] Cancel: ")
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if (c == 105):   # 105 i = ascii
+                loadFormat = 'ascii'
+                prompting = False
+            elif (c == 100): # 100 = d = dur
+                loadFormat = 'dur'
+                prompting = False
+            elif (c == 27): # 27 = esc = cancel
+                self.stdscr.addstr(self.mov.sizeY, 0, "                                               ")
+                prompting = False
+                return None
+        self.stdscr.addstr(self.mov.sizeY, 0, "                                               ")
+        self.stdscr.addstr(self.mov.sizeY, 0, "Enter file name to open: ")
+        curses.echo()
+        shortfile = self.stdscr.getstr()
+        curses.noecho()
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX - 1))
+        self.loadFromFile(shortfile, loadFormat)
+        self.refresh()      # so we can see the new ascii in memory.
+        #self.notify("Loaded " + shortfile)
+
+    def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename
+        filename = os.path.expanduser(shortfile)
+        if (loadFormat == 'ascii'):
+            try:
+                f = open(filename, 'r')
+            except:
+                self.notify("Could not open file for reading.")
+                return None
+            # here we add the stuff to load the file into self.mov.currentFrame.content[][]
+            linecount = 1
+            for line in f:
+                if (linecount < self.mov.sizeY):    # don't exceed canvas size
+                    inBuffer = list(line.strip('\n').ljust(self.mov.sizeX)) # Returns line as 80 column list of chars
+                    self.mov.currentFrame.content[linecount] = inBuffer
+                linecount += 1
+            f.close()
+            for x in range(linecount, self.mov.sizeY):   # clear out rest of contents.
+                 self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
+        elif (loadFormat == 'dur'):
+            try:
+                f = open(filename, 'rb')
+            except:
+                self.notify("Could not open file for reading.")
+                return None
+            try:
+                self.opts = pickle.load(f)
+                self.mov = pickle.load(f)
+            except:
+                loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead
+            self.mov.stdscr = self.stdscr
+            f.close()
+            if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
+                self.loadFromFile(shortfile, loadFormat)
+        pass
+    
+    def save(self):
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)     # clear status line
+        self.stdscr.move(self.mov.sizeY, 0)
+        self.stdscr.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR: ")
+        self.stdscr.nodelay(0) # do not wait for input when calling getch
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if (c == 105):   # 105 i = ascii
+                saveFormat = 'ascii'
+                prompting = False
+            elif (c == 100): # 100 = d = dur
+                saveFormat = 'dur'
+                prompting = False
+            elif (c == 27): # 27 = esc = cancel
+                self.stdscr.addstr(self.mov.sizeY, 0, "                                 ")
+                prompting = False
+                return None
+        self.stdscr.addstr(self.mov.sizeY, 0, "                                 ")
+        self.stdscr.addstr(self.mov.sizeY, 0, "Enter file name to save as: ")
+        curses.echo()
+        filename = self.stdscr.getstr()
+        curses.noecho()
+        filename = os.path.expanduser(filename)
+        # Check and see if file exists. If it does, make backup pablodraw-style.
+        # Or just ask if you would like to overwrite.  haven't decided yet.
+        # For now just skip the checking.
+        if (saveFormat == 'ascii'):
+            try:
+                f = open(filename, 'w')
+            except:
+                self.notify("Could not open file for writing. (Press any key to continue)")
+                return None
+            outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n')                 
+            f.write(outBuffer + '\n\n')
+            f.close()
+        if (saveFormat == 'dur'):   # dur = pickled python objects
+            # remove un-picklable objects
+            self.mov.stdscr = None
+            # open ad write file
+            try:
+                f = open(filename, 'wb')
+            except:
+                self.notify("Could not open file for writing. (Press any key to continue)")
+                return None
+            pickle.dump(self.opts, f)
+            pickle.dump(self.mov, f)
+            f.close()
+            self.mov.stdscr = self.stdscr   # re-insert un-picklable object
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
+        self.stdscr.addstr(self.mov.sizeY, 0, "*Saved* (Press any key to continue)")
+        self.stdscr.getch()
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
+
+    def showHelp(self):
+        helpStrings = ['META-O: Open', 'META-S: Save', 'META-Q: Quit', 'META is the same as Alt and Esc on most systems.']
+        curses.curs_set(0)
+        helpScreenText = '''
+                  __                __
+                _|  |__ __ _____ __|  |_____ _____ __ __ __
+               / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
+              /_____|_____|__|__|_____|__|___\____|________| |  Durr....
+              \_____________________________________________\|  v 0.2
+            ..________________________________________________..
+                /\ |\ |||\  /|         |  .-.  _| . _|_
+               /--\| \||| \/ | ()      |  |/_ (_| |  |
+      alt-k - next frame               |  esc-up - delete current line
+      alt-j - prev frame               |  esc-down - insert line
+      alt-n - new frame from current   |  esc-left - delete current column.
+      alt-p - play animation (up/down  |  esc-right - insert new column
+              change FPS, any other    |  alt-m - mark selection for
+              key stops playback)      |          copy/paste/cut/move *
+      alt-d - delete current frame     |  alt-s - save, alt-o - open
+   ..  ..------------------------------|  alt-q - quit
+                                       `----------------------------..  ..
+    PRO TIP:
+    if ALT doesn't work, use ESC or configure terminal to map ALT to META
+
+
+
+'''
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        #self.stdscr.addstr(self.mov.sizeY, 0, "CTRL-W: Save, CTRL-X: Exit  (Press any key to continue)")
+        #self.stdscr.addstr(self.mov.sizeY, 0, "ALT-O: Open, ALT-S: Save, ALT-Q: Quit  (Press any key to continue)")
+        self.stdscr.addstr(0, 0, helpScreenText)
+        self.stdscr.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
+        self.stdscr.getch()
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        curses.curs_set(1)
+
+    def refresh(self):          # Why doesn't this always work right? - seems good now. rename to redraw()?
+        """Refresh the screen"""
+        linenum = 0
+        for line in self.mov.currentFrame.content:
+            #for colnum in range(len(line)):    # maxX = len(line), or should be
+            for colnum in range(self.mov.sizeX):
+                self.stdscr.addstr(linenum, colnum, str(line[colnum]))
+            linenum += 1
+        #self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
+        for x in range(linenum, self.mov.sizeY):
+            self.stdscr.addstr(x, 0, " " * self.mov.sizeX)
+        # draw statusbar should be in here?
+        #self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ' )' ) 
+        self.stdscr.refresh()
+
+    def refresh2(self):
+        """Refresh the Screen - rewrite"""
+        pass
+
+    def delCol(self):          # This causes ghost characters when refresh() - still? no?
+        """Erase column at position of cursor"""
+        for x in range(len(self.mov.currentFrame.content)):         # Pop current column from every
+            self.mov.currentFrame.content[x].pop(self.xy[1] - 1)     # line & add a blank
+            self.mov.currentFrame.content[x].append(' ')         # at the end of each line.
+        self.refresh()
+
+    def addCol(self):
+        """Insert column at position of cursor"""
+        for x in range(len(self.mov.currentFrame.content)):
+            self.mov.currentFrame.content[x].insert(self.xy[1] - 1, ' ')
+            self.mov.currentFrame.content[x].pop()
+        self.refresh()
+
+    def delLine(self):
+        """delete current line"""
+        self.mov.currentFrame.content.pop(self.xy[0])
+        self.mov.currentFrame.content.append([])
+        self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
+        self.refresh()
+
+    def addLine(self):          # This causes ghost characters when refresh()
+        """Insert new line"""
+        self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
+        self.mov.currentFrame.content.pop()
+        self.refresh()
+
+    def markSelection(self):
+        """Mark selection for copy/cut/move - trigger with alt-m"""
+        # set start point to where the cursor is, wait for arrow key input (or esc for cancel).
+        # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
+        # then ask the user what to do with it - copy, move, cut
+        self.blockStartPoint =  [self.xy[0],  self.xy[1]]
+        #self.stdscr.addstr(linenum, colnum, str(line[colnum])) # line is a string
+        self.notify("Excellent.")
+
+    def parseArgs(self):
+        """ do argparse stuff, get filename from user """
+        pass
+            
+if (__name__ == "__main__"):
+    derlogo = '''
+       __                __
+     _|  |__ __ _____ __|  |_____ _____ __ __ __
+    / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
+   /_____|_____|__|__|_____|__|___\____|________| |  Durr....
+   \_____________________________________________\|  v 0.2
+
+'''
+    print derlogo
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
+    args = parser.parse_args()
+    time.sleep(3)
+    ui = UserInterface()
+    if args.filename:
+        ui.loadFromFile(args.filename, "dur")
+    ui.refresh()
+    ui.drawRuler(-1)    # why does this stupid thing take a paramater?  why does it even exist?
+    ui.mainLoop()
+    print ' '  # at this point we've printed the help screen and are exiting - never entering mainloop.
