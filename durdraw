@@ -3,25 +3,21 @@
 """
 Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
 
-PLANS AND MISC NOTES:
+LICENSE:
 
-Save file formats:
-* .dur is pickled python objects (config and movie)
-* add vt100 format?:
-* separate each frame with vt100 clearscreen or cursor move escape character, so you can cat animation.
-* useful excape characters (vt100):
-    Esc[2J  Clear entire screen ED2
-    Esc[2K  Clear entire line   EL2
-http://ascii-table.com/ansi-escape-sequences-vt-100.php
+Copyright 2009-2013 Sam Foster (cmang), all rights reserved
 
-Next:
-* Clipboard/select/cut/paste/flip
-* ANSI colors (extra dimensions in x/y array, or just another table completely, for color fg/bg)
-* ANSI extended characters
-* Animated Gif export, how: save as ansi/ascii (to memory?), ansi2png, stitch png's together as gif
-   ^ Have font handling system - can choose Putty/windows fonts, DOS fonts, xterm, monaco-ish, custom?
-* Mov (or MPG, or other FPS-synced) format export
-* undo/redo?
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import argparse,os.path,pickle,sys,time
@@ -142,6 +138,7 @@ class UserInterface():
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
 
     def drawRuler(self, col):
+        """ Deprecated.  Kill it for real. """
         longstring = ''
         for y in range(1,9):
             for x in range(1,10):
@@ -214,6 +211,10 @@ class UserInterface():
         self.stdscr.addstr(0, 0, " " * (self.mov.sizeX + 1))   # clear first line/ruler bar
         curses.curs_set(0)  # hide cursor
         playing = True
+        new_time = time.time()
+        # see how many milliseconds we have to sleep for
+        # then divide by 1000.0 since time.sleep() uses seconds
+        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         while (playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
@@ -222,23 +223,20 @@ class UserInterface():
                 # up or down to change framerate, otherwise stop playing
                 if (c == curses.KEY_UP):  # up key - increase fps
                     self.opts.framerate += 1
+                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif (c == curses.KEY_DOWN):    # down key - decrese fps
                     if (self.opts.framerate != 1.0):
                         self.opts.framerate -= 1
+                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 else:
                     playing = False # press any key to stop
-            # draw animation
-            self.mov.nextFrame()
-            self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
-            self.refresh()
-            # next few lines pause.
             new_time = time.time()
-            # see how many milliseconds we have to sleep for
-            # then divide by 1000.0 since time.sleep() uses seconds
-            sleep_time = ((1000.0 / self.opts.framerate) - (new_time - last_time)) / 1000.0
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-            last_time = new_time
+            if (new_time >= (last_time + sleep_time)): # Time to update the frame? If so...
+                last_time = new_time
+                # draw animation
+                self.mov.nextFrame()
+                self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
+                self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         curses.curs_set(1)  # make cursor visible again
     
@@ -251,12 +249,14 @@ class UserInterface():
 
     def mainLoop(self):
         self.metaKey = 0
+        self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # FPS and frame number
         while 1:
             self.testWindowSize()
-            self.stdscr.addstr(self.mov.sizeY, 1, str(self.xy))
-            #self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len("CRTL-G for Help. "), "CTRL-G for Help.")
+            # print statusbar stuff
+            self.stdscr.addstr(self.mov.sizeY, 1, str(self.xy))     # line/column number (line starts at 0)
             self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString)
-            self.stdscr.move(self.xy[0], self.xy[1] - 1)
+            # ^ f1-f10 map
+            self.stdscr.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right spot for refresh
             self.stdscr.refresh()
             c = self.stdscr.getch()
             self.testWindowSize()
@@ -386,9 +386,9 @@ class UserInterface():
                     if self.xy[1] < self.mov.sizeX:
                         self.xy[1] = self.xy[1] + 1
                 if (c != None):
-                    self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
+                    self.stdscr.addstr(self.mov.sizeY, 8, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
                 if (c == None):
-                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
+                    self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
                 self.refresh()
                 #longstring = self.drawRuler(-1)
                 #self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
@@ -634,7 +634,7 @@ if (__name__ == "__main__"):
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
    \_____________________________________________\|  v 0.2
-
+    Press esc-h for help.                            by cmang
 '''
     print derlogo
     parser = argparse.ArgumentParser()
