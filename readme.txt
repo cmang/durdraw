@@ -4,14 +4,25 @@
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
               \_____________________________________________\|  v 0.2
 
-Durdraw is an ASCII drawing program that supports frame-based animation, to make
-ASCII animation work more like a traditional animation studio.
+OVERVIEW:
+
+Durdraw is an ASCII drawing program for Linux and MacOS X that supports
+frame-based animation to make ASCII animation work more like a traditional
+animation studio.
 
 It supports importing ascii files to frames, duplicating and deleting frames,
 flipping between frames, and frames-per-second control during playback.
 
-Files can be loaded and saved in ASCII (.asc, .txt) or in proprietary DUR
-animation formats.
+Files can be loaded and saved in ASCII (.asc, .txt) or in DUR animation format.
+
+REQUIREMENTS:
+
+* Python 2.5.2 or higher (not tested with older versions)
+* Ncurses
+* A terminal and font that supports Code Page 463 (US-Latin-1, Western ASCII,
+  etc) is recommended for IBM-PC Extended ASCII. See PRO TIPS section below.
+
+USAGE:
 
 To open a .dur or .asc file from the command line, use:
 
@@ -45,11 +56,10 @@ PRO TIPS:
 
 http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-properly-when-connecting-to-a-bbs-with-telnet-under-linux/
 
-    * To get extended characters (AKA code page 437, ibm-pc characters, DOS
-      characters, blocks, etc) working in MacOS X Terminal.app, follow these
+    * To get extended characters working in MacOS X Terminal.app, follow these
       instructions:
 
-1: Install dos437.ttf font (included) by doucle-clicking it.
+1: Install dos437.ttf font (included) by double-clicking it.
 2: Create a profile in Terminal Preferences/Settings with the following
    settings:
     + In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
@@ -58,13 +68,14 @@ http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-proper
     + In "Advanced" tab, Character encoding set to "Western (ASCII)"
     + Set background color to black (low or no transprency) and foreground
       color to white
+        
+        * Extended characters do not work so well in GNU Screen.
 
-Homepage: http://bitbucket.org/sfoster/durdraw/
-
-Credits:
+CREDITS:
 
 Sam Foster (http://cmang.org)
 
+Homepage: http://bitbucket.org/sfoster/durdraw/
 
 License for dos437.ttf font:
 
