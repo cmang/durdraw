@@ -549,17 +549,17 @@ class UserInterface():
             ..________________________________________________..
                 /\ |\ |||\  /|         |  .-.  _| . _|_
                /--\| \||| \/ | ()      |  |/_ (_| |  |
-      alt-k - next frame               |  esc-up - delete current line
-      alt-j - prev frame               |  esc-down - insert line
-      alt-n - new frame from current   |  esc-left - delete current column.
-      alt-p - play animation (up/down  |  esc-right - insert new column
+      alt-k - next frame               |  alt-up - delete current line
+      alt-j - prev frame               |  alt-down - insert line
+      alt-n - new frame from current   |  alt-left - delete current column.
+      alt-p - play animation (up/down  |  alt-right - insert new column
               change FPS, any other    |  alt-m - mark selection for
               key stops playback)      |          copy/paste/cut/move *
-      alt-d - delete current frame     |  alt-s - save, alt-o - open
-   ..  ..------------------------------|  alt-q - quit
-                                       `----------------------------..  ..
-    PRO TIP:
-    if ALT doesn't work, use ESC or configure terminal to map ALT to META
+      alt-d - delete current frame     :  alt-c - clear canvas/movie
+   ..  ..----------------------------------------------------------..  ..
+
+           alt-s - save, alt-o - open, alt-h - help, alt-q - quit
+
 
 
 
