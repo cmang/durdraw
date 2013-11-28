@@ -31,24 +31,32 @@ or:
 durdraw filaneme.asc
 
 COMMANDS:
-            ..________________________________________________..
-                /\ |\ |||\  /|         |  .-.  _| . _|_
-               /--\| \||| \/ | ()      |  |/_ (_| |  |
-      alt-k - next frame               |  alt-up - delete current line
-      alt-j - prev frame               |  alt-down - insert line
-      alt-n - new frame from current   |  alt-left - delete current column.
-      alt-p - play animation (up/down  |  alt-right - insert new column
-              change FPS, any other    |  alt-m - mark selection for
-              key stops playback)      |          copy/paste/cut/move *
-      alt-d - delete current frame     :  alt-c - clear canvas/movie
-   ..  ..----------------------------------------------------------..  ..
 
-           alt-s - save, alt-o - open, alt-h - help, alt-q - quit
+            ..________________________________________________..          
+                /\ |\ |||\  /|         |  .-.  _| . _|_                   
+               /--\| \||| \/ | ()      |  |/_ (_| |  |                    
+      alt-k - next frame               |  alt-' - delete current line     
+      alt-j - prev frame               |  alt-/ - insert line             
+      alt-n - new frame from current   |  alt-, - delete current column.  
+      alt-p - play animation (up/down  |  alt-. - insert new column       
+              change FPS, any other    |  alt-m - mark selection for      
+              key stops playback)      |          copy/paste/cut/move *   
+      alt-d - delete current frame     |  alt-c - clear canvas/movie      
+   ..  ..----------------------------------------------------------..  ..  
+                                                                          
+           alt-s - save, alt-o - open, alt-h - help, alt-q - quit        
+              alt-up - next fg color, alt-down - prev fg color     
+            alt-right - next fg color, alt-left - prev fg color
 
 PRO TIPS:
 
     * If ALT doesn't work, use ESC or configure your terminal to map ALT to
       META.
+
+    * If extended characters are not working in gnu screen, try running the
+      following screen command (by pressing ctrl-a and typing):
+        :utf8 off off
+      then reload durdraw or switch back and forth to another screen window.
 
     * To get extended characters (AKA code page 437, ibm-pc characters, DOS
       characters, etc) working in Linux, follow these instructions (I recommend

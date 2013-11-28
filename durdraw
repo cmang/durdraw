@@ -25,18 +25,32 @@ import curses
 from copy import copy, deepcopy
 
 class AnsiArt():
-    """ Ansi specific stuff.. character sets for code page 438, at least """
+    """ Ansi specific stuff.. character sets for code page 438 should
+        be put in here """
     def __init__(self):
+        self.ColorPairMap = None # fill this with dict of FG/BG -> curses pair #
         pass
-    def codePage437(): 
+    def codePage437(self): 
         pass
-        
+    def initColorPairs(self):
+       """ Setup ncurses color pairs for ANSI colors """
+       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) 
+       curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) 
+       curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) 
+       curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK) 
+       curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) 
+       curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) 
+       curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) 
+       curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK)
+       self.colorPairMap = { (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5,
+            (6,0):6, (7,0):7, (8,0):8  } # (fg,bg):cursespair
 
 class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
     """
     def __init__(self, sizeX, sizeY):
         """ Iinitialize drawing.content[x][y]"""
+        # it's a bunch of rows of ' 'characters.
         self.content = []
         self.sizeX = sizeX
         self.sizeY = sizeY
@@ -44,14 +58,24 @@ class Frame():
             self.content.append([])
             for y in range(0, sizeX):
                 self.content[x].append(' ')
+        self.initColorMap()
 
-class Options():
+    def initColorMap(self):
+        """ Builds a dictionary mapping X/Y to a FG/BG color pair """
+        self.colorMap = {}
+        for x in range(0, self.sizeY):
+            for y in range(0, self.sizeX):
+                self.colorMap.update( {(x,y):(0,0)} )  # tuple keypair (xy), tuple value (fg and bg)
+
+
+class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
     """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
     def __init__(self):         # default options
         self.framerate = 2.0
         self.sizeX = 79
         self.sizeY = 23
-        self.saveFileFormat = 1 # save file format version number
+        self.saveFileFormat = 3 # save file format version number
+        # ^ in version 2 frames have a colormap
 
 
 class Movie():
@@ -79,7 +103,8 @@ class Movie():
         self.frameCount += 1
 
     def deleteCurrentFrame(self):
-        self.stdscr.addstr(self.sizeY, 10, "Are you sure you want to delete the current frame? (Y/N)   ");
+        self.stdscr.addstr(self.sizeY, 0, " " * self.sizeX);
+        self.stdscr.addstr(self.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
         prompting = True
         while (prompting):
             c = self.stdscr.getch()
@@ -99,7 +124,7 @@ class Movie():
                     self.currentFrame = self.frames[self.currentFrameNumber - 1]
             if (c == 110):  # 'n'
                 prompting = False
-        self.stdscr.addstr(self.sizeY, 10, "                                                          ");
+        self.stdscr.addstr(self.sizeY, 0, " " * self.sizeX);
     
     def nextFrame(self):
         if (self.currentFrameNumber == self.frameCount):    # if at last frame..
@@ -122,10 +147,15 @@ class UserInterface():
     """ Draws user interface, has main UI loop. """
     def __init__(self):
         self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
+        self.appState = None # will be filled in by main() .. run-time app state stuff
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
+        self.ansi = AnsiArt()   # obj for misc ansi-related stuff
+        self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
+        self.colorfg = 1    # default fg white
+        self.colorbg = 0    # default bg black
         self.mov = Movie(self.opts, self.stdscr) # initialize a new movie to work with
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         curses.noecho()
@@ -134,21 +164,21 @@ class UserInterface():
         curses.nonl()
         self.stdscr.keypad(1)
         self.testWindowSize()
-        #self.drawRuler(-1)
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
 
-    def drawRuler(self, col):
-        """ Deprecated.  Kill it for real. """
-        longstring = ''
-        for y in range(1,9):
-            for x in range(1,10):
-                col += 1
-                self.stdscr.addstr(0, col, str(x))
-                longstring += str(x)
-            col += 1
-            self.stdscr.addstr(0, col, str(y), curses.A_BOLD)
-            longstring += str(y)
-        return longstring
+    def nextFgColor(self):
+        """ switch to next fg color, cycle back to beginning at max """
+        if (self.colorfg < 8):
+            self.colorfg += 1
+        else:
+            self.colorfg = 1
+
+    def prevFgColor(self):
+        """ switch to prev fg color, cycle around to end if at beginning """
+        if (self.colorfg > 1):
+            self.colorfg -= 1
+        else:
+            self.colorfg = 8
 
     def notify(self, message):
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -180,9 +210,11 @@ class UserInterface():
         self.refresh()
         self.testWindowSize()
 
-    def insertChar(self, c):
+    def insertChar(self, c, fg=1, bg=0):
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
         self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
+        self.mov.currentFrame.colorMap.update(
+                {(self.xy[0],self.xy[1]):(fg,bg)} )
         if self.xy[1] < self.mov.sizeX:
             self.xy[1] = self.xy[1] + 1 
 
@@ -191,8 +223,8 @@ class UserInterface():
         clearing = True  # assume we are clearing unless we prompt and say "n"
         if prompting:
             self.stdscr.nodelay(0) # wait for input when calling getch
-            self.stdscr.addstr(self.mov.sizeY, 0, "                                                  ")
-            self.stdscr.addstr(self.mov.sizeY, 0, "Are you sure you want to claear the canvas? (Y/N) " )
+            self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+            self.stdscr.addstr(self.mov.sizeY, 0, "Are you sure you want to clear the canvas? (Y/N) " )
             while (prompting):
                 c = self.stdscr.getch()
                 if (c == 121):   # 121 = y
@@ -205,7 +237,7 @@ class UserInterface():
         if clearing:
             self.mov = Movie(self.opts, self.stdscr) # initialize a new movie
 
-    def animLoop(self): # ghetto fab sleep fps loop from http://stackoverflow.com/questions/2660919/python-animation-timing.. replace this with a 'game loop' that monitors time for appropriate increment, with a short sleep so it doesn't hog the cpu
+    def animLoop(self): # improved game loop - watches for FPS based on a delta from previous time
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.stdscr.addstr(0, 0, " " * (self.mov.sizeX + 1))   # clear first line/ruler bar
@@ -235,13 +267,15 @@ class UserInterface():
                 last_time = new_time
                 # draw animation
                 self.mov.nextFrame()
-                self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
+                if (self.appState.playOnlyMode == False): # if we're in play-only mode, don't show extra stuff.
+                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
                 self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         curses.curs_set(1)  # make cursor visible again
     
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
-        """ Map a dict of F1-f10 to character values """ # later this can support custom unicode character sets
+        # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
+        """ Map a dict of F1-f10 to character values """ 
         self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
         self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
@@ -249,7 +283,7 @@ class UserInterface():
 
     def mainLoop(self):
         self.metaKey = 0
-        self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # FPS and frame number
+        self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # FPS and frame number
         while 1:
             self.testWindowSize()
             # print statusbar stuff
@@ -277,18 +311,30 @@ class UserInterface():
                     elif c == 104:                # alt-h - help
                         self.showHelp()
                         c = None
-                    elif c == curses.KEY_LEFT:      # alt-left - erase/pop current column
+                    elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
+                        self.notify("previous bg color")
+                        pass
+                    elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
+                        self.notify("next bg color")
+                        pass
+                    elif c == curses.KEY_DOWN:      # alt-down - prev fg color
+                        self.prevFgColor()
+                        self.notify("fg color:" + str(self.colorfg))
+                        pass
+                    elif c == curses.KEY_UP:     # alt-up - next fg color
+                        self.nextFgColor()
+                        self.notify("fg color:" + str(self.colorfg))
+                        pass
+                    elif c == 44:      # alt-, - erase/pop current column
                         self.delCol()
-                    elif c == curses.KEY_RIGHT:     # alt-right - insert column
+                    elif c == 46:       # alt-. - insert column
                         self.addCol()
-                    elif (c == 98):      # alt-left - erase/pop current column
-                        self.delCol()
-                    elif (c == 102):     # alt-right - insert column
-                        self.addCol()
-                    elif c == curses.KEY_UP:        # alt-up - erase line
+                    elif c == 39:        # alt-' - erase line
                         self.delLine()
-                    elif c == curses.KEY_DOWN:      # alt-down - insert line
+                    elif c == 47:      # alt-/ - insert line
                         self.addLine()
+                    elif c == curses.KEY_SLEFT:
+                        self.notify("shift left")
                     elif (c == 109):    # alt-m - mark block
                         self.markSelection()
                     elif (c == 99):     # alt-c - clear canvas
@@ -380,17 +426,14 @@ class UserInterface():
                     self.xy[1] = self.mov.sizeX
                 elif c == curses.KEY_SLEFT:  # not working yet, in osx iterm at least
                     self.notify("Shift-left, select mode")
-                elif c <= 255 and c >= 32:      # normal printable character
-                    self.stdscr.addstr(self.xy[0], self.xy[1] - 1, chr(c))
-                    self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
-                    if self.xy[1] < self.mov.sizeX:
-                        self.xy[1] = self.xy[1] + 1
+                #elif c <= 255 and c >= 32:      # normal printable character
+                elif c <= 128 and c >= 32:      # normal printable character
+                    self.insertChar(c)
                 if (c != None):
-                    self.stdscr.addstr(self.mov.sizeY, 8, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
+                    self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
                 if (c == None):
-                    self.stdscr.addstr(self.mov.sizeY, 8, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
+                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
                 self.refresh()
-                #longstring = self.drawRuler(-1)
                 #self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
             #except Exception, err:
             except curses.error:
@@ -414,6 +457,9 @@ class UserInterface():
             #    return None
         self.stdscr.addstr(self.mov.sizeY, 0, " " * 50)
         if (exiting):
+            self.verySafeQuit()
+
+    def verySafeQuit(self): # non-interactive part.. lose out urses sreen and exit.
             curses.nocbreak()
             self.stdscr.keypad(0)
             curses.echo()
@@ -545,23 +591,22 @@ class UserInterface():
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.2
+              \_____________________________________________\|  v 0.3
             ..________________________________________________..
                 /\ |\ |||\  /|         |  .-.  _| . _|_
                /--\| \||| \/ | ()      |  |/_ (_| |  |
-      alt-k - next frame               |  alt-up - delete current line
-      alt-j - prev frame               |  alt-down - insert line
-      alt-n - new frame from current   |  alt-left - delete current column.
-      alt-p - play animation (up/down  |  alt-right - insert new column
+      alt-k - next frame               |  alt-' - delete current line
+      alt-j - prev frame               |  alt-/ - insert line
+      alt-n - new frame from current   |  alt-, - delete current column.
+      alt-p - play animation (up/down  |  alt-. - insert new column
               change FPS, any other    |  alt-m - mark selection for
               key stops playback)      |          copy/paste/cut/move *
-      alt-d - delete current frame     :  alt-c - clear canvas/movie
+      alt-d - delete current frame     |  alt-c - clear canvas/movie
    ..  ..----------------------------------------------------------..  ..
 
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
-
-
-
+              alt-up - next fg color, alt-down - prev fg color
+            alt-right - next fg color, alt-left - prev fg color
 
 '''
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -626,6 +671,11 @@ class UserInterface():
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
         pass
+
+class AppState():
+    """ run-time app state, separate from movie options (Options()) """
+    def __init__(self):
+        self.playOnlyMode = False
             
 if (__name__ == "__main__"):
     derlogo = '''
@@ -633,17 +683,26 @@ if (__name__ == "__main__"):
      _|  |__ __ _____ __|  |_____ _____ __ __ __
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-   \_____________________________________________\|  v 0.2
+   \_____________________________________________\|  v 0.3
     Press esc-h for help.                            by cmang
 '''
-    print derlogo
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
+    parser.add_argument("-p", "--play", help="Just play .dur file, then exit",
+                    action="store_true")
     args = parser.parse_args()
-    time.sleep(3)
+    app = AppState()    # to store run-time preferences from CLI, etc.
+    if (args.play == False):
+        print derlogo
+        time.sleep(3)
     ui = UserInterface()
+    ui.appState = app
     if args.filename:
         ui.loadFromFile(args.filename, "dur")
+    if args.play:
+        # Just play file and exit
+        app.playOnlyMode = True
+        ui.animLoop()
+        ui.verySafeQuit()
     ui.refresh()
-    #ui.drawRuler(-1)    # why does this stupid thing take a paramater?  why does it even exist?
     ui.mainLoop()
