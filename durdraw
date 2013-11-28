@@ -34,16 +34,53 @@ class AnsiArt():
         pass
     def initColorPairs(self):
        """ Setup ncurses color pairs for ANSI colors """
-       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) 
-       curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) 
-       curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) 
-       curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK) 
-       curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) 
-       curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) 
-       curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) 
-       curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK)
-       self.colorPairMap = { (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5,
-            (6,0):6, (7,0):7, (8,0):8  } # (fg,bg):cursespair
+       # 8 color pairs now, need to fill in the rest - bold, fg bg.
+       #curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) 
+       #curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) 
+       #curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) 
+       #curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK) 
+       #curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) 
+       #curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) 
+       #curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) 
+       #curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK)
+       # basic ncurses colors
+       curses.init_pair(8, 0, 0)
+       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # black is 0, white is 7
+       curses.init_pair(2, 1, curses.COLOR_BLACK) 
+       curses.init_pair(3, 2, curses.COLOR_BLACK) 
+       curses.init_pair(4, 3, curses.COLOR_BLACK) 
+       curses.init_pair(5, 4, curses.COLOR_BLACK) 
+       curses.init_pair(6, 5, curses.COLOR_BLACK) 
+       curses.init_pair(7, 6, curses.COLOR_BLACK) 
+       # black with background colors
+       curses.init_pair(9, 0, 7)
+       curses.init_pair(10, 0, 1)
+       curses.init_pair(11, 0, 2)
+       curses.init_pair(12, 0, 3)
+       curses.init_pair(13, 0, 4)
+       curses.init_pair(14, 0, 5)
+       curses.init_pair(15, 0, 6)
+       # white with background colors
+       curses.init_pair(16, 7, 7)
+       curses.init_pair(17, 7, 1)
+       curses.init_pair(18, 7, 2)
+       curses.init_pair(19, 7, 3)
+       curses.init_pair(20, 7, 4)
+       curses.init_pair(21, 7, 5)
+       curses.init_pair(22, 7, 6)
+       # red with background colors
+       curses.init_pair(23, 1, 7)
+       curses.init_pair(24, 1, 1)
+       curses.init_pair(25, 1, 2)
+       curses.init_pair(26, 1, 3)
+       curses.init_pair(27, 1, 4)
+       curses.init_pair(28, 1, 5)
+       curses.init_pair(29, 1, 6)
+       self.colorPairMap = { (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5,
+            (6,0):6, (7,0):7, (8,0):8, # black background .. 
+            # black with color backgrounds - white is color 1, black 8
+            (1,1):9, (0,2):10, (0,3):11, (0,4):12, (0,5):13, (0,6):14, (0,7):15
+            } # (fg,bg):cursespair
 
 class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
@@ -75,7 +112,7 @@ class Options():    # config, prefs, preferences, etc. Per movie. Separate from 
         self.sizeX = 79
         self.sizeY = 23
         self.saveFileFormat = 3 # save file format version number
-        # ^ in version 2 frames have a colormap
+        # ^ in version 2 frames have a colormap, but is not used.
 
 
 class Movie():
@@ -100,6 +137,7 @@ class Movie():
         newFrame = Frame(self.sizeX, self.sizeY)
         self.frames.append(newFrame)
         newFrame.content = deepcopy(self.currentFrame.content)
+        newFrame.colorMap = deepcopy(self.currentFrame.colorMap)
         self.frameCount += 1
 
     def deleteCurrentFrame(self):
@@ -156,6 +194,7 @@ class UserInterface():
         self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
         self.colorfg = 1    # default fg white
         self.colorbg = 0    # default bg black
+        self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts, self.stdscr) # initialize a new movie to work with
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         curses.noecho()
@@ -170,15 +209,28 @@ class UserInterface():
         """ switch to next fg color, cycle back to beginning at max """
         if (self.colorfg < 8):
             self.colorfg += 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
             self.colorfg = 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
     def prevFgColor(self):
         """ switch to prev fg color, cycle around to end if at beginning """
         if (self.colorfg > 1):
             self.colorfg -= 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
             self.colorfg = 8
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+
+    def nextBgColor(self):
+        """ switch to the next bg color, cycle around if at beginning """
+        # Need to add the rest of the color pairs before running/implementing this, really
+        pass
+
+    def nextBgColor(self):
+        # Need to add the rest of the color pairs before running/implementing this
+        pass
 
     def notify(self, message):
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -214,7 +266,7 @@ class UserInterface():
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
         self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
         self.mov.currentFrame.colorMap.update(
-                {(self.xy[0],self.xy[1]):(fg,bg)} )
+                {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
         if self.xy[1] < self.mov.sizeX:
             self.xy[1] = self.xy[1] + 1 
 
@@ -284,12 +336,15 @@ class UserInterface():
     def mainLoop(self):
         self.metaKey = 0
         self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # FPS and frame number
-        while 1:
+        while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
             self.stdscr.addstr(self.mov.sizeY, 1, str(self.xy))     # line/column number (line starts at 0)
+            # f1-f10 map
             self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString)
-            # ^ f1-f10 map
+            # color thing
+            colorString = "Color "
+            self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + self.chMapString), colorString, curses.color_pair(self.colorpair))
             self.stdscr.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right spot for refresh
             self.stdscr.refresh()
             c = self.stdscr.getch()
@@ -313,18 +368,18 @@ class UserInterface():
                         c = None
                     elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
                         self.notify("previous bg color")
-                        pass
+                        c = None
                     elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
                         self.notify("next bg color")
-                        pass
+                        c = None
                     elif c == curses.KEY_DOWN:      # alt-down - prev fg color
                         self.prevFgColor()
-                        self.notify("fg color:" + str(self.colorfg))
-                        pass
+                        #self.notify("fg color:" + str(self.colorfg))
+                        c = None
                     elif c == curses.KEY_UP:     # alt-up - next fg color
                         self.nextFgColor()
-                        self.notify("fg color:" + str(self.colorfg))
-                        pass
+                        #self.notify("fg color:" + str(self.colorfg))
+                        c = None
                     elif c == 44:      # alt-, - erase/pop current column
                         self.delCol()
                     elif c == 46:       # alt-. - insert column
@@ -380,34 +435,34 @@ class UserInterface():
                     self.xy[1] = self.mov.sizeX
                 #elif c in [curses.KEY_F1, 7]:    # F1 .. insert block character?
                 elif c in [curses.KEY_F1]:    # F1 - insert extended character
-                    self.insertChar(self.chMap['f1'])
+                    self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F2]:    # F2 - insert extended character
-                    self.insertChar(self.chMap['f2'])
+                    self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F3]:    # F3 - insert extended character
-                    self.insertChar(self.chMap['f3'])
+                    self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F4]:    # F4 - insert extended character
-                    self.insertChar(self.chMap['f4'])
+                    self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F5]:    # F5 - insert extended character
-                    self.insertChar(self.chMap['f5'])
+                    self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F6]:    # F6 - insert extended character
-                    self.insertChar(self.chMap['f6'])
+                    self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F7]:    # F7 - insert extended character
-                    self.insertChar(self.chMap['f7'])
+                    self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F8]:    # F8 - insert extended character
-                    self.insertChar(self.chMap['f8'])
+                    self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F9]:    # F9 - insert extended character
-                    self.insertChar(self.chMap['f9'])
+                    self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c in [curses.KEY_F10]:    # F10 - insert extended character
-                    self.insertChar(self.chMap['f10'])
+                    self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
                     c = None
                 elif c == curses.KEY_LEFT:
                     if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
@@ -428,7 +483,7 @@ class UserInterface():
                     self.notify("Shift-left, select mode")
                 #elif c <= 255 and c >= 32:      # normal printable character
                 elif c <= 128 and c >= 32:      # normal printable character
-                    self.insertChar(c)
+                    self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
                 if (c != None):
                     self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
                 if (c == None):
@@ -494,6 +549,18 @@ class UserInterface():
         self.refresh()      # so we can see the new ascii in memory.
         #self.notify("Loaded " + shortfile)
 
+    def convertToCurrentFormat(self):   # should this and loadFromFile be in a
+        # separate class for file operations? or into Movie() or Options() ?
+        # then loadFromFile could return a movie object instead.
+        """ If we load old .dur files, convert to the latest format """
+        # aka "fill in the blanks"
+        if (self.opts.saveFileFormat < 3):  # version 4 should rename saveFileFormat
+            # to saveFormatVersion
+            # initialize color map for all frames:
+            for frame in self.mov.frames:   # <3 python
+                frame.initColorMap()    # that was easy
+                self.opts.saveFileFormat = 3
+
     def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename
         filename = os.path.expanduser(shortfile)
         if (loadFormat == 'ascii'):
@@ -525,6 +592,7 @@ class UserInterface():
             except:
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead
             self.mov.stdscr = self.stdscr
+            self.convertToCurrentFormat()
             f.close()
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
@@ -621,7 +689,9 @@ class UserInterface():
         linenum = 0
         for line in self.mov.currentFrame.content:
             for colnum in range(self.mov.sizeX):
-                self.stdscr.addstr(linenum, colnum, str(line[colnum]))
+                charColor = self.mov.currentFrame.colorMap[(linenum, colnum)]
+                cursesColorPair = self.ansi.colorPairMap[charColor] # set ncurss color pair
+                self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
             linenum += 1
         for x in range(linenum, self.mov.sizeY):
             self.stdscr.addstr(x, 0, " " * self.mov.sizeX)
@@ -645,6 +715,10 @@ class UserInterface():
         for x in range(len(self.mov.currentFrame.content)):
             self.mov.currentFrame.content[x].insert(self.xy[1] - 1, ' ')
             self.mov.currentFrame.content[x].pop()
+        # insert bit here to shift color map to the right from the column
+        # onward. how: start at top right character, work down to bottom 
+        # copying the color from the character to the left.
+        # Then move left a column and repeat, etc, until you're at self.xy[1] -1 :).
         self.refresh()
 
     def delLine(self):
