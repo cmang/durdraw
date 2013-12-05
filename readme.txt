@@ -7,7 +7,7 @@
 OVERVIEW:
 
 Durdraw is an ASCII and ANSI drawing program for Linux and MacOS X that
-supports frame-based animation to make ASCII animation work more like a
+supports frame-based animation to make ANSI animation work more like a
 traditional animation studio.
 
 It supports importing ascii files to frames, duplicating and deleting frames,
@@ -29,6 +29,12 @@ To open a .dur or .asc file from the command line, use:
 durddraw filename.dur
 or:
 durdraw filaneme.asc
+
+To just play an animation and exit, without loading the editor, use:
+durdraw -p filename.dur
+
+To bypass the startup screen (quick start), use:
+durdraw -q
 
 COMMANDS:
 
