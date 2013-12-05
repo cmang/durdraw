@@ -6,9 +6,9 @@
 
 OVERVIEW:
 
-Durdraw is an ASCII drawing program for Linux and MacOS X that supports
-frame-based animation to make ASCII animation work more like a traditional
-animation studio.
+Durdraw is an ASCII and ANSI drawing program for Linux and MacOS X that
+supports frame-based animation to make ASCII animation work more like a
+traditional animation studio.
 
 It supports importing ascii files to frames, duplicating and deleting frames,
 flipping between frames, and frames-per-second control during playback.
@@ -32,20 +32,19 @@ durdraw filaneme.asc
 
 COMMANDS:
 
-            ..________________________________________________..          
-                /\ |\ |||\  /|         |  .-.  _| . _|_                   
-               /--\| \||| \/ | ()      |  |/_ (_| |  |                    
-      alt-k - next frame               |  alt-' - delete current line     
-      alt-j - prev frame               |  alt-/ - insert line             
-      alt-n - new frame from current   |  alt-, - delete current column.  
-      alt-p - play animation (up/down  |  alt-. - insert new column       
-              change FPS, any other    |  alt-m - mark selection for      
-              key stops playback)      |          copy/paste/cut/move *   
-      alt-d - delete current frame     |  alt-c - clear canvas/movie      
-   ..  ..----------------------------------------------------------..  ..  
-                                                                          
-           alt-s - save, alt-o - open, alt-h - help, alt-q - quit        
-              alt-up - next fg color, alt-down - prev fg color     
+                /\ |\ |||\  /|            .-.  _| . _|_
+               /--\| \||| \/ | ()         |/_ (_| |  |
+      alt-k - next frame                  alt-' - delete current line
+      alt-j - prev frame                  alt-/ - insert line
+      alt-n - new frame from current      alt-, - delete current column.
+      alt-N - new empty frame             alt-. - insert new column
+      alt-p - play animation (up/down     alt-c - clear canvas/movie
+              change FPS, any other       alt-m - mark selection for
+              key stops playback)                 copy/paste/cut/move *
+      alt-d - delete current frame        F1-F10 - insert character
+   ..  ..----------------------------------------------------------..  ..
+           alt-s - save, alt-o - open, alt-h - help, alt-q - quit
+              alt-up - next fg color, alt-down - prev fg color
             alt-right - next fg color, alt-left - prev fg color
 
 PRO TIPS:

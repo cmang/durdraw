@@ -25,7 +25,7 @@ import curses
 from copy import copy, deepcopy
 
 class AnsiArt():
-    """ Ansi specific stuff.. character sets for code page 438 should
+    """ Ansi specific stuff.. character sets for code page 437 should
         be put in here """
     def __init__(self):
         self.ColorPairMap = None # fill this with dict of FG/BG -> curses pair #
@@ -34,53 +34,135 @@ class AnsiArt():
         pass
     def initColorPairs(self):
        """ Setup ncurses color pairs for ANSI colors """
-       # 8 color pairs now, need to fill in the rest - bold, fg bg.
-       #curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) 
-       #curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) 
-       #curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) 
-       #curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK) 
-       #curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) 
-       #curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) 
-       #curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) 
-       #curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK)
-       # basic ncurses colors
-       curses.init_pair(8, 0, 0)
-       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # black is 0, white is 7
-       curses.init_pair(2, 1, curses.COLOR_BLACK) 
-       curses.init_pair(3, 2, curses.COLOR_BLACK) 
-       curses.init_pair(4, 3, curses.COLOR_BLACK) 
-       curses.init_pair(5, 4, curses.COLOR_BLACK) 
-       curses.init_pair(6, 5, curses.COLOR_BLACK) 
-       curses.init_pair(7, 6, curses.COLOR_BLACK) 
-       # black with background colors
-       curses.init_pair(9, 0, 7)
-       curses.init_pair(10, 0, 1)
-       curses.init_pair(11, 0, 2)
-       curses.init_pair(12, 0, 3)
-       curses.init_pair(13, 0, 4)
-       curses.init_pair(14, 0, 5)
-       curses.init_pair(15, 0, 6)
+       # this kind of hurts to write. wtf, ncurses.
+       # basic ncurses colors - comments for these are durdraw internal color numbers:
+       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) # white - 1
+       curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) # cyan - 2
+       curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) # magenta - 3
+       curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)  # blue - 4
+       curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) # yellow - 5
+       curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) # green - 6
+       curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) # red - 7
+       curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK) # black - 8 (and 0)
        # white with background colors
-       curses.init_pair(16, 7, 7)
-       curses.init_pair(17, 7, 1)
-       curses.init_pair(18, 7, 2)
-       curses.init_pair(19, 7, 3)
-       curses.init_pair(20, 7, 4)
-       curses.init_pair(21, 7, 5)
-       curses.init_pair(22, 7, 6)
+       curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_WHITE) # 1,1
+       curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_CYAN) # 1,2
+       curses.init_pair(11, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # 1,3
+       curses.init_pair(12, curses.COLOR_WHITE, curses.COLOR_BLUE)  # 1,4
+       curses.init_pair(13, curses.COLOR_WHITE, curses.COLOR_YELLOW)  # 1,5
+       curses.init_pair(14, curses.COLOR_WHITE, curses.COLOR_GREEN) # 1,6
+       curses.init_pair(15, curses.COLOR_WHITE, curses.COLOR_RED)   # 1,7
+       # cyan with background colors
+       curses.init_pair(16, curses.COLOR_CYAN, curses.COLOR_WHITE) # 2,1
+       curses.init_pair(17, curses.COLOR_CYAN, curses.COLOR_CYAN) # 2,2
+       curses.init_pair(18, curses.COLOR_CYAN, curses.COLOR_MAGENTA) # 2,3
+       curses.init_pair(19, curses.COLOR_CYAN, curses.COLOR_BLUE)  # 2,4
+       curses.init_pair(20, curses.COLOR_CYAN, curses.COLOR_YELLOW)  # 2,5
+       curses.init_pair(21, curses.COLOR_CYAN, curses.COLOR_GREEN) # 2,6
+       curses.init_pair(22, curses.COLOR_CYAN, curses.COLOR_RED)   # 2,7
+       # magenta with background colors
+       curses.init_pair(23, curses.COLOR_MAGENTA, curses.COLOR_WHITE) # 3,1
+       curses.init_pair(24, curses.COLOR_MAGENTA, curses.COLOR_CYAN) # 3,2
+       curses.init_pair(25, curses.COLOR_MAGENTA, curses.COLOR_MAGENTA) # 3,3
+       curses.init_pair(26, curses.COLOR_MAGENTA, curses.COLOR_BLUE)  # 3,4
+       curses.init_pair(27, curses.COLOR_MAGENTA, curses.COLOR_YELLOW)  # 3,5
+       curses.init_pair(28, curses.COLOR_MAGENTA, curses.COLOR_GREEN) # 3,6
+       curses.init_pair(29, curses.COLOR_MAGENTA, curses.COLOR_RED)   # 3,7
+       # blue with background colors
+       curses.init_pair(30, curses.COLOR_BLUE, curses.COLOR_WHITE) # 4,1
+       curses.init_pair(31, curses.COLOR_BLUE, curses.COLOR_CYAN) # 4,2
+       curses.init_pair(32, curses.COLOR_BLUE, curses.COLOR_MAGENTA) # 4,3
+       curses.init_pair(33, curses.COLOR_BLUE, curses.COLOR_BLUE)  # 4,4
+       curses.init_pair(34, curses.COLOR_BLUE, curses.COLOR_YELLOW)  # 4,5
+       curses.init_pair(35, curses.COLOR_BLUE, curses.COLOR_GREEN) # 4,6
+       curses.init_pair(36, curses.COLOR_BLUE, curses.COLOR_RED)   # 4,7
+       # yellow with background colors
+       curses.init_pair(37, curses.COLOR_YELLOW, curses.COLOR_WHITE) # 5,1
+       curses.init_pair(38, curses.COLOR_YELLOW, curses.COLOR_CYAN) # 5,2
+       curses.init_pair(39, curses.COLOR_YELLOW, curses.COLOR_MAGENTA) # 5,3
+       curses.init_pair(40, curses.COLOR_YELLOW, curses.COLOR_BLUE)  # 5,4
+       curses.init_pair(41, curses.COLOR_YELLOW, curses.COLOR_YELLOW)  # 5,5
+       curses.init_pair(42, curses.COLOR_YELLOW, curses.COLOR_GREEN) # 5,6
+       curses.init_pair(43, curses.COLOR_YELLOW, curses.COLOR_RED)   # 5,7
+       # green with background colors
+       curses.init_pair(44, curses.COLOR_GREEN, curses.COLOR_WHITE) # 6,1
+       curses.init_pair(45, curses.COLOR_GREEN, curses.COLOR_CYAN) # 6,2
+       curses.init_pair(46, curses.COLOR_GREEN, curses.COLOR_MAGENTA) # 6,3
+       curses.init_pair(47, curses.COLOR_GREEN, curses.COLOR_BLUE)  # 6,4
+       curses.init_pair(48, curses.COLOR_GREEN, curses.COLOR_YELLOW)  # 6,5
+       curses.init_pair(49, curses.COLOR_GREEN, curses.COLOR_GREEN) # 6,6
+       curses.init_pair(50, curses.COLOR_GREEN, curses.COLOR_RED)   # 6,7
        # red with background colors
-       curses.init_pair(23, 1, 7)
-       curses.init_pair(24, 1, 1)
-       curses.init_pair(25, 1, 2)
-       curses.init_pair(26, 1, 3)
-       curses.init_pair(27, 1, 4)
-       curses.init_pair(28, 1, 5)
-       curses.init_pair(29, 1, 6)
-       self.colorPairMap = { (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5,
-            (6,0):6, (7,0):7, (8,0):8, # black background .. 
-            # black with color backgrounds - white is color 1, black 8
-            (1,1):9, (0,2):10, (0,3):11, (0,4):12, (0,5):13, (0,6):14, (0,7):15
+       curses.init_pair(51, curses.COLOR_RED, curses.COLOR_WHITE) # 7,1
+       curses.init_pair(52, curses.COLOR_RED, curses.COLOR_CYAN) # 7,2
+       curses.init_pair(53, curses.COLOR_RED, curses.COLOR_MAGENTA) # 7,3
+       curses.init_pair(54, curses.COLOR_RED, curses.COLOR_BLUE)  # 7,4
+       curses.init_pair(55, curses.COLOR_RED, curses.COLOR_YELLOW)  # 7,5
+       curses.init_pair(56, curses.COLOR_RED, curses.COLOR_GREEN) # 7,6
+       #curses.init_pair(57, curses.COLOR_RED, curses.COLOR_RED)   # 7,7
+       # black with background colors
+       curses.init_pair(58, curses.COLOR_BLACK, curses.COLOR_WHITE) # 8,1
+       curses.init_pair(59, curses.COLOR_BLACK, curses.COLOR_CYAN) # 8,2
+       curses.init_pair(60, curses.COLOR_BLACK, curses.COLOR_MAGENTA) # 8,3
+       curses.init_pair(61, curses.COLOR_BLACK, curses.COLOR_BLUE)  # 8,4
+       curses.init_pair(62, curses.COLOR_BLACK, curses.COLOR_YELLOW)  # 8,5
+       curses.init_pair(63, curses.COLOR_BLACK, curses.COLOR_GREEN) # 8,6
+       curses.init_pair(57, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
+       #curses.init_pair(64, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
+       # ^ this doesn't work ?!@ ncurses pair # must be between 1 and 63
+       # or ncurses (const?) COLOR_PAIR - 1 
+       # fix is: have functions to swap color map from blackfg to normal.
+       # call that function when drawing if the fg color is black, then switch back
+       # after each character. Or.. keep track which map we're in in a variable.
+       self.colorPairMap = {
+            # foreground colors, black background
+            (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5, (6,0):6, (7,0):7, (8,0):8,
+            # and again, because black is both 0 and 8. :| let's just ditch 0?
+            (0,8):1, (1,8):1, (2,8):2, (3,8):3, (4,8):4, (5,8):5, (6,8):6, (7,8):7, (8,8):8,
+            # white with backround colors 
+            (1,1):9, (1,2):10, (1,3):11, (1,4):12, (1,5):13, (1,6):14, (1,7):15,
+            # cyan with backround colors 
+            (2,1):16, (2,2):17, (2,3):18, (2,4):19, (2,5):20, (2,6):21, (2,7):22,
+            # magenta with background colors
+            (3,1):23, (3,2):24, (3,3):25, (3,4):26, (3,5):27, (3,6):28, (3,7):29,
+            # blue with background colors
+            (4,1):30, (4,2):31, (4,3):32, (4,4):33, (4,5):34, (4,6):35, (4,7):36,
+            # yellow with background colors
+            (5,1):37, (5,2):38, (5,3):39, (5,4):40, (5,5):41, (5,6):42, (5,7):43,
+            # green with background colors
+            (6,1):44, (6,2):45, (6,3):46, (6,4):47, (6,5):48, (6,6):49, (6,7):50,
+            # red with background colors
+            (7,1):51, (7,2):52, (7,3):53, (7,4):54, (7,5):55, (7,6):56, (7,7):57,
+            # black with background colors
+            (8,1):58, (8,2):58, (8,3):60, (8,4):61, (8,5):62, (8,6):63, 
+            (8,7):57,  # 57 instead of 64, because we switch color maps for black
+            # on red
+            # BRIGHT COLORS 9-16
+            # white with backround colors 
+            (9,0):1, (9,8):1, (9,1):9, (9,2):10, (9,3):11, (9,4):12, (9,5):13, (9,6):14, (9,7):15,
+            # cyan with backround colors 
+            (10,0):2, (10,8):2, (10,1):16, (10,2):17, (10,3):18, (10,4):19, (10,5):20, (10,6):21, (10,7):22,
+            # magenta with background colors
+            (11,0):3, (11,8):3, (11,1):23, (11,2):24, (11,3):25, (11,4):26, (11,5):27, (11,6):28, (11,7):29,
+            # blue with background colors
+            (12,0):4, (12,8):4, (12,1):30, (12,2):31, (12,3):32, (12,4):33, (12,5):34, (12,6):35, (12,7):36,
+            # yellow with background colors
+            (13,0):5, (13,8):5, (13,1):37, (13,2):38, (13,3):39, (13,4):40, (13,5):41, (13,6):42, (13,7):43,
+            # green with background colors
+            (14,0):6, (14,8):6, (14,1):44, (14,2):45, (14,3):46, (14,4):47, (14,5):48, (14,6):49, (14,7):50,
+            # red with background colors
+            (15,0):7, (15,8):7, (15,1):51, (15,2):52, (15,3):53, (15,4):54, (15,5):55, (15,6):56, (15,7):57,
+            # black with background colors
+            (16,0):8, (16,8):8, (16,1):58, (16,2):58, (16,3):60, (16,4):61, (16,5):62, (16,6):63, 
+            (16,7):57,  # 57 instead of 64, because we switch color maps for black
             } # (fg,bg):cursespair
+    def switchColorMap(self, map=0):    # deprecated?  I think so.
+            if (map == 1):   # 1 = black map.. deal with it. pair 57 is black on red.
+                # black with background colors
+                curses.init_pair(57, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
+            elif (map == 0):  # 0 = normal color map, pair 57 is red on red 
+                curses.init_pair(57, curses.COLOR_RED, curses.COLOR_RED)   # 7,7
+
 
 class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
@@ -102,7 +184,7 @@ class Frame():
         self.colorMap = {}
         for x in range(0, self.sizeY):
             for y in range(0, self.sizeX):
-                self.colorMap.update( {(x,y):(0,0)} )  # tuple keypair (xy), tuple value (fg and bg)
+                self.colorMap.update( {(x,y):(1,0)} )  # tuple keypair (xy), tuple value (fg and bg)
 
 
 class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
@@ -124,11 +206,11 @@ class Movie():
         self.sizeY = opts.sizeY
         self.frames = []
         self.stdscr = stdscr;
-        self.addFrame()
+        self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1] 
 
-    def addFrame(self):
+    def addEmptyFrame(self):
         newFrame = Frame(self.sizeX, self.sizeY)
         self.frames.append(newFrame)
         self.frameCount += 1
@@ -207,8 +289,11 @@ class UserInterface():
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
-        if (self.colorfg < 8):
+        #if (self.colorfg < 8):
+        if (self.colorfg < 16):
             self.colorfg += 1
+            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                self.colorfg += 1
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
             self.colorfg = 1
@@ -218,19 +303,38 @@ class UserInterface():
         """ switch to prev fg color, cycle around to end if at beginning """
         if (self.colorfg > 1):
             self.colorfg -= 1
+            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
+            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                self.colorfg -= 1
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
-            self.colorfg = 8
+            #self.colorfg = 8
+            self.colorfg = 16
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
     def nextBgColor(self):
         """ switch to the next bg color, cycle around if at beginning """
-        # Need to add the rest of the color pairs before running/implementing this, really
-        pass
+        if (self.colorbg < 8):
+            self.colorbg += 1
+            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
+            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                self.colorbg += 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        else:
+            self.colorbg = 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
-    def nextBgColor(self):
-        # Need to add the rest of the color pairs before running/implementing this
-        pass
+    def prevBgColor(self):
+        """ switch to prev bg color, cycle around to end if at beginning """
+        if (self.colorbg > 1):
+            self.colorbg -= 1
+            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
+            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                self.colorbg -= 1
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        else:
+            self.colorbg = 8
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
     def notify(self, message):
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -341,10 +445,15 @@ class UserInterface():
             # print statusbar stuff
             self.stdscr.addstr(self.mov.sizeY, 1, str(self.xy))     # line/column number (line starts at 0)
             # f1-f10 map
-            self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString)
+            self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString, curses.color_pair(self.colorpair))
             # color thing
-            colorString = "Color "
-            self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + self.chMapString), colorString, curses.color_pair(self.colorpair))
+            colorString = " Color (%i,%i)" % (self.colorfg, self.colorbg)
+            #self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + " " + self.chMapString), colorString, curses.color_pair(self.colorpair)) # for debugging color numbers
+            if self.colorfg > 8:    # bold color
+                #self.stdscr.attron(curses.A_BOLD)
+                #self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + " " + self.chMapString), colorString + "*", curses.color_pair(self.colorpair) | curses.A_BOLD)
+                self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+                #self.stdscr.attroff(curses.A_BOLD)
             self.stdscr.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right spot for refresh
             self.stdscr.refresh()
             c = self.stdscr.getch()
@@ -367,10 +476,10 @@ class UserInterface():
                         self.showHelp()
                         c = None
                     elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
-                        self.notify("previous bg color")
+                        self.prevBgColor()
                         c = None
                     elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
-                        self.notify("next bg color")
+                        self.nextBgColor()
                         c = None
                     elif c == curses.KEY_DOWN:      # alt-down - prev fg color
                         self.prevFgColor()
@@ -401,8 +510,11 @@ class UserInterface():
                     elif (c == 106):          # esc-j or alt-j - previous frame
                         self.mov.prevFrame()
                         self.refresh()
-                    elif (c == 110) or (c == 14):          # esc-n - clone to new frame
+                    elif (c == 110) or (c == 14):          # alt-n - clone to new frame
                         self.mov.cloneNewFrame()
+                        self.refresh()
+                    elif (c == 78):          # alt-N (shift-alt-n) - new  empty frame
+                        self.mov.addEmptyFrame()
                         self.refresh()
                     elif (c == 100):      # esc-d - delete current frame
                         self.mov.deleteCurrentFrame()
@@ -660,21 +772,22 @@ class UserInterface():
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
               \_____________________________________________\|  v 0.3
-            ..________________________________________________..
-                /\ |\ |||\  /|         |  .-.  _| . _|_
-               /--\| \||| \/ | ()      |  |/_ (_| |  |
-      alt-k - next frame               |  alt-' - delete current line
-      alt-j - prev frame               |  alt-/ - insert line
-      alt-n - new frame from current   |  alt-, - delete current column.
-      alt-p - play animation (up/down  |  alt-. - insert new column
-              change FPS, any other    |  alt-m - mark selection for
-              key stops playback)      |          copy/paste/cut/move *
-      alt-d - delete current frame     |  alt-c - clear canvas/movie
+                /\ |\ |||\  /|            .-.  _| . _|_
+               /--\| \||| \/ | ()         |/_ (_| |  |
+      alt-k - next frame                  alt-' - delete current line
+      alt-j - prev frame                  alt-/ - insert line
+      alt-n - new frame from current      alt-, - delete current column.
+      alt-N - new empty frame             alt-. - insert new column
+      alt-p - play animation (up/down     alt-c - clear canvas/movie
+              change FPS, any other       alt-m - mark selection for
+              key stops playback)                 copy/paste/cut/move *
+      alt-d - delete current frame        F1-F10 - insert character
    ..  ..----------------------------------------------------------..  ..
-
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next fg color, alt-left - prev fg color
+
+Terminal tips in readme.txt
 
 '''
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -691,7 +804,18 @@ class UserInterface():
             for colnum in range(self.mov.sizeX):
                 charColor = self.mov.currentFrame.colorMap[(linenum, colnum)]
                 cursesColorPair = self.ansi.colorPairMap[charColor] # set ncurss color pair
-                self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
+                # check for charColor = (8,7) black on red
+                #if charColor == (8,7):
+                #    self.ansi.switchColorMap(map=1)
+                #    self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
+                #    self.ansi.switchColorMap(map=0)
+                #else:
+                if (charColor[0] > 8):    # bright color
+                    #self.stdscr.attron(curses.A_BOLD)
+                    self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    #self.stdscr.attroff(curses.A_BOLD)
+                else:
+                    self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
             linenum += 1
         for x in range(linenum, self.mov.sizeY):
             self.stdscr.addstr(x, 0, " " * self.mov.sizeX)
