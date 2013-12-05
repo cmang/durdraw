@@ -888,9 +888,16 @@ if (__name__ == "__main__"):
     parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parser.add_argument("-p", "--play", help="Just play .dur file, then exit",
                     action="store_true")
+    parser.add_argument("-q", "--quiet", help="Skip startup screen/wait",
+                    action="store_true")
     args = parser.parse_args()
     app = AppState()    # to store run-time preferences from CLI, etc.
-    if (args.play == False):
+    showStartupScreen=True
+    if args.play == True:
+        showStartupScreen=False
+    elif args.quiet == True:
+        showStartupScreen=False
+    if showStartupScreen:
         print derlogo
         time.sleep(3)
     ui = UserInterface()
