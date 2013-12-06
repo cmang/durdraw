@@ -272,6 +272,7 @@ class UserInterface():
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
+        curses.mousemask(1)     # it's a party now.
         self.ansi = AnsiArt()   # obj for misc ansi-related stuff
         self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
         self.colorfg = 1    # default fg white
@@ -460,9 +461,10 @@ class UserInterface():
             self.testWindowSize()
             try:    # in case self.stdscr.addstr() returns ERR <- still doesn't catch it or fix problem
                 self.stdscr.addstr(self.mov.sizeY, 0, " " * 10)
-                if c == 203: self.notify('Whaaaaat???')
+                #if c == 203: self.notify('Whaaaaat???')
+                if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
                 if self.metaKey == 1:
-                    # Try for meta-keys, then set metaKey to 0
+                    # Try for meta-keys, then set metaKey to 1
                     if c == 111:                # alt-o - open
                         self.open()
                         c = None
@@ -481,7 +483,7 @@ class UserInterface():
                     elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
                         self.nextBgColor()
                         c = None
-                    elif c == curses.KEY_DOWN:      # alt-down - prev fg color
+                    elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
                         self.prevFgColor()
                         #self.notify("fg color:" + str(self.colorfg))
                         c = None
@@ -500,7 +502,8 @@ class UserInterface():
                     elif c == curses.KEY_SLEFT:
                         self.notify("shift left")
                     elif (c == 109):    # alt-m - mark block
-                        self.markSelection()
+                        startPoint=(self.xy[0], self.xy[1])
+                        self.startSelecting(startPoint)
                     elif (c == 99):     # alt-c - clear canvas
                         self.clearCanvas(prompt = True)
                     # Animation Keystrokes
@@ -591,8 +594,22 @@ class UserInterface():
                 #elif c == curses.KEY_END:   # 338 = end
                 elif c == 338:   # 338 = end
                     self.xy[1] = self.mov.sizeX
-                elif c == curses.KEY_SLEFT:  # not working yet, in osx iterm at least
-                    self.notify("Shift-left, select mode")
+                elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
+                    mouseEvent = curses.getmouse()
+                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                    if mouseY < self.mov.sizeY:
+                        self.xy[1] = mouseX + 1
+                        self.xy[0] = mouseY
+                    #self.mouseClicked(mouseEvent)
+                elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336]:  # 337 - shift-up, 336 = shift-down
+                    # shift-up, shift-down, shift-left and shift-right = start selecting text block
+                    # shift-up and shift-down not defined in ncurses :(
+                    # doesn't seem to work in screen?
+                    startPoint=(self.xy[0], self.xy[1])
+                    self.startSelectingShift(c, startPoint)  # start selecting text
+                    # pass c to something here that starts selecting and moves
+                    # the cursor based on c, and knows whether it's selecting
+                    # via shift-arrow or mouse.
                 #elif c <= 255 and c >= 32:      # normal printable character
                 elif c <= 128 and c >= 32:      # normal printable character
                     self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
@@ -743,7 +760,7 @@ class UserInterface():
             except:
                 self.notify("Could not open file for writing. (Press any key to continue)")
                 return None
-            outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n')                 
+            outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n') 
             f.write(outBuffer + '\n\n')
             f.close()
         if (saveFormat == 'dur'):   # dur = pickled python objects
@@ -852,19 +869,33 @@ Terminal tips in readme.txt
         self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
         self.refresh()
 
-    def addLine(self):          # This causes ghost characters when refresh()
+    def addLine(self):          # This causes ghost characters when refresh(). Sometimes?
         """Insert new line"""
         self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
         self.mov.currentFrame.content.pop()
         self.refresh()
 
-    def markSelection(self):
+    def startSelecting(self, startPoint):   # startpoint is (y,x) tuple, or (self.xy[0],self.xy[1])
         """Mark selection for copy/cut/move - trigger with alt-m"""
-        # set start point to where the cursor is, wait for arrow key input (or esc for cancel).
+        # set start point to where the cursor is, wait for arrow keys, enter to select, or esc to cancel.
         # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
         # then ask the user what to do with it - copy, move, cut
+        # print message: "Select mode - Enter to select, Esc to cancel"
+        #self.blockStartPoint =  [self.xy[0],  self.xy[1]]
+        self.notify("Select mode (not yet implemented)")
+
+    def startSelectingShift(self, c, startPoint):
+        """Mark selection for copy/cut/move - trigger with shift-arrow-keys"""
+        # behave different.. wait for shift-arrow keys inputs.  enter selects.
+        # arrow keys move the cursor and return.
+        # any other key returns (cancels)
+        # print message: "Select mode - Enter to select, Esc to cancel"
+        self.notify("Select mode (not yet implemented)")
+    
+    def startSelectingMouse(self, c, startPoint):
+        """Mark selection for copy/cut/move - trigger with mouse click-drag"""
         self.blockStartPoint =  [self.xy[0],  self.xy[1]]
-        self.notify("Excellent. (not yet implemented)")
+        self.notify("Select mode (not yet implemented)")
 
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
@@ -876,21 +907,27 @@ class AppState():
         self.playOnlyMode = False
             
 if (__name__ == "__main__"):
+    derversion = '0.3'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-   \_____________________________________________\|  v 0.3
+   \_____________________________________________\|  v %s
     Press esc-h for help.                            by cmang
-'''
+''' % derversion
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parser.add_argument("-p", "--play", help="Just play .dur file, then exit",
                     action="store_true")
-    parser.add_argument("-q", "--quiet", help="Skip startup screen/wait",
+    parser.add_argument("-q", "--quick", help="Skip startup screen",
+                    action="store_true")
+    parser.add_argument("-v", "--version", help="Show version number and exit",
                     action="store_true")
     args = parser.parse_args()
+    if args.version:
+        print derversion
+        exit(0)
     app = AppState()    # to store run-time preferences from CLI, etc.
     showStartupScreen=True
     if args.play == True:
