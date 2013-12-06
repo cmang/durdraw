@@ -932,7 +932,7 @@ if (__name__ == "__main__"):
     showStartupScreen=True
     if args.play == True:
         showStartupScreen=False
-    elif args.quiet == True:
+    elif args.quick == True:
         showStartupScreen=False
     if showStartupScreen:
         print derlogo
