@@ -816,7 +816,7 @@ Terminal tips in readme.txt
         self.stdscr.addstr(0, 0, helpScreenText)
         self.stdscr.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
         self.stdscr.getch()
-        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        self.stdscr.clear()
         curses.curs_set(1)
 
     def refresh(self):          # Why doesn't this always work right? - seems good now. rename to redraw()?
