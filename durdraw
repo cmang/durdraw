@@ -499,8 +499,6 @@ class UserInterface():
                         self.delLine()
                     elif c == 47:      # alt-/ - insert line
                         self.addLine()
-                    elif c == curses.KEY_SLEFT:
-                        self.notify("shift left")
                     elif (c == 109):    # alt-m - mark block
                         startPoint=(self.xy[0], self.xy[1])
                         self.startSelecting(startPoint)
@@ -601,7 +599,8 @@ class UserInterface():
                         self.xy[1] = mouseX + 1
                         self.xy[0] = mouseY
                     #self.mouseClicked(mouseEvent)
-                elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336]:  # 337 - shift-up, 336 = shift-down
+                elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
+                    # 337 and 520 - shift-up, 336 and 513 = shift-down
                     # shift-up, shift-down, shift-left and shift-right = start selecting text block
                     # shift-up and shift-down not defined in ncurses :(
                     # doesn't seem to work in screen?
