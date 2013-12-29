@@ -398,7 +398,10 @@ class UserInterface():
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.stdscr.addstr(0, 0, " " * (self.mov.sizeX + 1))   # clear first line/ruler bar
-        curses.curs_set(0)  # hide cursor
+        try:
+            curses.curs_set(0)  # hide cursor
+        except curses.error:    # unless terminal doesn't support it.
+            pass
         playing = True
         new_time = time.time()
         # see how many milliseconds we have to sleep for
@@ -428,7 +431,10 @@ class UserInterface():
                     self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
                 self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
-        curses.curs_set(1)  # make cursor visible again
+        try:
+            curses.curs_set(1)  # make cursor visible again
+        except curses.error:
+            pass
     
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
