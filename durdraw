@@ -22,14 +22,35 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import argparse,os.path,pickle,sys,time
 import curses
+import subprocess # for ansilove
+import tempfile
 from copy import copy, deepcopy
 
 class AnsiArt():
-    """ Ansi specific stuff.. character sets for code page 437 should
-        be put in here """
+    """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
+        color boilerplate, etc """
     def __init__(self):
         self.ColorPairMap = None # fill this with dict of FG/BG -> curses pair #
-        pass
+        self.escapeFgMap = {   # color numbers documented in initColorPairs() comments
+            # ANSI escape code FG colors
+            # regular colors, white (1) through to black (8 and 0)
+            1:"0;37", 2:"0;36", 3:"0;35", 4:"0;34",
+            5:"0;33", 6:"0;32", 7:"0;31", 8:"0;30", 0:"0;30",
+            # bright colors, brwhite (9) through to brblack (16)
+            9:"1;37", 10:"1;36", 11:"1;35", 12:"1;34",
+            13:"1;33", 14:"1;32", 15:"1;31", 16:"1;30"
+        }
+        self.escapeBgMap = {
+            1:"47", 2:"46", 3:"45", 4:"44",
+            5:"43", 6:"42", 7:"41", 8:"40", 0:"40"
+        }
+    def getColorCode(self, fg, bg):
+        """ returns a string containing ANSI escape code for given fg/bg  """
+        escape = '\033['    # begin escape sequence
+        escape = escape + self.escapeFgMap[fg] + ';'  # set fg color
+        escape = escape + self.escapeBgMap[bg]  # set bg color
+        escape = escape + "m"   # m = set graphics mode command
+        return escape
     def codePage437(self): 
         pass
     def initColorPairs(self):
@@ -735,22 +756,32 @@ class UserInterface():
     def save(self):
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)     # clear status line
         self.stdscr.move(self.mov.sizeY, 0)
-        self.stdscr.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR: ")
+        self.stdscr.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
+        saved = False
         while (prompting):
             c = self.stdscr.getch()
-            if (c == 105):   # 105 i = ascii
+            if (c in [105, 68]):   # 105 i = ascii
                 saveFormat = 'ascii'
                 prompting = False
-            elif (c == 100): # 100 = d = dur
+            elif (c in [100, 68]): # 100 = d = dur, 68 = D
                 saveFormat = 'dur'
+                prompting = False
+            elif (c in [97, 65]): # a = ansi
+                saveFormat = 'ansi'
+                prompting = False
+            elif (c in [112, 80]): # p = png
+                saveFormat = 'png'
+                prompting = False
+            elif (c in [103, 71]): # g = gif
+                saveFormat = 'gif'
                 prompting = False
             elif (c == 27): # 27 = esc = cancel
                 self.stdscr.addstr(self.mov.sizeY, 0, "                                 ")
                 prompting = False
                 return None
-        self.stdscr.addstr(self.mov.sizeY, 0, "                                 ")
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
         self.stdscr.addstr(self.mov.sizeY, 0, "Enter file name to save as: ")
         curses.echo()
         filename = self.stdscr.getstr()
@@ -776,15 +807,103 @@ class UserInterface():
                 f = open(filename, 'wb')
             except:
                 self.notify("Could not open file for writing. (Press any key to continue)")
+                saved = False
                 return None
             pickle.dump(self.opts, f)
             pickle.dump(self.mov, f)
             f.close()
+            saved = True
             self.mov.stdscr = self.stdscr   # re-insert un-picklable object
-        self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
-        self.stdscr.addstr(self.mov.sizeY, 0, "*Saved* (Press any key to continue)")
+        if (saveFormat == 'ansi'):  # ansi = escape codes for colors + ascii
+            saved = self.saveAnsiFile(filename)
+        if (saveFormat == 'png'):  # png = requires ansi love
+            saved = self.savePngFile(filename)
+        if (saveFormat == 'gif'):  # gif = requires PIL and images2gif
+            saved = self.saveGifFile(filename)
+        if saved:
+            self.notify("*Saved* (Press any key to continue)")
+        elif not (saved):
+            self.notify("Save failed.")
         self.stdscr.getch()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
+
+    def savePngFile(self, filename):
+        """ Save to ANSI then convert to PNG """
+        if not self.appState.isAppAvail("ansilove"):   # ansilove not found
+            self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/")
+            return False
+        tmpAnsiFile = filename + '.tmp.ans' # remove this file when done
+        tmpPngFile = filename + '.tmp.ans.png' # remove this file when done
+        if not self.saveAnsiFile(tmpAnsiFile):
+            self.notify("Saving ansi failed, make sure you can write to current directory.")
+            return False
+        devnull = open('/dev/null', 'w')
+        ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, tmpPngFile], stdout=devnull)
+        devnull.close()
+        subprocess.call(['mv', tmpPngFile, filename])
+        subprocess.call(['rm', tmpAnsiFile])
+        if (ansiLoveReturn == 0):
+            #self.notify("File saved!") # move this to a better spot
+            return True
+        else:
+            self.notify("Ansilove didn't return success.")
+
+    def saveGifFile(self, filename):
+        """ check for PIL and images2gif """
+        try:
+            import PIL,images2gif
+        except ImportError:
+            self.notify("Error: Please install PIL and images2gif python modules.")
+            return False
+        tmpPngNames = []
+        # switch to first frame
+        self.mov.currentFrameNumber = 1
+        self.mov.currentFrame = self.mov.frames[self.mov.currentFrameNumber - 1]
+        self.refresh()
+        for num in range(1, self.mov.frameCount + 1):   # then for each frame
+            # make a temp png filename and add it to the list
+            tmpPngName = filename + "." + str(num) + ".png"
+            tmpPngNames.append(tmpPngName)
+            # save the png
+            if not self.savePngFile(tmpPngName):
+                return False
+            # go to next frame
+            self.mov.nextFrame()
+            self.refresh()
+        # open all the pngs so we can save them to gif
+        pngImages = [PIL.Image.open(fn) for fn in tmpPngNames]
+        sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 is good, too
+        images2gif.writeGif(filename, pngImages, duration=sleep_time)
+        for rmFile in tmpPngNames:
+            os.remove(rmFile)
+        return True
+
+    def saveAnsiFile(self, filename):
+        """ Saves current frame of current movie to ansi file """
+        try:
+            f = open(filename, 'w')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)")
+            return False
+        string = ''
+        for y in range(0, self.mov.sizeY):  # y is lines
+            for x in range(0, self.mov.sizeX):
+                char = self.mov.currentFrame.content[y][x]
+                color = self.mov.currentFrame.colorMap[(y, x)]
+                colorFg = color[0]
+                colorBg = color[1]
+                #string = string + str(color)
+                try:
+                    colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                except KeyError:
+                    colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
+                string = string + colorCode + char
+            string = string + '\r\n'
+        f.write(string)
+        f.write('\033[0m') # color attributes off
+        string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        f.close()
+        return True
 
     def showHelp(self):
         curses.curs_set(0)
@@ -793,7 +912,7 @@ class UserInterface():
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.3
+              \_____________________________________________\|  v 0.4
                 /\ |\ |||\  /|            .-.  _| . _|_
                /--\| \||| \/ | ()         |/_ (_| |  |
       alt-k - next frame                  alt-' - delete current line
@@ -868,14 +987,14 @@ Terminal tips in readme.txt
         self.refresh()
 
     def delLine(self):
-        """delete current line"""
+        """delete current line""" # does not move color map yet
         self.mov.currentFrame.content.pop(self.xy[0])
         self.mov.currentFrame.content.append([])
         self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
         self.refresh()
 
     def addLine(self):          # This causes ghost characters when refresh(). Sometimes?
-        """Insert new line"""
+        """Insert new line"""   # This doesn't move the color map yet
         self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
         self.mov.currentFrame.content.pop()
         self.refresh()
@@ -906,13 +1025,25 @@ Terminal tips in readme.txt
         """ do argparse stuff, get filename from user """
         pass
 
+
+
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self):
         self.playOnlyMode = False
+        self.ansiLove = self.isAppAvail("ansilove")
+    def isAppAvail(self, name):   # looks for program 'name' in path
+        try:
+            devnull = open(os.devnull)
+            subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
+        except OSError, e:
+            if e.errno == os.errno.ENOENT:
+                return False
+        return True
+        
             
 if (__name__ == "__main__"):
-    derversion = '0.3'
+    derversion = '0.4'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -941,6 +1072,7 @@ if (__name__ == "__main__"):
         showStartupScreen=False
     if showStartupScreen:
         print derlogo
+        print "ansilove = " + str(app.ansiLove)
         time.sleep(3)
     ui = UserInterface()
     ui.appState = app
