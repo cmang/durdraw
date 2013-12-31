@@ -791,29 +791,9 @@ class UserInterface():
         # Or just ask if you would like to overwrite.  haven't decided yet.
         # For now just skip the checking.
         if (saveFormat == 'ascii'):
-            try:
-                f = open(filename, 'w')
-            except:
-                self.notify("Could not open file for writing. (Press any key to continue)")
-                return None
-            outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n') 
-            f.write(outBuffer + '\n\n')
-            f.close()
+            saved = self.saveAsciiFile(filename)
         if (saveFormat == 'dur'):   # dur = pickled python objects
-            # remove un-picklable objects
-            self.mov.stdscr = None
-            # open ad write file
-            try:
-                f = open(filename, 'wb')
-            except:
-                self.notify("Could not open file for writing. (Press any key to continue)")
-                saved = False
-                return None
-            pickle.dump(self.opts, f)
-            pickle.dump(self.mov, f)
-            f.close()
-            saved = True
-            self.mov.stdscr = self.stdscr   # re-insert un-picklable object
+            saved = self.saveDurFile(filename)
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors + ascii
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
@@ -826,6 +806,33 @@ class UserInterface():
             self.notify("Save failed.")
         self.stdscr.getch()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
+
+    def saveDurFile(self, filename):
+        # remove un-picklable objects
+        self.mov.stdscr = None
+        # open ad write file
+        try:
+            f = open(filename, 'wb')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)")
+            return False
+        pickle.dump(self.opts, f)
+        pickle.dump(self.mov, f)
+        f.close()
+        self.mov.stdscr = self.stdscr   # re-insert un-picklable object
+        return True
+
+    def saveAsciiFile(self, filename):
+        """ Saves to ascii file, strips blank trailing lines """
+        try:
+            f = open(filename, 'w')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)")
+            return False
+        outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n') 
+        f.write(outBuffer + '\n\n')
+        f.close()
+        return True
 
     def savePngFile(self, filename):
         """ Save to ANSI then convert to PNG """
