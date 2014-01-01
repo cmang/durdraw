@@ -381,7 +381,7 @@ class UserInterface():
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         while (self.realmaxY < self.mov.sizeY or self.realmaxX < self.mov.sizeX):
             self.stdscr.addstr(0, 0, "Window is too small.")
-            self.stdscr.addstr(1, 0, "Please enlarge to 80x24 or larger.")
+            self.stdscr.addstr(1, 0, "Please enlarge to 80x25 or larger.")
             self.stdscr.refresh()
             #time.sleep(1)
             self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
@@ -1058,13 +1058,25 @@ Terminal tips in readme.txt
         """ do argparse stuff, get filename from user """
         pass
 
-
-
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self):
         self.playOnlyMode = False
         self.ansiLove = self.isAppAvail("ansilove")
+        self.PIL = self.checkForPIL()
+        self.images2gif = self.checkForImages2gif()
+    def checkForPIL(self):
+        try:
+            import PIL
+            return True
+        except ImportError:
+            return False
+    def checkForImages2gif(self):
+        try:
+            import images2gif
+            return True
+        except ImportError:
+            return False
     def isAppAvail(self, name):   # looks for program 'name' in path
         try:
             devnull = open(os.devnull)
@@ -1073,7 +1085,10 @@ class AppState():
             if e.errno == os.errno.ENOENT:
                 return False
         return True
-        
+
+class UndoManager():
+        """ Manages undo/redo "stack" by storing the last 50 movie states.
+            Takes a movie for syntax. methods for push, pop and redo """
             
 if (__name__ == "__main__"):
     derversion = '0.4'
@@ -1086,27 +1101,44 @@ if (__name__ == "__main__"):
     Press esc-h for help.                            by cmang
 ''' % derversion
     parser = argparse.ArgumentParser()
+    parserMutex = parser.add_mutually_exclusive_group()
     parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parser.add_argument("-p", "--play", help="Just play .dur file, then exit",
                     action="store_true")
-    parser.add_argument("-q", "--quick", help="Skip startup screen",
+    parserMutex.add_argument("-q", "--quick", help="Skip startup screen",
                     action="store_true")
-    parser.add_argument("-v", "--version", help="Show version number and exit",
+    parserMutex.add_argument("-w", "--wait", help="Pause at startup screen",
+                    action="store_true")
+    parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     args = parser.parse_args()
     if args.version:
         print derversion
         exit(0)
-    app = AppState()    # to store run-time preferences from CLI, etc.
+    app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
     showStartupScreen=True
-    if args.play == True:
+    if args.play:
         showStartupScreen=False
-    elif args.quick == True:
+    elif args.quick:
         showStartupScreen=False
     if showStartupScreen:
         print derlogo
-        print "ansilove = " + str(app.ansiLove)
-        time.sleep(3)
+        if app.ansiLove:
+            print "ansilove = Found"
+        else:
+            print "ansilove = Not found (no PNG or GIF support)"
+        if app.PIL:
+            print "PIL = Found"
+        else:
+            print "PIL = Not found (no GIF support)"
+        if app.images2gif:
+            print "images2gif = Found"
+        else:
+            print "images2gif = Not found (no GIF support)"
+        if args.wait:
+            choice = raw_input("Press Enter to Continue...")
+        else:
+            time.sleep(3)
     ui = UserInterface()
     ui.appState = app
     if args.filename:
