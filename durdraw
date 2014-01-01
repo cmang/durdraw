@@ -1174,7 +1174,11 @@ if (__name__ == "__main__"):
         else:
             print "images2gif = Not found (no GIF support)"
         if args.wait:
-            choice = raw_input("Press Enter to Continue...")
+            try:
+                choice = raw_input("Press Enter to Continue...")
+            except KeyboardInterrupt:
+                print("\nCaught interrupt, exiting.")
+                exit(0)
         else:
             time.sleep(3)
     ui = UserInterface()
