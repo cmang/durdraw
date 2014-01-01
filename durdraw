@@ -189,7 +189,7 @@ class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
     """
     def __init__(self, sizeX, sizeY):
-        """ Iinitialize drawing.content[x][y]"""
+        """ Initialize frame, content[x][y] grid """
         # it's a bunch of rows of ' 'characters.
         self.content = []
         self.sizeX = sizeX
@@ -220,13 +220,12 @@ class Options():    # config, prefs, preferences, etc. Per movie. Separate from 
 
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
-    def __init__(self, opts, stdscr):
+    def __init__(self, opts ):
         self.frameCount = 0  # total number of frames
         self.currentFrameNumber = 0
         self.sizeX = opts.sizeX
         self.sizeY = opts.sizeY
         self.frames = []
-        self.stdscr = stdscr;
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1] 
@@ -244,28 +243,18 @@ class Movie():
         self.frameCount += 1
 
     def deleteCurrentFrame(self):
-        self.stdscr.addstr(self.sizeY, 0, " " * self.sizeX);
-        self.stdscr.addstr(self.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
-        prompting = True
-        while (prompting):
-            c = self.stdscr.getch()
-            if (c == 121):  # 'y'
-                prompting = False
-                if (self.frameCount == 1):
-                    del self.frames[self.currentFrameNumber - 1]
-                    # deleted the last frame, so make a blank one
-                    newFrame = Frame(self.sizeX, self.sizeY)
-                    self.frames.append(newFrame)
-                    self.currentFrame = self.frames[self.currentFrameNumber - 1]
-                else:
-                    del self.frames[self.currentFrameNumber - 1]
-                    self.frameCount -= 1
-                    if (self.currentFrameNumber != 1):
-                        self.currentFrameNumber -= 1
-                    self.currentFrame = self.frames[self.currentFrameNumber - 1]
-            if (c == 110):  # 'n'
-                prompting = False
-        self.stdscr.addstr(self.sizeY, 0, " " * self.sizeX);
+        if (self.frameCount == 1):
+            del self.frames[self.currentFrameNumber - 1]
+            # deleted the last frame, so make a blank one
+            newFrame = Frame(self.sizeX, self.sizeY)
+            self.frames.append(newFrame)
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
+        else:
+            del self.frames[self.currentFrameNumber - 1]
+            self.frameCount -= 1
+            if (self.currentFrameNumber != 1):
+                self.currentFrameNumber -= 1
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
     
     def nextFrame(self):
         if (self.currentFrameNumber == self.frameCount):    # if at last frame..
@@ -300,7 +289,8 @@ class UserInterface():
         self.colorfg = 1    # default fg white
         self.colorbg = 0    # default bg black
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
-        self.mov = Movie(self.opts, self.stdscr) # initialize a new movie to work with
+        self.mov = Movie(self.opts) # initialize a new movie to work with
+        self.undo = UndoManager(self)   # initialize undo/redo system
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         curses.noecho()
         #curses.cbreak()
@@ -312,7 +302,6 @@ class UserInterface():
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
-        #if (self.colorfg < 8):
         if (self.colorfg < 16):
             self.colorfg += 1
             if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
@@ -326,12 +315,10 @@ class UserInterface():
         """ switch to prev fg color, cycle around to end if at beginning """
         if (self.colorfg > 1):
             self.colorfg -= 1
-            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
             if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
                 self.colorfg -= 1
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
-            #self.colorfg = 8
             self.colorfg = 16
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
@@ -339,7 +326,6 @@ class UserInterface():
         """ switch to the next bg color, cycle around if at beginning """
         if (self.colorbg < 8):
             self.colorbg += 1
-            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
             if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
                 self.colorbg += 1
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
@@ -351,7 +337,6 @@ class UserInterface():
         """ switch to prev bg color, cycle around to end if at beginning """
         if (self.colorbg > 1):
             self.colorbg -= 1
-            #if (self.colorfg == 7) and (self.colorbg == 7):  # skip over red on red
             if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
                 self.colorbg -= 1
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
@@ -359,11 +344,26 @@ class UserInterface():
             self.colorbg = 8
             self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
 
-    def notify(self, message):
+    def cursorOff(self):
+        try:
+            curses.curs_set(0)  # turn off cursor
+        except curses.error:
+            pass    # .. if terminal supports it.
+    def cursorOn(self):
+        try:
+            curses.curs_set(1)  # turn on cursor
+        except curses.error:
+            pass    # .. if terminal supports it.
+
+    def notify(self, message, pause=False):
+        self.cursorOff()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
         self.stdscr.addstr(self.mov.sizeY, 0, message)
-        self.stdscr.getch()
+        self.stdscr.refresh()
+        if pause: self.stdscr.getch()
+        if not pause: curses.napms(1500)
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        self.cursorOn()
         self.stdscr.refresh()
 
     def testWindowSize(self):
@@ -391,6 +391,7 @@ class UserInterface():
 
     def insertChar(self, c, fg=1, bg=0):
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
+        self.undo.push()
         self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
         self.mov.currentFrame.colorMap.update(
                 {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
@@ -414,16 +415,14 @@ class UserInterface():
                     prompting = False
             self.stdscr.addstr(self.mov.sizeY, 0, "                                                  ")
         if clearing:
+            self.undo.push() # so we can undo this operation
             self.mov = Movie(self.opts, self.stdscr) # initialize a new movie
 
     def animLoop(self): # improved game loop - watches for FPS based on a delta from previous time
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.stdscr.addstr(0, 0, " " * (self.mov.sizeX + 1))   # clear first line/ruler bar
-        try:
-            curses.curs_set(0)  # hide cursor
-        except curses.error:    # unless terminal doesn't support it.
-            pass
+        self.cursorOff()
         playing = True
         new_time = time.time()
         # see how many milliseconds we have to sleep for
@@ -435,10 +434,10 @@ class UserInterface():
             c = self.stdscr.getch()
             if (c != -1):   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
-                if (c == curses.KEY_UP):  # up key - increase fps
+                if c == curses.KEY_UP:  # up key - increase fps
                     self.opts.framerate += 1
                     sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                elif (c == curses.KEY_DOWN):    # down key - decrese fps
+                elif c == curses.KEY_DOWN:    # down key - decrese fps
                     if (self.opts.framerate != 1.0):
                         self.opts.framerate -= 1
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -455,10 +454,7 @@ class UserInterface():
                     self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
                 self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
-        try:
-            curses.curs_set(1)  # make cursor visible again
-        except curses.error:
-            pass
+        self.cursorOn()
     
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
@@ -478,13 +474,8 @@ class UserInterface():
             # f1-f10 map
             self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString, curses.color_pair(self.colorpair))
             # color thing
-            colorString = " Color (%i,%i)" % (self.colorfg, self.colorbg)
-            #self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + " " + self.chMapString), colorString, curses.color_pair(self.colorpair)) # for debugging color numbers
             if self.colorfg > 8:    # bold color
-                #self.stdscr.attron(curses.A_BOLD)
-                #self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(colorString + " " + self.chMapString), colorString + "*", curses.color_pair(self.colorpair) | curses.A_BOLD)
                 self.stdscr.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString), self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
-                #self.stdscr.attroff(curses.A_BOLD)
             self.stdscr.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right spot for refresh
             self.stdscr.refresh()
             c = self.stdscr.getch()
@@ -515,11 +506,9 @@ class UserInterface():
                         c = None
                     elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
                         self.prevFgColor()
-                        #self.notify("fg color:" + str(self.colorfg))
                         c = None
                     elif c == curses.KEY_UP:     # alt-up - next fg color
                         self.nextFgColor()
-                        #self.notify("fg color:" + str(self.colorfg))
                         c = None
                     elif c == 44:      # alt-, - erase/pop current column
                         self.delCol()
@@ -542,20 +531,25 @@ class UserInterface():
                         self.mov.prevFrame()
                         self.refresh()
                     elif (c == 110) or (c == 14):          # alt-n - clone to new frame
+                        self.undo.push()
                         self.mov.cloneNewFrame()
                         self.refresh()
                     elif (c == 78):          # alt-N (shift-alt-n) - new  empty frame
+                        self.undo.push()
                         self.mov.addEmptyFrame()
                         self.refresh()
                     elif (c == 100):      # esc-d - delete current frame
-                        self.mov.deleteCurrentFrame()
+                        self.deleteCurrentFramePrompt()
                         self.refresh()
+                    elif c is 122:  # cmd-z = undo
+                        self.undo.undo()
+                    elif c is 114:  # cmd-r = redo
+                        self.undo.redo()
                     elif (c == 112):    # esc-p - start playing, any key exits
                         self.animLoop()
                     else: self.notify("keystroke: %d" % c)
                     self.metaKey = 0
                     c = None
-                #if c == 27: self.safeQuit()    # 27 = ^[, used for meta-key
                 if c == 27: self.metaKey = 1; c = None
                 if c == 24: self.safeQuit()     # ctrl-x
                 elif c == 15:               # ctrl-o - open
@@ -576,7 +570,6 @@ class UserInterface():
                     self.xy[1] = 1
                 elif c in [5, curses.KEY_END]:      # ctrl-e or end
                     self.xy[1] = self.mov.sizeX
-                #elif c in [curses.KEY_F1, 7]:    # F1 .. insert block character?
                 elif c in [curses.KEY_F1]:    # F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
                     c = None
@@ -612,21 +605,18 @@ class UserInterface():
                 elif c == curses.KEY_RIGHT:
                     if self.xy[1] < self.mov.sizeX: self.xy[1] = self.xy[1] + 1
                 elif c == curses.KEY_UP:
-                    #if self.xy[0] > 1: self.xy[0] = self.xy[0] - 1
                     if self.xy[0] > 0: self.xy[0] = self.xy[0] - 1
                 elif c == curses.KEY_DOWN:
                     if self.xy[0] < self.mov.sizeY - 1: self.xy[0] = self.xy[0] + 1
-                #elif c == curses.KEY_HOME:  # 339 = home
-                elif c == 339:  # 339 = home
+                elif c in [339, curses.KEY_HOME]:  # 339 = home
                     self.xy[1] = 1
-                #elif c == curses.KEY_END:   # 338 = end
-                elif c == 338:   # 338 = end
+                elif c in [338, curses.KEY_END]:   # 338 = end
                     self.xy[1] = self.mov.sizeX
                 elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
                     mouseEvent = curses.getmouse()
                     _, mouseX, mouseY, _, _ = curses.getmouse()
                     if mouseY < self.mov.sizeY:
-                        self.xy[1] = mouseX + 1
+                        self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY
                     #self.mouseClicked(mouseEvent)
                 elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
@@ -642,14 +632,28 @@ class UserInterface():
                 elif c <= 128 and c >= 32:      # normal printable character
                     self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
                 if (c != None):
-                    self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )  # This is basically our statusbar, left side. should format this separately.
+                    self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' +
+                        'undo: ' + str(self.undo.undoIndex) + ' ' )  # This is basically our statusbar, left side. should format this separately.
                 if (c == None):
-                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' )
+                    self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' +
+                        'undo: ' + str(self.undo.undoIndex) + '  ' )
                 self.refresh()
-                #self.stdscr.addstr(0, self.xy[1] - 1, longstring[self.xy[1] - 1], curses.A_STANDOUT)
-            #except Exception, err:
             except curses.error:
                 self.smallWindowMode()
+
+    def deleteCurrentFramePrompt(self):
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX);
+        self.stdscr.addstr(self.mov.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
+        prompting = True
+        while prompting:
+            c = self.stdscr.getch()
+            if (c == 121):  # 'y'
+                prompting = False
+                self.undo.push()
+                self.mov.deleteCurrentFrame()
+            elif (c == 110):    # 'n'
+                prompting = False
+        self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX);
 
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -727,7 +731,8 @@ class UserInterface():
                 self.notify("Could not open file for reading.")
                 return None
             # here we add the stuff to load the file into self.mov.currentFrame.content[][]
-            #linecount = 1
+            self.undo.push()
+            self.mov.currentFrame.initColorMap()
             linecount = 0
             for line in f:
                 if (linecount < self.mov.sizeY):    # don't exceed canvas size
@@ -747,8 +752,10 @@ class UserInterface():
                 self.opts = pickle.load(f)
                 self.mov = pickle.load(f)
             except:
-                loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead
-            self.mov.stdscr = self.stdscr
+                loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
+                # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
+                # change this whole method to call loadDurFile(), loadAnsiFile(),
+                # etc, checking for faiulre.
             self.convertToCurrentFormat()
             f.close()
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
@@ -803,25 +810,22 @@ class UserInterface():
         if (saveFormat == 'gif'):  # gif = requires PIL and images2gif
             saved = self.saveGifFile(filename)
         if saved:
-            self.notify("*Saved* (Press any key to continue)")
+            self.notify("*Saved* (Press any key to continue)", pause=True)
         elif not (saved):
             self.notify("Save failed.")
         self.stdscr.getch()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * (self.mov.sizeX-1))
 
     def saveDurFile(self, filename):
-        # remove un-picklable objects
-        self.mov.stdscr = None
-        # open ad write file
+        # open and write file
         try:
             f = open(filename, 'wb')
         except:
-            self.notify("Could not open file for writing. (Press any key to continue)")
+            self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
         pickle.dump(self.opts, f)
         pickle.dump(self.mov, f)
         f.close()
-        self.mov.stdscr = self.stdscr   # re-insert un-picklable object
         return True
 
     def saveAsciiFile(self, filename):
@@ -829,7 +833,7 @@ class UserInterface():
         try:
             f = open(filename, 'w')
         except:
-            self.notify("Could not open file for writing. (Press any key to continue)")
+            self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
         outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n') 
         f.write(outBuffer + '\n\n')
@@ -841,12 +845,11 @@ class UserInterface():
         try:
             f = open(filename, 'w')
         except:
-            self.notify("Could not open file for writing. (Press any key to continue)")
+            self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
         string = ''
-        # put something here to find last line in frame, unless saveAnsiFile
-        # is passed lastLineNum=
-        if not lastLineNum:
+        if not lastLineNum: # if we weren't told what lastLineNum is...
+            # find it (last line we should save)
             lastLineNum = self.findLastFrameLine(self.mov.currentFrame)
         for lineNum in range(0, lastLineNum):  # y is lines
             for colNum in range(0, self.mov.sizeX):
@@ -854,7 +857,6 @@ class UserInterface():
                 color = self.mov.currentFrame.colorMap[(lineNum, colNum)]
                 colorFg = color[0]
                 colorBg = color[1]
-                #string = string + str(color)
                 try:
                     colorCode = self.ansi.getColorCode(colorFg,colorBg)
                 except KeyError:
@@ -904,7 +906,6 @@ class UserInterface():
         subprocess.call(['mv', tmpPngFile, filename])
         subprocess.call(['rm', tmpAnsiFile])
         if (ansiLoveReturn == 0):
-            #self.notify("File saved!") # move this to a better spot
             return True
         else:
             self.notify("Ansilove didn't return success.")
@@ -941,7 +942,7 @@ class UserInterface():
         return True
 
     def showHelp(self):
-        curses.curs_set(0)
+        self.cursorOff()
         helpScreenText = '''
                   __                __
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -962,8 +963,9 @@ class UserInterface():
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next fg color, alt-left - prev fg color
+                         alt-z - undo, alt-r - redo
 
-Terminal tips in readme.txt
+Terminal tips and more in readme.txt
 
 '''
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
@@ -971,7 +973,7 @@ Terminal tips in readme.txt
         self.stdscr.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
         self.stdscr.getch()
         self.stdscr.clear()
-        curses.curs_set(1)
+        self.cursorOn()
 
     def refresh(self):          # Why doesn't this always work right? - seems good now. rename to redraw()?
         """Refresh the screen"""
@@ -980,23 +982,13 @@ Terminal tips in readme.txt
             for colnum in range(self.mov.sizeX):
                 charColor = self.mov.currentFrame.colorMap[(linenum, colnum)]
                 cursesColorPair = self.ansi.colorPairMap[charColor] # set ncurss color pair
-                # check for charColor = (8,7) black on red
-                #if charColor == (8,7):
-                #    self.ansi.switchColorMap(map=1)
-                #    self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
-                #    self.ansi.switchColorMap(map=0)
-                #else:
                 if (charColor[0] > 8):    # bright color
-                    #self.stdscr.attron(curses.A_BOLD)
                     self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
-                    #self.stdscr.attroff(curses.A_BOLD)
                 else:
                     self.stdscr.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
             linenum += 1
         for x in range(linenum, self.mov.sizeY):
             self.stdscr.addstr(x, 0, " " * self.mov.sizeX)
-        # draw statusbar should be in here?
-        #self.stdscr.addstr(self.mov.sizeY, 10, str(c) + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ' )' ) 
         self.stdscr.refresh()
 
     def refresh2(self):
@@ -1005,6 +997,7 @@ Terminal tips in readme.txt
 
     def delCol(self):          # This causes ghost characters when refresh() - still? no?
         """Erase column at position of cursor"""
+        self.undo.push()
         for x in range(len(self.mov.currentFrame.content)):         # Pop current column from every
             self.mov.currentFrame.content[x].pop(self.xy[1] - 1)     # line & add a blank
             self.mov.currentFrame.content[x].append(' ')         # at the end of each line.
@@ -1012,6 +1005,7 @@ Terminal tips in readme.txt
 
     def addCol(self):
         """Insert column at position of cursor"""
+        self.undo.push()
         for x in range(len(self.mov.currentFrame.content)):
             self.mov.currentFrame.content[x].insert(self.xy[1] - 1, ' ')
             self.mov.currentFrame.content[x].pop()
@@ -1023,6 +1017,7 @@ Terminal tips in readme.txt
 
     def delLine(self):
         """delete current line""" # does not move color map yet
+        self.undo.push()
         self.mov.currentFrame.content.pop(self.xy[0])
         self.mov.currentFrame.content.append([])
         self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
@@ -1030,6 +1025,7 @@ Terminal tips in readme.txt
 
     def addLine(self):          # This causes ghost characters when refresh(). Sometimes?
         """Insert new line"""   # This doesn't move the color map yet
+        self.undo.push()
         self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
         self.mov.currentFrame.content.pop()
         self.refresh()
@@ -1041,7 +1037,7 @@ Terminal tips in readme.txt
         # then ask the user what to do with it - copy, move, cut
         # print message: "Select mode - Enter to select, Esc to cancel"
         #self.blockStartPoint =  [self.xy[0],  self.xy[1]]
-        self.notify("Select mode (not yet implemented)")
+        self.notify("Select mode not yet implemented.")
 
     def startSelectingShift(self, c, startPoint):
         """Mark selection for copy/cut/move - trigger with shift-arrow-keys"""
@@ -1049,12 +1045,12 @@ Terminal tips in readme.txt
         # arrow keys move the cursor and return.
         # any other key returns (cancels)
         # print message: "Select mode - Enter to select, Esc to cancel"
-        self.notify("Select mode (not yet implemented)")
+        self.notify("Select mode not yet implemented.")
     
     def startSelectingMouse(self, c, startPoint):
         """Mark selection for copy/cut/move - trigger with mouse click-drag"""
         self.blockStartPoint =  [self.xy[0],  self.xy[1]]
-        self.notify("Select mode (not yet implemented)")
+        self.notify("Select mode not yet implemented.")
 
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
@@ -1088,11 +1084,48 @@ class AppState():
                 return False
         return True
 
-class UndoManager():
-        """ Manages undo/redo "stack" by storing the last 50 movie states.
-            Takes a movie for syntax. methods for push, pop and redo """
-        def __init__(self):
+class UndoManager():  # pass it a UserInterface object so Undo can tell UI
+        # when to switch to another saved movie state.
+        """ Manages undo/redo "stack" by storing the last 50 movie states
+            in a list. Takes a UserInterface object for syntax. methods for
+            push, undo and redo """
+        def __init__(self, ui):
+            self.ui = ui
+            self.undoIndex = 0 # will be 0 when populated with 1 state.
+            self.undoList = []
+            self.push() # push initial state
             pass
+        def push(self): # maybe should be called pushState or saveState?
+            """ Take current movie, add to the end of a list of movie
+                objects - ie, push current state onto the undo stack. """ 
+            if len(self.undoList) >= 50:
+                # if undo stack is full, dequeue from the bottom
+                self.undoList.pop(0)
+            # if undoIndex isn't indexing the last item in undoList,
+            # ie we have redo states, remove all items after undoList[undoIndex]
+            self.undoList = self.undoList[0:self.undoIndex]  # trim list
+            # then add the new state to the end of the queue.
+            self.undoList.append(deepcopy(self.ui.mov))
+            # last item added is at the end of the list, so..
+            self.undoIndex = len(self.undoList) # point index to last item
+        def undo(self):
+            if self.undoIndex is 1: # nothing to undo
+                self.ui.notify("Nothing to undo.")
+                return False
+            # if we're at the end of the list, push current state so we can
+            # get back to it. A bit confusing.
+            if self.undoIndex is len(self.undoList):
+                self.push()
+                self.undoIndex -= 1
+            self.undoIndex -= 1
+            self.ui.mov = self.undoList[self.undoIndex] # set UI movie state
+            return True # succeeded
+        def redo(self):
+            if self.undoIndex < (len(self.undoList) -1): # we can redo
+                self.undoIndex += 1 # go to next redo state
+                self.ui.mov = self.undoList[self.undoIndex] 
+            else:
+                self.ui.notify("Nothing to redo.")
             
 if (__name__ == "__main__"):
     derversion = '0.4'
