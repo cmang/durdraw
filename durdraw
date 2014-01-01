@@ -442,6 +442,8 @@ class UserInterface():
                     if (self.opts.framerate != 1.0):
                         self.opts.framerate -= 1
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
+                    self.verySafeQuit()
                 else:
                     playing = False # press any key to stop
             new_time = time.time()
@@ -449,7 +451,7 @@ class UserInterface():
                 last_time = new_time
                 # draw animation
                 self.mov.nextFrame()
-                if (self.appState.playOnlyMode == False): # if we're in play-only mode, don't show extra stuff.
+                if not self.appState.playOnlyMode: # if we're in play-only mode, don't show extra stuff.
                     self.stdscr.addstr(self.mov.sizeY, 10, "   " + " (" + str(self.mov.currentFrameNumber) + '/' + str(self.mov.frameCount) + ') ' + 'FPS: ' + str(self.opts.framerate) + ' ' ) # show fps
                 self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
@@ -1089,6 +1091,8 @@ class AppState():
 class UndoManager():
         """ Manages undo/redo "stack" by storing the last 50 movie states.
             Takes a movie for syntax. methods for push, pop and redo """
+        def __init__(self):
+            pass
             
 if (__name__ == "__main__"):
     derversion = '0.4'
@@ -1101,13 +1105,14 @@ if (__name__ == "__main__"):
     Press esc-h for help.                            by cmang
 ''' % derversion
     parser = argparse.ArgumentParser()
-    parserMutex = parser.add_mutually_exclusive_group()
-    parser.add_argument("filename", nargs='?', help=".dur or ascii file to load")
-    parser.add_argument("-p", "--play", help="Just play .dur file, then exit",
+    parserStartScreenMutex = parser.add_mutually_exclusive_group()
+    parserFilenameMutex = parser.add_mutually_exclusive_group()
+    parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
+    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
+                    nargs='+')
+    parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
                     action="store_true")
-    parserMutex.add_argument("-q", "--quick", help="Skip startup screen",
-                    action="store_true")
-    parserMutex.add_argument("-w", "--wait", help="Pause at startup screen",
+    parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
                     action="store_true")
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
@@ -1144,9 +1149,11 @@ if (__name__ == "__main__"):
     if args.filename:
         ui.loadFromFile(args.filename, "dur")
     if args.play:
-        # Just play file and exit
+        # Just play files and exit
         app.playOnlyMode = True
-        ui.animLoop()
+        for movie in args.play:
+            ui.loadFromFile(movie, "dur")
+            ui.animLoop()
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()
