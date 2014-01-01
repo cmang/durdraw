@@ -282,7 +282,8 @@ class Movie():
         else:
             self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
-
+    def lastMovieLine():
+        pass
 
 class UserInterface():
     """ Draws user interface, has main UI loop. """
@@ -636,7 +637,6 @@ class UserInterface():
                     # pass c to something here that starts selecting and moves
                     # the cursor based on c, and knows whether it's selecting
                     # via shift-arrow or mouse.
-                #elif c <= 255 and c >= 32:      # normal printable character
                 elif c <= 128 and c >= 32:      # normal printable character
                     self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
                 if (c != None):
@@ -823,7 +823,7 @@ class UserInterface():
         return True
 
     def saveAsciiFile(self, filename):
-        """ Saves to ascii file, strips blank trailing lines """
+        """ Saves to ascii file, strips trailing blank lines """
         try:
             f = open(filename, 'w')
         except:
@@ -834,14 +834,66 @@ class UserInterface():
         f.close()
         return True
 
-    def savePngFile(self, filename):
+    def saveAnsiFile(self, filename, lastLineNum=False):
+        """ Saves current frame of current movie to ansi file """
+        try:
+            f = open(filename, 'w')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)")
+            return False
+        string = ''
+        # put something here to find last line in frame, unless saveAnsiFile
+        # is passed lastLineNum=
+        if not lastLineNum:
+            lastLineNum = self.findLastFrameLine(self.mov.currentFrame)
+        for lineNum in range(0, lastLineNum):  # y is lines
+            for colNum in range(0, self.mov.sizeX):
+                char = self.mov.currentFrame.content[lineNum][colNum]
+                color = self.mov.currentFrame.colorMap[(lineNum, colNum)]
+                colorFg = color[0]
+                colorBg = color[1]
+                #string = string + str(color)
+                try:
+                    colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                except KeyError:
+                    colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
+                string = string + colorCode + char
+            string = string + '\r\n'
+        f.write(string)
+        f.write('\033[0m') # color attributes off
+        string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        f.close()
+        return True
+
+    def findLastMovieLine(self, movie):    
+        """ Cycle through the whole movie, figure out the lowest numbered
+            line that is blank on all frames, return that #. Used to trim blank
+            lines when saving. """
+        movieLastLine = 1
+        for frame in movie.frames:
+            frameLastLine = self.findLastFrameLine(frame)
+            if frameLastLine > movieLastLine:
+                movieLastLine = frameLastLine
+        return movieLastLine
+
+    def findLastFrameLine(self, frame):
+        """ For the given frame, figure out the last non-blank line, return
+            that # + 1 (aka, last used line of the frame) """
+        # start at the last line, work up until we find a character.
+        for lineNum in reversed(range(0, self.mov.sizeY)):
+            for colNum in range(0, frame.sizeX):
+                if not frame.content[lineNum][colNum] in [' ', '']:
+                    return lineNum + 1  # we found a non-empty character
+        return 1 # blank frame, only save the first line.
+
+    def savePngFile(self, filename, lastLineNum=None):
         """ Save to ANSI then convert to PNG """
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
             self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/")
             return False
         tmpAnsiFile = filename + '.tmp.ans' # remove this file when done
         tmpPngFile = filename + '.tmp.ans.png' # remove this file when done
-        if not self.saveAnsiFile(tmpAnsiFile):
+        if not self.saveAnsiFile(tmpAnsiFile, lastLineNum):
             self.notify("Saving ansi failed, make sure you can write to current directory.")
             return False
         devnull = open('/dev/null', 'w')
@@ -867,12 +919,13 @@ class UserInterface():
         self.mov.currentFrameNumber = 1
         self.mov.currentFrame = self.mov.frames[self.mov.currentFrameNumber - 1]
         self.refresh()
+        lastMovieLineNum = self.findLastMovieLine(self.mov)  # so we can trim
         for num in range(1, self.mov.frameCount + 1):   # then for each frame
             # make a temp png filename and add it to the list
             tmpPngName = filename + "." + str(num) + ".png"
             tmpPngNames.append(tmpPngName)
             # save the png
-            if not self.savePngFile(tmpPngName):
+            if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum):
                 return False
             # go to next frame
             self.mov.nextFrame()
@@ -883,33 +936,6 @@ class UserInterface():
         images2gif.writeGif(filename, pngImages, duration=sleep_time)
         for rmFile in tmpPngNames:
             os.remove(rmFile)
-        return True
-
-    def saveAnsiFile(self, filename):
-        """ Saves current frame of current movie to ansi file """
-        try:
-            f = open(filename, 'w')
-        except:
-            self.notify("Could not open file for writing. (Press any key to continue)")
-            return False
-        string = ''
-        for y in range(0, self.mov.sizeY):  # y is lines
-            for x in range(0, self.mov.sizeX):
-                char = self.mov.currentFrame.content[y][x]
-                color = self.mov.currentFrame.colorMap[(y, x)]
-                colorFg = color[0]
-                colorBg = color[1]
-                #string = string + str(color)
-                try:
-                    colorCode = self.ansi.getColorCode(colorFg,colorBg)
-                except KeyError:
-                    colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
-                string = string + colorCode + char
-            string = string + '\r\n'
-        f.write(string)
-        f.write('\033[0m') # color attributes off
-        string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
-        f.close()
         return True
 
     def showHelp(self):
