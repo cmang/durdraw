@@ -271,10 +271,24 @@ class Movie():
         else:
             self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
     def lastMovieLine():
         pass
 
-class UserInterface():
+class CursesUI():   # Use this to isolate ncurses calls and objects,
+    # Use same interface for HtmlUI, etc. Perhaps CursesView() is a better name.
+    """ This talks a common UI language with UserInterface and contains all
+        ncurses calls and objects """
+    def __init__(self): # I guess this should load curses.wrapper(start), etc?
+        # this stuff may be better in 
+        curses.wrapper(start)
+        curses.start_color()
+        curses.mousemask(1)
+    def addstr(self): # addstr(y, x, str[, attr]) and addstr(str[, attr])
+        # per http://docs.python.org/2/library/curses.html#curses.window.addstr
+        pass
+
+class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
     def __init__(self):
         self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
@@ -299,6 +313,13 @@ class UserInterface():
         self.stdscr.keypad(1)
         self.testWindowSize()
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+
+    def setAppState(self, appState):
+        """ Takes the app state (running config options) and makes any changes
+            needed to the UI/etc to honor that app state """
+        self.appState = appState
+        # set undo history size
+        self.undo.setHistorySize(self.appState.undoHistorySize)
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -349,19 +370,28 @@ class UserInterface():
             curses.curs_set(0)  # turn off cursor
         except curses.error:
             pass    # .. if terminal supports it.
+
     def cursorOn(self):
         try:
             curses.curs_set(1)  # turn on cursor
         except curses.error:
             pass    # .. if terminal supports it.
 
+    def addstr(self):   # How hould the paramaters look for this?
+        """ Add a string at XY location with attributes, wrap ncurses addstr
+            for exception catching """
+        pass
+
     def notify(self, message, pause=False):
         self.cursorOff()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
         self.stdscr.addstr(self.mov.sizeY, 0, message)
         self.stdscr.refresh()
-        if pause: self.stdscr.getch()
-        if not pause: curses.napms(1500)
+        if pause:
+            self.stdscr.getch()
+        if not pause:
+            curses.napms(1500)
+            curses.flushinp()
         self.stdscr.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
         self.cursorOn()
         self.stdscr.refresh()
@@ -558,7 +588,8 @@ class UserInterface():
                 elif c == 23:               # ctrl-w - save
                     self.save()
                     c = None
-                elif c == 12:               # ctrl-l - refresh
+                elif c == 12:               # ctrl-l - harder refresh
+                    self.stdscr.redrawwin()
                     self.refresh()
                     c = None
                 elif c == 13:               # enter (10 if we don't do curses.nonl())
@@ -1063,6 +1094,7 @@ class AppState():
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
         self.images2gif = self.checkForImages2gif()
+        self.undoHistorySize = 100  # How far back our undo history can
     def checkForPIL(self):
         try:
             import PIL
@@ -1086,19 +1118,21 @@ class AppState():
 
 class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         # when to switch to another saved movie state.
-        """ Manages undo/redo "stack" by storing the last 50 movie states
+        """ Manages undo/redo "stack" by storing the last 100 movie states
             in a list. Takes a UserInterface object for syntax. methods for
             push, undo and redo """
         def __init__(self, ui):
             self.ui = ui
             self.undoIndex = 0 # will be 0 when populated with 1 state.
             self.undoList = []
+            self.historySize = 100  # default, but really determined by 
+            # AppState values passed to setHistorySize() below.
             self.push() # push initial state
-            pass
         def push(self): # maybe should be called pushState or saveState?
             """ Take current movie, add to the end of a list of movie
                 objects - ie, push current state onto the undo stack. """ 
-            if len(self.undoList) >= 50:
+            if len(self.undoList) >= self.historySize:   # How far back our undo history can
+                # go. Make this configurable.
                 # if undo stack is full, dequeue from the bottom
                 self.undoList.pop(0)
             # if undoIndex isn't indexing the last item in undoList,
@@ -1126,6 +1160,20 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.ui.mov = self.undoList[self.undoIndex] 
             else:
                 self.ui.notify("Nothing to redo.")
+        def setHistorySize(self, historySize):
+            """ Defines the max number of undo states we will save """
+            self.historySize = historySize
+
+class ArgumentChecker: 
+    """ Place to hold any methods for verifying CLI arguments, beyond
+        what argparse can do on its own. Call these methods via
+        argparse.add_argument(.. type= ..) paramaters. """
+    def undosize(size_s):
+        size = int(size_s)  # because it comes as a string
+        if size >= 1 and size <= 1000:
+            return size
+        else:
+            raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
     derversion = '0.4'
@@ -1137,6 +1185,7 @@ if (__name__ == "__main__"):
    \_____________________________________________\|  v %s
     Press esc-h for help.                            by cmang
 ''' % derversion
+    argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
     parserFilenameMutex = parser.add_mutually_exclusive_group()
@@ -1147,6 +1196,8 @@ if (__name__ == "__main__"):
                     action="store_true")
     parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
                     action="store_true")
+    #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
+    parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     args = parser.parse_args()
@@ -1154,6 +1205,8 @@ if (__name__ == "__main__"):
         print derversion
         exit(0)
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
+    if args.undosize:
+        app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
     if args.play:
         showStartupScreen=False
@@ -1173,6 +1226,7 @@ if (__name__ == "__main__"):
             print "images2gif = Found"
         else:
             print "images2gif = Not found (no GIF support)"
+        print "Undo history size = %d" % app.undoHistorySize
         if args.wait:
             try:
                 choice = raw_input("Press Enter to Continue...")
@@ -1182,7 +1236,8 @@ if (__name__ == "__main__"):
         else:
             time.sleep(3)
     ui = UserInterface()
-    ui.appState = app
+    ui.setAppState(app)
+    #ui.appState = app
     if args.filename:
         ui.loadFromFile(args.filename, "dur")
     if args.play:
