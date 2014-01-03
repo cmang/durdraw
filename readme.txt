@@ -88,7 +88,7 @@ http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-proper
 2: Create a profile in Terminal Preferences/Settings with the following
    settings:
     + In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
-      checked
+      and "Use bright colors for bold text" are checked
     + In Keyboard tab, "Use option as meta key" selected
     + In "Advanced" tab, Character encoding set to "Western (ASCII)"
     + Set background color to black (low or no transprency) and foreground
@@ -97,7 +97,7 @@ http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-proper
     * If extended characters are not working in gnu screen, try running the
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
-      then reload durdraw or switch back and forth to another screen window.
+      then type "clrl-a l" to redraw the screen window.
         
 CREDITS:
 
