@@ -924,6 +924,45 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 return None
         self.clearStatusLine()
+        self.addstr(self.mov.sizeY, 0, "Which font? IBM PC [A]NSI, AM[I]GA: ")
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if (c in [97, 65]): # a = ansi
+                saveFont = 'ansi'
+                prompting = False
+            elif (c in [105, 68]):   # 105 i = amiga
+                saveFont = 'amiga'
+                prompting = False
+            elif (c == 27): # 27 = esc = cancel
+                self.clearStatusLine()
+                prompting = False
+                return None
+        self.clearStatusLine()
+        self.addstr(self.mov.sizeY, 0, "Which amiga font? 1=topaz 2=b-strict, 3=microknight, 4=mosoul, 5=pot-noodle: ")
+        prompting = True
+        while (prompting):
+            c = self.stdscr.getch()
+            if c is 49: # 1 = topaz
+                saveFont = 'topaz'
+                prompting = False
+            if c is 50: # 2 = b-strict
+                saveFont = 'b-strict'
+                prompting = False
+            if c is 51: # 3 = microknight
+                saveFont = 'microknight'
+                prompting = False
+            if c is 52: # 4 = mosoul
+                saveFont = 'mosoul'
+                prompting = False
+            if c is 53: # 5 = pot-noodle
+                saveFont = 'pot-noodle'
+                prompting = False
+            elif (c == 27): # 27 = esc = cancel
+                self.clearStatusLine()
+                prompting = False
+                return None
+        self.clearStatusLine()
         self.addstr(self.mov.sizeY, 0, "Enter file name to save as: ")
         curses.echo()
         filename = self.stdscr.getstr()
@@ -939,9 +978,9 @@ class UserInterface():  # Separate view (curses) from this controller
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
-            saved = self.savePngFile(filename)
+            saved = self.savePngFile(filename, saveFont)
         if (saveFormat == 'gif'):  # gif = requires PIL and images2gif
-            saved = self.saveGifFile(filename)
+            saved = self.saveGifFile(filename, saveFont)
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
         elif not saved:
@@ -1025,7 +1064,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     return lineNum + 1  # we found a non-empty character
         return 1 # blank frame, only save the first line.
 
-    def savePngFile(self, filename, lastLineNum=None):
+    def savePngFile(self, filename, lastLineNum=None, font='ansi'):
         """ Save to ANSI then convert to PNG """
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
             self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/")
@@ -1036,7 +1075,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.notify("Saving ansi failed, make sure you can write to current directory.")
             return False
         devnull = open('/dev/null', 'w')
-        ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, tmpPngFile], stdout=devnull)
+        if font is 'ansi':
+            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, tmpPngFile], stdout=devnull)
+        else:
+            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, font], stdout=devnull)
         devnull.close()
         subprocess.call(['mv', tmpPngFile, filename])
         subprocess.call(['rm', tmpAnsiFile])
@@ -1045,7 +1087,7 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             self.notify("Ansilove didn't return success.")
 
-    def saveGifFile(self, filename):
+    def saveGifFile(self, filename, font="ansi"):
         """ check for PIL and images2gif """
         try:
             import PIL,images2gif
@@ -1063,7 +1105,7 @@ class UserInterface():  # Separate view (curses) from this controller
             tmpPngName = filename + "." + str(num) + ".png"
             tmpPngNames.append(tmpPngName)
             # save the png
-            if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum):
+            if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum, font=font):
                 return False
             # If frame has a delay, copy saved file FPS times and add new
             # file names to tmpPngNames.

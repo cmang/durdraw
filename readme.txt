@@ -81,8 +81,9 @@ PRO TIPS:
 
 http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-properly-when-connecting-to-a-bbs-with-telnet-under-linux/
 
-    * To get extended characters working in MacOS X Terminal, follow these
-      instructions (similar settings can be used for iTerm2):
+    * Good terminals to use in Mac OS X are the default Terminal.app and
+      iTerm.  To get extended characters working in MacOS X Terminal, follow
+      these instructions (similar settings can be used for iTerm2):
 
 1: Install dos437.ttf font (included) by double-clicking it.
 2: Create a profile in Terminal Preferences/Settings with the following
@@ -97,7 +98,7 @@ http://techtinkering.com/2010/02/14/getting-colour-ansi-emulation-to-work-proper
     * If extended characters are not working in gnu screen, try running the
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
-      then type "clrl-a l" to redraw the screen window.
+      then type "clrl-a l" to redraw the window.
         
 CREDITS:
 
