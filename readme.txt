@@ -63,7 +63,7 @@ COMMANDS:
    ..  ..----------------------------------------------------------..  ..
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
               alt-up - next fg color, alt-down - prev fg color
-            alt-right - next fg color, alt-left - prev fg color
+            alt-right - next bg color, alt-left - prev bg color
         alt-z - undo, alt-r - redo, alt-D - set current frame delay
 
 PRO TIPS:
