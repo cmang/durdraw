@@ -23,6 +23,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 import argparse,os.path,pickle,sys,time
 import curses
 import subprocess # for ansilove
+import shutil
 import tempfile
 from copy import copy, deepcopy
 
@@ -221,11 +222,16 @@ class Frame():
         self.content = []
         self.sizeX = sizeX
         self.sizeY = sizeY
+        self.delay = 0  # delay is # of sec to wait at this frame.
         for x in range(0, sizeY):
             self.content.append([])
             for y in range(0, sizeX):
                 self.content[x].append(' ')
         self.initColorMap()
+        self.setDelayValue(0)
+
+    def setDelayValue(self, delayValue):
+        self.delay = delayValue
 
     def initColorMap(self):
         """ Builds a dictionary mapping X/Y to a FG/BG color pair """
@@ -234,16 +240,14 @@ class Frame():
             for y in range(0, self.sizeX):
                 self.colorMap.update( {(x,y):(1,0)} )  # tuple keypair (xy), tuple value (fg and bg)
 
-
 class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
     """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
     def __init__(self):         # default options
         self.framerate = 2.0
         self.sizeX = 79
         self.sizeY = 23
-        self.saveFileFormat = 3 # save file format version number
+        self.saveFileFormat = 4 # save file format version number
         # ^ in version 2 frames have a colormap, but is not used.
-
 
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
@@ -510,6 +514,7 @@ class UserInterface():  # Separate view (curses) from this controller
         while (playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
+            self.refresh()
             c = self.stdscr.getch()
             if (c != -1):   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
@@ -523,16 +528,22 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
                     self.verySafeQuit()
                 else:
-                    playing = False # press any key to stop
+                    playing = False # press most any key to stop
             new_time = time.time()
-            if (new_time >= (last_time + sleep_time)): # Time to update the frame? If so...
+            frame_delay = self.mov.currentFrame.delay
+            if frame_delay > 0:
+                realDelayTime = frame_delay
+            else:
+                realDelayTime = sleep_time
+            #if (new_time >= (last_time + sleep_time + frame_delay)): # Time to update the frame? If so...
+            if (new_time >= (last_time + realDelayTime)): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
                 self.mov.nextFrame()
                 if not self.appState.playOnlyMode: # if we're in play-only
                     # mode, don't show extra stuff.
                     self.drawStatusBar()
-                self.refresh()
+                #self.refresh()
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
     
@@ -551,19 +562,21 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
 
     def drawStatusBar(self):
+        self.clearStatusLine()
         statusBar = "%s (%i/%i) FPS: %i D: %i " % \
             (str(self.xy),
             self.mov.currentFrameNumber, \
             self.mov.frameCount, \
             self.opts.framerate, \
-            0)   # delay for current frame, will become a variable
+            self.mov.currentFrame.delay)
         self.addstr(self.mov.sizeY, 2, statusBar)
         # f1-f10 map
         # color thing
+        chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         if self.colorfg > 8:    # bright color
-            self.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString)-1, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
-        else:
-            self.addstr(self.mov.sizeY, self.mov.sizeX - len(self.chMapString)-1, self.chMapString, curses.color_pair(self.colorpair))
+            self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+        else:   # normal color
+            self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
 
     def mainLoop(self):
         self.metaKey = 0
@@ -617,10 +630,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif (c == 99):     # alt-c - clear canvas
                     self.clearCanvas(prompt = True)
                 # Animation Keystrokes
-                elif (c == 107):          # esc-k - next frame
+                elif (c == 68):     #alt-D - set delay for current frame
+                    self.getDelayValue()
+                    pass
+                elif (c == 107):          # alt-k - next frame
                     self.mov.nextFrame()
                     self.refresh()  
-                elif (c == 106):          # esc-j or alt-j - previous frame
+                elif (c == 106):          # alt-j or alt-j - previous frame
                     self.mov.prevFrame()
                     self.refresh()
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
@@ -631,7 +647,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.undo.push()
                     self.mov.addEmptyFrame()
                     self.refresh()
-                elif (c == 100):      # esc-d - delete current frame
+                elif (c == 77):         # alt-M - move current frame
+                    pass
+                elif (c == 100):      # alt-d - delete current frame
                     self.deleteCurrentFramePrompt()
                     self.refresh()
                 elif c is 122:  # cmd-z = undo
@@ -732,6 +750,25 @@ class UserInterface():  # Separate view (curses) from this controller
             self.drawStatusBar()
             self.refresh()
 
+    def getDelayValue(self):
+        """ Ask the user for the delay value to set for current frame, then
+            set it """
+        self.clearStatusLine()
+        self.addstr(self.mov.sizeY, 0, "Current frame delay is %i, new value in seconds: " % \
+            self.mov.currentFrame.delay);
+        curses.echo()
+        try:
+            delayValue = int(self.stdscr.getstr())
+        except ValueError:
+            delayValue = -1
+        curses.noecho()
+        self.clearStatusLine()
+        if (delayValue >= 0 and delayValue <= 120): # hard limit of 0 to 120 seconds
+            self.undo.push()
+            self.mov.currentFrame.setDelayValue(delayValue)
+        else:
+            self.notify("Delay must be between 0-120 seconds.")   
+
     def deleteCurrentFramePrompt(self):
         self.clearStatusLine()
         self.addstr(self.mov.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
@@ -812,6 +849,11 @@ class UserInterface():  # Separate view (curses) from this controller
             for frame in self.mov.frames:   # <3 python
                 frame.initColorMap()    # that was easy
                 self.opts.saveFileFormat = 3
+        if (self.opts.saveFileFormat < 4):
+            # old file, needs delay times populated.
+            for frame in self.mov.frames:
+                frame.setDelayValue(0)
+                self.opts.saveFileFormat = 4
 
     def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename
         filename = os.path.expanduser(shortfile)
@@ -1023,6 +1065,15 @@ class UserInterface():  # Separate view (curses) from this controller
             # save the png
             if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum):
                 return False
+            # If frame has a delay, copy saved file FPS times and add new
+            # file names to tmpPngNames.
+            if self.mov.currentFrame.delay > 0:
+                for delayFrameNum in range(1,int(self.mov.currentFrame.delay) * \
+                        int(self.opts.framerate)):
+                    # eg: 2 second delay, 8fps, means add 16 frames.
+                    delayFramePngName = tmpPngName + str(delayFrameNum) + ".png"
+                    shutil.copy(tmpPngName, delayFramePngName)
+                    tmpPngNames.append(delayFramePngName)
             # go to next frame
             self.mov.nextFrame()
             self.refresh()
@@ -1056,7 +1107,7 @@ class UserInterface():  # Separate view (curses) from this controller
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next fg color, alt-left - prev fg color
-                         alt-z - undo, alt-r - redo
+        alt-z - undo, alt-r - redo, alt-D - set current frame delay
 
 Terminal tips and more in readme.txt
 
