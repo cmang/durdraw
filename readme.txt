@@ -104,7 +104,7 @@ CREDITS:
 
 Sam Foster (http://cmang.org)
 
-Homepage: http://bitbucket.org/sfoster/durdraw/
+Homepage: http://cmang.org/durdraw
 
 LEGAL:
 
