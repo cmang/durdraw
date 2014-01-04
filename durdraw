@@ -286,6 +286,18 @@ class Movie():
             if (self.currentFrameNumber != 1):
                 self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+    def moveFramePosition(self, startPosition, newPosition):
+        """ move the frame at startPosition to newPosition """
+        # use push and pop to remove and insert it
+        fromIndex = startPosition - 1
+        toIndex = newPosition - 1
+        self.frames.insert(toIndex, self.frames.pop(fromIndex))
+
+    def goToFrame(self, frameNumber):
+        if frameNumber > 0 and frameNumber < self.frameCount:
+            self.currentFrameNumber = frameNumber
+            self.currentFrame = self.frames[self.currentFrameNumber - 1]
     
     def nextFrame(self):
         if (self.currentFrameNumber == self.frameCount):    # if at last frame..
@@ -347,6 +359,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self)   # initialize undo/redo system
         self.xy = [0, 1]     # cursor position x/y - was "curs"
+        self.playing = False
         curses.noecho()
         curses.raw()
         curses.nonl()
@@ -482,8 +495,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.xy[1] < self.mov.sizeX:
             self.xy[1] = self.xy[1] + 1 
 
-    def clearCanvas(self, prompt = False):
-        prompting = prompt
+    def clearCanvas(self, prompting = False):
         clearing = True  # assume we are clearing unless we prompt and say "n"
         if prompting:
             self.stdscr.nodelay(0) # wait for input when calling getch
@@ -502,16 +514,48 @@ class UserInterface():  # Separate view (curses) from this controller
             self.undo.push() # so we can undo this operation
             self.mov = Movie(self.opts) # initialize a new movie
 
+    def moveCurrentFrame(self):
+        self.undo.push()
+        prompting = True
+        self.clearStatusLine()
+        startPosition = self.mov.currentFrameNumber
+        newPosition = self.mov.currentFrameNumber
+        while prompting:
+            self.addstr(self.mov.sizeY, 0, "Use left/right to move frame, press Enter when done or Esc to cancel. (%i/%i)" % (newPosition, self.mov.frameCount))
+            c = self.stdscr.getch()
+            if c in [98, curses.KEY_LEFT]:
+                # move frame left one position (use pop and push)
+                if newPosition is 1: # if at first
+                    newPosition = self.mov.frameCount # go to end
+                else:
+                    newPosition -= 1
+            elif c in [102, curses.KEY_RIGHT]:
+                if newPosition is self.mov.frameCount: # if at last
+                    newPosition = 1 # go back to beginning
+                else:
+                    newPosition += 1
+            elif c in [13, curses.KEY_ENTER]: # enter - save  new position
+                self.mov.moveFramePosition(startPosition, newPosition)
+                self.mov.goToFrame(newPosition)
+                prompting = False
+            elif c in [27]: # escape - cancel
+                self.undo.undo()
+                prompting = False
+        #self.clearStatusLine()
+        #self.drawStatusBar()
+        #self.refresh()
+
     def animLoop(self): # improved game loop - watches for FPS based on a delta from previous time
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.cursorOff()
-        playing = True
+        self.playing = True
         new_time = time.time()
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-        while (playing):
+        self.drawStatusBar()
+        while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
             self.refresh()
@@ -528,7 +572,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
                     self.verySafeQuit()
                 else:
-                    playing = False # press most any key to stop
+                    self.playing = False # press most any key to stop
             new_time = time.time()
             frame_delay = self.mov.currentFrame.delay
             if frame_delay > 0:
@@ -577,6 +621,13 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
             self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+        # draw transport
+        #if self.playing:
+        #    transportString = "      ||      " 
+        #else:
+        #    transportString = "|< << |> >> >|" 
+        #transportOffset = chMapOffset - len(transportString) - 1
+        #self.addstr(self.mov.sizeY, transportOffset, transportString)
 
     def mainLoop(self):
         self.metaKey = 0
@@ -648,6 +699,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.mov.addEmptyFrame()
                     self.refresh()
                 elif (c == 77):         # alt-M - move current frame
+                    self.moveCurrentFrame()
                     pass
                 elif (c == 100):      # alt-d - delete current frame
                     self.deleteCurrentFramePrompt()
@@ -673,7 +725,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.stdscr.redrawwin()
                 self.refresh()
                 c = None
-            elif c == 13:               # enter (10 if we don't do curses.nonl())
+            elif c in [13, curses.KEY_ENTER]:               # enter (10 if we don't do curses.nonl())
                 if self.xy[0] < self.mov.sizeX - 1:
                     self.xy = [self.xy[0] + 1, 1]
             elif c in [263, 127]:              # backspace
@@ -1156,11 +1208,11 @@ class UserInterface():  # Separate view (curses) from this controller
               change FPS, any other       alt-m - mark selection for
               key stops playback)                 copy/paste/cut/move *
       alt-d - delete current frame        F1-F10 - insert character
-   ..  ..----------------------------------------------------------..  ..
            alt-s - save, alt-o - open, alt-h - help, alt-q - quit
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next bg color, alt-left - prev bg color
         alt-z - undo, alt-r - redo, alt-D - set current frame delay
+                          alt-M - move current frame
 
 Terminal tips and more in readme.txt
 

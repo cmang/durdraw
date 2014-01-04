@@ -65,6 +65,7 @@ COMMANDS:
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next bg color, alt-left - prev bg color
         alt-z - undo, alt-r - redo, alt-D - set current frame delay
+                          alt-M - move current frame
 
 PRO TIPS:
 
