@@ -929,10 +929,10 @@ class UserInterface():  # Separate view (curses) from this controller
             prompting = True
             while (prompting):
                 c = self.stdscr.getch()
-                if (c in [97, 65]): # a = ansi
+                if (c in [97, 65]): # a/A = ansi
                     saveFont = 'ansi'
                     prompting = False
-                elif (c in [105, 68]):   # 105 i = amiga
+                elif (c in [105, 68]):   # 105 i/I = amiga
                     saveFont = 'amiga'
                     prompting = False
                 elif (c == 27): # 27 = esc = cancel
@@ -980,9 +980,9 @@ class UserInterface():  # Separate view (curses) from this controller
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
-            saved = self.savePngFile(filename, saveFont)
+            saved = self.savePngFile(filename, font=saveFont)
         if (saveFormat == 'gif'):  # gif = requires PIL and images2gif
-            saved = self.saveGifFile(filename, saveFont)
+            saved = self.saveGifFile(filename, font=saveFont)
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
         elif not saved:
@@ -1009,9 +1009,8 @@ class UserInterface():  # Separate view (curses) from this controller
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
-        # please, for the love of god, rewrite this next line.
-        # the rstrip(' ') is cool, though.
-        outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n') 
+        # rewrite this. rstrip(' ') looks cool, though.
+        outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n')
         f.write(outBuffer + '\n\n')
         f.close()
         return True
@@ -1089,7 +1088,7 @@ class UserInterface():  # Separate view (curses) from this controller
         devnull = open('/dev/null', 'w')
         if font is 'ansi':
             ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, tmpPngFile], stdout=devnull)
-        else:
+        else:   # amiga font
             ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, font], stdout=devnull)
         devnull.close()
         subprocess.call(['mv', tmpPngFile, filename])
