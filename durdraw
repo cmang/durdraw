@@ -556,7 +556,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-        self.drawStatusBar()
+        #self.drawStatusBar()
         while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
