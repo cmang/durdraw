@@ -25,6 +25,7 @@ import curses
 import subprocess
 import shutil
 import tempfile
+from PIL import Image
 from copy import copy, deepcopy
 
 class AnsiArt():
@@ -247,7 +248,6 @@ class Options():    # config, prefs, preferences, etc. Per movie. Separate from 
         self.sizeX = 79
         self.sizeY = 23
         self.saveFileFormat = 4 # save file format version number
-        # ^ in version 2 frames have a colormap, but is not used.
 
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
@@ -502,9 +502,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.clearStatusLine()
             self.addstr(self.mov.sizeY, 0, "Are you sure you want to clear the canvas? (Y/N) " )
             while (prompting):
+                time.sleep(0.01)
                 c = self.stdscr.getch()
                 if (c == 121):   # 121 = y
-                    claering = True
+                    clearing = True
                     prompting = False
                 elif (c == 110): # 110 = n
                     clearing = False
@@ -521,6 +522,7 @@ class UserInterface():  # Separate view (curses) from this controller
         startPosition = self.mov.currentFrameNumber
         newPosition = self.mov.currentFrameNumber
         while prompting:
+            time.sleep(0.01)
             self.addstr(self.mov.sizeY, 0, "Use left/right to move frame, press Enter when done or Esc to cancel. (%i/%i)" % (newPosition, self.mov.frameCount))
             c = self.stdscr.getch()
             if c in [98, curses.KEY_LEFT]:
@@ -588,6 +590,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     # mode, don't show extra stuff.
                     self.drawStatusBar()
                 #self.refresh()
+            time.sleep(0.01) # to keep from sucking up cpu
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
     
@@ -635,7 +638,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.testWindowSize()
             # print statusbar stuff
             self.drawStatusBar()
-            self.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right spot for refresh
+            self.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right
+            # spot for refresh
             self.stdscr.refresh()
             c = self.stdscr.getch()
             self.testWindowSize()
@@ -679,7 +683,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     startPoint=(self.xy[0], self.xy[1])
                     self.startSelecting(startPoint)
                 elif (c == 99):     # alt-c - clear canvas
-                    self.clearCanvas(prompt = True)
+                    self.clearCanvas(prompting = True)
                 # Animation Keystrokes
                 elif (c == 68):     #alt-D - set delay for current frame
                     self.getDelayValue()
@@ -826,6 +830,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
         prompting = True
         while prompting:
+            time.sleep(0.01)
             c = self.stdscr.getch()
             if (c == 121):  # 'y'
                 prompting = False
@@ -833,6 +838,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.mov.deleteCurrentFrame()
             elif (c == 110):    # 'n'
                 prompting = False
+            time.sleep(0.01)
         self.clearStatusLine()
 
     def safeQuit(self):
@@ -841,6 +847,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 0, "Are you sure you want to Quit? (Y/N) " )
         prompting = True
         while (prompting):
+            time.sleep(0.01)
             c = self.stdscr.getch()
             if (c == 121):   # 121 = y
                 exiting = True
@@ -851,6 +858,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #elif (c == 27): # 27 = esc = cancel
             #    exiting = False
             #    return None
+            time.sleep(0.01)
         self.clearStatusLine()
         if (exiting):
             self.verySafeQuit()
@@ -870,6 +878,7 @@ class UserInterface():  # Separate view (curses) from this controller
         prompting = True
         while (prompting):
             c = self.stdscr.getch()
+            time.sleep(0.01)
             if (c == 105):   # 105 i = ascii
                 loadFormat = 'ascii'
                 prompting = False
@@ -885,6 +894,9 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.echo()
         shortfile = self.stdscr.getstr()
         curses.noecho()
+        if shortfile.replace(' ', '') is '':
+            self.notify("File name cannot be empty.")
+            return False
         self.clearStatusLine()
         self.loadFromFile(shortfile, loadFormat)
         self.refresh()      # so we can see the new ascii in memory.
@@ -956,6 +968,7 @@ class UserInterface():  # Separate view (curses) from this controller
         saved = False
         while (prompting):
             c = self.stdscr.getch()
+            time.sleep(0.01)
             if (c in [105, 68]):   # 105 i = ascii
                 saveFormat = 'ascii'
                 prompting = False
@@ -980,7 +993,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(self.mov.sizeY, 0, "Which font? IBM PC [A]NSI, AM[I]GA: ")
             prompting = True
             while (prompting):
+                time.sleep(0.01)
                 c = self.stdscr.getch()
+                time.sleep(0.01)
                 if (c in [97, 65]): # a/A = ansi
                     saveFont = 'ansi'
                     prompting = False
@@ -997,6 +1012,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = True
                 while (prompting):
                     c = self.stdscr.getch()
+                    time.sleep(0.01)
                     if c is 49: # 1 = topaz
                         saveFont = 'topaz'
                         prompting = False
@@ -1021,6 +1037,9 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.echo()
         filename = self.stdscr.getstr()
         curses.noecho()
+        if filename.replace(' ', '') is '':
+            self.notify("File name cannot be empty.")
+            return False
         filename = os.path.expanduser(filename)
         # Check and see if file exists. If it does, make backup pablodraw-style.
         # Or just ask if you would like to overwrite.  haven't decided yet.
@@ -1039,8 +1058,6 @@ class UserInterface():  # Separate view (curses) from this controller
             self.notify("*Saved* (Press any key to continue)", pause=True)
         elif not saved:
             self.notify("Save failed.")
-        self.stdscr.getch()
-        self.clearStatusLine()
 
     def saveDurFile(self, filename):
         # open and write file
@@ -1067,7 +1084,7 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveAnsiFile(self, filename, lastLineNum=False):
+    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None):
         """ Saves current frame of current movie to ansi file """
         try:
             f = open(filename, 'w')
@@ -1078,8 +1095,16 @@ class UserInterface():  # Separate view (curses) from this controller
         if not lastLineNum: # if we weren't told what lastLineNum is...
             # find it (last line we should save)
             lastLineNum = self.findFrameLastLine(self.mov.currentFrame)
-        for lineNum in range(0, lastLineNum):  # y is lines
-            for colNum in range(0, self.mov.sizeX):
+        if not lastColNum:
+            lastColNum = self.findFrameLastCol(self.mov.currentFrame)
+        if not firstColNum:
+            firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
+        if not firstLineNum:
+            firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+        #for lineNum in range(0, lastLineNum):  # y is lines
+        for lineNum in range(firstLineNum, lastLineNum):  # y is lines
+            #for colNum in range(0, self.mov.sizeX):
+            for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.colorMap[(lineNum, colNum)]
                 colorFg = color[0]
@@ -1107,6 +1132,49 @@ class UserInterface():  # Separate view (curses) from this controller
                 movieLastLine = frameLastLine
         return movieLastLine
 
+    def findFirstMovieLine(self, movie):    
+        """ Cycle through the whole movie, figure out the highest numbered
+            line that is blank on all frames, return that #. Used to trim blank
+            lines when saving. """
+        movieFirstLine = movie.sizeY
+        for frame in movie.frames:
+            frameFirstLine = self.findFrameFirstLine(frame)
+            if frameFirstLine < movieFirstLine:
+                movieFirstLine = frameFirstLine
+        return movieFirstLine
+
+    def findFirstMovieCol(self, movie):    
+        """ Cycle through the whole movie, figure out the leftmost column that
+            is blank on all frames, return that #. Used to trim blank lines
+            when saving. """
+        movieFirstCol = movie.sizeX
+        for frame in movie.frames:
+            frameFirstCol = self.findFrameFirstCol(frame)
+            if frameFirstCol < movieFirstCol:
+                movieFirstCol = frameFirstCol
+        return movieFirstCol
+
+    def findLastMovieCol(self, movie):    
+        """ Cycle through the whole movie, figure out the rightmost column
+            that is blank on all frames, return that #. Used to trim blank
+            lines when saving. """
+        movieLastCol = 1
+        for frame in movie.frames:
+            frameLastCol = self.findFrameLastCol(frame)
+            if frameLastCol > movieLastCol:
+                movieLastCol = frameLastCol
+        return movieLastCol
+
+    def findFrameFirstLine(self, frame):
+        """ For the given frame, figure out the first non-blank line, return
+            that # (aka, first used line of the frame) """
+        # start at the first line, work up until we find a character.
+        for lineNum in range(0, self.mov.sizeY):
+            for colNum in range(0, frame.sizeX):
+                if not frame.content[lineNum][colNum] in [' ', '']:
+                    return lineNum  # we found a non-empty character
+        return 1 # blank frame, only save the first line.
+
     def findFrameLastLine(self, frame):
         """ For the given frame, figure out the last non-blank line, return
             that # + 1 (aka, last used line of the frame) """
@@ -1119,36 +1187,68 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def findFrameLastCol(self, frame):
         """ For the given frame, figure out the last non-blank column, return
-            that # + 1 (aka, last used line of the frame) """
+            that # + 1 (aka, last used column of the frame) """
         # start at the last column, work back until we find a character.
-        for lineNum in reversed(range(0, self.mov.sizeY)):
-            for colNum in range(0, frame.sizeX):
+        for colNum in reversed(range(0, frame.sizeX)):
+            for lineNum in reversed(range(0, self.mov.sizeY)):
                 if not frame.content[lineNum][colNum] in [' ', '']:
-                    return lineNum + 1  # we found a non-empty character
+                    return colNum + 1  # we found a non-empty character
         return 1 # blank frame, only save the first line.
 
-    def savePngFile(self, filename, lastLineNum=None, font='ansi'):
+    def findFrameFirstCol(self, frame):
+        """ For the given frame, figure out the first non-blank column, return
+            that # (aka, first used column of the frame) """
+        # start at the first column, work forward until we find a character.
+        for colNum in range(0, frame.sizeX):
+            for lineNum in range(0, self.mov.sizeY):
+                if not frame.content[lineNum][colNum] in [' ', '']:
+                    return colNum  # we found a non-empty character
+        return 1 # blank frame, only save the first line.
+
+    def savePngFile(self, filename, lastLineNum=None, firstLineNum=None, firstColNum=None, lastColNum=None, font='ansi'):
         """ Save to ANSI then convert to PNG """
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
             self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/")
             return False
-        tmpAnsiFile = filename + '.tmp.ans' # remove this file when done
-        tmpPngFile = filename + '.tmp.ans.png' # remove this file when done
-        if not self.saveAnsiFile(tmpAnsiFile, lastLineNum):
+        tmpAnsiFileName = filename + '.tmp.ans' # remove this file when done
+        tmpPngFileName = filename + '.tmp.ans.png' # remove this file when done
+        if not self.saveAnsiFile(tmpAnsiFileName, lastLineNum=lastLineNum, firstLineNum=firstLineNum, firstColNum=firstColNum, lastColNum=lastColNum):
             self.notify("Saving ansi failed, make sure you can write to current directory.")
             return False
         devnull = open('/dev/null', 'w')
         if font is 'ansi':
-            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, tmpPngFile], stdout=devnull)
+            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, tmpPngFileName], stdout=devnull)
         else:   # amiga font
-            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFile, font], stdout=devnull)
+            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, font], stdout=devnull)
         devnull.close()
-        subprocess.call(['mv', tmpPngFile, filename])
-        subprocess.call(['rm', tmpAnsiFile])
-        if (ansiLoveReturn == 0):
-            return True
+        os.remove(tmpAnsiFileName)
+        if (ansiLoveReturn == 0): # this doesnt seem right either, as ansilove always
+            pass                  # returns True. 
         else:
             self.notify("Ansilove didn't return success.")
+        # crop out rightmost blank space
+        if not lastColNum:
+            lastColNum = self.findFrameLastCol(self.mov.currentFrame)
+        if not firstColNum:
+            firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
+        characterWidth = 8  # 9 pixels wide
+        cropImage = Image.open(tmpPngFileName)
+        cropWidthPixels = (lastColNum - firstColNum) * characterWidth # right
+        w,h = cropImage.size
+        cropBox = (0, 0, cropWidthPixels, h)  # should be right
+        cropImage = cropImage.crop(cropBox)
+        finalImage = open(filename, 'wb')
+        try:
+            cropImage.save(finalImage, "png")
+            #self.notify("Saved successfully!")
+            finalImage.close()
+        except:
+            self.notify("Error: Could not crop png.")
+            os.remove(tmpPngFileName)
+            return False
+        os.remove(tmpPngFileName)
+        return True
+
 
     def saveGifFile(self, filename, font="ansi"):
         """ check for PIL and images2gif """
@@ -1162,13 +1262,16 @@ class UserInterface():  # Separate view (curses) from this controller
         self.mov.currentFrameNumber = 1
         self.mov.currentFrame = self.mov.frames[self.mov.currentFrameNumber - 1]
         self.refresh()
-        lastMovieLineNum = self.findLastMovieLine(self.mov)  # so we can trim
+        firstMovieLineNum = self.findFirstMovieLine(self.mov) # so we can trim
+        lastMovieLineNum = self.findLastMovieLine(self.mov) 
+        firstMovieColNum = self.findFirstMovieCol(self.mov)
+        lastMovieColNum = self.findLastMovieCol(self.mov) 
         for num in range(1, self.mov.frameCount + 1):   # then for each frame
             # make a temp png filename and add it to the list
             tmpPngName = filename + "." + str(num) + ".png"
             tmpPngNames.append(tmpPngName)
             # save the png
-            if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum, font=font):
+            if not self.savePngFile(tmpPngName, lastLineNum=lastMovieLineNum, firstLineNum=firstMovieLineNum, firstColNum=firstMovieColNum, lastColNum=lastMovieColNum, font=font):
                 return False
             # If frame has a delay, copy saved file FPS times and add new
             # file names to tmpPngNames.
