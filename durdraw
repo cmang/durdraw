@@ -556,7 +556,6 @@ class UserInterface():  # Separate view (curses) from this controller
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-        #self.drawStatusBar()
         while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
@@ -565,10 +564,11 @@ class UserInterface():  # Separate view (curses) from this controller
             if (c != -1):   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
                 if c == curses.KEY_UP:  # up key - increase fps
-                    self.opts.framerate += 1
-                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    if (self.opts.framerate != 50): # max 40fps
+                        self.opts.framerate += 1
+                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c == curses.KEY_DOWN:    # down key - decrese fps
-                    if (self.opts.framerate != 1.0):
+                    if (self.opts.framerate != 1.0): # min 1fps
                         self.opts.framerate -= 1
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
@@ -590,7 +590,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     # mode, don't show extra stuff.
                     self.drawStatusBar()
                 #self.refresh()
-            time.sleep(0.01) # to keep from sucking up cpu
+            else: time.sleep(0.005) # to keep from sucking up cpu
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
     
@@ -768,13 +768,13 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [curses.KEY_F10]:    # F10 - insert extended character
                 self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
                 c = None
-            elif c == curses.KEY_LEFT:
+            elif c == curses.KEY_LEFT:      # left - move cursor right a character
                 if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
-            elif c == curses.KEY_RIGHT:
+            elif c == curses.KEY_RIGHT:     # right - move cursor right
                 if self.xy[1] < self.mov.sizeX: self.xy[1] = self.xy[1] + 1
-            elif c == curses.KEY_UP:
+            elif c == curses.KEY_UP:    # up - move cursor up
                 if self.xy[0] > 0: self.xy[0] = self.xy[0] - 1
-            elif c == curses.KEY_DOWN:
+            elif c == curses.KEY_DOWN:  # down - move curosr down
                 if self.xy[0] < self.mov.sizeY - 1: self.xy[0] = self.xy[0] + 1
             elif c in [339, curses.KEY_HOME]:  # 339 = home
                 self.xy[1] = 1
