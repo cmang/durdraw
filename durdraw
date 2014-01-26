@@ -781,7 +781,7 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [338, curses.KEY_END]:   # 338 = end
                 self.xy[1] = self.mov.sizeX
             elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
-                mouseEvent = curses.getmouse()
+                #mouseEvent = curses.getmouse()
                 _, mouseX, mouseY, _, _ = curses.getmouse()
                 if mouseY < self.mov.sizeY:
                     self.xy[1] = mouseX + 1 # set cursor position
