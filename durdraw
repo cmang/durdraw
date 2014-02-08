@@ -5,7 +5,7 @@ Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
 
 LICENSE:
 
-Copyright 2009-2013 Sam Foster (cmang), all rights reserved
+Copyright 2009-2014 Sam Foster (cmang), all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -266,9 +266,10 @@ class Movie():
         self.frames.append(newFrame)
         self.frameCount += 1
 
-    def cloneNewFrame(self):    # clone current frame onto a new frame
+    def insertCloneFrame(self):
+        """ clone current frame after current frame """
         newFrame = Frame(self.sizeX, self.sizeY)
-        self.frames.append(newFrame)
+        self.frames.insert(self.currentFrameNumber, newFrame)    
         newFrame.content = deepcopy(self.currentFrame.content)
         newFrame.colorMap = deepcopy(self.currentFrame.colorMap)
         self.frameCount += 1
@@ -547,6 +548,14 @@ class UserInterface():  # Separate view (curses) from this controller
         #self.drawStatusBar()
         #self.refresh()
 
+    def increaseFPS(self):
+        if (self.opts.framerate != 50): # max 50fps
+            self.opts.framerate += 1
+
+    def decreaseFPS(self):
+        if (self.opts.framerate != 1.0): # min 1fps
+            self.opts.framerate -= 1
+
     def animLoop(self): # improved game loop - watches for FPS based on a delta from previous time
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
@@ -564,13 +573,11 @@ class UserInterface():  # Separate view (curses) from this controller
             if (c != -1):   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
                 if c == curses.KEY_UP:  # up key - increase fps
-                    if (self.opts.framerate != 50): # max 40fps
-                        self.opts.framerate += 1
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.increaseFPS()
+                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c == curses.KEY_DOWN:    # down key - decrese fps
-                    if (self.opts.framerate != 1.0): # min 1fps
-                        self.opts.framerate -= 1
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.decreaseFPS()
+                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
                     self.verySafeQuit()
                 else:
@@ -696,7 +703,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.refresh()
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
                     self.undo.push()
-                    self.mov.cloneNewFrame()
+                    self.mov.insertCloneFrame()
                     self.refresh()
                 elif (c == 78):          # alt-N (shift-alt-n) - new  empty frame
                     self.undo.push()
@@ -714,9 +721,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.undo.redo()
                 elif (c == 112):    # esc-p - start playing, any key exits
                     self.animLoop()
-                else: self.notify("keystroke: %d" % c)
+                elif c in [61, 43]: # esc-= and esc-+ - fps up
+                    self.increaseFPS()
+                elif c in [45]: # esc-- (alt minus) - fps down
+                    self.decreaseFPS()
+                else: self.notify("keystroke: %d" % c) # alt-unknown
                 self.metaKey = 0
                 c = None
+            # Meta key (alt) was not pressed, so look for non-meta chars
             if c == 27: self.metaKey = 1; c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open
@@ -729,7 +741,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.stdscr.redrawwin()
                 self.refresh()
                 c = None
-            elif c in [13, curses.KEY_ENTER]:               # enter (10 if we don't do curses.nonl())
+            elif c in [13, curses.KEY_ENTER]:               # enter (10 if we
+                # don't do curses.nonl())
                 if self.xy[0] < self.mov.sizeX - 1:
                     self.xy = [self.xy[0] + 1, 1]
             elif c in [263, 127]:              # backspace
@@ -1305,8 +1318,8 @@ class UserInterface():  # Separate view (curses) from this controller
                /--\| \||| \/ | ()         |/_ (_| |  |
       alt-k - next frame                  alt-' - delete current line
       alt-j - prev frame                  alt-/ - insert line
-      alt-n - new frame from current      alt-, - delete current column.
-      alt-N - new empty frame             alt-. - insert new column
+      alt-n - insert current frame clone  alt-, - delete current column.
+      alt-N - append empty frame          alt-. - insert new column
       alt-p - play animation (up/down     alt-c - clear canvas/movie
               change FPS, any other       alt-m - mark selection for
               key stops playback)                 copy/paste/cut/move *
@@ -1315,9 +1328,9 @@ class UserInterface():  # Separate view (curses) from this controller
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next bg color, alt-left - prev bg color
         alt-z - undo, alt-r - redo, alt-D - set current frame delay
-                          alt-M - move current frame
+       alt-M - move current frame, alt-+/alt-- increase/decrease fps
 
-Terminal tips and more in readme.txt
+Terminal tips and more in at http://cmang.org/dur/
 
 '''
         self.clearStatusLine()
@@ -1388,7 +1401,7 @@ Terminal tips and more in readme.txt
         # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
         # then ask the user what to do with it - copy, move, cut
         # print message: "Select mode - Enter to select, Esc to cancel"
-        #self.blockStartPoint =  [self.xy[0],  self.xy[1]]
+        self.blockStartPoint =  [self.xy[0],  self.xy[1]]
         self.notify("Select mode not yet implemented.")
 
     def startSelectingShift(self, c, startPoint):
