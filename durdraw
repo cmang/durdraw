@@ -296,7 +296,7 @@ class Movie():
         self.frames.insert(toIndex, self.frames.pop(fromIndex))
 
     def goToFrame(self, frameNumber):
-        if frameNumber > 0 and frameNumber < self.frameCount:
+        if frameNumber > 0 and frameNumber < self.frameCount + 1:
             self.currentFrameNumber = frameNumber
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
     
@@ -556,11 +556,19 @@ class UserInterface():  # Separate view (curses) from this controller
         if (self.opts.framerate != 1.0): # min 1fps
             self.opts.framerate -= 1
 
-    def animLoop(self): # improved game loop - watches for FPS based on a delta from previous time
+    def startPlaying(self):
+        """ Start playing the animation - start a "game" style loop, make FPS
+            by drawing if current time is greater than a delta plus the time
+            the last frame was drawn.
+        """
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.cursorOff()
         self.playing = True
+        if not self.appState.playOnlyMode: # if we're not in play-only
+            # mode, show extra stuff.
+            self.drawStatusBar()
+        playedTimes = 1
         new_time = time.time()
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
@@ -580,6 +588,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [113, 81] and self.appState.playOnlyMode:    # q or Q
                     self.verySafeQuit()
+                elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
+                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                    if mouseY < self.mov.sizeY:
+                        # we clicked in edit area
+                        pass
+                    else:   # we clicked on the status bar somewhere..
+                        if mouseX in [38, 39]:  # clicked pause button
+                            self.playing = False
                 else:
                     self.playing = False # press most any key to stop
             new_time = time.time()
@@ -593,9 +609,17 @@ class UserInterface():  # Separate view (curses) from this controller
                 last_time = new_time
                 # draw animation
                 self.mov.nextFrame()
-                if not self.appState.playOnlyMode: # if we're in play-only
-                    # mode, don't show extra stuff.
+                if not self.appState.playOnlyMode: # if we're not in play-only
+                    # mode, show extra stuff.
                     self.drawStatusBar()
+                else:
+                    if (self.appState.playNumberOfTimes > 0):   # if we're playing x times
+                        if (self.mov.currentFrameNumber == self.mov.frameCount):
+                            # and on the last frame
+                            if playedTimes < self.appState.playNumberOfTimes:
+                                playedTimes += 1
+                            else:   # we've played the desired number of times.
+                                self.playing = False
                 #self.refresh()
             else: time.sleep(0.005) # to keep from sucking up cpu
         self.stdscr.nodelay(0) # back to wait for input when calling getch
@@ -632,12 +656,12 @@ class UserInterface():  # Separate view (curses) from this controller
         else:   # normal color
             self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
         # draw transport
-        #if self.playing:
-        #    transportString = "      ||      " 
-        #else:
-        #    transportString = "|< << |> >> >|" 
-        #transportOffset = chMapOffset - len(transportString) - 1
-        #self.addstr(self.mov.sizeY, transportOffset, transportString)
+        if self.playing:
+            transportString = "      ||      " 
+        else:
+            transportString = "|< << |> >> >|" 
+        transportOffset = chMapOffset - len(transportString) - 1
+        self.addstr(self.mov.sizeY, transportOffset, transportString)
 
     def mainLoop(self):
         self.metaKey = 0
@@ -720,7 +744,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c is 114:  # cmd-r = redo
                     self.undo.redo()
                 elif (c == 112):    # esc-p - start playing, any key exits
-                    self.animLoop()
+                    self.startPlaying()
                 elif c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
                 elif c in [45]: # esc-- (alt minus) - fps down
@@ -794,7 +818,6 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [338, curses.KEY_END]:   # 338 = end
                 self.xy[1] = self.mov.sizeX
             elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
-                #mouseEvent = curses.getmouse()
                 _, mouseX, mouseY, _, _ = curses.getmouse()
                 if mouseY < self.mov.sizeY:
                     self.xy[1] = mouseX + 1 # set cursor position
@@ -802,7 +825,18 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:   # we clicked on the status bar somewhere..
                     # Add stuff here to take mouse 'commands' like clicking
                     # play/next/etc on transport, or clicking "start button"
-                    pass
+                    if mouseX in [38, 39]:  # clicked play button
+                        self.startPlaying()
+                    elif mouseX in [35, 36]: # goto prev frame
+                        self.mov.prevFrame()
+                    elif mouseX in [41, 42]: # goto next frame
+                        self.mov.nextFrame()
+                    elif mouseX in [32, 33]: # goto first frame
+                        self.mov.goToFrame(1)
+                    elif mouseX in [44, 45]: # goto last frame
+                        self.mov.goToFrame(self.mov.frameCount)
+                    else:
+                        self.notify(str([mouseX, mouseY]))
                 #self.mouseClicked(mouseEvent)
             elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
                 # 337 and 520 - shift-up, 336 and 513 = shift-down
@@ -970,6 +1004,7 @@ class UserInterface():  # Separate view (curses) from this controller
             f.close()
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
+        self.mov.goToFrame(1)
         pass
     
     def save(self):
@@ -1328,7 +1363,7 @@ class UserInterface():  # Separate view (curses) from this controller
               alt-up - next fg color, alt-down - prev fg color
             alt-right - next bg color, alt-left - prev bg color
         alt-z - undo, alt-r - redo, alt-D - set current frame delay
-       alt-M - move current frame, alt-+/alt-- increase/decrease fps
+       alt-M - move current frame, alt-+/alt-- increase/decrease FPS
 
 Terminal tips and more in at http://cmang.org/dur/
 
@@ -1425,6 +1460,7 @@ class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self):
         self.playOnlyMode = False
+        self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
         self.images2gif = self.checkForImages2gif()
@@ -1530,6 +1566,8 @@ if (__name__ == "__main__"):
                     action="store_true")
     parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
                     action="store_true")
+    parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
+                    nargs=1, type=int)
     #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
@@ -1538,6 +1576,9 @@ if (__name__ == "__main__"):
     if args.version:
         print derversion
         exit(0)
+    if args.times and not args.play:
+        print "-x option requires -p"
+        exit(1)
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
     if args.undosize:
         app.undoHistorySize = int(args.undosize[0])
@@ -1576,9 +1617,11 @@ if (__name__ == "__main__"):
     if args.play:
         # Just play files and exit
         app.playOnlyMode = True
+        if args.times:
+            app.playNumberOfTimes = args.times[0]
         for movie in args.play:
             ui.loadFromFile(movie, "dur")
-            ui.animLoop()
+            ui.startPlaying()
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()
