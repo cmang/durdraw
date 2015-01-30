@@ -610,6 +610,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None 
+                elif c is 122:  # alt-z = undo
+                    self.undo.undo()
+                elif c is 114:  # alt-r = redo
+                    self.undo.redo()
                 elif c in [112]: # alt-p - stop playing
                     self.playing = False
                 else: self.notify("keystroke: %d" % c) # alt-unknown
@@ -1209,6 +1213,7 @@ class UserInterface():  # Separate view (curses) from this controller
             saved = self.saveGifFile(filename, font=saveFont)
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
+            self.appState.curOpenFileName = os.path.basename(filename)
         elif not saved:
             self.notify("Save failed.")
 
@@ -1379,6 +1384,7 @@ class UserInterface():  # Separate view (curses) from this controller
             pass                  # returns True. 
         else:
             self.notify("Ansilove didn't return success.")
+            return False    # stop trying to save png
         # crop out rightmost blank space
         if not lastColNum:
             lastColNum = self.findFrameLastCol(self.mov.currentFrame)
@@ -1454,24 +1460,23 @@ class UserInterface():  # Separate view (curses) from this controller
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
               \_____________________________________________\|  v 0.5
-                /\ |\ |||\  /|            .-.  _| . _|_
-               /--\| \||| \/ | ()         |/_ (_| |  |
+
       alt-k - next frame                  alt-' - delete current line
       alt-j - prev frame                  alt-/ - insert line
       alt-n - insert current frame clone  alt-, - delete current column.
       alt-N - append empty frame          alt-. - insert new column
-      alt-p - play animation (up/down     alt-c - clear canvas/movie
-              change FPS, any other       alt-m - mark selection for
-              key stops playback)                 copy/paste/cut/move *
-      alt-d - delete current frame        F1-F10 - insert character
-           alt-s - save, alt-o - open, alt-h - help, alt-q - quit
-              alt-up - next fg color, alt-down - prev fg color
-            alt-right - next bg color, alt-left - prev bg color
-        alt-z - undo, alt-r - redo, alt-D - set current frame delay
-       alt-M - move current frame, alt-+/alt-- increase/decrease FPS
+      alt-p - start/stop playback         alt-c - clear canvas/movie
+      alt-d - delete current frame        alt-m - mark selection
+      alt-D - set current frame delay     F1-F10 - insert character
+      alt-+/alt-- increase/decrease FPS   alt-z - undo
+      alt-M - move current frame          alt-r - redo
+      alt-up - next fg color              alt-s - save
+      alt-down - prev fg color            alt-o - open
+      alt-right - next bg color           alt-q - quit
+      alt-left - prev bg color            alt-h - help
 
+Can use ESC or META instead of ALT.
 Terminal tips and more in at http://cmang.org/dur/
-
 '''
         self.clearStatusLine()
         self.addstr(0, 0, helpScreenText)
