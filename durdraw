@@ -5,7 +5,7 @@ Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
 
 LICENSE:
 
-Copyright 2009-2014 Sam Foster (cmang), all rights reserved
+Copyright 2009-2015 Sam Foster (cmang), all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -367,6 +367,69 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.keypad(1)
         self.testWindowSize()
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        self.setWindowTitle("Durdraw")
+
+    def setWindowTitle(self, title):
+        sys.stdout.write("\x1b]2;%s\x07" % title)
+
+    def getPlaybackRange(self): # ask for playback range when user presses cmd-r
+        self.clearStatusLine()
+        self.move(self.mov.sizeY, 0)
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        goodResponse = False
+        while goodResponse == False:
+            self.addstr(self.mov.sizeY, 0, "Start frame for playback [currently %i of %i, 0 for All]: " % \
+                (self.appState.playbackRange[0], self.mov.frameCount))
+            curses.echo()
+            lowRange = self.stdscr.getstr()
+            if (lowRange.isdigit()):
+                lowRange = int(lowRange)
+                if (lowRange >= 0 and lowRange <= self.mov.frameCount):
+                    goodResponse = True
+                else:
+                    self.notify("Must be a number between %i and %i" % (1, self.mov.frameCount))
+                    goodResponse = False
+            else:
+                self.notify("Playback range unmodified.")
+                curses.noecho()
+                if self.playing:
+                    self.stdscr.nodelay(1) # don't wait for input when calling getch
+                return False
+        if (lowRange == 0):
+            self.setPlaybackRange(1, self.mov.frameCount)
+            curses.noecho()
+            if self.playing:
+                self.stdscr.nodelay(1) # don't wait for input when calling getch
+            return True
+        goodResponse = False
+        self.clearStatusLine()
+        while goodResponse == False:
+            self.addstr(self.mov.sizeY, 0, "End frame for playback [currently %i of %i]: " % \
+                (self.appState.playbackRange[0], self.mov.frameCount))
+            curses.echo()
+            highRange = self.stdscr.getstr()
+            if (highRange.isdigit()):
+                highRange = int(highRange)
+                if (highRange >= lowRange and highRange <= self.mov.frameCount):
+                    goodResponse = True
+                else:
+                    self.notify("Must be a number between %i and %i" % (lowRange, self.mov.frameCount))
+                    goodResponse = False
+            else:
+                self.notify("Playback range unmodified.")
+                curses.noecho()
+                if self.playing:
+                    self.stdscr.nodelay(1) # don't wait for input when calling getch
+                return False
+        self.setPlaybackRange(lowRange, highRange)
+        curses.noecho()
+        if self.playing:
+            self.stdscr.nodelay(1) # don't wait for input when calling getch
+        return True
+    
+
+    def setPlaybackRange(self, start, stop):
+        self.appState.playbackRange = (start, stop)
 
     def setAppState(self, appState):
         """ Takes the app state (running config options) and makes any changes
@@ -456,7 +519,12 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 0, message)
         self.stdscr.refresh()
         if pause:
-            self.stdscr.getch()
+            if self.playing:
+                self.stdscr.nodelay(0) # wait for input when calling getch
+                self.stdscr.getch()
+                self.stdscr.nodelay(1) # do not wait for input when calling getch   
+            else:
+                self.stdscr.getch()
         if not pause:
             curses.napms(1500)
             curses.flushinp()
@@ -491,7 +559,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
         self.undo.push()
         if frange:
-            for fn in range(frange[0], frange[1]):
+            for fn in range(frange[0] - 1, frange[1]):
                 self.mov.frames[fn].content[self.xy[0]][self.xy[1] - 1] = chr(c)
                 self.mov.frames[fn].colorMap.update(
                         {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
@@ -583,6 +651,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+        self.mov.goToFrame(self.appState.playbackRange[0])
         while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
@@ -614,17 +683,26 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.undo.undo()
                 elif c is 114:  # alt-r = redo
                     self.undo.redo()
+                elif c is 82:   # alt-R = set playback range
+                    self.getPlaybackRange()
                 elif c in [112]: # alt-p - stop playing
                     self.playing = False
+                elif c in [104, 63]:                # alt-h - help
+                    self.showHelp()
+                    c = None
+                elif c == 113:                 # alt-q - quit
+                    self.safeQuit()
+                    self.stdscr.nodelay(1)
+                    c = None
                 else: self.notify("keystroke: %d" % c) # alt-unknown
                 self.metaKey = 0
                 c = None 
             elif (c != -1):   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
                 #if c == curses.KEY_UP:  # up key - increase fps
-                if self.appState.playOnlyMode:
-                    if c in [113, 81]:    # q or Q
-                        self.verySafeQuit()
+                if self.appState.playOnlyMode:  # quit on any keystroke
+                    #if c in [113, 81]:    # q or Q
+                    self.verySafeQuit()
                 else:
                     if c == curses.KEY_MOUSE: # mouse = move cursor, etc
                         _, mouseX, mouseY, _, _ = curses.getmouse()
@@ -635,8 +713,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:   # we clicked on the status bar somewhere..
                             if mouseX in [38, 39]:  # clicked pause button
                                 self.playing = False
-                    #elif c in [113, 81]:    # q or Q
-                    #    self.playing = False # press most any key to stop
+                            elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
+                                self.showHelp()
+                                c = None 
                     elif c == curses.KEY_LEFT:      # left - move cursor right a character
                         if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
                     elif c == curses.KEY_RIGHT:     # right - move cursor right
@@ -661,46 +740,47 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[1] = self.mov.sizeX
                     elif c in [curses.KEY_F1]:    # F1 - insert extended character
                         self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                #frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F2]:    # F2 - insert extended character
                         self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F3]:    # F3 - insert extended character
                         self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F4]:    # F4 - insert extended character
                         self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F5]:    # F5 - insert extended character
                         self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F6]:    # F6 - insert extended character
                         self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F7]:    # F7 - insert extended character
                         self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F8]:    # F8 - insert extended character
                         self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F9]:    # F9 - insert extended character
                         self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c in [curses.KEY_F10]:    # F10 - insert extended character
                         self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
-                                frange=(0,self.mov.frameCount))
+                                frange=self.appState.playbackRange)
                         c = None
                     elif c <= 128 and c >= 32:      # normal printable character
-                        self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=(0,self.mov.frameCount))
+                        self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
 
             #self.move(self.xy[0], self.xy[1])   # moving the cursor?
             new_time = time.time()
@@ -713,7 +793,10 @@ class UserInterface():  # Separate view (curses) from this controller
             if (new_time >= (last_time + realDelayTime)): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
-                self.mov.nextFrame()
+                if self.mov.currentFrameNumber is self.appState.playbackRange[1]:
+                    self.mov.goToFrame(self.appState.playbackRange[0])
+                else:
+                    self.mov.nextFrame()
                 if not self.appState.playOnlyMode: # if we're not in play-only
                     # mode, show extra stuff.
                     self.drawStatusBar()
@@ -746,13 +829,16 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def drawStatusBar(self):
         self.clearStatusLine()
-        statusBar = "%s (%i/%i) FPS: %i D: %i " % \
-            (str(self.xy),
-            self.mov.currentFrameNumber, \
+        #statusBar = "%s (%i/%i) FPS: %i D: %i " % \
+        statusBar = "F: (%i/%i) R: %i-%i FPS: %i D: %i " % \
+            (self.mov.currentFrameNumber, \
             self.mov.frameCount, \
+            self.appState.playbackRange[0], \
+            self.appState.playbackRange[1], \
             self.opts.framerate, \
             self.mov.currentFrame.delay)
         self.addstr(self.mov.sizeY, 2, statusBar)
+        self.addstr(self.mov.sizeY, 0, "?")
         # f1-f10 map
         # color thing
         chMapOffset = self.mov.sizeX - len(self.chMapString)-1
@@ -792,7 +878,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 113:                 # alt-q - quit
                     self.safeQuit()
                     c = None
-                elif c == 104:                # alt-h - help
+                elif c in [104, 63]:                # alt-h - help
                     self.showHelp()
                     c = None
                 elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
@@ -844,10 +930,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif (c == 100):      # alt-d - delete current frame
                     self.deleteCurrentFramePrompt()
                     self.refresh()
-                elif c is 122:  # cmd-z = undo
+                elif c is 122:  # alt-z = undo
                     self.undo.undo()
-                elif c is 114:  # cmd-r = redo
+                elif c is 114:  # alt-r = redo
                     self.undo.redo()
+                elif c is 82:   # alt-R = set playback range
+                    self.getPlaybackRange()
                 elif (c == 112):    # esc-p - start playing, any key exits
                     self.metaKey = 0
                     self.startPlaying()
@@ -942,6 +1030,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.mov.goToFrame(1)
                     elif mouseX in [44, 45]: # goto last frame
                         self.mov.goToFrame(self.mov.frameCount)
+                    elif mouseX in [self.mov.sizeY, 0]: # help
+                        self.showHelp()
+                        c = None
                     else:
                         self.notify(str([mouseX, mouseY]))
                 #self.mouseClicked(mouseEvent)
@@ -1104,6 +1195,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.opts = pickle.load(f)
                 self.mov = pickle.load(f)
                 self.appState.curOpenFileName = os.path.basename(filename)
+                self.appState.playbackRange = (1,self.mov.frameCount)
             except:
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
                 # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
@@ -1113,6 +1205,7 @@ class UserInterface():  # Separate view (curses) from this controller
             f.close()
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
+        self.setWindowTitle(shortfile)
         self.mov.goToFrame(1)
         pass
     
@@ -1214,6 +1307,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
             self.appState.curOpenFileName = os.path.basename(filename)
+            self.setWindowTitle(self.appState.curOpenFileName)
         elif not saved:
             self.notify("Save failed.")
 
@@ -1454,36 +1548,43 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def showHelp(self):
         self.cursorOff()
+        self.stdscr.nodelay(0)
         helpScreenText = '''
                   __                __
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.5
+              \_____________________________________________\|  v 0.6
 
       alt-k - next frame                  alt-' - delete current line
       alt-j - prev frame                  alt-/ - insert line
-      alt-n - insert current frame clone  alt-, - delete current column.
-      alt-N - append empty frame          alt-. - insert new column
-      alt-p - start/stop playback         alt-c - clear canvas/movie
-      alt-d - delete current frame        alt-m - mark selection
-      alt-D - set current frame delay     F1-F10 - insert character
+      alt-n - iNsert current frame clone  alt-, - delete current column.
+      alt-N - appeNd empty frame          alt-. - insert new column
+      alt-p - start/stop Playback         alt-c - Clear canvas/movie
+      alt-d - Delete current frame        alt-m - Mark selection
+      alt-D - set current frame Delay     F1-F10 - insert character
       alt-+/alt-- increase/decrease FPS   alt-z - undo
-      alt-M - move current frame          alt-r - redo
-      alt-up - next fg color              alt-s - save
-      alt-down - prev fg color            alt-o - open
-      alt-right - next bg color           alt-q - quit
-      alt-left - prev bg color            alt-h - help
+      alt-M - Move current frame          alt-r - Redo
+      alt-up - next fg color              alt-s - Save
+      alt-down - prev fg color            alt-o - Open
+      alt-right - next bg color           alt-q - Quit
+      alt-left - prev bg color            alt-h - Help
+      alt-R - set playback/edit Range 
 
 Can use ESC or META instead of ALT.
 Terminal tips and more in at http://cmang.org/dur/
 '''
+        # remove the blank first line from helpScreenText..
+        # it's easier to edit here with the blank first line.
+        helpScreenText = '\n'.join(helpScreenText.split('\n')[1:]) 
         self.clearStatusLine()
         self.addstr(0, 0, helpScreenText)
         self.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
         self.stdscr.getch()
         self.stdscr.clear()
         self.cursorOn()
+        if self.playing == True:
+            self.stdscr.nodelay(1)
 
     def refresh(self):          # Why doesn't this always work right? - seems good now. rename to redraw()?
         """Refresh the screen"""
@@ -1578,6 +1679,7 @@ class AppState():
         self.PIL = self.checkForPIL()
         self.images2gif = self.checkForImages2gif()
         self.undoHistorySize = 100  # How far back our undo history can
+        self.playbackRange = (1,1)
     def checkForPIL(self):
         try:
             import PIL
@@ -1659,7 +1761,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    derversion = '0.5'
+    derversion = '0.6'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
