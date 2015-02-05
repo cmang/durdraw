@@ -327,7 +327,7 @@ class CursesUI():   # Use this to isolate ncurses calls and objects,
     """ This talks a common UI language with UserInterface and contains all
         ncurses calls and objects """
     def __init__(self): # I guess this should load curses.wrapper(start), etc?
-        # this stuff may be better in 
+        # this stuff may be better in a separate function.
         curses.wrapper(start)
         curses.start_color()
         curses.mousemask(1)
@@ -354,7 +354,6 @@ class UserInterface():  # Separate view (curses) from this controller
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
-        curses.mousemask(1)     # it's a party now.
         self.ansi = AnsiArt()   # obj for misc ansi-related stuff
         self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
         self.colorfg = 1    # default fg white
@@ -372,10 +371,14 @@ class UserInterface():  # Separate view (curses) from this controller
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         self.setWindowTitle("Durdraw")
 
+    def initMouse(self):
+        curses.mousemask(1)     # it's a party now.
+
     def setWindowTitle(self, title):
         sys.stdout.write("\x1b]2;%s\x07" % title)
 
-    def getPlaybackRange(self): # ask for playback range when user presses cmd-r
+    def getPlaybackRange(self):
+        """ ask for playback range presses cmd-r """
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -561,9 +564,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def insertChar(self, c, fg=1, bg=0, frange=None):
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
         self.undo.push()
-        if frange:
-            #for fn in range(frange[0] - 1, frange[1]):
-            for fn in range(frange[0], frange[1]):
+        if frange: # frame range
+            for fn in range(frange[0] - 1, frange[1]):
                 self.mov.frames[fn].content[self.xy[0]][self.xy[1] - 1] = chr(c)
                 self.mov.frames[fn].colorMap.update(
                         {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
@@ -921,11 +923,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif (c == 106):          # alt-j or alt-j - previous frame
                     self.mov.prevFrame()
                     self.refresh()
+                elif (c == 67):             # alt-C - clone range to new location
+                    self.notify("clone range starting frame: ") # Implement this.
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
                     self.undo.push()
                     if self.mov.insertCloneFrame():
-                        #self.appState.playbackRange[1] += 1
-                        #self.notify(str(self.appState.playbackRange) + str(self.mov.frameCount))
                         if self.appState.playbackRange[0] is 1 and \
                                 self.appState.playbackRange[1] is self.mov.frameCount - 1:
                             self.appState.playbackRange = (self.appState.playbackRange[0], \
@@ -943,7 +945,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.moveCurrentFrame()
                     pass
                 elif (c == 100):      # alt-d - delete current frame
-                    self.deleteCurrentFramePrompt()
+                    if self.deleteCurrentFramePrompt():
+                        if self.appState.playbackRange[0] is 1 and \
+                                self.appState.playbackRange[1] is self.mov.frameCount + 1:
+                            self.appState.playbackRange = (self.appState.playbackRange[0], \
+                                self.appState.playbackRange[1] - 1)
                     self.refresh()
                 elif c is 122:  # alt-z = undo
                     self.undo.undo()
@@ -1096,10 +1102,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 self.undo.push()
                 self.mov.deleteCurrentFrame()
+                self.clearStatusLine()
+                return True
             elif (c == 110):    # 'n'
                 prompting = False
+                self.clearStatusLine()
+                return False
             time.sleep(0.01)
-        self.clearStatusLine()
 
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -1569,7 +1578,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.6
+              \_____________________________________________\|  v %s
 
       alt-k - next frame                  alt-' - delete current line
       alt-j - prev frame                  alt-/ - insert line
@@ -1588,7 +1597,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
 Can use ESC or META instead of ALT.
 Terminal tips and more at http://cmang.org/dur/
-'''
+''' % DUR_VER
         # remove the blank first line from helpScreenText..
         # it's easier to edit here with the blank first line.
         helpScreenText = '\n'.join(helpScreenText.split('\n')[1:]) 
@@ -1695,6 +1704,8 @@ class AppState():
         self.images2gif = self.checkForImages2gif()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
+        self.hasMouse = True # replace with equivalent curses.has_mouse()
+
     def checkForPIL(self):
         try:
             import PIL
@@ -1776,7 +1787,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    derversion = '0.6'
+    DUR_VER = '0.6'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -1784,7 +1795,7 @@ if (__name__ == "__main__"):
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
    \_____________________________________________\|  v %s
     Press esc-h for help.                            by cmang
-''' % derversion
+''' % DUR_VER
     argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
@@ -1798,13 +1809,16 @@ if (__name__ == "__main__"):
                     action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
+    parser.add_argument("--nomouse", help="Disable mouse support",
+                    action="store_true")
+    
     #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     args = parser.parse_args()
     if args.version:
-        print derversion
+        print DUR_VER
         exit(0)
     if args.times and not args.play:
         print "-x option requires -p"
@@ -1817,6 +1831,8 @@ if (__name__ == "__main__"):
         showStartupScreen=False
     elif args.quick:
         showStartupScreen=False
+    if args.nomouse:
+        app.hasMouse = False
     if showStartupScreen:
         print derlogo
         if app.ansiLove:
@@ -1831,6 +1847,10 @@ if (__name__ == "__main__"):
             print "images2gif = Found"
         else:
             print "images2gif = Not found (no GIF support)"
+        if app.hasMouse:
+            print "Mouse = Enabled"
+        else:
+            print "Mouse = Disabled"
         print "Undo history size = %d" % app.undoHistorySize
         if args.wait:
             try:
@@ -1842,6 +1862,8 @@ if (__name__ == "__main__"):
             time.sleep(3)
     ui = UserInterface()
     ui.setAppState(app)
+    if app.hasMouse:
+        ui.initMouse()
     if args.filename:
         ui.loadFromFile(args.filename, "dur")
     if args.play:
