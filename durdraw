@@ -1831,6 +1831,7 @@ class AppState():
         return True
 
     def loadHelpFile(self, helpFileName):
+        helpFileName = os.path.expanduser(helpFileName)
         #self.helpMov = Movie(self.opts) # initialize a new movie to work with
         try:
             f = open(helpFileName, 'rb')
@@ -1974,8 +1975,10 @@ if (__name__ == "__main__"):
             print "Mouse = Enabled"
         else:
             print "Mouse = Disabled"
-        if app.loadHelpFile("durhelp.dur"):
-            print "Help file: Found"
+        if app.loadHelpFile("~/.dur/durhelp.dur"):
+            print "Help file: Found in ~/.dur/"
+        elif app.loadHelpFile("/usr/local/share/durdraw/durhelp.dur"):
+            print "Help file: Found in /usr/local/share/durdraw/"
         else:
             print "Help file: Not found"
         print "Undo history size = %d" % app.undoHistorySize
