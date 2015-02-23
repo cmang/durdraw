@@ -298,10 +298,13 @@ class Movie():
         toIndex = newPosition - 1
         self.frames.insert(toIndex, self.frames.pop(fromIndex))
 
-    def goToFrame(self, frameNumber):
+    def gotoFrame(self, frameNumber):
         if frameNumber > 0 and frameNumber < self.frameCount + 1:
             self.currentFrameNumber = frameNumber
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
+            return True # succeeded
+        else:
+            return False # failed - invalid input
     
     def nextFrame(self):
         if (self.currentFrameNumber == self.frameCount):    # if at last frame..
@@ -436,6 +439,34 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def setPlaybackRange(self, start, stop):
         self.appState.playbackRange = (start, stop)
+
+    def gotoFrameGetInput(self):
+        #self.mov.gotoFrame(
+        self.clearStatusLine()
+        self.move(self.mov.sizeY, 0)
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        goodResponse = False
+        while goodResponse == False:
+            self.addstr(self.mov.sizeY, 0, "Enter frame to go to [currently %i of %i]: " % \
+                (self.mov.currentFrameNumber, self.mov.frameCount))
+            curses.echo()
+            newFrameNumber = self.stdscr.getstr()
+            if (newFrameNumber.isdigit()):
+                newFrameNumber = int(newFrameNumber)
+                if (newFrameNumber >= 0 and newFrameNumber <= self.mov.frameCount):
+                    goodResponse = True
+                else:
+                    self.notify("Must be a number between %i and %i" % (1, self.mov.frameCount))
+                    goodResponse = False
+            else:
+                self.notify("Current frame number not changed.")
+                curses.noecho()
+                if self.playing:
+                    self.stdscr.nodelay(1) # don't wait for input when calling getch
+                return False
+        if goodResponse:
+            self.mov.gotoFrame(newFrameNumber)
+        curses.noecho()
 
     def setAppState(self, appState):
         """ Takes the app state (running config options) and makes any changes
@@ -597,6 +628,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if clearing:
             self.undo.push() # so we can undo this operation
             self.mov = Movie(self.opts) # initialize a new movie
+            self.setPlaybackRange(1, self.mov.frameCount)
 
     def moveCurrentFrame(self):
         self.undo.push()
@@ -621,7 +653,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     newPosition += 1
             elif c in [13, curses.KEY_ENTER]: # enter - save  new position
                 self.mov.moveFramePosition(startPosition, newPosition)
-                self.mov.goToFrame(newPosition)
+                self.mov.gotoFrame(newPosition)
                 prompting = False
             elif c in [27]: # escape - cancel
                 self.undo.undo()
@@ -637,6 +669,53 @@ class UserInterface():  # Separate view (curses) from this controller
     def decreaseFPS(self):
         if (self.opts.framerate != 1.0): # min 1fps
             self.opts.framerate -= 1
+
+    def showAnimatedHelpScreen(self):
+        wasPlaying = self.playing
+        self.playing = False
+        self.stdscr.nodelay(1) # do not wait for input when calling getch
+        last_time = time.time()
+        self.cursorOff()
+        self.playingHelpScreen = True
+        self.appState.playingHelpScreen = True
+        playedTimes=1
+        new_time = time.time()
+        helpMov = self.appState.helpMov
+        sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #self.mov.gotoFrame(self.appState.playbackRange[0])
+        helpMov.gotoFrame(1)
+        self.stdscr.clear()
+        self.clearStatusLine()
+        self.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
+        while (self.playingHelpScreen):
+            self.move(self.xy[0], self.xy[1])
+            self.refresh()
+            c = self.stdscr.getch()
+            if (c != -1):   # -1 means no keys are pressed.
+                self.playingHelpScreen = False
+            new_time = time.time()
+            frame_delay = helpMov.currentFrame.delay
+            if frame_delay > 0:
+                realDelayTime = frame_delay
+            else:
+                realDelayTime = sleep_time
+            #if (new_time >= (last_time + sleep_time + frame_delay)): # Time to update the frame? If so...
+            if (new_time >= (last_time + realDelayTime)): # Time to update the frame? If so...
+                last_time = new_time
+                # draw animation
+                if helpMov.currentFrameNumber is helpMov.frameCount:
+                    helpMov.gotoFrame(1)
+                else:
+                    helpMov.nextFrame()
+                #self.refresh()
+            else: time.sleep(0.005) # to keep from sucking up cpu
+        if not wasPlaying:
+            self.stdscr.nodelay(0) # back to wait for input when calling getch
+        self.cursorOn()
+        self.appState.playingHelpScreen = False
+        self.playingHelpScreen = False
+        self.stdscr.clear()
+        self.playing = wasPlaying
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
@@ -657,15 +736,16 @@ class UserInterface():  # Separate view (curses) from this controller
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-        self.mov.goToFrame(self.appState.playbackRange[0])
+        self.mov.gotoFrame(self.appState.playbackRange[0])
         while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
             self.refresh()
             c = self.stdscr.getch()
-            if c == 27: self.metaKey = 1; c = self.stdscr.getch()
+            if c == 27: self.metaKey = 1; c = self.stdscr.getch() # normal esc
             if self.metaKey == 1 and not self.appState.playOnlyMode:   # esc
+                if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
                     sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -694,7 +774,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [112]: # alt-p - stop playing
                     self.playing = False
                 elif c in [104, 63]:                # alt-h - help
-                    self.showHelp()
+                    if self.appState.hasHelpFile:
+                        self.showAnimatedHelpScreen()
+                    else:
+                        self.showHelp()
                     c = None
                 elif c == 113:                 # alt-q - quit
                     self.safeQuit()
@@ -708,7 +791,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 #if c == curses.KEY_UP:  # up key - increase fps
                 if self.appState.playOnlyMode:  # quit on any keystroke
                     #if c in [113, 81]:    # q or Q
-                    self.verySafeQuit()
+                    #self.verySafeQuit()    # we need to play next file first, so instead..
+                    self.playing = False
                 else:
                     if c == curses.KEY_MOUSE: # mouse = move cursor, etc
                         _, mouseX, mouseY, _, _ = curses.getmouse()
@@ -720,7 +804,10 @@ class UserInterface():  # Separate view (curses) from this controller
                             if mouseX in [38, 39]:  # clicked pause button
                                 self.playing = False
                             elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
-                                self.showHelp()
+                                if self.appState.hasHelpFile:
+                                    self.showAnimatedHelpScreen()
+                                else:
+                                    self.showHelp()
                                 c = None 
                     elif c == curses.KEY_LEFT:      # left - move cursor right a character
                         if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
@@ -800,7 +887,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 last_time = new_time
                 # draw animation
                 if self.mov.currentFrameNumber is self.appState.playbackRange[1]:
-                    self.mov.goToFrame(self.appState.playbackRange[0])
+                    self.mov.gotoFrame(self.appState.playbackRange[0])
                 else:
                     self.mov.nextFrame()
                 if not self.appState.playOnlyMode: # if we're not in play-only
@@ -844,7 +931,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.opts.framerate, \
             self.mov.currentFrame.delay)
         self.addstr(self.mov.sizeY, 2, statusBar)
-        self.addstr(self.mov.sizeY, 0, "?")
+        self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
         # f1-f10 map
         # color thing
         chMapOffset = self.mov.sizeX - len(self.chMapString)-1
@@ -886,7 +973,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.safeQuit()
                     c = None
                 elif c in [104, 63]:                # alt-h - help
-                    self.showHelp()
+                    if self.appState.hasHelpFile:
+                        self.showAnimatedHelpScreen()
+                    else:
+                        self.showHelp()
                     c = None
                 elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
                     self.prevBgColor()
@@ -916,13 +1006,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 # Animation Keystrokes
                 elif (c == 68):     #alt-D - set delay for current frame
                     self.getDelayValue()
-                    pass
                 elif (c == 107):          # alt-k - next frame
                     self.mov.nextFrame()
                     self.refresh()  
                 elif (c == 106):          # alt-j or alt-j - previous frame
                     self.mov.prevFrame()
                     self.refresh()
+                elif (c is 103):            # alt-g - go to frame
+                    self.gotoFrameGetInput()
                 elif (c == 67):             # alt-C - clone range to new location
                     self.notify("clone range starting frame: ") # Implement this.
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
@@ -943,7 +1034,6 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.refresh()
                 elif (c == 77):         # alt-M - move current frame
                     self.moveCurrentFrame()
-                    pass
                 elif (c == 100):      # alt-d - delete current frame
                     if self.deleteCurrentFramePrompt():
                         if self.appState.playbackRange[0] is 1 and \
@@ -1028,7 +1118,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.xy[0] > 0: self.xy[0] = self.xy[0] - 1
             elif c == curses.KEY_DOWN:  # down - move curosr down
                 if self.xy[0] < self.mov.sizeY - 1: self.xy[0] = self.xy[0] + 1
-            elif c in [339, curses.KEY_HOME]:  # 339 = home
+            elif c in [339, curses.KEY_HOME]:  # 339 = home. not in xterm :'(
                 self.xy[1] = 1
             elif c in [338, curses.KEY_END]:   # 338 = end
                 self.xy[1] = self.mov.sizeX
@@ -1048,11 +1138,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif mouseX in [41, 42]: # goto next frame
                         self.mov.nextFrame()
                     elif mouseX in [32, 33]: # goto first frame
-                        self.mov.goToFrame(1)
+                        self.mov.gotoFrame(1)
                     elif mouseX in [44, 45]: # goto last frame
-                        self.mov.goToFrame(self.mov.frameCount)
+                        self.mov.gotoFrame(self.mov.frameCount)
                     elif mouseX in [self.mov.sizeY, 0]: # help
-                        self.showHelp()
+                        if self.appState.hasHelpFile:
+                            self.showAnimatedHelpScreen()
+                        else:
+                            self.showHelp()
                         c = None
                     else:
                         self.notify(str([mouseX, mouseY]))
@@ -1230,8 +1323,9 @@ class UserInterface():  # Separate view (curses) from this controller
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
         self.setWindowTitle(shortfile)
-        self.mov.goToFrame(1)
-        pass
+        self.mov.gotoFrame(1)
+
+
     
     def save(self):
         self.clearStatusLine()
@@ -1593,10 +1687,10 @@ class UserInterface():  # Separate view (curses) from this controller
       alt-down - prev fg color            alt-o - Open
       alt-right - next bg color           alt-q - Quit
       alt-left - prev bg color            alt-h - Help
-      alt-R - set playback/edit Range 
+      alt-R - set playback/edit Range     alt-g - Go to frame #
 
-Can use ESC or META instead of ALT.
-Terminal tips and more at http://cmang.org/dur/
+Can use ESC or META instead of ALT
+
 ''' % DUR_VER
         # remove the blank first line from helpScreenText..
         # it's easier to edit here with the blank first line.
@@ -1613,17 +1707,21 @@ Terminal tips and more at http://cmang.org/dur/
     def refresh(self):          # Why doesn't this always work right? - seems good now. rename to redraw()?
         """Refresh the screen"""
         linenum = 0
-        for line in self.mov.currentFrame.content:
-            for colnum in range(self.mov.sizeX):
-                charColor = self.mov.currentFrame.colorMap[(linenum, colnum)]
+        if self.appState.playingHelpScreen:
+            mov = self.appState.helpMov
+        else:
+            mov = self.mov
+        for line in mov.currentFrame.content:
+            for colnum in range(mov.sizeX):
+                charColor = mov.currentFrame.colorMap[(linenum, colnum)]
                 cursesColorPair = self.ansi.colorPairMap[charColor] # set ncurss color pair
                 if (charColor[0] > 8):    # bright color
                     self.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 else:
                     self.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
             linenum += 1
-        for x in range(linenum, self.mov.sizeY):
-            self.addstr(x, 0, " " * self.mov.sizeX)
+        for x in range(linenum, mov.sizeY):
+            self.addstr(x, 0, " " * mov.sizeX)
         if not self.appState.playOnlyMode:
             self.move(self.xy[0], self.xy[1] - 1)
         self.stdscr.refresh()
@@ -1705,6 +1803,9 @@ class AppState():
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.hasMouse = True # replace with equivalent curses.has_mouse()
+        self.helpMov = None
+        self.hasHelpFile = False
+        self.playingHelpScreen = False
 
     def checkForPIL(self):
         try:
@@ -1712,12 +1813,14 @@ class AppState():
             return True
         except ImportError:
             return False
+
     def checkForImages2gif(self):
         try:
             import images2gif
             return True
         except ImportError:
             return False
+
     def isAppAvail(self, name):   # looks for program 'name' in path
         try:
             devnull = open(os.devnull)
@@ -1726,6 +1829,26 @@ class AppState():
             if e.errno == os.errno.ENOENT:
                 return False
         return True
+
+    def loadHelpFile(self, helpFileName):
+        #self.helpMov = Movie(self.opts) # initialize a new movie to work with
+        try:
+            f = open(helpFileName, 'rb')
+        except:
+            self.hasHelpFile = False
+            self.helpMov = None
+            return False
+        try:                             # load the help file
+            #self.opts = pickle.load(f)
+            #self.mov = pickle.load(f)
+            self.helpMovOpts = pickle.load(f)
+            self.helpMov = pickle.load(f)
+            self.hasHelpFile = True
+            return True
+        except:
+            self.hasHelpFile = False
+            self.helpMov = None
+            return False
 
 class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         # when to switch to another saved movie state.
@@ -1851,6 +1974,10 @@ if (__name__ == "__main__"):
             print "Mouse = Enabled"
         else:
             print "Mouse = Disabled"
+        if app.loadHelpFile("durhelp.dur"):
+            print "Help file: Found"
+        else:
+            print "Help file: Not found"
         print "Undo history size = %d" % app.undoHistorySize
         if args.wait:
             try:
@@ -1874,6 +2001,7 @@ if (__name__ == "__main__"):
         for movie in args.play:
             ui.loadFromFile(movie, "dur")
             ui.startPlaying()
+            ui.stdscr.clear()
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()
