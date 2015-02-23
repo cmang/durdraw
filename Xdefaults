@@ -1,0 +1,48 @@
+! Copy this into your ~/.Xdefaults to get CGA (IBM-PC) colors in mrxvt, for use with Durdraw.
+! For accuracte character set, use vga.pcf font like so: mrxvt -fn vga
+
+!mrxvt*foreground: #AAAAAA
+!mrxvt*background: #000000
+
+! CGA/IBM-PC/ANSI colors in mrxvt (for Durdraw):
+
+! Normal
+! color0    black
+! color1    red
+! color2    green
+! color3    yellow
+! color4    blue
+! color5    purple (magenta)
+! color6    cyan
+! color7    white
+
+mrxvt*color0:    #000000
+mrxvt*color1:    #AA0000
+mrxvt*color2:    #00AA00
+mrxvt*color3:    #AA5500
+mrxvt*color4:    #0000AA
+mrxvt*color5:    #AA00AA
+mrxvt*color6:    #00AAAA
+mrxvt*color7:    #AAAAAA
+
+! Light
+! color8    black
+! color9    red
+! color10    green
+! color11    yellow
+! color12    blue
+! color13    purple
+! color14    cyan
+! color15    white
+
+mrxvt*color8:    #555555
+mrxvt*color9:    #FF5555
+mrxvt*color10:    #55FF55
+mrxvt*color11:    #FFFF55
+mrxvt*color12:    #5555FF
+mrxvt*color13:    #FF55FF
+mrxvt*color14:    #55FFFF
+mrxvt*color15:    #FFFFFF
+
+
+
