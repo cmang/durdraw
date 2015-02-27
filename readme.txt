@@ -6,57 +6,68 @@
 
 OVERVIEW:
 
-Durdraw is an ASCII and ANSI drawing program for Linux and MacOS X that
-supports frame-based animation, attempting to make ANSI and ASCII art
-animation work more like a traditional animation studio.
+Durdraw is an ASCII and ANSI drawing and playback program for UNIX-like systems
+(Linux, OSX, FreeBSD, etc) that supports frame-based animation, attempting to
+make ANSI and ASCII art animation work more like a traditional animation studio.
 
-Durdraw can also be used to view or playback .dur animation files, even from
-shell scripts.
+Durdraw runs in the terminal and is shell script friendly, for those wanting to
+spice up their automations.
 
 It has editing features such as importing ascii files to frames, duplicating
 and deleting frames, flipping between frames, and frames-per-second speed
 control during playback. It supports the mouse.
 
 Files can be loaded and saved in ASCII (.asc, .txt) or in DUR animation
-format. Files can also be saved in animated GIF (with FPS accuracy), PNG and ANSI
-formats.
+format. Files can also be saved in animated GIF (with FPS accuracy), PNG and
+ANSI formats.
 
 REQUIREMENTS:
 
 * Python 2.5.2 or higher (not tested with older versions)
 * Python Ncurses
 
-RECOMMENDED:
+ALSO RECOMMENDED:
 
-* A terminal and font that supports Code Page 463 (US-Latin-1, Western ASCII,
-  etc) is recommended for IBM-PC Extended ASCII. See optional instructions
-  below for using mrxvt.
-* Animated GIF requires the following Python modules:
+* PNG and Animated GIF export requires that Ansilove be in your path.
+  Ansilove can be found at: http://ansilove.sourceforge.net/
+* Animated GIF export also requires the following Python modules, which can
+  usually be installed with easy_install or your system's package manager:
     PIL
     images2gif
-* PNG and Animated GIF requires that Ansilove be in your path.
-    Ansilove can be found at: http://ansilove.sourceforge.net/
+* A terminal and font that supports Code Page 463 (US-Latin-1, Western ASCII,
+  etc) is recommended for IBM-PC Extended ASCII. In other words, ANSI doesn't
+  show up right in UTF-8 terminals.  See optional instructions below for
+  configuring mrxvt for this purpose. 
 
 BASIC INSTALLATION:
 
-* Copy the file "durdraw" to a nice place like /usr/local/bin/
+* Copy the file "durdraw" to a nice place like /usr/local/bin/ or ~/bin/
 * Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/
 
 OPTIONAL INSTALLATION:
-
-For a better durdraw terminal in Linux:
-
-* Install mrxvt
-* Give mrxvt IBM-PC colors by copying the contents of Xdefaults in to your own ~/.Xdefaults file
-* Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running these commands:
-    $ mkfontdir /usr/share/fonts/X11/misc/
-    $ xset fp rehash
 
 For PNG and animated GIF export:
 
 * Install PIL, images2gif and Ansilove (see RECOMMENDED section above)
 
+For a better durdraw terminal in Linux, FreeBSD or other X-Windows environment:
+
+* Install mrxvt
+* Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
+  these commands:
+    $ mkfontdir /usr/share/fonts/X11/misc/
+    $ xset fp rehash
+* Give mrxvt IBM-PC colors and font settings by copying the contents of
+  Xdefaults into your own ~/.Xdefaults file. You can create ~/.Xdefaults if
+  it does not exist.
+
 COMMAND LINE USAGE:
+
+You can play a .dur file or series of .dur files with:
+    $ durdraw -p filename.dur
+    $ durdraw -p file1.dur file2.dur file3.dur ...
+
+Other command-line options:
 
 usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse]
                [-u UNDOSIZE] [-V]
@@ -79,7 +90,10 @@ optional arguments:
                         100. More requires more RAM, less saves RAM.
   -V, --version         Show version number and exit
 
-INTERACTIVE USAGE/COMMANDS:
+INTERACTIVE USAGE/EDITING:
+
+Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
+Also:
 
       alt-k - next frame                  alt-' - delete current line
       alt-j - prev frame                  alt-/ - insert line
@@ -132,7 +146,7 @@ Homepage: http://cmang.org/durdraw
 
 LEGAL:
 
-Durdraw is Copyright 2009-2014 Sam Foster (cmang), all rights reserved
+Durdraw is Copyright 2009-2015 Sam Foster (cmang), all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
