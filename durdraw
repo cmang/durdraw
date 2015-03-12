@@ -25,8 +25,12 @@ import curses
 import subprocess
 import shutil
 import tempfile
+import gzip
 from PIL import Image
 from copy import copy, deepcopy
+
+#try: import simplejson as json
+#except ImportError: import json
 
 class AnsiArt():
     """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
@@ -708,7 +712,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     helpMov.nextFrame()
                 #self.refresh()
-            else: time.sleep(0.005) # to keep from sucking up cpu
+            #else: time.sleep(0.005) # to keep from sucking up cpu
+            else: time.sleep(0.008) # to keep from sucking up cpu
         if not wasPlaying:
             self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
@@ -1308,6 +1313,16 @@ class UserInterface():  # Separate view (curses) from this controller
             except:
                 self.notify("Could not open file for reading.")
                 return None
+            # check for gzipped ifle
+            if (f.read(2) == '\x1f\x8b'): # gzip magic number
+                # file is gzip compressed
+                f.close()
+                try:
+                    f = gzip.open(filename, 'rb')
+                except:
+                    self.notify("Could not open file for reading.")
+            else:
+                f.seek(0)
             try:
                 self.opts = pickle.load(f)
                 self.mov = pickle.load(f)
@@ -1432,7 +1447,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def saveDurFile(self, filename):
         # open and write file
         try:
-            f = open(filename, 'wb')
+            f = gzip.open(filename, 'wb')
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
@@ -1839,6 +1854,17 @@ class AppState():
             self.hasHelpFile = False
             self.helpMov = None
             return False
+        if (f.read(2) == '\x1f\x8b'): # gzip magic number
+            # file is gzip compressed
+            f.close()
+            try:
+                f = gzip.open(helpFileName, 'rb')
+            except:
+                self.hasHelpFile = False
+                self.helpMov = None
+                return False
+        else:
+            f.seek(0)
         try:                             # load the help file
             #self.opts = pickle.load(f)
             #self.mov = pickle.load(f)
