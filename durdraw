@@ -1683,7 +1683,6 @@ class UserInterface():  # Separate view (curses) from this controller
         # create frames
         frames = []
         for frame in pngImages:
-            #new_frame = Image.open(i)
             frames.append(frame)
         # Save into a GIF file that loops forever
         frames[0].save(outfile, format='GIF',
