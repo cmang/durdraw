@@ -1435,7 +1435,7 @@ class UserInterface():  # Separate view (curses) from this controller
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
             saved = self.savePngFile(filename, font=saveFont)
-        if (saveFormat == 'gif'):  # gif = requires PIL and images2gif
+        if (saveFormat == 'gif'):  # gif = requires PIL
             saved = self.saveGifFile(filename, font=saveFont)
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
@@ -1637,11 +1637,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
     def saveGifFile(self, filename, font="ansi"):
-        """ check for PIL and images2gif """
-        try:
-            import PIL,images2gif
+        try:    # check for PIL/pillow
+            import PIL
         except ImportError:
-            self.notify("Error: Please install PIL and images2gif python modules.")
+            self.notify("Error: Please install the PIL python module.")
             return False
         tmpPngNames = []
         # switch to first frame
@@ -1672,12 +1671,26 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov.nextFrame()
             self.refresh()
         # open all the pngs so we can save them to gif
-        pngImages = [PIL.Image.open(fn) for fn in tmpPngNames]
+        pngImages = [Image.open(fn) for fn in tmpPngNames]
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 is good, too
-        images2gif.writeGif(filename, pngImages, duration=sleep_time)
+        self.pngsToGif(filename, pngImages, sleep_time)
         for rmFile in tmpPngNames:
             os.remove(rmFile)
         return True
+
+    def pngsToGif(self, outfile, pngImages, sleeptime):
+        import glob
+        # create frames
+        frames = []
+        for frame in pngImages:
+            #new_frame = Image.open(i)
+            frames.append(frame)
+        # Save into a GIF file that loops forever
+        frames[0].save(outfile, format='GIF',
+               append_images=frames[1:],
+               save_all=True,
+               duration=sleeptime, loop=0)
+
 
     def showHelp(self):
         self.cursorOff()
@@ -1814,7 +1827,6 @@ class AppState():
         self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
-        self.images2gif = self.checkForImages2gif()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.hasMouse = True # replace with equivalent curses.has_mouse()
@@ -1825,13 +1837,6 @@ class AppState():
     def checkForPIL(self):
         try:
             import PIL
-            return True
-        except ImportError:
-            return False
-
-    def checkForImages2gif(self):
-        try:
-            import images2gif
             return True
         except ImportError:
             return False
@@ -1937,7 +1942,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.6'
+    DUR_VER = '0.7'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -1993,10 +1998,6 @@ if (__name__ == "__main__"):
             print "PIL = Found"
         else:
             print "PIL = Not found (no GIF support)"
-        if app.images2gif:
-            print "images2gif = Found"
-        else:
-            print "images2gif = Not found (no GIF support)"
         if app.hasMouse:
             print "Mouse = Enabled"
         else:

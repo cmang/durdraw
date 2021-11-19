@@ -2,7 +2,7 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.6
+              \_____________________________________________\|  v 0.7
 
 OVERVIEW:
 
@@ -23,21 +23,18 @@ ANSI formats.
 
 REQUIREMENTS:
 
-* Python 2.5.2 or higher (not tested with older versions)
+* Python 2
 * Python Ncurses
 
 ALSO RECOMMENDED:
 
-* PNG and Animated GIF export requires that Ansilove be in your path.
-  Ansilove can be found at: http://ansilove.sourceforge.net/
-* Animated GIF export also requires the following Python modules, which can
-  usually be installed with easy_install or your system's package manager:
-    PIL
-    images2gif
-* A terminal and font that supports Code Page 463 (US-Latin-1, Western ASCII,
-  etc) is recommended for IBM-PC Extended ASCII. In other words, ANSI doesn't
-  show up right in UTF-8 terminals.  See optional instructions below for
-  configuring mrxvt for this purpose. 
+* For animated GIF support, install:
+    "PIL" or "pillow" Python module
+    Ansilove (http://ansilove.sourceforge.net/)
+* For IBM-PC ANSI art support: Install a terminal and VGA font that supports
+  Code Page 463 (US-Latin-1, Western ASCII, etc) for IBM-PC Extended ASCII.
+  ANSI art doesn't show up correctly in UTF-8 terminals.  See optional
+  instructions below for configuring mrxvt for this purpose. 
 
 BASIC INSTALLATION:
 
@@ -46,11 +43,7 @@ BASIC INSTALLATION:
 
 OPTIONAL INSTALLATION:
 
-For PNG and animated GIF export:
-
-* Install PIL, images2gif and Ansilove (see RECOMMENDED section above)
-
-For a better durdraw terminal in Linux, FreeBSD or other X-Windows environment:
+If you are using X11 and want IBM-PC ANSI art support:
 
 * Install mrxvt
 * Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
