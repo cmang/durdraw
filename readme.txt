@@ -23,18 +23,20 @@ ANSI formats.
 
 REQUIREMENTS:
 
-* Python 2
-* Python Ncurses
+* Python 2 (Python 3 version coming soon, I promise!)
+* Python Ncurses module
 
 ALSO RECOMMENDED:
 
-* For animated GIF support, install:
+* For animated GIF export, install:
     "PIL" or "pillow" Python module
-    Ansilove (http://ansilove.sourceforge.net/)
-* For IBM-PC ANSI art support: Install a terminal and VGA font that supports
-  Code Page 463 (US-Latin-1, Western ASCII, etc) for IBM-PC Extended ASCII.
-  ANSI art doesn't show up correctly in UTF-8 terminals.  See optional
-  instructions below for configuring mrxvt for this purpose. 
+    Ansilove (https://ansilove.org/)
+
+* For IBM-PC ANSI art support: Install a terminal and font (like the included
+  vga.pcf) that supports Code Page 463 (US-Latin-1, Western ASCII, etc)
+  encoding for IBM-PC Extended ASCII. ANSI art doesn't show up correctly in
+  UTF-8 terminals.  See optional instructions below for configuring mrxvt for
+  this purpose. 
 
 BASIC INSTALLATION:
 
@@ -43,7 +45,7 @@ BASIC INSTALLATION:
 
 OPTIONAL INSTALLATION:
 
-If you are using X11 and want IBM-PC ANSI art support:
+If you are using Linux/X11 and want IBM-PC ANSI art support:
 
 * Install mrxvt
 * Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
@@ -53,6 +55,19 @@ If you are using X11 and want IBM-PC ANSI art support:
 * Give mrxvt IBM-PC colors and font settings by copying the contents of
   Xdefaults into your own ~/.Xdefaults file. You can create ~/.Xdefaults if
   it does not exist.
+
+If you are using macOS or MacOS X and want IBM-PC ANSI art support in
+Terminal.app:
+
+1: Install dos437.ttf font (included) by double-clicking it.
+2: Create a profile in Terminal Preferences/Settings with the following
+   settings (similar settings can be applied in iTerm):
+    + In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
+      and "Use bright colors for bold text" are checked
+    + In Keyboard tab, "Use option as meta key" selected
+    + In "Advanced" tab, Character encoding set to "Western (ASCII)"
+    + Set background color to black (low or no transprency) and foreground
+      color to white
 
 COMMAND LINE USAGE:
 
@@ -107,30 +122,15 @@ Can use ESC or META instead of ALT
 
 OTHER TIPS:
 
-    * The mouse can be used for moving the cursor (even over SSH!) if your
-      terminal supports Xterm mouse reporting. (In iTerm2 this is under
-      Profiles, Terminal and Terminal Emulation.)
+    * The mouse can be used for moving the cursor (even over SSH) and
+      clicking buttons, if your terminal supports Xterm mouse reporting.
+      In iTerm2 this is under Profiles, Terminal and Terminal Emulation.
 
     * If extended characters are not working in gnu screen, try running the
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
       then type "clrl-a l" to redraw the window.
 
-    * Good terminals to use in Mac OS X are the default Terminal.app and
-      iTerm.  To get extended characters working in MacOS X Terminal, follow
-      these instructions (similar settings can be used for iTerm2):
-
-1: Install dos437.ttf font (included) by double-clicking it.
-2: Create a profile in Terminal Preferences/Settings with the following
-   settings (similar settings can be applied in iTerm):
-    + In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
-      and "Use bright colors for bold text" are checked
-    + In Keyboard tab, "Use option as meta key" selected
-    + In "Advanced" tab, Character encoding set to "Western (ASCII)"
-    + Set background color to black (low or no transprency) and foreground
-      color to white
-
-        
 CREDITS:
 
 Sam Foster (http://cmang.org)
@@ -139,7 +139,7 @@ Homepage: http://cmang.org/durdraw
 
 LEGAL:
 
-Durdraw is Copyright 2009-2015 Sam Foster (cmang), all rights reserved
+Durdraw is Copyright 2009-2021 Sam Foster <samfoster@gmail.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
