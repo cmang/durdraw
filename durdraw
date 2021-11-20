@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 """
 Durdraw by cmang (http://cmang.org) - Ascii art (animation!!!) doodling program
 
 LICENSE:
 
-Copyright 2009-2015 Sam Foster (cmang), all rights reserved
+Copyright 2009-2021 Sam Foster, all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -29,10 +29,13 @@ import gzip
 from PIL import Image
 from copy import copy, deepcopy
 
-#try: import simplejson as json
-#except ImportError: import json
+def debug_write(debug_string):
+    dbgfile = open("durdraw-debug.txt", "a")
+    dbgfile.write(debug_string)
+    dbgfile.write("\n")
+    dbgfile.close()
 
-class AnsiArt():
+class AnsiArtStuff():
     """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
         color boilerplate, etc """
     def __init__(self):
@@ -361,7 +364,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
-        self.ansi = AnsiArt()   # obj for misc ansi-related stuff
+        self.ansi = AnsiArtStuff()   # obj for misc ansi-related stuff
         self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
         self.colorfg = 1    # default fg white
         self.colorbg = 0    # default bg black
@@ -1165,6 +1168,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # pass c to something here that starts selecting and moves
                 # the cursor based on c, and knows whether it's selecting
                 # via shift-arrow or mouse.
+            elif c is None: pass
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
@@ -1259,7 +1263,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.clearStatusLine()
         self.addstr(self.mov.sizeY, 0, "Enter file name to open: ")
         curses.echo()
-        shortfile = self.stdscr.getstr()
+        shortfile = self.stdscr.getstr().decode('utf-8')
         curses.noecho()
         if shortfile.replace(' ', '') is '':
             self.notify("File name cannot be empty.")
@@ -1313,8 +1317,8 @@ class UserInterface():  # Separate view (curses) from this controller
             except:
                 self.notify("Could not open file for reading.")
                 return None
-            # check for gzipped ifle
-            if (f.read(2) == '\x1f\x8b'): # gzip magic number
+            # check for gzipped file
+            if (f.read(2) == b'\x1f\x8b'): # gzip magic number
                 # file is gzip compressed
                 f.close()
                 try:
@@ -1328,7 +1332,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.mov = pickle.load(f)
                 self.appState.curOpenFileName = os.path.basename(filename)
                 self.appState.playbackRange = (1,self.mov.frameCount)
-            except:
+            except Exception as e:
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
                 # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
                 # change this whole method to call loadDurFile(), loadAnsiFile(),
@@ -1418,7 +1422,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.clearStatusLine()
         self.addstr(self.mov.sizeY, 0, "Enter file name to save as: [" + self.appState.curOpenFileName + "] ")
         curses.echo()
-        filename = self.stdscr.getstr()
+        filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
         if filename.replace(' ', '') is '':
             self.notify("File name cannot be empty.")
@@ -1564,7 +1568,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the last non-blank line, return
             that # + 1 (aka, last used line of the frame) """
         # start at the last line, work up until we find a character.
-        for lineNum in reversed(range(0, self.mov.sizeY)):
+        for lineNum in reversed(list(range(0, self.mov.sizeY))):
             for colNum in range(0, frame.sizeX):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return lineNum + 1  # we found a non-empty character
@@ -1574,8 +1578,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the last non-blank column, return
             that # + 1 (aka, last used column of the frame) """
         # start at the last column, work back until we find a character.
-        for colNum in reversed(range(0, frame.sizeX)):
-            for lineNum in reversed(range(0, self.mov.sizeY)):
+        for colNum in reversed(list(range(0, frame.sizeX))):
+            for lineNum in reversed(list(range(0, self.mov.sizeY))):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum + 1  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -1661,6 +1665,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # If frame has a delay, copy saved file FPS times and add new
             # file names to tmpPngNames.
             if self.mov.currentFrame.delay > 0:
+                numOfDelayFramesToAdd = int(self.mov.currentFrame.delay) * int(self.opts.framerate)
                 for delayFrameNum in range(1,int(self.mov.currentFrame.delay) * \
                         int(self.opts.framerate)):
                     # eg: 2 second delay, 8fps, means add 16 frames.
@@ -1679,7 +1684,6 @@ class UserInterface():  # Separate view (curses) from this controller
         return True
 
     def pngsToGif(self, outfile, pngImages, sleeptime):
-        import glob
         # create frames
         frames = []
         for frame in pngImages:
@@ -1688,7 +1692,7 @@ class UserInterface():  # Separate view (curses) from this controller
         frames[0].save(outfile, format='GIF',
                append_images=frames[1:],
                save_all=True,
-               duration=sleeptime, loop=0)
+               duration=sleeptime * 1000, loop=0)
 
 
     def showHelp(self):
@@ -1844,7 +1848,7 @@ class AppState():
         try:
             devnull = open(os.devnull)
             subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
-        except OSError, e:
+        except OSError as e:
             if e.errno == os.errno.ENOENT:
                 return False
         return True
@@ -1858,7 +1862,7 @@ class AppState():
             self.hasHelpFile = False
             self.helpMov = None
             return False
-        if (f.read(2) == '\x1f\x8b'): # gzip magic number
+        if (f.read(2) == b'\x1f\x8b'): # gzip magic number
             # file is gzip compressed
             f.close()
             try:
@@ -1941,7 +1945,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.7'
+    DUR_VER = '0.8'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -1972,10 +1976,10 @@ if (__name__ == "__main__"):
                     action="store_true")
     args = parser.parse_args()
     if args.version:
-        print DUR_VER
+        print(DUR_VER)
         exit(0)
     if args.times and not args.play:
-        print "-x option requires -p"
+        print("-x option requires -p")
         exit(1)
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
     if args.undosize:
@@ -1988,29 +1992,29 @@ if (__name__ == "__main__"):
     if args.nomouse:
         app.hasMouse = False
     if showStartupScreen:
-        print derlogo
+        print(derlogo)
         if app.ansiLove:
-            print "ansilove = Found"
+            print("ansilove = Found")
         else:
-            print "ansilove = Not found (no PNG or GIF support)"
+            print("ansilove = Not found (no PNG or GIF support)")
         if app.PIL:
-            print "PIL = Found"
+            print("PIL = Found")
         else:
-            print "PIL = Not found (no GIF support)"
+            print("PIL = Not found (no GIF support)")
         if app.hasMouse:
-            print "Mouse = Enabled"
+            print("Mouse = Enabled")
         else:
-            print "Mouse = Disabled"
+            print("Mouse = Disabled")
         if app.loadHelpFile("~/.dur/durhelp.dur"):
-            print "Help file: Found in ~/.dur/"
+            print("Help file: Found in ~/.dur/")
         elif app.loadHelpFile("/usr/local/share/durdraw/durhelp.dur"):
-            print "Help file: Found in /usr/local/share/durdraw/"
+            print("Help file: Found in /usr/local/share/durdraw/")
         else:
-            print "Help file: Not found"
-        print "Undo history size = %d" % app.undoHistorySize
+            print("Help file: Not found")
+        print("Undo history size = %d" % app.undoHistorySize)
         if args.wait:
             try:
-                choice = raw_input("Press Enter to Continue...")
+                choice = input("Press Enter to Continue...")
             except KeyboardInterrupt:
                 print("\nCaught interrupt, exiting.")
                 exit(0)
@@ -2021,14 +2025,14 @@ if (__name__ == "__main__"):
     if app.hasMouse:
         ui.initMouse()
     if args.filename:
-        ui.loadFromFile(args.filename, "dur")
+        ui.loadFromFile(args.filename, 'dur')
     if args.play:
         # Just play files and exit
         app.playOnlyMode = True
         if args.times:
             app.playNumberOfTimes = args.times[0]
         for movie in args.play:
-            ui.loadFromFile(movie, "dur")
+            ui.loadFromFile(movie, 'dur')
             ui.startPlaying()
             ui.stdscr.clear()
         ui.verySafeQuit()

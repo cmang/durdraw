@@ -2,7 +2,7 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.7
+              \_____________________________________________\|  v 0.8
 
 OVERVIEW:
 
@@ -23,8 +23,8 @@ ANSI formats.
 
 REQUIREMENTS:
 
-* Python 2 (Python 3 version coming soon, I promise!)
-* Python Ncurses module
+* Python 3
+* Python curses module
 
 ALSO RECOMMENDED:
 
