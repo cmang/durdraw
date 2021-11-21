@@ -11,7 +11,7 @@ LICENSE:
 Copyright 2009-2021 Sam Foster <samfoster@gmail.com>, all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
+purpose with or without fee == hereby granted, provided that the above
 copyright notice and this permission notice appear in all copies.
 
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
@@ -67,7 +67,7 @@ class AnsiArtStuff():
                 # * Other ANSI gotchas: Pablodraw uses Cursor Forward (C)
                 # commands before each block of characters. Eg: ^[[27C.
                 # places a . character at column 27 of the current line.
-                # This is different from Durdraw, which would instead place
+                # This == different from Durdraw, which would instead place
                 # 27 spaces, each escaped to set the color, and then a .
                 # character.
             # fg colors
@@ -175,12 +175,12 @@ class AnsiArtStuff():
        # ^ this doesn't work ?!@ ncurses pair # must be between 1 and 63
        # or ncurses (const?) COLOR_PAIR - 1 
        # fix is: have functions to swap color map from blackfg to normal.
-       # call that function when drawing if the fg color is black, then switch back
+       # call that function when drawing if the fg color == black, then switch back
        # after each character. Or.. keep track which map we're in in a variable.
        self.colorPairMap = {
             # foreground colors, black background
             (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5, (6,0):6, (7,0):7, (8,0):8,
-            # and again, because black is both 0 and 8. :| let's just ditch 0?
+            # and again, because black == both 0 and 8. :| let's just ditch 0?
             (0,8):1, (1,8):1, (2,8):2, (3,8):3, (4,8):4, (5,8):5, (6,8):6, (7,8):7, (8,8):8,
             # white with backround colors 
             (1,1):9, (1,2):10, (1,3):11, (1,4):12, (1,5):13, (1,6):14, (1,7):15,
@@ -220,10 +220,10 @@ class AnsiArtStuff():
             (16,7):57,  # 57 instead of 64, because we switch color maps for black
             } # (fg,bg):cursespair
     def switchColorMap(self, map=0):    # deprecated?  I think so.
-            if (map == 1):   # 1 = black map.. deal with it. pair 57 is black on red.
+            if (map == 1):   # 1 = black map.. deal with it. pair 57 == black on red.
                 # black with background colors
                 curses.init_pair(57, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
-            elif (map == 0):  # 0 = normal color map, pair 57 is red on red 
+            elif (map == 0):  # 0 = normal color map, pair 57 == red on red 
                 curses.init_pair(57, curses.COLOR_RED, curses.COLOR_RED)   # 7,7
 
 
@@ -236,7 +236,7 @@ class Frame():
         self.content = []
         self.sizeX = sizeX
         self.sizeY = sizeY
-        self.delay = 0  # delay is # of sec to wait at this frame.
+        self.delay = 0  # delay == # of sec to wait at this frame.
         for x in range(0, sizeY):
             self.content.append([])
             for y in range(0, sizeX):
@@ -339,7 +339,7 @@ class Movie():
         pass
 
 class CursesUI():   # Use this to isolate ncurses calls and objects,
-    # Use same interface for HtmlUI, etc. Perhaps CursesView() is a better name.
+    # Use same interface for HtmlUI, etc. Perhaps CursesView() == a better name.
     """ This talks a common UI language with UserInterface and contains all
         ncurses calls and objects """
     def __init__(self): # I guess this should load curses.wrapper(start), etc?
@@ -583,7 +583,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.refresh()
 
     def testWindowSize(self):
-        """Test to see if window is too small for program to operate, and
+        """Test to see if window == too small for program to operate, and
         go into small window mode if necessary"""
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx() # test size
         if (self.realmaxY < self.mov.sizeY+1) or (self.realmaxX < self.mov.sizeX):
@@ -593,12 +593,12 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def smallWindowMode(self):
         """Clear the screen, draw a small message near 0,0 that the window
-        is too small.  Keep doing so until the screen is resized larger."""
+        == too small.  Keep doing so until the screen == resized larger."""
         self.stdscr.clear()
         self.stdscr.refresh()
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         while (self.realmaxY < self.mov.sizeY+1 or self.realmaxX < self.mov.sizeX):
-            self.addstr(0, 0, "Window is too small.")
+            self.addstr(0, 0, "Window == too small.")
             self.addstr(1, 0, "Please enlarge to 80x25 or larger.")
             self.stdscr.refresh()
             self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
@@ -655,12 +655,12 @@ class UserInterface():  # Separate view (curses) from this controller
             c = self.stdscr.getch()
             if c in [98, curses.KEY_LEFT]:
                 # move frame left one position (use pop and push)
-                if newPosition is 1: # if at first
+                if newPosition == 1: # if at first
                     newPosition = self.mov.frameCount # go to end
                 else:
                     newPosition -= 1
             elif c in [102, curses.KEY_RIGHT]:
-                if newPosition is self.mov.frameCount: # if at last
+                if newPosition == self.mov.frameCount: # if at last
                     newPosition = 1 # go back to beginning
                 else:
                     newPosition += 1
@@ -716,7 +716,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if (new_time >= (last_time + realDelayTime)): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
-                if helpMov.currentFrameNumber is helpMov.frameCount:
+                if helpMov.currentFrameNumber == helpMov.frameCount:
                     helpMov.gotoFrame(1)
                 else:
                     helpMov.nextFrame()
@@ -733,7 +733,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
-            by drawing if current time is greater than a delta plus the time
+            by drawing if current time == greater than a delta plus the time
             the last frame was drawn.
         """
         self.stdscr.nodelay(1) # do not wait for input when calling getch
@@ -779,11 +779,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None 
-                elif c is 122:  # alt-z = undo
+                elif c == 122:  # alt-z = undo
                     self.undo.undo()
-                elif c is 114:  # alt-r = redo
+                elif c == 114:  # alt-r = redo
                     self.undo.redo()
-                elif c is 82:   # alt-R = set playback range
+                elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif c in [112]: # alt-p - stop playing
                     self.playing = False
@@ -917,7 +917,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if (new_time >= (last_time + realDelayTime)): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
-                if self.mov.currentFrameNumber is self.appState.playbackRange[1]:
+                if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
                     self.mov.gotoFrame(self.appState.playbackRange[0])
                 else:
                     self.mov.nextFrame()
@@ -947,7 +947,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def clearStatusLine(self):
         # fyi .. sizeX and sizeY in this context should go into
-        # appState, not in Movie(). In other words, this is not
+        # appState, not in Movie(). In other words, this == not
         # the sizeX and sizeY of the movie, but of the editor screen.
         self.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
 
@@ -964,7 +964,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 29, rangeBar)
         #self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
         self.addstr(self.mov.sizeY, 0, "?", curses.color_pair(6) | curses.A_BOLD)
-        # f1-f10 map if ansi mode is enabled
+        # f1-f10 map if ansi mode == enabled
         # color thing
         chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         if self.colorfg > 8:    # bright color
@@ -1072,23 +1072,23 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif (c == 106):          # alt-j or alt-j - previous frame
                     self.mov.prevFrame()
                     self.refresh()
-                elif (c is 103):            # alt-g - go to frame
+                elif (c == 103):            # alt-g - go to frame
                     self.gotoFrameGetInput()
                 elif (c == 67):             # alt-C - clone range to new location
                     self.notify("clone range starting frame: ") # Implement this.
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
                     self.undo.push()
                     if self.mov.insertCloneFrame():
-                        if self.appState.playbackRange[0] is 1 and \
-                                self.appState.playbackRange[1] is self.mov.frameCount - 1:
+                        if self.appState.playbackRange[0] == 1 and \
+                                self.appState.playbackRange[1] == self.mov.frameCount - 1:
                             self.appState.playbackRange = (self.appState.playbackRange[0], \
                                 self.appState.playbackRange[1] + 1)
                     self.refresh()
                 elif (c == 78):          # alt-N (shift-alt-n) - new  empty frame
                     self.undo.push()
                     if self.mov.addEmptyFrame():
-                        if self.appState.playbackRange[0] is 1 and \
-                                self.appState.playbackRange[1] is self.mov.frameCount - 1:
+                        if self.appState.playbackRange[0] == 1 and \
+                                self.appState.playbackRange[1] == self.mov.frameCount - 1:
                             self.appState.playbackRange = (self.appState.playbackRange[0], \
                                     self.appState.playbackRange[1] + 1)
                     self.refresh()
@@ -1096,16 +1096,16 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.moveCurrentFrame()
                 elif (c == 100):      # alt-d - delete current frame
                     if self.deleteCurrentFramePrompt():
-                        if self.appState.playbackRange[0] is 1 and \
-                                self.appState.playbackRange[1] is self.mov.frameCount + 1:
+                        if self.appState.playbackRange[0] == 1 and \
+                                self.appState.playbackRange[1] == self.mov.frameCount + 1:
                             self.appState.playbackRange = (self.appState.playbackRange[0], \
                                 self.appState.playbackRange[1] - 1)
                     self.refresh()
-                elif c is 122:  # alt-z = undo
+                elif c == 122:  # alt-z = undo
                     self.undo.undo()
-                elif c is 114:  # alt-r = redo
+                elif c == 114:  # alt-r = redo
                     self.undo.redo()
-                elif c is 82:   # alt-R = set playback range
+                elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif (c == 112):    # esc-p - start playing, any key exits
                     self.metaKey = 0
@@ -1243,7 +1243,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # pass c to something here that starts selecting and moves
                 # the cursor based on c, and knows whether it's selecting
                 # via shift-arrow or mouse.
-            elif c is None: pass
+            elif c == None: pass
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
@@ -1253,7 +1253,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Ask the user for the delay value to set for current frame, then
             set it """
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Current frame delay is %i, new value in seconds: " % \
+        self.addstr(self.mov.sizeY, 0, "Current frame delay == %i, new value in seconds: " % \
             self.mov.currentFrame.delay);
         curses.echo()
         try:
@@ -1340,7 +1340,7 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.echo()
         shortfile = self.stdscr.getstr().decode('utf-8')
         curses.noecho()
-        if shortfile.replace(' ', '') is '':
+        if shortfile.replace(' ', '') == '':
             self.notify("File name cannot be empty.")
             return False
         self.clearStatusLine()
@@ -1394,7 +1394,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 return None
             # check for gzipped file
             if (f.read(2) == b'\x1f\x8b'): # gzip magic number
-                # file is gzip compressed
+                # file == gzip compressed
                 f.close()
                 try:
                     f = gzip.open(filename, 'rb')
@@ -1468,26 +1468,26 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.clearStatusLine()
                     prompting = False
                     return None
-            if saveFont is 'amiga':
+            if saveFont == 'amiga':
                 self.clearStatusLine()
                 self.addstr(self.mov.sizeY, 0, "Which amiga font? 1=topaz 2=b-strict, 3=microknight, 4=mosoul, 5=pot-noodle: ")
                 prompting = True
                 while (prompting):
                     c = self.stdscr.getch()
                     time.sleep(0.01)
-                    if c is 49: # 1 = topaz
+                    if c == 49: # 1 = topaz
                         saveFont = 'topaz'
                         prompting = False
-                    if c is 50: # 2 = b-strict
+                    if c == 50: # 2 = b-strict
                         saveFont = 'b-strict'
                         prompting = False
-                    if c is 51: # 3 = microknight
+                    if c == 51: # 3 = microknight
                         saveFont = 'microknight'
                         prompting = False
-                    if c is 52: # 4 = mosoul
+                    if c == 52: # 4 = mosoul
                         saveFont = 'mosoul'
                         prompting = False
-                    if c is 53: # 5 = pot-noodle
+                    if c == 53: # 5 = pot-noodle
                         saveFont = 'pot-noodle'
                         prompting = False
                     elif (c == 27): # 27 = esc = cancel
@@ -1499,7 +1499,7 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.echo()
         filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
-        if filename.replace(' ', '') is '':
+        if filename.replace(' ', '') == '':
             self.notify("File name cannot be empty.")
             return False
         filename = os.path.expanduser(filename)
@@ -1565,8 +1565,8 @@ class UserInterface():  # Separate view (curses) from this controller
             firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
         if not firstLineNum:
             firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
-        #for lineNum in range(0, lastLineNum):  # y is lines
-        for lineNum in range(firstLineNum, lastLineNum):  # y is lines
+        #for lineNum in range(0, lastLineNum):  # y == lines
+        for lineNum in range(firstLineNum, lastLineNum):  # y == lines
             #for colNum in range(0, self.mov.sizeX):
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
@@ -1587,7 +1587,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def findLastMovieLine(self, movie):    
         """ Cycle through the whole movie, figure out the lowest numbered
-            line that is blank on all frames, return that #. Used to trim blank
+            line that == blank on all frames, return that #. Used to trim blank
             lines when saving. """
         movieLastLine = 1
         for frame in movie.frames:
@@ -1598,7 +1598,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def findFirstMovieLine(self, movie):    
         """ Cycle through the whole movie, figure out the highest numbered
-            line that is blank on all frames, return that #. Used to trim blank
+            line that == blank on all frames, return that #. Used to trim blank
             lines when saving. """
         movieFirstLine = movie.sizeY
         for frame in movie.frames:
@@ -1609,7 +1609,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def findFirstMovieCol(self, movie):    
         """ Cycle through the whole movie, figure out the leftmost column that
-            is blank on all frames, return that #. Used to trim blank lines
+            == blank on all frames, return that #. Used to trim blank lines
             when saving. """
         movieFirstCol = movie.sizeX
         for frame in movie.frames:
@@ -1620,7 +1620,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def findLastMovieCol(self, movie):    
         """ Cycle through the whole movie, figure out the rightmost column
-            that is blank on all frames, return that #. Used to trim blank
+            that == blank on all frames, return that #. Used to trim blank
             lines when saving. """
         movieLastCol = 1
         for frame in movie.frames:
@@ -1680,7 +1680,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.notify("Saving ansi failed, make sure you can write to current directory.")
             return False
         devnull = open('/dev/null', 'w')
-        if font is 'ansi':
+        if font == 'ansi':
             ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, tmpPngFileName], stdout=devnull)
         else:   # amiga font
             ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, "-f", font], stdout=devnull)
@@ -1752,7 +1752,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.refresh()
         # open all the pngs so we can save them to gif
         pngImages = [Image.open(fn) for fn in tmpPngNames]
-        sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 is good, too
+        sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
         self.pngsToGif(filename, pngImages, sleep_time)
         for rmFile in tmpPngNames:
             os.remove(rmFile)
@@ -1871,7 +1871,7 @@ Can use ESC or META instead of ALT
         self.mov.currentFrame.content.pop()
         self.refresh()
 
-    def startSelecting(self, startPoint):   # startpoint is (y,x) tuple, or (self.xy[0],self.xy[1])
+    def startSelecting(self, startPoint):   # startpoint == (y,x) tuple, or (self.xy[0],self.xy[1])
         """Mark selection for copy/cut/move - trigger with alt-m"""
         # set start point to where the cursor is, wait for arrow keys, enter to select, or esc to cancel.
         # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
@@ -1924,8 +1924,9 @@ class AppState():
             devnull = open(os.devnull)
             subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
         except OSError as e:
-            if e.errno == os.errno.ENOENT:
-                return False
+            #if e.errno == os.errno.ENOENT:
+            #    return False
+            return False
         return True
 
     def loadHelpFile(self, helpFileName):
@@ -1938,7 +1939,7 @@ class AppState():
             self.helpMov = None
             return False
         if (f.read(2) == b'\x1f\x8b'): # gzip magic number
-            # file is gzip compressed
+            # file == gzip compressed
             f.close()
             try:
                 f = gzip.open(helpFileName, 'rb')
@@ -1977,22 +1978,22 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 objects - ie, push current state onto the undo stack. """ 
             if len(self.undoList) >= self.historySize:   # How far back our undo history can
                 # go. Make this configurable.
-                # if undo stack is full, dequeue from the bottom
+                # if undo stack == full, dequeue from the bottom
                 self.undoList.pop(0)
             # if undoIndex isn't indexing the last item in undoList,
             # ie we have redo states, remove all items after undoList[undoIndex]
             self.undoList = self.undoList[0:self.undoIndex]  # trim list
             # then add the new state to the end of the queue.
             self.undoList.append(deepcopy(self.ui.mov))
-            # last item added is at the end of the list, so..
+            # last item added == at the end of the list, so..
             self.undoIndex = len(self.undoList) # point index to last item
         def undo(self):
-            if self.undoIndex is 1: # nothing to undo
+            if self.undoIndex == 1: # nothing to undo
                 self.ui.notify("Nothing to undo.")
                 return False
             # if we're at the end of the list, push current state so we can
             # get back to it. A bit confusing.
-            if self.undoIndex is len(self.undoList):
+            if self.undoIndex == len(self.undoList):
                 self.push()
                 self.undoIndex -= 1
             self.undoIndex -= 1
@@ -2046,7 +2047,7 @@ if (__name__ == "__main__"):
                     action="store_true")
     parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
     
-    #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
+    #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default == 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
