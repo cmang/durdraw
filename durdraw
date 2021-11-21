@@ -29,11 +29,14 @@ import gzip
 from PIL import Image
 from copy import copy, deepcopy
 
+DEBUG_MODE = False
+
 def debug_write(debug_string):
-    dbgfile = open("durdraw-debug.txt", "a")
-    dbgfile.write(debug_string)
-    dbgfile.write("\n")
-    dbgfile.close()
+    if DEBUG_MODE:
+        dbgfile = open("durdraw-debug.txt", "a")
+        dbgfile.write(debug_string)
+        dbgfile.write("\n")
+        dbgfile.close()
 
 class AnsiArtStuff():
     """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
@@ -693,7 +696,7 @@ class UserInterface():  # Separate view (curses) from this controller
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
+        self.addstr(self.mov.sizeY, 0, "* Press the ANY key (or click) to continue *")
         while (self.playingHelpScreen):
             self.move(self.xy[0], self.xy[1])
             self.refresh()
@@ -791,7 +794,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.safeQuit()
                     self.stdscr.nodelay(1)
                     c = None
-                else: self.notify("keystroke: %d" % c) # alt-unknown
+                else:
+                    if DEBUG_MODE:
+                        self.notify("keystroke: %d" % c) # alt-unknown
                 self.metaKey = 0
                 c = None 
             elif (c != -1):   # -1 means no keys are pressed.
@@ -811,6 +816,14 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:   # we clicked on the status bar somewhere..
                             if mouseX in [38, 39]:  # clicked pause button
                                 self.playing = False
+                            elif mouseX == 62:  # clicked prev color 
+                                self.prevFgColor()
+                            elif mouseX == 65:  # clicked next color 
+                                self.nextFgColor()
+                            elif mouseX == 67:  # clicked prev bg color 
+                                self.prevBgColor()
+                            elif mouseX == 70:  # clicked next bg color 
+                                self.nextBgColor()
                             elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
                                 if self.appState.hasHelpFile:
                                     self.showAnimatedHelpScreen()
@@ -939,22 +952,43 @@ class UserInterface():  # Separate view (curses) from this controller
             self.opts.framerate, \
             self.mov.currentFrame.delay)
         self.addstr(self.mov.sizeY, 2, statusBar)
-        self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
-        # f1-f10 map
+        #self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
+        self.addstr(self.mov.sizeY, 0, "?", curses.color_pair(6) | curses.A_BOLD)
+        # f1-f10 map if ansi mode is enabled
         # color thing
         chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         if self.colorfg > 8:    # bright color
-            self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            if self.appState.ansiArtMode:
+                self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            else:
+                self.addstr(self.mov.sizeY, self.mov.sizeX-7, " Color ", curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
-            self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            if self.appState.ansiArtMode:
+                self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            else:
+                self.addstr(self.mov.sizeY, self.mov.sizeX-7, " Color ", curses.color_pair(self.colorpair))
+
+        # Draw color selector buttons
+        if not self.appState.ansiArtMode: 
+            self.addstr(self.mov.sizeY, self.mov.sizeX-17, "<", curses.color_pair(6) | curses.A_BOLD)
+            self.addstr(self.mov.sizeY, self.mov.sizeX-16, "FG", curses.color_pair(1) | curses.A_BOLD)
+            self.addstr(self.mov.sizeY, self.mov.sizeX-14, ">", curses.color_pair(6) | curses.A_BOLD)
+
+            self.addstr(self.mov.sizeY, self.mov.sizeX-12, "<", curses.color_pair(6) | curses.A_BOLD)
+            self.addstr(self.mov.sizeY, self.mov.sizeX-11, "BG", curses.color_pair(1) | curses.A_BOLD)
+            self.addstr(self.mov.sizeY, self.mov.sizeX-9, ">", curses.color_pair(6) | curses.A_BOLD)
         # draw transport
+        transportString = "|< << |> >> >|" 
+        transportOffset = chMapOffset - len(transportString) - 1
         if self.playing:
-            transportString = "      ||      " 
+            transportString = "|< << || >> >|" 
+            self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(1))
+            self.addstr(self.mov.sizeY, transportOffset+6, "||", curses.color_pair(6) | curses.A_BOLD)
         else:
             transportString = "|< << |> >> >|" 
-        transportOffset = chMapOffset - len(transportString) - 1
+            self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6) | curses.A_BOLD)
         #transportOffset = chMapOffset - len(transportString) 
-        self.addstr(self.mov.sizeY, transportOffset, transportString)
+        #self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6))
 
     def mainLoop(self):
         self.metaKey = 0
@@ -1062,7 +1096,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.increaseFPS()
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
-                else: self.notify("keystroke: %d" % c) # alt-unknown
+                else:
+                    if DEBUG_MODE: 
+                        self.notify("keystroke: %d" % c) # alt-unknown
                 self.metaKey = 0
                 c = None
             # Meta key (alt) was not pressed, so look for non-meta chars
@@ -1155,8 +1191,17 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:
                             self.showHelp()
                         c = None
+                    elif mouseX == 62:  # clicked prev color 
+                        self.prevFgColor()
+                    elif mouseX == 65:  # clicked next color 
+                        self.nextFgColor()
+                    elif mouseX == 67:  # clicked prev bg color 
+                        self.prevBgColor()
+                    elif mouseX == 70:  # clicked next bg color 
+                        self.nextBgColor()
                     else:
-                        self.notify(str([mouseX, mouseY]))
+                        if DEBUG_MODE:
+                            self.notify(str([mouseX, mouseY]))
                 #self.mouseClicked(mouseEvent)
             elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
                 # 337 and 520 - shift-up, 336 and 513 = shift-down
@@ -1728,7 +1773,7 @@ Can use ESC or META instead of ALT
         helpScreenText = '\n'.join(helpScreenText.split('\n')[1:]) 
         self.clearStatusLine()
         self.addstr(0, 0, helpScreenText)
-        self.addstr(self.mov.sizeY, 0, "* Press the ANY key to continue *")
+        self.addstr(self.mov.sizeY, 0, "* Press the ANY key (or click) to continue *")
         self.stdscr.getch()
         self.stdscr.clear()
         self.cursorOn()
@@ -1969,6 +2014,7 @@ if (__name__ == "__main__"):
                     nargs=1, type=int)
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
+    parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
     
     #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
@@ -1991,6 +2037,9 @@ if (__name__ == "__main__"):
         showStartupScreen=False
     if args.nomouse:
         app.hasMouse = False
+    if args.ansi:
+        app.ansiArtMode = True
+    else: app.ansiArtMode = False
     if showStartupScreen:
         print(derlogo)
         if app.ansiLove:
