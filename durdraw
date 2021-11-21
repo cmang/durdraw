@@ -1990,7 +1990,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.8'
+    DUR_VER = '0.9'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
