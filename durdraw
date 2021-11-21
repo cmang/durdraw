@@ -2089,6 +2089,8 @@ if (__name__ == "__main__"):
             print("Help file: Found in ~/.dur/")
         elif app.loadHelpFile("/usr/local/share/durdraw/durhelp.dur"):
             print("Help file: Found in /usr/local/share/durdraw/")
+        elif app.loadHelpFile("durhelp.dur"):
+            print("Help file: Found in current directory")
         else:
             print("Help file: Not found")
         print("Undo history size = %d" % app.undoHistorySize)

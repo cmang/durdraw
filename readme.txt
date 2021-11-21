@@ -18,18 +18,16 @@ and deleting frames, flipping between frames, and frames-per-second speed
 control during playback. It supports the mouse.
 
 Files can be loaded and saved in ASCII (.asc, .txt) or in DUR animation
-format. Files can also be saved in animated GIF (with FPS accuracy), PNG and
-ANSI formats.
+format. Files can also be saved in animated GIF, PNG and ANSI formats.
 
 REQUIREMENTS:
 
 * Python 3
-* Python curses module
+* Pillow or PIL Python module
 
 ALSO RECOMMENDED:
 
 * For animated GIF export, install:
-    "PIL" or "pillow" Python module
     Ansilove (https://ansilove.org/)
 
 * For IBM-PC ANSI art support: Install a terminal and font (like the included
@@ -38,12 +36,14 @@ ALSO RECOMMENDED:
   UTF-8 terminals.  See optional instructions below for configuring mrxvt for
   this purpose. 
 
-BASIC INSTALLATION:
+INSTALLATION:
 
 * Copy the file "durdraw" to a nice place like /usr/local/bin/ or ~/bin/
 * Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/
 
 OPTIONAL INSTALLATION:
+
+For animated GIF export, install Ansilove and make sure it is is in your path.
 
 If you are using Linux/X11 and want IBM-PC ANSI art support:
 
