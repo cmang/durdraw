@@ -1653,7 +1653,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if font is 'ansi':
             ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, tmpPngFileName], stdout=devnull)
         else:   # amiga font
-            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, font], stdout=devnull)
+            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, "-f", font], stdout=devnull)
         devnull.close()
         os.remove(tmpAnsiFileName)
         if (ansiLoveReturn == 0): # this doesnt seem right either, as ansilove always
