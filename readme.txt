@@ -77,7 +77,7 @@ You can play a .dur file or series of .dur files with:
 
 Other command-line options:
 
-usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse]
+usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse] [-A]
                [-u UNDOSIZE] [-V]
                [filename]
 
@@ -93,6 +93,8 @@ optional arguments:
   -x TIMES, --times TIMES
                         Play X number of times (requires -p)
   --nomouse             Disable mouse support
+  -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
+                        characters (Code Page 437 extended ASCII)
   -u UNDOSIZE, --undosize UNDOSIZE
                         Set the number of undo history states - default is
                         100. More requires more RAM, less saves RAM.
