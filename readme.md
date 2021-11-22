@@ -6,7 +6,7 @@
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
               \_____________________________________________\|  v 0.10
 
-OVERVIEW:
+# OVERVIEW:
 
 Durdraw is an ASCII and ANSI drawing and playback program for UNIX-like systems
 (Linux, OSX, FreeBSD, etc) that supports frame-based animation, attempting to
@@ -22,12 +22,12 @@ control during playback. It supports the mouse.
 Files can be loaded and saved in ASCII (.asc, .txt) or in DUR animation
 format. Files can also be saved in animated GIF, PNG and ANSI formats.
 
-REQUIREMENTS:
+# REQUIREMENTS:
 
 * Python 3
 * Pillow or PIL Python module
 
-ALSO RECOMMENDED:
+# ALSO RECOMMENDED:
 
 * For animated GIF export, install:
     Ansilove (https://ansilove.org/)
@@ -38,12 +38,12 @@ ALSO RECOMMENDED:
   UTF-8 terminals.  See optional instructions below for configuring mrxvt for
   this purpose. 
 
-INSTALLATION:
+# INSTALLATION:
 
 * Copy the file "durdraw" to a nice place like /usr/local/bin/ or ~/bin/
 * Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/
 
-OPTIONAL INSTALLATION:
+# OPTIONAL INSTALLATION:
 
 For animated GIF export, install Ansilove and make sure it is is in your path.
 
@@ -71,7 +71,7 @@ Terminal.app:
     + Set background color to black (low or no transprency) and foreground
       color to white
 
-COMMAND LINE USAGE:
+# COMMAND LINE USAGE:
 
 You can play a .dur file or series of .dur files with:
     $ durdraw -p filename.dur
@@ -102,7 +102,7 @@ optional arguments:
                         100. More requires more RAM, less saves RAM.
   -V, --version         Show version number and exit
 
-INTERACTIVE USAGE/EDITING:
+# INTERACTIVE USAGE/EDITING:
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 Also:
@@ -124,7 +124,7 @@ Also:
 
 Can use ESC or META instead of ALT
 
-OTHER TIPS:
+# OTHER TIPS:
 
     * The mouse can be used for moving the cursor (even over SSH) and
       clicking buttons, if your terminal supports Xterm mouse reporting.
@@ -135,13 +135,13 @@ OTHER TIPS:
         :utf8 off off
       then type "clrl-a l" to redraw the window.
 
-CREDITS:
+# CREDITS:
 
 Sam Foster (http://cmang.org)
 
 Homepage: http://cmang.org/durdraw
 
-LEGAL:
+# LEGAL:
 
 Durdraw is Copyright 2009-2021 Sam Foster <samfoster@gmail.com>
 
