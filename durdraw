@@ -2028,7 +2028,7 @@ if (__name__ == "__main__"):
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
    \_____________________________________________\|  v %s
-    Press esc-h for help.                            by cmang
+    Press esc-h for help.                            
 ''' % DUR_VER
     argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
