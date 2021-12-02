@@ -338,29 +338,6 @@ class Movie():
     def lastMovieLine():
         pass
 
-class CursesUI():   # Use this to isolate ncurses calls and objects,
-    # Use same interface for HtmlUI, etc. Perhaps CursesView() == a better name.
-    """ This talks a common UI language with UserInterface and contains all
-        ncurses calls and objects """
-    def __init__(self): # I guess this should load curses.wrapper(start), etc?
-        # this stuff may be better in a separate function.
-        curses.wrapper(start)
-        curses.start_color()
-        curses.mousemask(1)
-    def addstr(self, y, x, str, attr=None): # addstr(y, x, str[, attr]) and addstr(str[, attr])
-        """ Wraps ncurses addstr in a try;except, prevents addstr from
-            crashing cureses if it fails """
-        if not attr:
-            try:
-                self.stdscr.addstr(y, x, str)
-            except curses.error:
-                self.testWindowSize()
-        else:
-            try:
-                self.stdscr.addstr(y, x, str, attr)
-            except curses.error:
-                self.testWindowSize()
-
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
     def __init__(self):
@@ -370,6 +347,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
+        #curses.use_default_colors() # enable transparent bg in ncurses
         self.ansi = AnsiArtStuff()   # obj for misc ansi-related stuff
         self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
         self.colorfg = 1    # default fg white
@@ -810,7 +788,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.verySafeQuit()    # we need to play next file first, so instead..
                     self.playing = False
                 else:
-                    if c == curses.KEY_MOUSE: # mouse = move cursor, etc
+                    if c == curses.KEY_MOUSE: # Remember, we are playing here
                         _, mouseX, mouseY, _, _ = curses.getmouse()
                         if mouseY < self.mov.sizeY:
                             # we clicked in edit area
@@ -818,23 +796,31 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.xy[0] = mouseY
                         else:   # we clicked on the status bar while playing.
                             if mouseX in [52, 53]:  # clicked pause button
+                                self.clickHighlight(52, "||")
                                 self.playing = False
                             elif mouseX == 62:  # clicked prev color 
+                                self.clickHighlight(62, "<")
                                 self.prevFgColor()
                             elif mouseX == 65:  # clicked next color 
+                                self.clickHighlight(65, ">")
                                 self.nextFgColor()
                             elif mouseX == 67:  # clicked prev bg color 
+                                self.clickHighlight(67, "<")
                                 self.prevBgColor()
                             elif mouseX == 70:  # clicked next bg color 
+                                self.clickHighlight(70, ">")
                                 self.nextBgColor()
                             elif mouseX == 12:    # clicked FPS down
+                                self.clickHighlight(12, "<")
                                 self.decreaseFPS()
                                 sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                             elif mouseX == 16:    # clicked FPS up
+                                self.clickHighlight(16, ">")
                                 self.increaseFPS()
                                 sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                             #elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
                             elif mouseX == 0: # clicked "?"
+                                self.clickHighlight(0, "?")
                                 if self.appState.hasHelpFile:
                                     self.showAnimatedHelpScreen()
                                 else:
@@ -1007,6 +993,18 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6) | curses.A_BOLD)
         #transportOffset = chMapOffset - len(transportString) 
         #self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6))
+
+    def clickHighlight(self, pos, buttonString):    # Visual feedback
+        # example: self.clickHighlight(52, "|>")
+        # Highlight clicked item at "pos" by drawing it as "str" in bright white or yellow, sleep a moment,
+        # then back to green
+        self.addstr(self.mov.sizeY, pos, buttonString, curses.color_pair(5) | curses.A_BOLD)
+        curses.curs_set(0)  # turn off cursor
+        self.stdscr.refresh()
+        time.sleep(0.2)
+        self.addstr(self.mov.sizeY, pos, buttonString, curses.color_pair(6) | curses.A_BOLD)
+        curses.curs_set(1)  # turn on cursor
+
 
     def mainLoop(self):
         self.metaKey = 0
@@ -1184,7 +1182,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.xy[1] = 1
             elif c in [338, curses.KEY_END]:   # 338 = end
                 self.xy[1] = self.mov.sizeX
-            elif c == curses.KEY_MOUSE: # mouse = move cursor, etc
+            elif c == curses.KEY_MOUSE: # We are not playing
                 _, mouseX, mouseY, _, _ = curses.getmouse()
                 if mouseY < self.mov.sizeY:
                     self.xy[1] = mouseX + 1 # set cursor position
@@ -1194,40 +1192,56 @@ class UserInterface():  # Separate view (curses) from this controller
                     # play/next/etc on transport, or clicking "start button"
                     #if mouseX in [38, 39]:  # clicked play button
                     if mouseX in [52, 53]:  # clicked play button
+                        self.clickHighlight(52, "|>")
                         self.startPlaying()
                         self.metaKey = 0
                     elif mouseX in [49, 50]: # goto prev frame
+                        self.clickHighlight(49, "<<")
                         self.mov.prevFrame()
                     elif mouseX in [55, 56]: # goto next frame
+                        self.clickHighlight(55, ">>")
                         self.mov.nextFrame()
                     elif mouseX in [46, 47]: # goto first frame
+                        self.clickHighlight(46, "|<")
                         self.mov.gotoFrame(1)
                     elif mouseX in [58, 59]: # goto last frame
+                        self.clickHighlight(58, ">|")
+                        self.mov.nextFrame()
                         self.mov.gotoFrame(self.mov.frameCount)
                     #elif mouseX in [self.mov.sizeY, 0]: # help
                     elif mouseX == 0: # help
+                        self.clickHighlight(0, "?")
                         if self.appState.hasHelpFile:
                             self.showAnimatedHelpScreen()
                         else:
                             self.showHelp()
                         c = None
                     elif mouseX == 62:  # clicked prev color 
+                        self.clickHighlight(62, "<")
                         self.prevFgColor()
                     elif mouseX == 65:  # clicked next color 
+                        self.clickHighlight(65, ">")
                         self.nextFgColor()
                     elif mouseX == 67:  # clicked prev bg color 
+                        self.clickHighlight(67, "<")
                         self.prevBgColor()
                     elif mouseX == 70:  # clicked next bg color 
+                        self.clickHighlight(70, ">")
                         self.nextBgColor()
                     elif mouseX == 12:    # clicked FPS down
+                        self.clickHighlight(12, "<")
                         self.decreaseFPS()
                     elif mouseX == 16:    # clicked FPS up
+                        self.clickHighlight(16, ">")
                         self.increaseFPS()
                     elif mouseX == 23:  # clicked Delay button
+                        self.clickHighlight(23, "D")
                         self.getDelayValue()
                     elif mouseX == 29:  # clicked Range button
+                        self.clickHighlight(29, "R")
                         self.getPlaybackRange()
                     elif mouseX == 2:   # clicked Frame button
+                        self.clickHighlight(2, "F")
                         self.gotoFrameGetInput()
                     else:
                         if DEBUG_MODE:
@@ -2021,7 +2035,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.10'
+    DUR_VER = '0.11'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
