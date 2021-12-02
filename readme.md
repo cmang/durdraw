@@ -41,22 +41,28 @@ format. Files can also be saved in animated GIF, PNG and ANSI formats.
 ## INSTALLATION:
 
 * Copy the file "durdraw" to a nice place like /usr/local/bin/ or ~/bin/
-* Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/
+* Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/ or /usr/share/durdraw
 
 ## OPTIONAL INSTALLATION:
 
-For animated GIF export, install Ansilove and make sure it is is in your path.
+For animated GIF export, install Ansilove and make sure it is is in your path. (Recommended)
 
-If you are using Linux/X11 and want IBM-PC ANSI art support:
+If you want to try making animated ANSI art with durdraw, you need a terminal
+and font that supports ASCII encoding and IBM's Code Page 437. You can find
+fonts in the "extras" directory for this purpose.
+
+Note that ANSI art character support is experimental.
+
+In Linux/X11, here is one way to set that up:
 
 * Install mrxvt
 * Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
   these commands:
     $ mkfontdir /usr/share/fonts/X11/misc/
     $ xset fp rehash
-* Give mrxvt IBM-PC colors and font settings by copying the contents of
-  Xdefaults into your own ~/.Xdefaults file. You can create ~/.Xdefaults if
-  it does not exist.
+* Give mrxvt IBM-PC colors by copying the contents of Xdefaults into your own
+  ~/.Xdefaults file. You can create ~/.Xdefaults if it does not exist.
+* Launch mrxvt with: mrxvt -fn vga -bg black -fg grey
 
 If you are using macOS or MacOS X and want IBM-PC ANSI art support in
 Terminal.app:
@@ -70,6 +76,10 @@ Terminal.app:
     + In "Advanced" tab, Character encoding set to "Western (ASCII)"
     + Set background color to black (low or no transprency) and foreground
       color to white
+
+Once this is setup, pass "-A" to durdraw's command-line to allow you to use
+F1-F12 to input ANSI block characters. 
+
 
 ## COMMAND LINE USAGE:
 
