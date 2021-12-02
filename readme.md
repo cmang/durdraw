@@ -67,14 +67,14 @@ In Linux/X11, here is one way to set that up:
 If you are using macOS or MacOS X and want IBM-PC ANSI art support in
 Terminal.app:
 
-1: Install dos437.ttf font (included) by double-clicking it.
-2: Create a profile in Terminal Preferences/Settings with the following
+1. Install dos437.ttf font (included) by double-clicking it.
+2. Create a profile in Terminal Preferences/Settings with the following
    settings (similar settings can be applied in iTerm):
-    + In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
+    * In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
       and "Use bright colors for bold text" are checked
-    + In Keyboard tab, "Use option as meta key" selected
-    + In "Advanced" tab, Character encoding set to "Western (ASCII)"
-    + Set background color to black (low or no transprency) and foreground
+    * In Keyboard tab, "Use option as meta key" selected
+    * In "Advanced" tab, Character encoding set to "Western (ASCII)"
+    * Set background color to black (low or no transprency) and foreground
       color to white
 
 Once this is setup, pass "-A" to durdraw's command-line to allow you to use
