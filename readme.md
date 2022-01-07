@@ -40,12 +40,42 @@ format. Files can also be saved in animated GIF, PNG and ANSI formats.
 
 ## INSTALLATION:
 
-* Copy the file "durdraw" to a nice place like /usr/local/bin/ or ~/bin/
-* Copy the file "durhelp.dur" to /usr/local/share/durdraw/ or ~/.dur/ or /usr/share/durdraw
+
+1: Install the PIL or Pillow Python module: 
+
+To install using pip:
+
+`
+   pip install Pillow
+`
+
+Alternatively if you are on Debian or Ubuntu:
+
+`
+   sudo apt-get install python3-pil
+`
+
+2: Once PIL is installed, you can just extract and run durdraw as-is:
+
+`
+    $ ./durdraw
+`
+
+To install system-wide, or locally:
+
+* Copy the file "durdraw" to any of the following locations:
+~/bin/
+/usr/local/bin/
+/usr/bin/
+
+* Copy the file "durhelp.dur" to any of the following locaitons:
+~/.dur/
+/usr/local/share/durdraw/
+/usr/share/durdraw/
 
 ## OPTIONAL INSTALLATION:
 
-For animated GIF export, install Ansilove and make sure it is is in your path. (Recommended)
+For animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
 
 If you want to try making animated ANSI art with durdraw, you need a terminal
 and font that supports ASCII encoding and IBM's Code Page 437. You can find
