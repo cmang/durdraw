@@ -368,6 +368,17 @@ class UserInterface():  # Separate view (curses) from this controller
     def initMouse(self):
         curses.mousemask(1)     # it's a party now.
 
+    def enableTransBackground(self):
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_WHITE, -1) # white - 1
+        curses.init_pair(2, curses.COLOR_CYAN, -1) # cyan - 2
+        curses.init_pair(3, curses.COLOR_MAGENTA, -1) # magenta - 3
+        curses.init_pair(4, curses.COLOR_BLUE, -1)  # blue - 4
+        curses.init_pair(5, curses.COLOR_YELLOW, -1) # yellow - 5
+        curses.init_pair(6, curses.COLOR_GREEN, -1) # green - 6
+        curses.init_pair(7, curses.COLOR_RED, -1) # red - 7
+        curses.init_pair(8, curses.COLOR_BLACK, -1) # black - 8 (and 0)
+
     def setWindowTitle(self, title):
         sys.stdout.write("\x1b]2;%s\x07" % title)
 
@@ -729,6 +740,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # then divide by 1000.0 since time.sleep() uses seconds
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         self.mov.gotoFrame(self.appState.playbackRange[0])
+        mouseX, mouseY = 0, 0
         while (self.playing):
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
@@ -789,12 +801,15 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.playing = False
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
-                        _, mouseX, mouseY, _, _ = curses.getmouse()
-                        if mouseY < self.mov.sizeY:
+                        try:
+                            _, mouseX, mouseY, _, _ = curses.getmouse()
+                        except:
+                            pass
+                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX:
                             # we clicked in edit area
                             self.xy[1] = mouseX + 1 # set cursor position
                             self.xy[0] = mouseY
-                        else:   # we clicked on the status bar while playing.
+                        elif mouseX < self.mov.sizeX and mouseY == self.mov.sizeY:   # we clicked on the status bar while playing.
                             if mouseX in [52, 53]:  # clicked pause button
                                 self.clickHighlight(52, "||")
                                 self.playing = False
@@ -957,12 +972,12 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.appState.ansiArtMode:
                 self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
             else:
-                self.addstr(self.mov.sizeY, self.mov.sizeX-7, " Color ", curses.color_pair(self.colorpair) | curses.A_BOLD)
+                self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
             if self.appState.ansiArtMode:
                 self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
             else:
-                self.addstr(self.mov.sizeY, self.mov.sizeX-7, " Color ", curses.color_pair(self.colorpair))
+                self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
         # Draw Range, FPS and Delay buttons
         self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
         self.addstr(self.mov.sizeY, 16, ">", curses.color_pair(6) | curses.A_BOLD)
@@ -1008,6 +1023,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def mainLoop(self):
         self.metaKey = 0
+        mouseX, mouseY = 0, 0
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
@@ -1020,6 +1036,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #if c == 203: self.notify('Whaaaaat???')
             if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
             if self.metaKey == 1:
+                # self.addstr(self.mov.sizeY, self.mov.sizeX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
                 # Try for meta-keys, then set metaKey to 1
                 if c == 111:                # alt-o - open
                     self.open()
@@ -1183,11 +1200,14 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [338, curses.KEY_END]:   # 338 = end
                 self.xy[1] = self.mov.sizeX
             elif c == curses.KEY_MOUSE: # We are not playing
-                _, mouseX, mouseY, _, _ = curses.getmouse()
-                if mouseY < self.mov.sizeY:
+                try:
+                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                except:
+                    pass
+                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX:
                     self.xy[1] = mouseX + 1 # set cursor position
                     self.xy[0] = mouseY
-                else:   # we clicked on the status bar somewhere..
+                elif mouseX < self.mov.sizeX and mouseY == self.mov.sizeY:   # we clicked on the status bar somewhere..
                     # Add stuff here to take mouse 'commands' like clicking
                     # play/next/etc on transport, or clicking "start button"
                     #if mouseX in [38, 39]:  # clicked play button
@@ -2035,7 +2055,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.11'
+    DUR_VER = '0.12'
     derlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -2057,6 +2077,7 @@ if (__name__ == "__main__"):
                     action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
+    parserStartScreenMutex.add_argument("-b", "--notrans", help="Use a black background color instead of terminal default", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
     parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
@@ -2085,6 +2106,8 @@ if (__name__ == "__main__"):
     if args.ansi:
         app.ansiArtMode = True
     else: app.ansiArtMode = False
+    if args.notrans: app.trans = False   # notrans = black background
+    else: app.trans = True
     if showStartupScreen:
         print(derlogo)
         if app.ansiLove:
@@ -2099,7 +2122,9 @@ if (__name__ == "__main__"):
             print("Mouse = Enabled")
         else:
             print("Mouse = Disabled")
-        if app.loadHelpFile("~/.dur/durhelp.dur"):
+        if app.loadHelpFile("durhelp.dur"):
+            print("Help file: Found in ./")
+        elif app.loadHelpFile("~/.dur/durhelp.dur"):
             print("Help file: Found in ~/.dur/")
         elif app.loadHelpFile("/usr/local/share/durdraw/durhelp.dur"):
             print("Help file: Found in /usr/local/share/durdraw/")
@@ -2124,6 +2149,8 @@ if (__name__ == "__main__"):
     ui.setAppState(app)
     if app.hasMouse:
         ui.initMouse()
+    if app.trans:
+        ui.enableTransBackground()
     if args.filename:
         ui.loadFromFile(args.filename, 'dur')
     if args.play:

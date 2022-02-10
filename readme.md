@@ -4,7 +4,7 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.11
+              \_____________________________________________\|  v 0.12
 
 ## OVERVIEW:
 
@@ -179,11 +179,11 @@ Can use ESC or META instead of ALT
 
 Sam Foster (http://cmang.org)
 
-Homepage: http://cmang.org/durdraw
+Homepage: http://durdraw.org
 
 ### LEGAL:
 
-Durdraw is Copyright 2009-2021 Sam Foster <samfoster@gmail.com>
+Durdraw is Copyright 2009-2022 Sam Foster <samfoster@gmail.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
