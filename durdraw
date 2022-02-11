@@ -8,7 +8,7 @@ Latest source: https://github.com/cmang/durdraw
 
 LICENSE:
 
-Copyright 2009-2021 Sam Foster <samfoster@gmail.com>, all rights reserved
+Copyright 2009-2022 Sam Foster <samfoster@gmail.com>, all rights reserved
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee == hereby granted, provided that the above
@@ -344,6 +344,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
         self.appState = None # will be filled in by main() .. run-time app state stuff
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
+        os.environ.setdefault('ESCDELAY', '10')
         # initialize screen and draw the 'canvas'
         self.stdscr = curses.initscr()
         curses.start_color()    # Yeayuhhh
@@ -747,8 +748,11 @@ class UserInterface():  # Separate view (curses) from this controller
             self.move(self.xy[0], self.xy[1])
             self.refresh()
             c = self.stdscr.getch()
-            if c == 27: self.metaKey = 1; c = self.stdscr.getch() # normal esc
-            if self.metaKey == 1 and not self.appState.playOnlyMode:   # esc
+            if c == 27:
+                self.metaKey = 1
+                self.commandMode = 1
+                c = self.stdscr.getch() # normal esc
+            if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
@@ -790,6 +794,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     if DEBUG_MODE:
                         self.notify("keystroke: %d" % c) # alt-unknown
+                self.commandMode = 0
                 self.metaKey = 0
                 c = None 
             elif (c != -1):   # -1 means no keys are pressed.
@@ -981,6 +986,10 @@ class UserInterface():  # Separate view (curses) from this controller
         # Draw Range, FPS and Delay buttons
         self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
         self.addstr(self.mov.sizeY, 16, ">", curses.color_pair(6) | curses.A_BOLD)
+        if self.commandMode:
+            self.addstr(self.mov.sizeY, self.mov.sizeX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
+        else:
+            self.addstr(self.mov.sizeY, self.mov.sizeX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
         if not self.playing:
             self.addstr(self.mov.sizeY, 2, "F", curses.color_pair(6) | curses.A_BOLD)  # Frame button
             self.addstr(self.mov.sizeY, 29, "R", curses.color_pair(6) | curses.A_BOLD)  # Range button
@@ -1023,6 +1032,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def mainLoop(self):
         self.metaKey = 0
+        self.commandMode = False
         mouseX, mouseY = 0, 0
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
@@ -1123,6 +1133,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif (c == 112):    # esc-p - start playing, any key exits
+                    self.commandMode = False
                     self.metaKey = 0
                     self.startPlaying()
                 elif c in [61, 43]: # esc-= and esc-+ - fps up
@@ -1132,10 +1143,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     if DEBUG_MODE: 
                         self.notify("keystroke: %d" % c) # alt-unknown
+                self.commandMode = False
                 self.metaKey = 0
                 c = None
             # Meta key (alt) was not pressed, so look for non-meta chars
-            if c == 27: self.metaKey = 1; c = None
+            if c == 27:
+                self.metaKey = 1;
+                self.commandMode = True
+                c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open
                 self.open()
@@ -2056,14 +2071,14 @@ class ArgumentChecker:
             
 if (__name__ == "__main__"):
     DUR_VER = '0.12'
-    derlogo = '''
+    durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
    /_____|_____|__|__|_____|__|___\____|________| |  Durr....
    \_____________________________________________\|  v %s
     Press esc-h for help.                            
-''' % DUR_VER
+    ''' % DUR_VER
     argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
@@ -2109,7 +2124,7 @@ if (__name__ == "__main__"):
     if args.notrans: app.trans = False   # notrans = black background
     else: app.trans = True
     if showStartupScreen:
-        print(derlogo)
+        print(durlogo)
         if app.ansiLove:
             print("ansilove = Found")
         else:
