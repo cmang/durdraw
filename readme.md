@@ -46,7 +46,7 @@ format. Files can also be saved in animated GIF, PNG and ANSI formats.
 To install using pip:
 
 `
-   pip install Pillow
+   pip3 install Pillow
 `
 
 Alternatively if you are on Debian or Ubuntu:
