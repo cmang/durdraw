@@ -2097,7 +2097,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.13'
+    DUR_VER = '0.13.1'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -2122,6 +2122,7 @@ if (__name__ == "__main__"):
     parser.add_argument("-b", "--blackbg", help="Use a black background color instead of terminal default", action="store_true")
     parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
     parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
+    parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overwides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
     parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
@@ -2141,14 +2142,20 @@ if (__name__ == "__main__"):
     if args.undosize:
         app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
-    if args.width and args.width[0] > 79:
-        app.width= args.width[0]
+    term_size = os.get_terminal_size()
+    if args.width and args.width[0] > 79 and args.width[0] < term_size[0]:
+        app.width = args.width[0]
     else:
-        app.width = 79
-    if args.height and args.height[0] > 24:
+        app.width = 79      # "sane" default screen size, 79x24.. 
+    if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
         app.height = args.height[0]
     else:
         app.height = 24
+    if args.max:
+        if term_size[0] > 79:
+            app.width = term_size[0]
+        if term_size[1] > 24:
+            app.height = term_size[1] - 1
     if args.play:
         showStartupScreen=False
     elif args.quick:
@@ -2189,6 +2196,10 @@ if (__name__ == "__main__"):
         else:
             print("Help file: Not found")
         print("Undo history size = %d" % app.undoHistorySize)
+        if app.width == 79 and app.height == 24:
+            print("Canvas size: %i columns, %i lines (Default)" % (app.width, app.height))
+        else:
+            print("Canvas size: %i columns, %i lines" % (app.width, app.height))
         if args.wait:
             try:
                 choice = input("Press Enter to Continue...")

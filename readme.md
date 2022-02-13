@@ -4,7 +4,7 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.13
+              \_____________________________________________\|  v 0.13.1
 
 ## OVERVIEW:
 
@@ -39,7 +39,6 @@ format. Files can also be saved in animated GIF, PNG and ANSI formats.
   this purpose. 
 
 ## INSTALLATION:
-
 
 1: Install the PIL or Pillow Python module: 
 
@@ -122,7 +121,7 @@ Other command-line options:
 <pre>
 
 usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [-b] [-W WIDTH]
-               [-H HEIGHT] [--nomouse] [-A] [-u UNDOSIZE] [-V]
+               [-H HEIGHT] [-m] [--nomouse] [-A] [-u UNDOSIZE] [-V]
                [filename]
 
 positional arguments:
@@ -142,6 +141,7 @@ optional arguments:
                         Set canvas width
   -H HEIGHT, --height HEIGHT
                         Set canvas height
+  -m, --max             Maximum canvas size for terminal (overwides -W and -H)
   --nomouse             Disable mouse support
   -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
                         characters (Code Page 437 extended ASCII)
