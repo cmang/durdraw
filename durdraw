@@ -29,6 +29,7 @@ import subprocess
 import shutil
 import tempfile
 import gzip
+import json
 from PIL import Image
 from copy import copy, deepcopy
 
@@ -230,16 +231,16 @@ class AnsiArtStuff():
 class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
     """
-    def __init__(self, sizeX, sizeY):
+    def __init__(self, width, height):
         """ Initialize frame, content[x][y] grid """
         # it's a bunch of rows of ' 'characters.
         self.content = []
-        self.sizeX = sizeX
-        self.sizeY = sizeY
+        self.sizeX = width
+        self.sizeY = height
         self.delay = 0  # delay == # of sec to wait at this frame.
-        for x in range(0, sizeY):
+        for x in range(0, height):
             self.content.append([])
-            for y in range(0, sizeX):
+            for y in range(0, width):
                 self.content[x].append(' ')
         self.initColorMap()
         self.setDelayValue(0)
@@ -256,11 +257,14 @@ class Frame():
 
 class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
     """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
-    def __init__(self):         # default options
+    def __init__(self, width=79, height=23):         # default options
         self.framerate = 2.0
-        self.sizeX = 79
-        self.sizeY = 23
+        self.sizeX = width
+        self.sizeY = height
         self.saveFileFormat = 4 # save file format version number
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
 
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
@@ -338,11 +342,15 @@ class Movie():
     def lastMovieLine():
         pass
 
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
-    def __init__(self):
-        self.opts = Options()    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
-        self.appState = None # will be filled in by main() .. run-time app state stuff
+    def __init__(self, app):
+        self.opts = Options(width=app.width, height=app.height)    # so we can use opts.sizeX and opts.sizeY. Needed by Frame(), subsequently Movie()
+        self.appState = app # will be filled in by main() .. run-time app state stuff
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         os.environ.setdefault('ESCDELAY', '10')
         # initialize screen and draw the 'canvas'
@@ -356,6 +364,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self)   # initialize undo/redo system
+        self.undo.setHistorySize(self.appState.undoHistorySize)
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         self.playing = False
         curses.noecho()
@@ -588,8 +597,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.refresh()
         self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         while (self.realmaxY < self.mov.sizeY+1 or self.realmaxX < self.mov.sizeX):
-            self.addstr(0, 0, "Window == too small.")
-            self.addstr(1, 0, "Please enlarge to 80x25 or larger.")
+            self.addstr(0, 0, "Terminal is too small.")
+            self.addstr(1, 0, "Please enlarge to %ix%i or larger." % (self.mov.sizeX, self.mov.sizeY))
             self.stdscr.refresh()
             self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
         self.stdscr.refresh()
@@ -815,20 +824,20 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.xy[1] = mouseX + 1 # set cursor position
                             self.xy[0] = mouseY
                         elif mouseX < self.mov.sizeX and mouseY == self.mov.sizeY:   # we clicked on the status bar while playing.
-                            if mouseX in [52, 53]:  # clicked pause button
-                                self.clickHighlight(52, "||")
+                            if mouseX in [self.mov.sizeX - 26, self.mov.sizeX - 27]:  # clicked pause button
+                                self.clickHighlight(self.mov.sizeX - 27, "||")
                                 self.playing = False
-                            elif mouseX == 62:  # clicked prev color 
-                                self.clickHighlight(62, "<")
+                            elif mouseX == self.mov.sizeX - 17:  # clicked prev color 
+                                self.clickHighlight(self.mov.sizeX - 17, "<")
                                 self.prevFgColor()
-                            elif mouseX == 65:  # clicked next color 
-                                self.clickHighlight(65, ">")
+                            elif mouseX == self.mov.sizeX - 14:  # clicked next color 
+                                self.clickHighlight(self.mov.sizeX - 14, ">")
                                 self.nextFgColor()
-                            elif mouseX == 67:  # clicked prev bg color 
-                                self.clickHighlight(67, "<")
+                            elif mouseX == self.mov.sizeX - 12:  # clicked prev bg color 
+                                self.clickHighlight(self.mov.sizeX - 12, "<")
                                 self.prevBgColor()
-                            elif mouseX == 70:  # clicked next bg color 
-                                self.clickHighlight(70, ">")
+                            elif mouseX == self.mov.sizeX - 9:  # clicked next bg color 
+                                self.clickHighlight(self.mov.sizeX - 9, ">")
                                 self.nextBgColor()
                             elif mouseX == 12:    # clicked FPS down
                                 self.clickHighlight(12, "<")
@@ -952,9 +961,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
 
     def clearStatusLine(self):
-        # fyi .. sizeX and sizeY in this context should go into
+        # fyi .. width and height in this context should go into
         # appState, not in Movie(). In other words, this == not
-        # the sizeX and sizeY of the movie, but of the editor screen.
+        # the width and height of the movie, but of the editor screen.
         self.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
 
     def drawStatusBar(self):
@@ -1226,21 +1235,21 @@ class UserInterface():  # Separate view (curses) from this controller
                     # Add stuff here to take mouse 'commands' like clicking
                     # play/next/etc on transport, or clicking "start button"
                     #if mouseX in [38, 39]:  # clicked play button
-                    if mouseX in [52, 53]:  # clicked play button
-                        self.clickHighlight(52, "|>")
+                    if mouseX in [self.mov.sizeX - 26, self.mov.sizeX - 27]:  # clicked play button
+                        self.clickHighlight(self.mov.sizeX - 27, "|>")
                         self.startPlaying()
                         self.metaKey = 0
-                    elif mouseX in [49, 50]: # goto prev frame
-                        self.clickHighlight(49, "<<")
+                    elif mouseX in [self.mov.sizeX - 29, self.mov.sizeX - 30]: # goto prev frame
+                        self.clickHighlight(self.mov.sizeX - 30, "<<")
                         self.mov.prevFrame()
-                    elif mouseX in [55, 56]: # goto next frame
-                        self.clickHighlight(55, ">>")
+                    elif mouseX in [self.mov.sizeX - 23, self.mov.sizeX - 24]: # goto next frame
+                        self.clickHighlight(self.mov.sizeX - 24, ">>")
                         self.mov.nextFrame()
-                    elif mouseX in [46, 47]: # goto first frame
-                        self.clickHighlight(46, "|<")
+                    elif mouseX in [self.mov.sizeX - 32, self.mov.sizeX - 33]: # goto first frame
+                        self.clickHighlight(self.mov.sizeX - 33, "|<")
                         self.mov.gotoFrame(1)
-                    elif mouseX in [58, 59]: # goto last frame
-                        self.clickHighlight(58, ">|")
+                    elif mouseX in [self.mov.sizeX - 20, self.mov.sizeX - 21]: # goto last frame
+                        self.clickHighlight(self.mov.sizeX - 21, ">|")
                         self.mov.nextFrame()
                         self.mov.gotoFrame(self.mov.frameCount)
                     #elif mouseX in [self.mov.sizeY, 0]: # help
@@ -1251,17 +1260,17 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:
                             self.showHelp()
                         c = None
-                    elif mouseX == 62:  # clicked prev color 
-                        self.clickHighlight(62, "<")
+                    elif mouseX == self.mov.sizeX - 17:  # clicked prev color 
+                        self.clickHighlight(self.mov.sizeX - 17, "<")
                         self.prevFgColor()
-                    elif mouseX == 65:  # clicked next color 
-                        self.clickHighlight(65, ">")
+                    elif mouseX == self.mov.sizeX - 14:  # clicked next color 
+                        self.clickHighlight(self.mov.sizeX - 14, ">")
                         self.nextFgColor()
-                    elif mouseX == 67:  # clicked prev bg color 
-                        self.clickHighlight(67, "<")
+                    elif mouseX == self.mov.sizeX - 12:  # clicked prev bg color 
+                        self.clickHighlight(self.mov.sizeX - 12, "<")
                         self.prevBgColor()
-                    elif mouseX == 70:  # clicked next bg color 
-                        self.clickHighlight(70, ">")
+                    elif mouseX == self.mov.sizeX - 9:  # clicked next bg color 
+                        self.clickHighlight(self.mov.sizeX - 9, ">")
                         self.nextBgColor()
                     elif mouseX == 12:    # clicked FPS down
                         self.clickHighlight(12, "<")
@@ -1405,8 +1414,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if (self.opts.saveFileFormat < 3):  # version 4 should rename saveFileFormat
             # to saveFormatVersion
             # initialize color map for all frames:
-            for frame in self.mov.frames:   # <3 python
-                frame.initColorMap()    # that was easy
+            for frame in self.mov.frames:  
+                frame.initColorMap()    
                 self.opts.saveFileFormat = 3
         if (self.opts.saveFileFormat < 4):
             # old file, needs delay times populated.
@@ -1474,6 +1483,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
         self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, [P]NG, [G]IF: ")
+        #self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, DUR[2], [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
         saved = False
@@ -1486,6 +1496,9 @@ class UserInterface():  # Separate view (curses) from this controller
             elif (c in [100, 68]): # 100 = d = dur, 68 = D
                 saveFormat = 'dur'
                 prompting = False
+            #elif c == 50:       # 50 == '2'
+            #    saveFormat = 'dur2'
+            #    prompting = False
             elif (c in [97, 65]): # a = ansi
                 saveFormat = 'ansi'
                 prompting = False
@@ -1559,6 +1572,8 @@ class UserInterface():  # Separate view (curses) from this controller
             saved = self.saveAsciiFile(filename)
         if (saveFormat == 'dur'):   # dur = pickled python objects
             saved = self.saveDurFile(filename)
+        if (saveFormat == 'dur2'):   # dur2 = serialized json
+            saved = self.saveDur2File(filename)
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
@@ -1581,6 +1596,18 @@ class UserInterface():  # Separate view (curses) from this controller
             return False
         pickle.dump(self.opts, f)
         pickle.dump(self.mov, f)
+        f.close()
+        return True
+
+    def saveDur2File(self, filename):
+        # open and write file
+        try:
+            f = gzip.open(filename, 'wb')
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
+            return False
+        json.dump(self.opts, f)
+        json.dump(self.mov, f)
         f.close()
         return True
 
@@ -1649,7 +1676,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Cycle through the whole movie, figure out the highest numbered
             line that == blank on all frames, return that #. Used to trim blank
             lines when saving. """
-        movieFirstLine = movie.sizeY
+        movieFirstLine = movie.height
         for frame in movie.frames:
             frameFirstLine = self.findFrameFirstLine(frame)
             if frameFirstLine < movieFirstLine:
@@ -1660,7 +1687,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Cycle through the whole movie, figure out the leftmost column that
             == blank on all frames, return that #. Used to trim blank lines
             when saving. """
-        movieFirstCol = movie.sizeX
+        movieFirstCol = movie.width
         for frame in movie.frames:
             frameFirstCol = self.findFrameFirstCol(frame)
             if frameFirstCol < movieFirstCol:
@@ -1683,7 +1710,7 @@ class UserInterface():  # Separate view (curses) from this controller
             that # (aka, first used line of the frame) """
         # start at the first line, work up until we find a character.
         for lineNum in range(0, self.mov.sizeY):
-            for colNum in range(0, frame.sizeX):
+            for colNum in range(0, frame.width):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return lineNum  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -1693,7 +1720,7 @@ class UserInterface():  # Separate view (curses) from this controller
             that # + 1 (aka, last used line of the frame) """
         # start at the last line, work up until we find a character.
         for lineNum in reversed(list(range(0, self.mov.sizeY))):
-            for colNum in range(0, frame.sizeX):
+            for colNum in range(0, frame.width):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return lineNum + 1  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -1702,7 +1729,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the last non-blank column, return
             that # + 1 (aka, last used column of the frame) """
         # start at the last column, work back until we find a character.
-        for colNum in reversed(list(range(0, frame.sizeX))):
+        for colNum in reversed(list(range(0, frame.width))):
             for lineNum in reversed(list(range(0, self.mov.sizeY))):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum + 1  # we found a non-empty character
@@ -1712,7 +1739,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the first non-blank column, return
             that # (aka, first used column of the frame) """
         # start at the first column, work forward until we find a character.
-        for colNum in range(0, frame.sizeX):
+        for colNum in range(0, frame.width):
             for lineNum in range(0, self.mov.sizeY):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum  # we found a non-empty character
@@ -2070,7 +2097,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.12'
+    DUR_VER = '0.13'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -2092,7 +2119,9 @@ if (__name__ == "__main__"):
                     action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
-    parserStartScreenMutex.add_argument("-b", "--notrans", help="Use a black background color instead of terminal default", action="store_true")
+    parser.add_argument("-b", "--blackbg", help="Use a black background color instead of terminal default", action="store_true")
+    parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
+    parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
     parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
@@ -2112,6 +2141,14 @@ if (__name__ == "__main__"):
     if args.undosize:
         app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
+    if args.width and args.width[0] > 79:
+        app.width= args.width[0]
+    else:
+        app.width = 79
+    if args.height and args.height[0] > 24:
+        app.height = args.height[0]
+    else:
+        app.height = 24
     if args.play:
         showStartupScreen=False
     elif args.quick:
@@ -2121,8 +2158,8 @@ if (__name__ == "__main__"):
     if args.ansi:
         app.ansiArtMode = True
     else: app.ansiArtMode = False
-    if args.notrans: app.trans = False   # notrans = black background
-    else: app.trans = True
+    if args.blackbg: app.blackbg = False   # blackbg = black background
+    else: app.blackbg = True
     if showStartupScreen:
         print(durlogo)
         if app.ansiLove:
@@ -2160,11 +2197,10 @@ if (__name__ == "__main__"):
                 exit(0)
         else:
             time.sleep(3)
-    ui = UserInterface()
-    ui.setAppState(app)
+    ui = UserInterface(app)
     if app.hasMouse:
         ui.initMouse()
-    if app.trans:
+    if app.blackbg:
         ui.enableTransBackground()
     if args.filename:
         ui.loadFromFile(args.filename, 'dur')

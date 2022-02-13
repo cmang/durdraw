@@ -4,7 +4,7 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.12
+              \_____________________________________________\|  v 0.13
 
 ## OVERVIEW:
 
@@ -119,28 +119,32 @@ You can play a .dur file or series of .dur files with:
 
 Other command-line options:
 
-usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse] [-A]
-               [-u UNDOSIZE] [-V]
-               [filename]
+<pre>
 
-positional arguments:
-  filename              .dur or ascii file to load
+  usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse] [-A]
+                 [-u UNDOSIZE] [-V]
+                 [filename]
+      
+  positional arguments:
+    filename              .dur or ascii file to load
+      
+  optional arguments:
+    -h, --help            show this help message and exit
+    -p PLAY [PLAY ...], --play PLAY [PLAY ...]
+                          Just play .dur file or files, then exit
+    -q, --quick           Skip startup screen
+    -w, --wait            Pause at startup screen
+    -x TIMES, --times TIMES
+                          Play X number of times (requires -p)
+    --nomouse             Disable mouse support
+    -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
+                          characters (Code Page 437 extended ASCII)
+    -u UNDOSIZE, --undosize UNDOSIZE
+                          Set the number of undo history states - default is
+                          100. More requires more RAM, less saves RAM.
+    -V, --version         Show version number and exit
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -p PLAY [PLAY ...], --play PLAY [PLAY ...]
-                        Just play .dur file or files, then exit
-  -q, --quick           Skip startup screen
-  -w, --wait            Pause at startup screen
-  -x TIMES, --times TIMES
-                        Play X number of times (requires -p)
-  --nomouse             Disable mouse support
-  -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
-                        characters (Code Page 437 extended ASCII)
-  -u UNDOSIZE, --undosize UNDOSIZE
-                        Set the number of undo history states - default is
-                        100. More requires more RAM, less saves RAM.
-  -V, --version         Show version number and exit
+</pre>
 
 ## INTERACTIVE USAGE/EDITING:
 
