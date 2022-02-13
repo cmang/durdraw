@@ -121,28 +121,34 @@ Other command-line options:
 
 <pre>
 
-  usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--nomouse] [-A]
-                 [-u UNDOSIZE] [-V]
-                 [filename]
-      
-  positional arguments:
-    filename              .dur or ascii file to load
-      
-  optional arguments:
-    -h, --help            show this help message and exit
-    -p PLAY [PLAY ...], --play PLAY [PLAY ...]
-                          Just play .dur file or files, then exit
-    -q, --quick           Skip startup screen
-    -w, --wait            Pause at startup screen
-    -x TIMES, --times TIMES
-                          Play X number of times (requires -p)
-    --nomouse             Disable mouse support
-    -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
-                          characters (Code Page 437 extended ASCII)
-    -u UNDOSIZE, --undosize UNDOSIZE
-                          Set the number of undo history states - default is
-                          100. More requires more RAM, less saves RAM.
-    -V, --version         Show version number and exit
+usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [-b] [-W WIDTH]
+               [-H HEIGHT] [--nomouse] [-A] [-u UNDOSIZE] [-V]
+               [filename]
+
+positional arguments:
+  filename              .dur or ascii file to load
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PLAY [PLAY ...], --play PLAY [PLAY ...]
+                        Just play .dur file or files, then exit
+  -q, --quick           Skip startup screen
+  -w, --wait            Pause at startup screen
+  -x TIMES, --times TIMES
+                        Play X number of times (requires -p)
+  -b, --blackbg         Use a black background color instead of terminal
+                        default
+  -W WIDTH, --width WIDTH
+                        Set canvas width
+  -H HEIGHT, --height HEIGHT
+                        Set canvas height
+  --nomouse             Disable mouse support
+  -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
+                        characters (Code Page 437 extended ASCII)
+  -u UNDOSIZE, --undosize UNDOSIZE
+                        Set the number of undo history states - default is
+                        100. More requires more RAM, less saves RAM.
+  -V, --version         Show version number and exit
 
 </pre>
 
