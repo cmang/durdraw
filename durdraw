@@ -257,7 +257,7 @@ class Frame():
 
 class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
     """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
-    def __init__(self, width=79, height=23):         # default options
+    def __init__(self, width=80, height=23):         # default options
         self.framerate = 2.0
         self.sizeX = width
         self.sizeY = height
@@ -486,6 +486,18 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState = appState
         # set undo history size
         self.undo.setHistorySize(self.appState.undoHistorySize)
+
+    def setColor(self, fg, bg):
+        setFgColor(fg)
+        setBgColor(bg)
+
+    def setFgColor(self, fg):
+        self.colorfg = fg
+        self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
+
+    def setBgColor(self, bg):
+        self.colorbg = bg
+        self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -819,42 +831,45 @@ class UserInterface():  # Separate view (curses) from this controller
                             _, mouseX, mouseY, _, _ = curses.getmouse()
                         except:
                             pass
-                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX:
+                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: 
                             # we clicked in edit area
                             self.xy[1] = mouseX + 1 # set cursor position
                             self.xy[0] = mouseY
-                        elif mouseX < self.mov.sizeX and mouseY == self.mov.sizeY:   # we clicked on the status bar while playing.
-                            if mouseX in [self.mov.sizeX - 26, self.mov.sizeX - 27]:  # clicked pause button
-                                self.clickHighlight(self.mov.sizeX - 27, "||")
-                                self.playing = False
-                            elif mouseX == self.mov.sizeX - 17:  # clicked prev color 
-                                self.clickHighlight(self.mov.sizeX - 17, "<")
-                                self.prevFgColor()
-                            elif mouseX == self.mov.sizeX - 14:  # clicked next color 
-                                self.clickHighlight(self.mov.sizeX - 14, ">")
-                                self.nextFgColor()
-                            elif mouseX == self.mov.sizeX - 12:  # clicked prev bg color 
-                                self.clickHighlight(self.mov.sizeX - 12, "<")
-                                self.prevBgColor()
-                            elif mouseX == self.mov.sizeX - 9:  # clicked next bg color 
-                                self.clickHighlight(self.mov.sizeX - 9, ">")
-                                self.nextBgColor()
-                            elif mouseX == 12:    # clicked FPS down
-                                self.clickHighlight(12, "<")
-                                self.decreaseFPS()
-                                sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                            elif mouseX == 16:    # clicked FPS up
-                                self.clickHighlight(16, ">")
-                                self.increaseFPS()
-                                sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                            #elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
-                            elif mouseX == 0: # clicked "?"
-                                self.clickHighlight(0, "?")
-                                if self.appState.hasHelpFile:
-                                    self.showAnimatedHelpScreen()
-                                else:
-                                    self.showHelp()
-                                c = None 
+                        elif mouseX < self.mov.sizeX and mouseY in [self.mov.sizeY, self.mov.sizeY+1]:   # we clicked on the status bar while playing.
+                            if mouseY == self.mov.sizeY: # clicked upper bar
+                                if mouseX in [self.mov.sizeX - 9, self.mov.sizeX - 10]:  # clicked pause button
+                                    self.clickHighlight(self.mov.sizeX - 10, "||")
+                                    self.playing = False
+                                elif mouseX == 12:    # clicked FPS down
+                                    self.clickHighlight(12, "<")
+                                    self.decreaseFPS()
+                                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                elif mouseX == 16:    # clicked FPS up
+                                    self.clickHighlight(16, ">")
+                                    self.increaseFPS()
+                                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                #elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
+                                elif mouseX == 0: # clicked "?"
+                                    self.clickHighlight(0, "?")
+                                    if self.appState.hasHelpFile:
+                                        self.showAnimatedHelpScreen()
+                                    else:
+                                        self.showHelp()
+                                    c = None 
+                            elif mouseY == self.mov.sizeY+1:    # clicked bottom bar
+                                if mouseX in range(4,20): 
+                                    fg = mouseX - 3  
+                                    #self.notify("set fg color: " + str(fg))
+                                    self.setFgColor(fg)
+                                elif mouseX in range(25,33):    
+                                    bg = mouseX - 24
+                                    #self.notify("set bg color: " + str(bg))
+                                    self.setBgColor(bg)
+                                elif DEBUG_MODE:
+                                    self.notify("bottom bar. " + str([mouseX, mouseY]))
+                            elif DEBUG_MODE:
+                                self.notify("clicked. " + str([mouseX, mouseY]))
+
                     elif c == curses.KEY_LEFT:      # left - move cursor right a character
                         if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
                     elif c == curses.KEY_RIGHT:     # right - move cursor right
@@ -955,10 +970,15 @@ class UserInterface():  # Separate view (curses) from this controller
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
         """ Map a dict of F1-f10 to character values """ 
-        self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+        if self.appState.charEncoding == 'ibm-pc':
+            self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
+        else:
+            #self.chMap = {'f1':2591, 'f2':2592, 'f3':2593, 'f4':2588, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
+            self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':254, 'f10':250 }
+        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
+                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'] )
+                #self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
 
     def clearStatusLine(self):
         # fyi .. width and height in this context should go into
@@ -979,19 +999,54 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 29, rangeBar)
         #self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
         self.addstr(self.mov.sizeY, 0, "?", curses.color_pair(6) | curses.A_BOLD)
-        # f1-f10 map if ansi mode == enabled
-        # color thing
-        chMapOffset = self.mov.sizeX - len(self.chMapString)-1
+        # Draw character map for f1-f10 (block characters)
+        #chMapOffset = self.mov.sizeX - len(self.chMapString)-1
+        #chMapOffset = 37    # how far in to show the character map
+        chMapOffset = 35    # how far in to show the character map
         if self.colorfg > 8:    # bright color
-            if self.appState.ansiArtMode:
-                self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
-            else:
-                self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
+            self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
-            if self.appState.ansiArtMode:
-                self.addstr(self.mov.sizeY, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
+        # draw color picker
+        # fg color
+        colorPickerFGOffset = 0
+        self.addstr(self.mov.sizeY+1, colorPickerFGOffset, "FG:", curses.color_pair(1))
+        for c in range(1,17):
+            cp = self.ansi.colorPairMap[(c, 0)]
+            debug_write("c = " + str(c))
+            debug_write("cp is " + str(type(cp)))
+            debug_write("cp = " + str(cp))
+            if c > 8:
+                if c == self.colorfg:
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
+                else:
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp) | curses.A_BOLD)   # block character
             else:
-                self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
+                if c == self.colorfg:
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp))   
+                else:
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp))
+        # bg color
+        colorPickerBGOffset = 21
+        self.addstr(self.mov.sizeY+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
+        for c in range(1,9):
+            cp = self.ansi.colorPairMap[(c, 0)]
+            #debug_write("c = " + str(c))
+            #debug_write("cp is " + str(type(cp)))
+            #debug_write("cp = " + str(cp))
+            if c == self.colorbg or (c == 8 and self.colorbg == 0):
+                if c == 8: # black bg
+                    self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(1)) 
+                else:
+                    self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
+            else:
+                self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp))
+        # Draw x/y location
+        locationString = "  [%i,%i]" % (self.xy[1]-1, self.xy[0])
+        locationStringOffset = self.mov.sizeX - len(locationString) - 2
+        self.addstr(self.mov.sizeY+1, locationStringOffset, locationString, curses.color_pair(1))
         # Draw Range, FPS and Delay buttons
         self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
         self.addstr(self.mov.sizeY, 16, ">", curses.color_pair(6) | curses.A_BOLD)
@@ -1003,20 +1058,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(self.mov.sizeY, 2, "F", curses.color_pair(6) | curses.A_BOLD)  # Frame button
             self.addstr(self.mov.sizeY, 29, "R", curses.color_pair(6) | curses.A_BOLD)  # Range button
             self.addstr(self.mov.sizeY, 23, "D", curses.color_pair(6) | curses.A_BOLD)  # Delay button
-        # Draw color selector buttons
-        if not self.appState.ansiArtMode: 
-            colorButtonOffset = self.mov.sizeX - 17
-            self.addstr(self.mov.sizeY, colorButtonOffset, "<", curses.color_pair(6) | curses.A_BOLD)
-            self.addstr(self.mov.sizeY, colorButtonOffset+1, "FG", curses.color_pair(1))
-            self.addstr(self.mov.sizeY, colorButtonOffset+3, ">", curses.color_pair(6) | curses.A_BOLD)
-
-            self.addstr(self.mov.sizeY, colorButtonOffset+5, "<", curses.color_pair(6) | curses.A_BOLD)
-            self.addstr(self.mov.sizeY, colorButtonOffset+6, "BG", curses.color_pair(1))
-            self.addstr(self.mov.sizeY, colorButtonOffset+8, ">", curses.color_pair(6) | curses.A_BOLD)
         # draw transport
         transportString = "|< << |> >> >|" 
         #transportOffset = chMapOffset - len(transportString) - 1
-        transportOffset = self.mov.sizeX - len(transportString) - 1 - 18
+        transportOffset = self.mov.sizeX - len(transportString) - 2 
         if self.playing:
             transportString = "|< << || >> >|" 
             self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(1))
@@ -1231,62 +1276,64 @@ class UserInterface():  # Separate view (curses) from this controller
                 if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX:
                     self.xy[1] = mouseX + 1 # set cursor position
                     self.xy[0] = mouseY
-                elif mouseX < self.mov.sizeX and mouseY == self.mov.sizeY:   # we clicked on the status bar somewhere..
+                elif mouseX < self.mov.sizeX and mouseY in [self.mov.sizeY, self.mov.sizeY+1]:   # we clicked on the status bar somewhere..
                     # Add stuff here to take mouse 'commands' like clicking
                     # play/next/etc on transport, or clicking "start button"
                     #if mouseX in [38, 39]:  # clicked play button
-                    if mouseX in [self.mov.sizeX - 26, self.mov.sizeX - 27]:  # clicked play button
-                        self.clickHighlight(self.mov.sizeX - 27, "|>")
-                        self.startPlaying()
-                        self.metaKey = 0
-                    elif mouseX in [self.mov.sizeX - 29, self.mov.sizeX - 30]: # goto prev frame
-                        self.clickHighlight(self.mov.sizeX - 30, "<<")
-                        self.mov.prevFrame()
-                    elif mouseX in [self.mov.sizeX - 23, self.mov.sizeX - 24]: # goto next frame
-                        self.clickHighlight(self.mov.sizeX - 24, ">>")
-                        self.mov.nextFrame()
-                    elif mouseX in [self.mov.sizeX - 32, self.mov.sizeX - 33]: # goto first frame
-                        self.clickHighlight(self.mov.sizeX - 33, "|<")
-                        self.mov.gotoFrame(1)
-                    elif mouseX in [self.mov.sizeX - 20, self.mov.sizeX - 21]: # goto last frame
-                        self.clickHighlight(self.mov.sizeX - 21, ">|")
-                        self.mov.nextFrame()
-                        self.mov.gotoFrame(self.mov.frameCount)
-                    #elif mouseX in [self.mov.sizeY, 0]: # help
-                    elif mouseX == 0: # help
-                        self.clickHighlight(0, "?")
-                        if self.appState.hasHelpFile:
-                            self.showAnimatedHelpScreen()
-                        else:
-                            self.showHelp()
-                        c = None
-                    elif mouseX == self.mov.sizeX - 17:  # clicked prev color 
-                        self.clickHighlight(self.mov.sizeX - 17, "<")
-                        self.prevFgColor()
-                    elif mouseX == self.mov.sizeX - 14:  # clicked next color 
-                        self.clickHighlight(self.mov.sizeX - 14, ">")
-                        self.nextFgColor()
-                    elif mouseX == self.mov.sizeX - 12:  # clicked prev bg color 
-                        self.clickHighlight(self.mov.sizeX - 12, "<")
-                        self.prevBgColor()
-                    elif mouseX == self.mov.sizeX - 9:  # clicked next bg color 
-                        self.clickHighlight(self.mov.sizeX - 9, ">")
-                        self.nextBgColor()
-                    elif mouseX == 12:    # clicked FPS down
-                        self.clickHighlight(12, "<")
-                        self.decreaseFPS()
-                    elif mouseX == 16:    # clicked FPS up
-                        self.clickHighlight(16, ">")
-                        self.increaseFPS()
-                    elif mouseX == 23:  # clicked Delay button
-                        self.clickHighlight(23, "D")
-                        self.getDelayValue()
-                    elif mouseX == 29:  # clicked Range button
-                        self.clickHighlight(29, "R")
-                        self.getPlaybackRange()
-                    elif mouseX == 2:   # clicked Frame button
-                        self.clickHighlight(2, "F")
-                        self.gotoFrameGetInput()
+                    if mouseY == self.mov.sizeY: # clicked upper bar 
+                        if mouseX in [self.mov.sizeX - 9, self.mov.sizeX - 10]:  # clicked play button
+                            self.clickHighlight(self.mov.sizeX - 10, "|>")
+                            self.startPlaying()
+                            self.metaKey = 0
+                        elif mouseX in [self.mov.sizeX - 12, self.mov.sizeX - 13]: # goto prev frame
+                            self.clickHighlight(self.mov.sizeX - 13, "<<")
+                            self.mov.prevFrame()
+                        elif mouseX in [self.mov.sizeX - 6, self.mov.sizeX - 7]: # goto next frame
+                            self.clickHighlight(self.mov.sizeX - 7, ">>")
+                            self.mov.nextFrame()
+                        elif mouseX in [self.mov.sizeX - 15, self.mov.sizeX - 16]: # goto first frame
+                            self.clickHighlight(self.mov.sizeX - 16, "|<")
+                            self.mov.gotoFrame(1)
+                        elif mouseX in [self.mov.sizeX - 3, self.mov.sizeX - 4]: # goto last frame
+                            self.clickHighlight(self.mov.sizeX - 4, ">|")
+                            self.mov.nextFrame()
+                            self.mov.gotoFrame(self.mov.frameCount)
+                        #elif mouseX in [self.mov.sizeY, 0]: # help
+                        elif mouseX == 0: # help
+                            self.clickHighlight(0, "?")
+                            if self.appState.hasHelpFile:
+                                self.showAnimatedHelpScreen()
+                            else:
+                                self.showHelp()
+                            c = None
+                        elif mouseX == 12:    # clicked FPS down
+                            self.clickHighlight(12, "<")
+                            self.decreaseFPS()
+                        elif mouseX == 16:    # clicked FPS up
+                            self.clickHighlight(16, ">")
+                            self.increaseFPS()
+                        elif mouseX == 23:  # clicked Delay button
+                            self.clickHighlight(23, "D")
+                            self.getDelayValue()
+                        elif mouseX == 29:  # clicked Range button
+                            self.clickHighlight(29, "R")
+                            self.getPlaybackRange()
+                        elif mouseX == 2:   # clicked Frame button
+                            self.clickHighlight(2, "F")
+                            self.gotoFrameGetInput()
+
+
+                    elif mouseY == self.mov.sizeY+1: # clicked bottom bar 
+                        if mouseX in range(4,20): 
+                            fg = mouseX - 3  
+                            #self.notify("set fg color: " + str(fg))
+                            self.setFgColor(fg)
+                        elif mouseX in range(25,33):    
+                            bg = mouseX - 24
+                            #self.notify("set bg color: " + str(bg))
+                            self.setBgColor(bg)
+                        elif DEBUG_MODE:
+                            self.notify("bottom bar. " + str([mouseX, mouseY]))
                     else:
                         if DEBUG_MODE:
                             self.notify(str([mouseX, mouseY]))
@@ -2097,7 +2144,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.13.1'
+    DUR_VER = '0.14'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
@@ -2143,19 +2190,19 @@ if (__name__ == "__main__"):
         app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
     term_size = os.get_terminal_size()
-    if args.width and args.width[0] > 79 and args.width[0] < term_size[0]:
+    if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
         app.width = args.width[0]
     else:
-        app.width = 79      # "sane" default screen size, 79x24.. 
+        app.width = 80      # "sane" default screen size, 80x24.. 
     if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
-        app.height = args.height[0]
+        app.height = args.height[0] - 1
     else:
-        app.height = 24
+        app.height = 24 - 1
     if args.max:
-        if term_size[0] > 79:
+        if term_size[0] > 80:
             app.width = term_size[0]
         if term_size[1] > 24:
-            app.height = term_size[1] - 1
+            app.height = term_size[1] - 2
     if args.play:
         showStartupScreen=False
     elif args.quick:
@@ -2164,7 +2211,10 @@ if (__name__ == "__main__"):
         app.hasMouse = False
     if args.ansi:
         app.ansiArtMode = True
-    else: app.ansiArtMode = False
+        app.charEncoding = 'ibm-pc'
+    else:
+        app.ansiArtMode = False
+        app.charEncoding = 'utf-8'
     if args.blackbg: app.blackbg = False   # blackbg = black background
     else: app.blackbg = True
     if showStartupScreen:
@@ -2196,7 +2246,7 @@ if (__name__ == "__main__"):
         else:
             print("Help file: Not found")
         print("Undo history size = %d" % app.undoHistorySize)
-        if app.width == 79 and app.height == 24:
+        if app.width == 80 and app.height == 24:
             print("Canvas size: %i columns, %i lines (Default)" % (app.width, app.height))
         else:
             print("Canvas size: %i columns, %i lines" % (app.width, app.height))
