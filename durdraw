@@ -969,15 +969,46 @@ class UserInterface():  # Separate view (curses) from this controller
     
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
+        self.charMapNumber = 0
+        self.fullCharMap = [ \
+            # unicode block characters
+            {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 },    # ibm-pc looking block characters
+            {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
+            {'f1':9601, 'f2':9602, 'f3':9603, 'f4':9605, 'f5':9606, 'f6':9607, 'f7':9613, 'f8':9614, 'f9':9615, 'f10':9616 },   # more block elements
+            {'f1':9581, 'f2':9582, 'f3':9583, 'f4':9584, 'f5':9585, 'f6':9586, 'f7':9587, 'f8':9472, 'f9':9474, 'f10':9532 },   # character cell arcs
+            ]
         """ Map a dict of F1-f10 to character values """ 
         if self.appState.charEncoding == 'ibm-pc':
             self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
         else:
             #self.chMap = {'f1':2591, 'f2':2592, 'f3':2593, 'f4':2588, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
-            self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':254, 'f10':250 }
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%c" % \
+            #self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 }
+            self.chMap = self.fullCharMap[self.charMapNumber]
+        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'] )
+                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+                #self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
+
+    def nextCharSet(self):
+        if self.charMapNumber == len(self.fullCharMap) - 1:
+            self.charMapNumber = 0
+        else:
+            self.charMapNumber += 1
+        self.refreshCharMap()
+
+    def prevCharSet(self):
+        if self.charMapNumber == 0:
+            self.charMapNumber = len(self.fullCharMap) - 1
+        else:
+            self.charMapNumber -= 1
+        self.refreshCharMap()
+
+    def refreshCharMap(self):
+        # checks self.charMapNumber and does the rest
+        self.chMap = self.fullCharMap[self.charMapNumber]
+        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
+                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
                 #self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
 
     def clearStatusLine(self):
@@ -1003,6 +1034,8 @@ class UserInterface():  # Separate view (curses) from this controller
         #chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         #chMapOffset = 37    # how far in to show the character map
         chMapOffset = 35    # how far in to show the character map
+        self.addstr(self.mov.sizeY+1, chMapOffset-1, "<", curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(self.mov.sizeY+1, 66, ">", curses.color_pair(6) | curses.A_BOLD)
         if self.colorfg > 8:    # bright color
             self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
             #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
@@ -1022,12 +1055,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 if c == self.colorfg:
                     self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
                 else:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp) | curses.A_BOLD)   # block character
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp) | curses.A_BOLD)   # block character
             else:
                 if c == self.colorfg:
                     self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp))   
                 else:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp))
+                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp))
         # bg color
         colorPickerBGOffset = 21
         self.addstr(self.mov.sizeY+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
@@ -1042,7 +1075,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
             else:
-                self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(self.chMap['f4']), curses.color_pair(cp))
+                self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
         # Draw x/y location
         locationString = "  [%i,%i]" % (self.xy[1]-1, self.xy[0])
         locationStringOffset = self.mov.sizeX - len(locationString) - 2
@@ -1072,15 +1105,19 @@ class UserInterface():  # Separate view (curses) from this controller
         #transportOffset = chMapOffset - len(transportString) 
         #self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6))
 
-    def clickHighlight(self, pos, buttonString):    # Visual feedback
+    def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
         # example: self.clickHighlight(52, "|>")
         # Highlight clicked item at "pos" by drawing it as "str" in bright white or yellow, sleep a moment,
         # then back to green
-        self.addstr(self.mov.sizeY, pos, buttonString, curses.color_pair(5) | curses.A_BOLD)
+        if bar == 'top':
+            y = self.mov.sizeY
+        if bar == 'bottom':
+            y = self.mov.sizeY + 1
+        self.addstr(y, pos, buttonString, curses.color_pair(5) | curses.A_BOLD)
         curses.curs_set(0)  # turn off cursor
         self.stdscr.refresh()
         time.sleep(0.2)
-        self.addstr(self.mov.sizeY, pos, buttonString, curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(y, pos, buttonString, curses.color_pair(6) | curses.A_BOLD)
         curses.curs_set(1)  # turn on cursor
 
 
@@ -1324,14 +1361,20 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
                     elif mouseY == self.mov.sizeY+1: # clicked bottom bar 
-                        if mouseX in range(4,20): 
+                        if mouseX in range(4,20): # clicked a fg color
                             fg = mouseX - 3  
                             #self.notify("set fg color: " + str(fg))
                             self.setFgColor(fg)
-                        elif mouseX in range(25,33):    
+                        elif mouseX in range(25,33):   # clicked a bg color
                             bg = mouseX - 24
                             #self.notify("set bg color: " + str(bg))
                             self.setBgColor(bg)
+                        elif mouseX == 66:  # clicked next character set
+                            self.clickHighlight(66, ">", bar='bottom')
+                            self.nextCharSet()
+                        elif mouseX == 34:  # clicked previous character set
+                            self.clickHighlight(34, "<", bar='bottom')
+                            self.prevCharSet()
                         elif DEBUG_MODE:
                             self.notify("bottom bar. " + str([mouseX, mouseY]))
                     else:
@@ -2144,7 +2187,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.14'
+    DUR_VER = '0.14.1'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
