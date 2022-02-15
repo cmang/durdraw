@@ -4,23 +4,32 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.14
+              \_____________________________________________\|  v 0.15
 
 ## OVERVIEW:
 
-Durdraw is an ASCII and ANSI drawing and playback program for UNIX-like systems
-(Linux, OSX, FreeBSD, etc) that supports frame-based animation, attempting to
-make ANSI and ASCII art animation work more like a traditional animation studio.
+Durdraw is an ASCII and Unicode drawing and animation program for UNIX-like
+systems (Linux, OSX, FreeBSD, etc) that supports frame-based animation,
+attempting to make ANSI and ASCII art animation work more like a traditional
+animation studio.
 
-Durdraw runs in the terminal and is shell script friendly, for those wanting to
-spice up their automations.
+Durdraw runs in the terminal and is shell script friendly, for those wanting
+to spice up their automations.
+
+Durdraw was heavily inspired by classic ANSI editing software for MS-DOS and
+Windows, such as TheDraw, Aciddraw and Pablodraw. What makes Durdraw different
+from those programs is the following features:
+
+* Frame-based animation
+* Drawing with Unicode characters
+* Runs in a Unix terminal
 
 It has editing features such as importing ascii files to frames, duplicating
 and deleting frames, flipping between frames, and frames-per-second speed
 control during playback. It supports the mouse.
 
-Files can be loaded and saved in ASCII (.asc, .txt) or in DUR animation
-format. Files can also be saved in animated GIF, PNG and ANSI formats.
+Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
+ANSI (.ans), .GIF and .PNG formats.
 
 ## REQUIREMENTS:
 
@@ -170,7 +179,8 @@ Also:
       alt-down - prev fg color            alt-o - Open
       alt-right - next bg color           alt-q - Quit
       alt-left - prev bg color            alt-h - Help
-      alt-R - set playback/edit Range     alt-g - Go to frame #
+      alt-R - set playback/edit Range     alt-] - next character set
+      alt-g - Go to frame #               alt-[ - prev character set
 
 Can use ESC or META instead of ALT
 
@@ -180,7 +190,7 @@ Can use ESC or META instead of ALT
       clicking buttons, if your terminal supports Xterm mouse reporting.
       In iTerm2 this is under Profiles, Terminal and Terminal Emulation.
 
-    * If extended characters are not working in gnu screen, try running the
+    * If IBM-PC characters (-A) are not working in gnu screen, try running the
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
       then type "clrl-a l" to redraw the window.

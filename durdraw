@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Durdraw - Ascii art (animation!!!) doodling program
+Durdraw - Ascii art (animation!!!) and Unicode doodling program
 
 Homepage: https://durdraw.org
 Latest source: https://github.com/cmang/durdraw
@@ -682,9 +682,6 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [27]: # escape - cancel
                 self.undo.undo()
                 prompting = False
-        #self.clearStatusLine()
-        #self.drawStatusBar()
-        #self.refresh()
 
     def increaseFPS(self):
         if (self.opts.framerate != 50): # max 50fps
@@ -794,6 +791,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None 
+                elif c == 93:   # alt-] next character set
+                    self.nextCharSet()
+                elif c == 91:   # alt-[ previous character set  # apparently this doesn't work
+                    self.prevCharSet() # during playback, c == -1
                 elif c == 122:  # alt-z = undo
                     self.undo.undo()
                 elif c == 114:  # alt-r = redo
@@ -865,6 +866,12 @@ class UserInterface():  # Separate view (curses) from this controller
                                     bg = mouseX - 24
                                     #self.notify("set bg color: " + str(bg))
                                     self.setBgColor(bg)
+                                elif mouseX == 66:  # clicked next character set
+                                    self.clickHighlight(66, ">", bar='bottom')
+                                    self.nextCharSet()
+                                elif mouseX == 34:  # clicked previous character set
+                                    self.clickHighlight(34, "<", bar='bottom')
+                                    self.prevCharSet()
                                 elif DEBUG_MODE:
                                     self.notify("bottom bar. " + str([mouseX, mouseY]))
                             elif DEBUG_MODE:
@@ -966,17 +973,58 @@ class UserInterface():  # Separate view (curses) from this controller
             else: time.sleep(0.005) # to keep from sucking up cpu
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
+
+    def genCharSet(self, firstChar):   # firstChar is a unicode number
+        newSet = {}
+        newChar = firstChar
+        for x in range(1,11):   # 1-10
+            keyStr = 'f%i' % x
+            newSet.update({keyStr:newChar})
+            newChar += 1
+        return(newSet)
+            
     
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
         self.charMapNumber = 0
         self.fullCharMap = [ \
-            # unicode block characters
-            {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 },    # ibm-pc looking block characters
+            # All of our unicode templates live here. Blank template:
+            #{'f1':, 'f2':, 'f3':, 'f4':, 'f5':, 'f6':, 'f7':, 'f8':, 'f9':, 'f10':},
+
+            # block characters
+            {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 },    # ibm-pc looking block characters (but unicode instead of ascii)
+            {'f1':9601, 'f2':9602, 'f3':9603, 'f4':9604, 'f5':9605, 'f6':9606, 'f7': 9607, 'f8':9608, 'f9'     :9600, 'f10':0x2594 },   # more block elements - mostly bottom half fills
+            {'f1':0x2588, 'f2':0x2589, 'f3':0x258A, 'f4':0x258B, 'f5':0x258C, 'f6':0x258D, 'f7':0x258E, 'f8':0x258F, 'f9':0x2590, 'f10':0x2595},    # partial left and right fills
+
+            # geometric shapes
+            {'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
+
+            # terminal graphic characters
             {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
-            {'f1':9601, 'f2':9602, 'f3':9603, 'f4':9605, 'f5':9606, 'f6':9607, 'f7':9613, 'f8':9614, 'f9':9615, 'f10':9616 },   # more block elements
-            {'f1':9581, 'f2':9582, 'f3':9583, 'f4':9584, 'f5':9585, 'f6':9586, 'f7':9587, 'f8':9472, 'f9':9474, 'f10':9532 },   # character cell arcs
+            #{'f1':0x1FB9C, 'f2':0x1FB9D, 'f3':0x1FB9F, 'f4':0x1FB9E, 'f5':0x1FB9A, 'f6':0x1FB9B, 'f7':0x1FB65, 'f8':0x1FB5A, 'f9':0x1FB4B, 'f10':0x1FB40},  # legacy computing smooth terminal mosaic characters - newer versions of unicode Triangles and shit.. not sure why it isn't working
+            #{'f1':9581, 'f2':9582, 'f3':9583, 'f4':9584, 'f5':9585, 'f6':9586, 'f7':9587, 'f8':9472, 'f9':9474, 'f10':9532 },   # character cell arcs, aka curved pipes
+            {'f1':9581, 'f2':9582, 'f3':9584, 'f4':9583, 'f5':9472, 'f6':9474, 'f7':9585, 'f8':9586, 'f9':9587, 'f10':9532 },   # character cell arcs, aka curved pipes
+            #{'f1':130032, 'f2':0x1FBF2, 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
+            #{'f1':0x1FB8C, 'f2':ord('🭀'), 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
             ]
+        # generate some unicode sets via offset
+        self.fullCharMap.append(self.genCharSet(0x25a0)) # geometric shapes
+        self.fullCharMap.append(self.genCharSet(0x25e6)) # more geometric shapes
+        self.fullCharMap.append(self.genCharSet(0x25c6)) # geometrics - diamond and circles
+        self.fullCharMap.append(self.genCharSet(0x02ef)) # UPA modifiers
+        self.fullCharMap.append(self.genCharSet(0x02c2)) # UPA modifiers
+        self.fullCharMap.append(self.genCharSet(0x2669)) # music symbols
+        self.fullCharMap.append(self.genCharSet(0xFF66)) # half-width kanji letters
+        self.fullCharMap.append(self.genCharSet(0xFF70)) # half-width kanji letters
+        self.fullCharMap.append(self.genCharSet(0xFF7a)) # half-width kanji letters
+        self.fullCharMap.append(self.genCharSet(0xFF84)) # half-width kanji letters
+        self.fullCharMap.append(self.genCharSet(0xFF8e)) # half-width kanji letters
+        #self.fullCharMap.append(self.genCharSet(0xFF98)) # half-width kanji letters
+        #self.fullCharMap.append(self.genCharSet(0x1F603)) # smiley emojis
+        self.fullCharMap.append(self.genCharSet(0x2801)) # braile a-j
+        self.fullCharMap.append(self.genCharSet(0x2805)) # braile k-t
+        self.fullCharMap.append(self.genCharSet(0x2825)) # braile u+
+
         """ Map a dict of F1-f10 to character values """ 
         if self.appState.charEncoding == 'ibm-pc':
             self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
@@ -1016,10 +1064,10 @@ class UserInterface():  # Separate view (curses) from this controller
         # appState, not in Movie(). In other words, this == not
         # the width and height of the movie, but of the editor screen.
         self.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
+        self.addstr(self.mov.sizeY+1, 0, " " * self.mov.sizeX)
 
     def drawStatusBar(self):
         self.clearStatusLine()
-        #statusBar = "%s (%i/%i) FPS: %i D: %i " % \
         frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
         rangeBar = "R: %i/%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
         fpsBar = "<FPS>: %i " % (self.opts.framerate)
@@ -1028,8 +1076,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY, 12, fpsBar)
         self.addstr(self.mov.sizeY, 23, delayBar)
         self.addstr(self.mov.sizeY, 29, rangeBar)
-        #self.addstr(self.mov.sizeY, 0, "?", curses.A_STANDOUT)
         self.addstr(self.mov.sizeY, 0, "?", curses.color_pair(6) | curses.A_BOLD)
+
         # Draw character map for f1-f10 (block characters)
         #chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         #chMapOffset = 37    # how far in to show the character map
@@ -1042,15 +1090,15 @@ class UserInterface():  # Separate view (curses) from this controller
         else:   # normal color
             self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
             #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
+        # draw current character set #
+        self.addstr(self.mov.sizeY+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(1)) 
+
         # draw color picker
         # fg color
         colorPickerFGOffset = 0
         self.addstr(self.mov.sizeY+1, colorPickerFGOffset, "FG:", curses.color_pair(1))
         for c in range(1,17):
             cp = self.ansi.colorPairMap[(c, 0)]
-            debug_write("c = " + str(c))
-            debug_write("cp is " + str(type(cp)))
-            debug_write("cp = " + str(cp))
             if c > 8:
                 if c == self.colorfg:
                     self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
@@ -1066,9 +1114,6 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(self.mov.sizeY+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
         for c in range(1,9):
             cp = self.ansi.colorPairMap[(c, 0)]
-            #debug_write("c = " + str(c))
-            #debug_write("cp is " + str(type(cp)))
-            #debug_write("cp = " + str(cp))
             if c == self.colorbg or (c == 8 and self.colorbg == 0):
                 if c == 8: # black bg
                     self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(1)) 
@@ -1077,8 +1122,8 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
         # Draw x/y location
-        locationString = "  [%i,%i]" % (self.xy[1]-1, self.xy[0])
-        locationStringOffset = self.mov.sizeX - len(locationString) - 2
+        locationString = "[%i,%i]" % (self.xy[1]-1, self.xy[0])
+        locationStringOffset = self.mov.sizeX - len(locationString) 
         self.addstr(self.mov.sizeY+1, locationStringOffset, locationString, curses.color_pair(1))
         # Draw Range, FPS and Delay buttons
         self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
@@ -1166,6 +1211,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None
+                elif c == 91:   # alt-[ previous character set
+                    self.prevCharSet()
+                elif c == 93:   # alt-] next character set
+                    self.nextCharSet()
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol()
                 elif c == 46:       # alt-. - insert column
@@ -2187,7 +2236,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.14.1'
+    DUR_VER = '0.15'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
