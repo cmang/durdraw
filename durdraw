@@ -33,7 +33,7 @@ import json
 from PIL import Image
 from copy import copy, deepcopy
 
-DEBUG_MODE = False
+DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
 
 def debug_write(debug_string):
     if DEBUG_MODE:
@@ -791,10 +791,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None 
-                elif c == 93:   # alt-] next character set
+                elif c == 93 or c == 338:   # alt-] next character set
                     self.nextCharSet()
-                elif c == 91:   # alt-[ previous character set  # apparently this doesn't work
-                    self.prevCharSet() # during playback, c == -1
+                elif c == 91 or c == 339:   # alt-[ previous character set. apparently this doesn't work
+                    self.prevCharSet() # during playback, c == -1, so 339 is alt-pgup, as a backup
                 elif c == 122:  # alt-z = undo
                     self.undo.undo()
                 elif c == 114:  # alt-r = redo
@@ -1092,6 +1092,11 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
         # draw current character set #
         self.addstr(self.mov.sizeY+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(1)) 
+        # overlay draw function key names in normal color
+        y = 0
+        for x in range(1,11): 
+            self.addstr(self.mov.sizeY+1, chMapOffset+y, "F%i" % x, curses.color_pair(1))
+            y = y + 3
 
         # draw color picker
         # fg color
@@ -1123,7 +1128,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
         # Draw x/y location
         locationString = "[%i,%i]" % (self.xy[1]-1, self.xy[0])
-        locationStringOffset = self.mov.sizeX - len(locationString) 
+        locationStringOffset = self.mov.sizeX - len(locationString) -2
         self.addstr(self.mov.sizeY+1, locationStringOffset, locationString, curses.color_pair(1))
         # Draw Range, FPS and Delay buttons
         self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
@@ -1211,9 +1216,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == curses.KEY_UP:     # alt-up - next fg color
                     self.nextFgColor()
                     c = None
-                elif c == 91:   # alt-[ previous character set
+                elif c == 91 or c == 339:   # alt-[ (91) or alt-pgup (339). previous character set
                     self.prevCharSet()
-                elif c == 93:   # alt-] next character set
+                elif c == 93 or c == 338:   # alt-] or alt-pgdown, next character set
                     self.nextCharSet()
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol()
@@ -2236,7 +2241,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.15'
+    DUR_VER = '0.15.1'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
