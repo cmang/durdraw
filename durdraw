@@ -198,7 +198,7 @@ class AnsiArtStuff():
             # red with background colors
             (7,1):51, (7,2):52, (7,3):53, (7,4):54, (7,5):55, (7,6):56, (7,7):57,
             # black with background colors
-            (8,1):58, (8,2):58, (8,3):60, (8,4):61, (8,5):62, (8,6):63, 
+            (8,1):58, (8,2):59, (8,3):60, (8,4):61, (8,5):62, (8,6):63, 
             (8,7):57,  # 57 instead of 64, because we switch color maps for black
             # on red
             # BRIGHT COLORS 9-16
@@ -217,7 +217,7 @@ class AnsiArtStuff():
             # red with background colors
             (15,0):7, (15,8):7, (15,1):51, (15,2):52, (15,3):53, (15,4):54, (15,5):55, (15,6):56, (15,7):57,
             # black with background colors
-            (16,0):8, (16,8):8, (16,1):58, (16,2):58, (16,3):60, (16,4):61, (16,5):62, (16,6):63, 
+            (16,0):8, (16,8):8, (16,1):58, (16,2):59, (16,3):60, (16,4):61, (16,5):62, (16,6):63, 
             (16,7):57,  # 57 instead of 64, because we switch color maps for black
             } # (fg,bg):cursespair
     def switchColorMap(self, map=0):    # deprecated?  I think so.
@@ -997,7 +997,8 @@ class UserInterface():  # Separate view (curses) from this controller
             {'f1':0x2588, 'f2':0x2589, 'f3':0x258A, 'f4':0x258B, 'f5':0x258C, 'f6':0x258D, 'f7':0x258E, 'f8':0x258F, 'f9':0x2590, 'f10':0x2595},    # partial left and right fills
 
             # geometric shapes
-            {'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
+            #{'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
+            {'f1':0x25e2, 'f2':0x25e3, 'f3':0x25e5, 'f4':0x25e4, 'f5':0x25c4, 'f6':0x25ba, 'f7':0x25b2, 'f8':0x25bc, 'f9':0x25c0, 'f10':0x25b6 },    # little curves and triangles
 
             # terminal graphic characters
             {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
@@ -1024,6 +1025,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.fullCharMap.append(self.genCharSet(0x2801)) # braile a-j
         self.fullCharMap.append(self.genCharSet(0x2805)) # braile k-t
         self.fullCharMap.append(self.genCharSet(0x2825)) # braile u+
+        self.fullCharMap.append(self.genCharSet(0x2b2c)) # ellipses
 
         """ Map a dict of F1-f10 to character values """ 
         if self.appState.charEncoding == 'ibm-pc':
@@ -2013,7 +2015,13 @@ class UserInterface():  # Separate view (curses) from this controller
       alt-down - prev fg color            alt-o - Open
       alt-right - next bg color           alt-q - Quit
       alt-left - prev bg color            alt-h - Help
-      alt-R - set playback/edit Range     alt-g - Go to frame #
+      alt-R - set playback/edit Range     alt-pgdn - next character set
+      alt-g - Go to frame #               alt-pgup - prev character set
+
+
+Can use ESC or META instead of ALT
+
+
 
 Can use ESC or META instead of ALT
 
@@ -2241,7 +2249,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
             
 if (__name__ == "__main__"):
-    DUR_VER = '0.15.1'
+    DUR_VER = '0.15.2'
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __

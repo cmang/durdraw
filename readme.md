@@ -179,8 +179,8 @@ Also:
       alt-down - prev fg color            alt-o - Open
       alt-right - next bg color           alt-q - Quit
       alt-left - prev bg color            alt-h - Help
-      alt-R - set playback/edit Range     alt-] - next character set
-      alt-g - Go to frame #               alt-[ - prev character set
+      alt-R - set playback/edit Range     alt-pgdn - next character set
+      alt-g - Go to frame #               alt-pgup - prev character set
 
 Can use ESC or META instead of ALT
 
