@@ -1,3 +1,4 @@
+![durdraw-linux-unicode-ansi](https://user-images.githubusercontent.com/261501/161380487-ac6e2b5f-d44a-493a-ba78-9903a6a9f1ca.png)
 ![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
 
                   __                __
@@ -16,11 +17,11 @@ animation studio.
 Durdraw runs in the terminal and is shell script friendly, for those wanting
 to spice up their automations.
 
-Durdraw was heavily inspired by classic ANSI editing software for MS-DOS and
+Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw. What makes Durdraw different
 from those programs is the following features:
 
-* Frame-based animation
+* Frame-based animation, with time control
 * Drawing with Unicode characters
 * Runs in a Unix terminal
 
@@ -42,7 +43,7 @@ ANSI (.ans), .GIF and .PNG formats.
     Ansilove (https://ansilove.org/)
 
 * For IBM-PC ANSI art support: Install a terminal and font (like the included
-  vga.pcf) that supports Code Page 463 (US-Latin-1, Western ASCII, etc)
+  vga.pcf) that supports Code Page 437 (US-Latin-1, Western ASCII, etc)
   encoding for IBM-PC Extended ASCII. ANSI art doesn't show up correctly in
   UTF-8 terminals.  See optional instructions below for configuring mrxvt for
   this purpose. 
