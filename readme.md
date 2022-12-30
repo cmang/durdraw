@@ -19,8 +19,8 @@ a traditional animation studio.
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw.
 
-It has editing features such as importing ascii files to frames, duplicating
-and deleting frames, flipping between frames, and frames-per-second speed
+Some animation features include importing ascii files to frames, duplicating
+and deleting frames, switching between frames, and frames-per-second speed
 control during playback. It supports the mouse.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
@@ -76,7 +76,7 @@ Then you can run Durdraw with:
     ./start-durdraw
 ```
 
-To demo out the example animations:
+To look at some included example animations:
 
 ```
     ./start-durdraw -p examples/*.dur
@@ -166,9 +166,9 @@ Can use ESC or META instead of ALT
 
 For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
 
-If you want to try making animated ANSI art with durdraw, you need a terminal
-and font that supports ASCII encoding and IBM's Code Page 437. You can find
-fonts in the "extras" directory for this purpose.
+If you want to try making animated IBM-PC/MS-DOS ANSI art with durdraw, you
+need a terminal and font that supports ASCII encoding and IBM's Code Page 437.
+You can find fonts in the "extras" directory for this purpose.
 
 Note that ANSI art character support is experimental (see FAQ).
 
@@ -176,7 +176,7 @@ In Linux/X11, here is one possible way to set up a terminal for IBM-PC ANSI art:
 
 * Install mrxvt
 * Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
-  these commands:
+  these commands. This may be different on your OS:
     $ mkfontdir /usr/share/fonts/X11/misc/
     $ xset fp rehash
 * Give mrxvt IBM-PC colors by copying the contents of Xdefaults into your own
@@ -201,27 +201,30 @@ F1-F12 to input ANSI block characters.
 
 ## FAQ
 
-Q: Don't TheDraw and some other programs already do ANSI animation?
+#### Q: Don't TheDraw and some other programs already do ANSI animation?
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
-Q: Can I run Durdraw in Windows?
-A: Durdraw is not currently supported on Windows. If you can provide a curses-compatible library for Python, however, it may work. It may also work in Windows Subsystem for Linux.
+#### Q: Can I run Durdraw in Windows?
+A: Durdraw is not currently supported on Windows. However, if you can provide a curses-compatible library for Python (like PDCurses), it may work. It may also work in Windows Subsystem for Linux.
 
-Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, etc?
-A: No. DurDraw requires a Unix-like system with Python 3. However, the file format for Durdraw movies is in JSON format. It should be possible to support this format on different operating systems.
+#### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
+A: No. DurDraw requires a Unix-like system with Python 3. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
-Q: Does DurDraw support IBM-PC ANSI art?
+#### Q: Does DurDraw support IBM-PC ANSI art?
 A: Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
 
 ### CREDITS:
 
 Sam Foster
 
-Homepage: http://durdraw.org
+Homepages:
+
+http://durdraw.org
+https://github.com/cmang/durdraw
 
 ### LEGAL:
 
-Durdraw is Copyright 2009-2022 Sam Foster <samfoster@gmail.com>
+Durdraw is Copyright (c) 2009-2022 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
