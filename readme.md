@@ -27,7 +27,7 @@ ANSI (.ans), JSON, GIF and PNG formats.
 ## REQUIREMENTS:
 
 * Python 3
-* Pillow or PIL Python module
+* Linux, macOS, or other Unix-like System
 
 ## OPTIONAL EXTRAS:
 
