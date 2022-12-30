@@ -44,44 +44,47 @@ ANSI (.ans), JSON, GIF and PNG formats.
 
 1: Download and extract, or use git to download:
 
-`
+```
    git clone https://github.com/cmang/durdraw.git  
    cd durdraw 
-`
+```
 
 2: Install using pip:
 
-`
+```
     pip install .
-`
+```
 
 Or run the installer:
 
-`
+```
    python3 setup.py install
-`
+```
 
-You should now be able to run 'durdraw'
+You should now be able to run `durdraw`
 
 ## RUNNING WITHOUT INSTALLING
 
 You may need to install the "PIL" or "pillow" python module first:
 
-`
+```
     pip3 install pillow
-`
+```
 
 Then you can run Durdraw with:
 
-`
+```
     ./start-durdraw
-`
+```
 
 ## COMMAND LINE USAGE:
 
 You can play a .dur file or series of .dur files with:
+
+```
     $ durdraw -p filename.dur
     $ durdraw -p file1.dur file2.dur file3.dur ...
+```
 
 Other command-line options:
 
