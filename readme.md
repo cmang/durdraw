@@ -1,3 +1,6 @@
+Durdraw
+=======
+
                   __                __
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
@@ -28,17 +31,6 @@ ANSI (.ans), JSON, GIF and PNG formats.
 
 * Python 3
 * Linux, macOS, or other Unix-like System
-
-## OPTIONAL EXTRAS:
-
-* For animated GIF export, install:
-    Ansilove (https://ansilove.org/)
-
-* For IBM-PC ANSI art support: Install a terminal and font (like the included
-  vga.pcf) that supports Code Page 437 (US-Latin-1, Western ASCII, etc)
-  encoding for IBM-PC Extended ASCII. ANSI art doesn't show up correctly in
-  UTF-8 terminals.  See optional instructions below for configuring mrxvt for
-  this purpose. 
 
 ## INSTALLATION:
 
@@ -159,15 +151,15 @@ Can use ESC or META instead of ALT
 
 ## OPTIONAL INSTALLATION:
 
-For animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
+For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
 
 If you want to try making animated ANSI art with durdraw, you need a terminal
 and font that supports ASCII encoding and IBM's Code Page 437. You can find
 fonts in the "extras" directory for this purpose.
 
-Note that ANSI art character support is experimental.
+Note that ANSI art character support is experimental (see FAQ).
 
-In Linux/X11, here is one possible way to set that up:
+In Linux/X11, here is one possible way to set up a terminal for IBM-PC ANSI art:
 
 * Install mrxvt
 * Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
