@@ -2,42 +2,34 @@
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.15.1
+              \_____________________________________________\|  v 0.16.0
 
 ![durdraw-linux-unicode-ansi](https://user-images.githubusercontent.com/261501/161380487-ac6e2b5f-d44a-493a-ba78-9903a6a9f1ca.png)
 ![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
 
 ## OVERVIEW:
 
-Durdraw is an ASCII and Unicode drawing and animation program for UNIX-like
-systems (Linux, OSX, FreeBSD, etc) that supports frame-based animation,
-attempting to make ANSI and ASCII art animation work more like a traditional
-animation studio.
-
-Durdraw runs in the terminal and is shell script friendly, for those wanting
-to spice up their automations.
+Durdraw is an ASCII and Unicode art editor for UNIX-like systems (Linux, 
+macOS, etc). It runs in the terminal and supports color and frame-based
+animation, attempting to make ANSI and ASCII art animation work more like
+a traditional animation studio.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
-Windows, such as TheDraw, Aciddraw and Pablodraw. What makes Durdraw different
-from those programs is the following features:
-
-* Frame-based animation, with time control
-* Drawing with Unicode characters
-* Runs in a Unix terminal
+Windows, such as TheDraw, Aciddraw and Pablodraw.
 
 It has editing features such as importing ascii files to frames, duplicating
 and deleting frames, flipping between frames, and frames-per-second speed
 control during playback. It supports the mouse.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
-ANSI (.ans), .GIF and .PNG formats.
+ANSI (.ans), JSON, GIF and PNG formats.
 
 ## REQUIREMENTS:
 
 * Python 3
 * Pillow or PIL Python module
 
-## ALSO RECOMMENDED:
+## OPTIONAL EXTRAS:
 
 * For animated GIF export, install:
     Ansilove (https://ansilove.org/)
@@ -50,75 +42,40 @@ ANSI (.ans), .GIF and .PNG formats.
 
 ## INSTALLATION:
 
-1: Install the PIL or Pillow Python module: 
-
-To install using pip:
+1: Download and extract, or use git to download:
 
 `
-   pip3 install Pillow
+   git clone https://github.com/cmang/durdraw.git  
+   cd durdraw 
 `
 
-Alternatively if you are on Debian or Ubuntu:
+2: Install using pip:
 
 `
-   sudo apt-get install python3-pil
+    pip install .
 `
 
-2: Once PIL is installed, you can just extract and run durdraw as-is:
+Or run the installer:
 
 `
-    $ ./durdraw
+   python3 setup.py install
 `
 
-To install system-wide, or locally:
+You should now be able to run 'durdraw'
 
-* Copy the file "durdraw" to any of the following locations:
-~/bin/
-/usr/local/bin/
-/usr/bin/
+## RUNNING WITHOUT INSTALLING
 
-* Copy the file "durhelp.dur" to any of the following locaitons:
-~/.dur/
-/usr/local/share/durdraw/
-/usr/share/durdraw/
+You may need to install the "PIL" or "pillow" python module first:
 
-## OPTIONAL INSTALLATION:
+`
+    pip3 install pillow
+`
 
-For animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
+Then you can run Durdraw with:
 
-If you want to try making animated ANSI art with durdraw, you need a terminal
-and font that supports ASCII encoding and IBM's Code Page 437. You can find
-fonts in the "extras" directory for this purpose.
-
-Note that ANSI art character support is experimental.
-
-In Linux/X11, here is one way to set that up:
-
-* Install mrxvt
-* Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
-  these commands:
-    $ mkfontdir /usr/share/fonts/X11/misc/
-    $ xset fp rehash
-* Give mrxvt IBM-PC colors by copying the contents of Xdefaults into your own
-  ~/.Xdefaults file. You can create ~/.Xdefaults if it does not exist.
-* Launch mrxvt with: mrxvt -fn vga -bg black -fg grey
-
-If you are using macOS or MacOS X and want IBM-PC ANSI art support in
-Terminal.app:
-
-1. Install dos437.ttf font (included) by double-clicking it.
-2. Create a profile in Terminal Preferences/Settings with the following
-   settings (similar settings can be applied in iTerm):
-    * In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
-      and "Use bright colors for bold text" are checked
-    * In Keyboard tab, "Use option as meta key" selected
-    * In "Advanced" tab, Character encoding set to "Western (ASCII)"
-    * Set background color to black (low or no transprency) and foreground
-      color to white
-
-Once this is setup, pass "-A" to durdraw's command-line to allow you to use
-F1-F12 to input ANSI block characters. 
-
+`
+    ./start-durdraw
+`
 
 ## COMMAND LINE USAGE:
 
@@ -195,10 +152,62 @@ Can use ESC or META instead of ALT
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
       then type "clrl-a l" to redraw the window.
+      Also see "OPTIONAL INSTALLATION" notes below
+
+## OPTIONAL INSTALLATION:
+
+For animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
+
+If you want to try making animated ANSI art with durdraw, you need a terminal
+and font that supports ASCII encoding and IBM's Code Page 437. You can find
+fonts in the "extras" directory for this purpose.
+
+Note that ANSI art character support is experimental.
+
+In Linux/X11, here is one possible way to set that up:
+
+* Install mrxvt
+* Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
+  these commands:
+    $ mkfontdir /usr/share/fonts/X11/misc/
+    $ xset fp rehash
+* Give mrxvt IBM-PC colors by copying the contents of Xdefaults into your own
+  ~/.Xdefaults file. You can create ~/.Xdefaults if it does not exist.
+* Launch mrxvt with: mrxvt -fn vga -bg black -fg grey
+
+If you are using macOS or MacOS X and want IBM-PC ANSI art support in
+Terminal.app:
+
+1. Install dos437.ttf font (included) by double-clicking it.
+2. Create a profile in Terminal Preferences/Settings with the following
+   settings (similar settings can be applied in iTerm):
+    * In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
+      and "Use bright colors for bold text" are checked
+    * In Keyboard tab, "Use option as meta key" selected
+    * In "Advanced" tab, Character encoding set to "Western (ASCII)"
+    * Set background color to black (low or no transprency) and foreground
+      color to white
+
+Once this is setup, pass "-A" to durdraw's command-line to allow you to use
+F1-F12 to input ANSI block characters. 
+
+## FAQ
+
+Q: Don't TheDraw and some other programs already do ANSI animation?
+A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
+
+Q: Can I run Durdraw in Windows?
+A: Durdraw is not currently supported on Windows. If you can provide a curses-compatible library for Python, however, it may work. It may also work in Windows Subsystem for Linux.
+
+Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, etc?
+A: No. DurDraw requires a Unix-like system with Python 3. However, the file format for Durdraw movies is in JSON format. It should be possible to support this format on different operating systems.
+
+Q: Does DurDraw support IBM-PC ANSI art?
+A: Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
 
 ### CREDITS:
 
-Sam Foster (http://cmang.org)
+Sam Foster
 
 Homepage: http://durdraw.org
 

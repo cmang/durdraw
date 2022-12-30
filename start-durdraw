@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+
+# Launches Durdraw
+
+from durdraw import main
+from durdraw.durdraw_options import Options
+from durdraw.durdraw_movie import *
+
+if __name__ == "__main__":
+    #try:
+    main.main()
+    #except Exception as e:
+    #    print(f"Exception: {e}")
+    #    print("Caught exception. Exiting.")
+    #    exit(1)
+

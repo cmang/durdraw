@@ -1,350 +1,22 @@
-#!/usr/bin/env python3
+# This file needs to have all of its non-curses code moved into separate files/libraries
 
-"""
-Durdraw - Ascii art (animation!!!) and Unicode doodling program
-
-Homepage: https://durdraw.org
-Latest source: https://github.com/cmang/durdraw
-
-LICENSE:
-
-Copyright 2009-2022 Sam Foster <samfoster@gmail.com>, all rights reserved
-
-Permission to use, copy, modify, and distribute this software for any
-purpose with or without fee == hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-"""
-
-import argparse,os.path,pickle,sys,time
 import curses
-import subprocess
-import shutil
-import tempfile
 import gzip
 import json
+import os
+import os.path
+import pdb
+import pickle
+import sys
+import time
 from PIL import Image
-from copy import copy, deepcopy
 
-DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
-
-def debug_write(debug_string):
-    if DEBUG_MODE:
-        dbgfile = open("durdraw-debug.txt", "a")
-        dbgfile.write(debug_string)
-        dbgfile.write("\n")
-        dbgfile.close()
-
-class AnsiArtStuff():
-    """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
-        color boilerplate, etc """
-    def __init__(self):
-        self.ColorPairMap = None # fill this with dict of FG/BG -> curses pair #
-        self.escapeFgMap = {   # color numbers documented in initColorPairs() comments
-            # ANSI escape code FG colors
-            # regular colors, white (1) through to black (8 and 0)
-            1:"0;37", 2:"0;36", 3:"0;35", 4:"0;34",
-            5:"0;33", 6:"0;32", 7:"0;31", 8:"0;30", 0:"0;30",
-            # bright colors, brwhite (9) through to brblack (16)
-            9:"1;37", 10:"1;36", 11:"1;35", 12:"1;34",
-            13:"1;33", 14:"1;32", 15:"1;31", 16:"1;30"
-        }
-        self.ansiGraphicsModeTokenMap = {
-            """ For parsing ANSI graphics sequence. Eg: ^[0;32;42m is
-                green fg (32), magenta bg (42) no bold (0), setting graphics
-                mode (m) """
-                # expects a function to extract escape sequence then tokenize
-                # based on locations of ^[, ; and ending with m.
-                # Should this store logical color name strings instead of
-                # durdraw color numbers? Then another map can convert names
-                # to numbers.
-                # * Other ANSI gotchas: Pablodraw uses Cursor Forward (C)
-                # commands before each block of characters. Eg: ^[[27C.
-                # places a . character at column 27 of the current line.
-                # This == different from Durdraw, which would instead place
-                # 27 spaces, each escaped to set the color, and then a .
-                # character.
-            # fg colors
-            "37":1, "36":2, "35":3, "34":4, "33":5, "32":6, "31":7, "30":8,
-            # bg colors
-            "47":1, "46":2, "45":3, "44":4, "43":5, "42":6, "41":7, "40":8,
-            # text attributes
-            "0":"none",     # non-bold white fg, black bg
-            "1":"bold",     # bright color
-            "4":"underscore",   # should we handle this?
-            "5":"blink",    # iCE color
-            "7":"reverse",  # should we handle this?
-            "8":"concealed",
-        }
-        self.escapeBgMap = {
-            1:"47", 2:"46", 3:"45", 4:"44",
-            5:"43", 6:"42", 7:"41", 8:"40", 0:"40"
-        }
-    def getColorCode(self, fg, bg):
-        """ returns a string containing ANSI escape code for given fg/bg  """
-        escape = '\033['    # begin escape sequence
-        escape = escape + self.escapeFgMap[fg] + ';'  # set fg color
-        escape = escape + self.escapeBgMap[bg]  # set bg color
-        escape = escape + "m"   # m = set graphics mode command
-        return escape
-    def codePage437(self): 
-        pass
-    def initColorPairs(self):
-       """ Setup ncurses color pairs for ANSI colors """
-       # this kind of hurts to write. wtf, ncurses.
-       # basic ncurses colors - comments for these are durdraw internal color numbers:
-       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK) # white - 1
-       curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK) # cyan - 2
-       curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK) # magenta - 3
-       curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)  # blue - 4
-       curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK) # yellow - 5
-       curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK) # green - 6
-       curses.init_pair(7, curses.COLOR_RED, curses.COLOR_BLACK) # red - 7
-       curses.init_pair(8, curses.COLOR_BLACK, curses.COLOR_BLACK) # black - 8 (and 0)
-       # white with background colors
-       curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_WHITE) # 1,1
-       curses.init_pair(10, curses.COLOR_WHITE, curses.COLOR_CYAN) # 1,2
-       curses.init_pair(11, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # 1,3
-       curses.init_pair(12, curses.COLOR_WHITE, curses.COLOR_BLUE)  # 1,4
-       curses.init_pair(13, curses.COLOR_WHITE, curses.COLOR_YELLOW)  # 1,5
-       curses.init_pair(14, curses.COLOR_WHITE, curses.COLOR_GREEN) # 1,6
-       curses.init_pair(15, curses.COLOR_WHITE, curses.COLOR_RED)   # 1,7
-       # cyan with background colors
-       curses.init_pair(16, curses.COLOR_CYAN, curses.COLOR_WHITE) # 2,1
-       curses.init_pair(17, curses.COLOR_CYAN, curses.COLOR_CYAN) # 2,2
-       curses.init_pair(18, curses.COLOR_CYAN, curses.COLOR_MAGENTA) # 2,3
-       curses.init_pair(19, curses.COLOR_CYAN, curses.COLOR_BLUE)  # 2,4
-       curses.init_pair(20, curses.COLOR_CYAN, curses.COLOR_YELLOW)  # 2,5
-       curses.init_pair(21, curses.COLOR_CYAN, curses.COLOR_GREEN) # 2,6
-       curses.init_pair(22, curses.COLOR_CYAN, curses.COLOR_RED)   # 2,7
-       # magenta with background colors
-       curses.init_pair(23, curses.COLOR_MAGENTA, curses.COLOR_WHITE) # 3,1
-       curses.init_pair(24, curses.COLOR_MAGENTA, curses.COLOR_CYAN) # 3,2
-       curses.init_pair(25, curses.COLOR_MAGENTA, curses.COLOR_MAGENTA) # 3,3
-       curses.init_pair(26, curses.COLOR_MAGENTA, curses.COLOR_BLUE)  # 3,4
-       curses.init_pair(27, curses.COLOR_MAGENTA, curses.COLOR_YELLOW)  # 3,5
-       curses.init_pair(28, curses.COLOR_MAGENTA, curses.COLOR_GREEN) # 3,6
-       curses.init_pair(29, curses.COLOR_MAGENTA, curses.COLOR_RED)   # 3,7
-       # blue with background colors
-       curses.init_pair(30, curses.COLOR_BLUE, curses.COLOR_WHITE) # 4,1
-       curses.init_pair(31, curses.COLOR_BLUE, curses.COLOR_CYAN) # 4,2
-       curses.init_pair(32, curses.COLOR_BLUE, curses.COLOR_MAGENTA) # 4,3
-       curses.init_pair(33, curses.COLOR_BLUE, curses.COLOR_BLUE)  # 4,4
-       curses.init_pair(34, curses.COLOR_BLUE, curses.COLOR_YELLOW)  # 4,5
-       curses.init_pair(35, curses.COLOR_BLUE, curses.COLOR_GREEN) # 4,6
-       curses.init_pair(36, curses.COLOR_BLUE, curses.COLOR_RED)   # 4,7
-       # yellow with background colors
-       curses.init_pair(37, curses.COLOR_YELLOW, curses.COLOR_WHITE) # 5,1
-       curses.init_pair(38, curses.COLOR_YELLOW, curses.COLOR_CYAN) # 5,2
-       curses.init_pair(39, curses.COLOR_YELLOW, curses.COLOR_MAGENTA) # 5,3
-       curses.init_pair(40, curses.COLOR_YELLOW, curses.COLOR_BLUE)  # 5,4
-       curses.init_pair(41, curses.COLOR_YELLOW, curses.COLOR_YELLOW)  # 5,5
-       curses.init_pair(42, curses.COLOR_YELLOW, curses.COLOR_GREEN) # 5,6
-       curses.init_pair(43, curses.COLOR_YELLOW, curses.COLOR_RED)   # 5,7
-       # green with background colors
-       curses.init_pair(44, curses.COLOR_GREEN, curses.COLOR_WHITE) # 6,1
-       curses.init_pair(45, curses.COLOR_GREEN, curses.COLOR_CYAN) # 6,2
-       curses.init_pair(46, curses.COLOR_GREEN, curses.COLOR_MAGENTA) # 6,3
-       curses.init_pair(47, curses.COLOR_GREEN, curses.COLOR_BLUE)  # 6,4
-       curses.init_pair(48, curses.COLOR_GREEN, curses.COLOR_YELLOW)  # 6,5
-       curses.init_pair(49, curses.COLOR_GREEN, curses.COLOR_GREEN) # 6,6
-       curses.init_pair(50, curses.COLOR_GREEN, curses.COLOR_RED)   # 6,7
-       # red with background colors
-       curses.init_pair(51, curses.COLOR_RED, curses.COLOR_WHITE) # 7,1
-       curses.init_pair(52, curses.COLOR_RED, curses.COLOR_CYAN) # 7,2
-       curses.init_pair(53, curses.COLOR_RED, curses.COLOR_MAGENTA) # 7,3
-       curses.init_pair(54, curses.COLOR_RED, curses.COLOR_BLUE)  # 7,4
-       curses.init_pair(55, curses.COLOR_RED, curses.COLOR_YELLOW)  # 7,5
-       curses.init_pair(56, curses.COLOR_RED, curses.COLOR_GREEN) # 7,6
-       #curses.init_pair(57, curses.COLOR_RED, curses.COLOR_RED)   # 7,7
-       # black with background colors
-       curses.init_pair(58, curses.COLOR_BLACK, curses.COLOR_WHITE) # 8,1
-       curses.init_pair(59, curses.COLOR_BLACK, curses.COLOR_CYAN) # 8,2
-       curses.init_pair(60, curses.COLOR_BLACK, curses.COLOR_MAGENTA) # 8,3
-       curses.init_pair(61, curses.COLOR_BLACK, curses.COLOR_BLUE)  # 8,4
-       curses.init_pair(62, curses.COLOR_BLACK, curses.COLOR_YELLOW)  # 8,5
-       curses.init_pair(63, curses.COLOR_BLACK, curses.COLOR_GREEN) # 8,6
-       curses.init_pair(57, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
-       #curses.init_pair(64, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
-       # ^ this doesn't work ?!@ ncurses pair # must be between 1 and 63
-       # or ncurses (const?) COLOR_PAIR - 1 
-       # fix is: have functions to swap color map from blackfg to normal.
-       # call that function when drawing if the fg color == black, then switch back
-       # after each character. Or.. keep track which map we're in in a variable.
-       self.colorPairMap = {
-            # foreground colors, black background
-            (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5, (6,0):6, (7,0):7, (8,0):8,
-            # and again, because black == both 0 and 8. :| let's just ditch 0?
-            (0,8):1, (1,8):1, (2,8):2, (3,8):3, (4,8):4, (5,8):5, (6,8):6, (7,8):7, (8,8):8,
-            # white with backround colors 
-            (1,1):9, (1,2):10, (1,3):11, (1,4):12, (1,5):13, (1,6):14, (1,7):15,
-            # cyan with backround colors 
-            (2,1):16, (2,2):17, (2,3):18, (2,4):19, (2,5):20, (2,6):21, (2,7):22,
-            # magenta with background colors
-            (3,1):23, (3,2):24, (3,3):25, (3,4):26, (3,5):27, (3,6):28, (3,7):29,
-            # blue with background colors
-            (4,1):30, (4,2):31, (4,3):32, (4,4):33, (4,5):34, (4,6):35, (4,7):36,
-            # yellow with background colors
-            (5,1):37, (5,2):38, (5,3):39, (5,4):40, (5,5):41, (5,6):42, (5,7):43,
-            # green with background colors
-            (6,1):44, (6,2):45, (6,3):46, (6,4):47, (6,5):48, (6,6):49, (6,7):50,
-            # red with background colors
-            (7,1):51, (7,2):52, (7,3):53, (7,4):54, (7,5):55, (7,6):56, (7,7):57,
-            # black with background colors
-            (8,1):58, (8,2):59, (8,3):60, (8,4):61, (8,5):62, (8,6):63, 
-            (8,7):57,  # 57 instead of 64, because we switch color maps for black
-            # on red
-            # BRIGHT COLORS 9-16
-            # white with backround colors 
-            (9,0):1, (9,8):1, (9,1):9, (9,2):10, (9,3):11, (9,4):12, (9,5):13, (9,6):14, (9,7):15,
-            # cyan with backround colors 
-            (10,0):2, (10,8):2, (10,1):16, (10,2):17, (10,3):18, (10,4):19, (10,5):20, (10,6):21, (10,7):22,
-            # magenta with background colors
-            (11,0):3, (11,8):3, (11,1):23, (11,2):24, (11,3):25, (11,4):26, (11,5):27, (11,6):28, (11,7):29,
-            # blue with background colors
-            (12,0):4, (12,8):4, (12,1):30, (12,2):31, (12,3):32, (12,4):33, (12,5):34, (12,6):35, (12,7):36,
-            # yellow with background colors
-            (13,0):5, (13,8):5, (13,1):37, (13,2):38, (13,3):39, (13,4):40, (13,5):41, (13,6):42, (13,7):43,
-            # green with background colors
-            (14,0):6, (14,8):6, (14,1):44, (14,2):45, (14,3):46, (14,4):47, (14,5):48, (14,6):49, (14,7):50,
-            # red with background colors
-            (15,0):7, (15,8):7, (15,1):51, (15,2):52, (15,3):53, (15,4):54, (15,5):55, (15,6):56, (15,7):57,
-            # black with background colors
-            (16,0):8, (16,8):8, (16,1):58, (16,2):59, (16,3):60, (16,4):61, (16,5):62, (16,6):63, 
-            (16,7):57,  # 57 instead of 64, because we switch color maps for black
-            } # (fg,bg):cursespair
-    def switchColorMap(self, map=0):    # deprecated?  I think so.
-            if (map == 1):   # 1 = black map.. deal with it. pair 57 == black on red.
-                # black with background colors
-                curses.init_pair(57, curses.COLOR_BLACK, curses.COLOR_RED)   # 8,7
-            elif (map == 0):  # 0 = normal color map, pair 57 == red on red 
-                curses.init_pair(57, curses.COLOR_RED, curses.COLOR_RED)   # 7,7
-
-
-class Frame():
-    """Frame class - single canvas size frame of animation. a traditional drawing.
-    """
-    def __init__(self, width, height):
-        """ Initialize frame, content[x][y] grid """
-        # it's a bunch of rows of ' 'characters.
-        self.content = []
-        self.sizeX = width
-        self.sizeY = height
-        self.delay = 0  # delay == # of sec to wait at this frame.
-        for x in range(0, height):
-            self.content.append([])
-            for y in range(0, width):
-                self.content[x].append(' ')
-        self.initColorMap()
-        self.setDelayValue(0)
-
-    def setDelayValue(self, delayValue):
-        self.delay = delayValue
-
-    def initColorMap(self):
-        """ Builds a dictionary mapping X/Y to a FG/BG color pair """
-        self.colorMap = {}
-        for x in range(0, self.sizeY):
-            for y in range(0, self.sizeX):
-                self.colorMap.update( {(x,y):(1,0)} )  # tuple keypair (xy), tuple value (fg and bg)
-
-class Options():    # config, prefs, preferences, etc. Per movie. Separate from AppState options.
-    """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
-    def __init__(self, width=80, height=23):         # default options
-        self.framerate = 2.0
-        self.sizeX = width
-        self.sizeY = height
-        self.saveFileFormat = 4 # save file format version number
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
-
-class Movie():
-    """ Contains an array of Frames, options to add, remove, copy them """
-    def __init__(self, opts):
-        self.frameCount = 0  # total number of frames
-        self.currentFrameNumber = 0
-        self.sizeX = opts.sizeX
-        self.sizeY = opts.sizeY
-        self.frames = []
-        self.addEmptyFrame()
-        self.currentFrameNumber = self.frameCount
-        self.currentFrame = self.frames[self.currentFrameNumber - 1] 
-
-    def addEmptyFrame(self):
-        newFrame = Frame(self.sizeX, self.sizeY)
-        self.frames.append(newFrame)
-        self.frameCount += 1
-        return True
-
-    def insertCloneFrame(self):
-        """ clone current frame after current frame """
-        newFrame = Frame(self.sizeX, self.sizeY)
-        self.frames.insert(self.currentFrameNumber, newFrame)    
-        newFrame.content = deepcopy(self.currentFrame.content)
-        newFrame.colorMap = deepcopy(self.currentFrame.colorMap)
-        self.frameCount += 1
-        return True
-
-    def deleteCurrentFrame(self):
-        if (self.frameCount == 1):
-            del self.frames[self.currentFrameNumber - 1]
-            # deleted the last frame, so make a blank one
-            newFrame = Frame(self.sizeX, self.sizeY)
-            self.frames.append(newFrame)
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-        else:
-            del self.frames[self.currentFrameNumber - 1]
-            self.frameCount -= 1
-            if (self.currentFrameNumber != 1):
-                self.currentFrameNumber -= 1
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-        return True
-
-    def moveFramePosition(self, startPosition, newPosition):
-        """ move the frame at startPosition to newPosition """
-        # use push and pop to remove and insert it
-        fromIndex = startPosition - 1
-        toIndex = newPosition - 1
-        self.frames.insert(toIndex, self.frames.pop(fromIndex))
-
-    def gotoFrame(self, frameNumber):
-        if frameNumber > 0 and frameNumber < self.frameCount + 1:
-            self.currentFrameNumber = frameNumber
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-            return True # succeeded
-        else:
-            return False # failed - invalid input
-    
-    def nextFrame(self):
-        if (self.currentFrameNumber == self.frameCount):    # if at last frame..
-            self.currentFrameNumber = 1     # cycle back to the beginning
-            self.currentFrame = self.frames[self.currentFrameNumber - 1] # -1 bcuz frame 1 = self.frames[0]
-        else:
-            self.currentFrameNumber += 1
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-
-    def prevFrame(self):
-        if (self.currentFrameNumber == 1):
-            self.currentFrameNumber = self.frameCount
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-        else:
-            self.currentFrameNumber -= 1
-            self.currentFrame = self.frames[self.currentFrameNumber - 1]
-
-    def lastMovieLine():
-        pass
-
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, 
-            sort_keys=True, indent=4)
+from durdraw.durdraw_appstate import AppState
+from durdraw.durdraw_options import Options
+from durdraw.durdraw_color_curses import AnsiArtStuff
+from durdraw.durdraw_movie import Movie
+from durdraw.durdraw_undo import UndoManager
+import durdraw.durdraw_file as durfile
 
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
@@ -814,7 +486,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.stdscr.nodelay(1)
                     c = None
                 else:
-                    if DEBUG_MODE:
+                    if self.appState.debug:
                         self.notify("keystroke: %d" % c) # alt-unknown
                 self.commandMode = 0
                 self.metaKey = 0
@@ -872,9 +544,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                 elif mouseX == 34:  # clicked previous character set
                                     self.clickHighlight(34, "<", bar='bottom')
                                     self.prevCharSet()
-                                elif DEBUG_MODE:
+                                elif self.appState.debug:
                                     self.notify("bottom bar. " + str([mouseX, mouseY]))
-                            elif DEBUG_MODE:
+                            elif self.appState.debug:
                                 self.notify("clicked. " + str([mouseX, mouseY]))
 
                     elif c == curses.KEY_LEFT:      # left - move cursor right a character
@@ -1288,7 +960,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
                 else:
-                    if DEBUG_MODE: 
+                    if self.appState.debug: 
                         self.notify("keystroke: %d" % c) # alt-unknown
                 self.commandMode = False
                 self.metaKey = 0
@@ -1431,10 +1103,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         elif mouseX == 34:  # clicked previous character set
                             self.clickHighlight(34, "<", bar='bottom')
                             self.prevCharSet()
-                        elif DEBUG_MODE:
+                        elif self.appState.debug:
                             self.notify("bottom bar. " + str([mouseX, mouseY]))
                     else:
-                        if DEBUG_MODE:
+                        if self.appState.debug:
                             self.notify(str([mouseX, mouseY]))
                 #self.mouseClicked(mouseEvent)
             elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
@@ -1524,7 +1196,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
         self.stdscr.nodelay(0) # wait for input when calling getch
-        self.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR, [ESC] Cancel: ")
+        self.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR (or JSON), [ESC] Cancel: ")
         prompting = True
         while (prompting):
             c = self.stdscr.getch()
@@ -1557,26 +1229,32 @@ class UserInterface():  # Separate view (curses) from this controller
         # then loadFromFile could return a movie object instead.
         """ If we load old .dur files, convert to the latest format """
         # aka "fill in the blanks"
+        if self.appState.debug: self.notify(f"Converting to new format. Current format: {self.opts.saveFileFormat}")
         if (self.opts.saveFileFormat < 3):  # version 4 should rename saveFileFormat
+            if self.appState.debug: self.notify(f"Dur format 1 or 2 found. Making color map.")
             # to saveFormatVersion
             # initialize color map for all frames:
             for frame in self.mov.frames:  
                 frame.initColorMap()    
                 self.opts.saveFileFormat = 3
         if (self.opts.saveFileFormat < 4):
+            if self.appState.debug: self.notify(f"Dur format 1, 2 or 3 found. Adding delays.")
             # old file, needs delay times populated.
             for frame in self.mov.frames:
                 frame.setDelayValue(0)
                 self.opts.saveFileFormat = 4
+        self.opts.saveFileFormat = 5
 
     def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename
         filename = os.path.expanduser(shortfile)
         if (loadFormat == 'ascii'):
             try:
+                if self.appState.debug: self.notify("Trying to open() file as ascii.")
                 f = open(filename, 'r')
                 self.appState.curOpenFileName = os.path.basename(filename)
-            except:
-                self.notify("Could not open file for reading.")
+            except Exception as e:
+                #if self.appState.debug: self.notify(f"self.opts = pickle.load(f)")
+                self.notify(f"Could not open file for reading: {e}")
                 return None
             # here we add the stuff to load the file into self.mov.currentFrame.content[][]
             self.undo.push()
@@ -1593,25 +1271,58 @@ class UserInterface():  # Separate view (curses) from this controller
         elif (loadFormat == 'dur'):
             try:
                 f = open(filename, 'rb')
-            except:
-                self.notify("Could not open file for reading.")
+            except Exception as e:
+                self.notify(f"Could not open file for reading: {type(e)}: {e}")
                 return None
             # check for gzipped file
-            if (f.read(2) == b'\x1f\x8b'): # gzip magic number
+            f.seek(0)
+            fileHeader = f.read(2)
+            if self.appState.debug: self.notify(f"File header: {fileHeader.hex()}")
+            if self.appState.debug: self.notify(f"Checking for gzip file...")
+            if (fileHeader == b'\x1f\x8b'): # gzip magic numbers
+                if self.appState.debug: self.notify(f"gzip found")
+                #pdb.set_trace()
                 # file == gzip compressed
                 f.close()
                 try:
                     f = gzip.open(filename, 'rb')
-                except:
-                    self.notify("Could not open file for reading.")
+                    f.seek(0)
+                    if self.appState.debug: self.notify(f"Un-gzipped successfully")
+                except Exception as e:
+                    self.notify(f"Could not open file for reading as gzip: {type(e)}: {e}", pause=True)
             else:
+                if self.appState.debug: self.notify(f"gzip NOT found")
+                #f.seek(0)
+            # check for JSON Durdraw file
+            #if (f.read(16) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x64\x72\x61\x77\x20\x4d\x6f\x76'): # {.  "Durdraw Mov
+            if self.appState.debug: self.notify(f"Checking for JSON file.")
+            f.seek(0)
+            if (f.read(12) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x4d\x6f\x76\x69'): # {.  "DurMov
+                if self.appState.debug: self.notify(f"JSON found. Loading JSON dur file.")
                 f.seek(0)
+                newMovie =  durfile.open_json_dur_file(f)
+                self.opts = newMovie['opts']
+                self.mov = newMovie['mov']
+                self.setPlaybackRange(1, self.mov.frameCount)
+                if self.appState.debug: self.notify(f"{self.opts}")
+                if self.appState.debug: self.notify(f"Finished loading JSON dur file")
+                return True
             try:
-                self.opts = pickle.load(f)
-                self.mov = pickle.load(f)
+                if self.appState.debug: self.notify(f"Unpickling..")
+                f.seek(0)
+                unpickler = durfile.DurUnpickler(f)
+                if self.appState.debug: self.notify(f"self.opts = unpickler.load()")
+                self.opts = unpickler.load()
+                #self.opts.saveFileFormat = self.appState.durFileVer
+                if self.appState.debug: self.notify(f"self.mov = unpickler.load()")
+                self.mov = unpickler.load()
+                if self.appState.debug: self.notify(f"self.appState.curOpenFileName = os.path.basename(filename)")
                 self.appState.curOpenFileName = os.path.basename(filename)
+                if self.appState.debug: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
                 self.appState.playbackRange = (1,self.mov.frameCount)
             except Exception as e:
+                if self.appState.debug:
+                    self.notify(f"Exception in unpickling: {type(e)}: {e}", pause=True)
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
                 # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
                 # change this whole method to call loadDurFile(), loadAnsiFile(),
@@ -1628,7 +1339,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def save(self):
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
-        self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, [P]NG, [G]IF: ")
+        self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, [J]SON, [P]NG, [G]IF: ")
         #self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, DUR[2], [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
@@ -1636,11 +1347,14 @@ class UserInterface():  # Separate view (curses) from this controller
         while (prompting):
             c = self.stdscr.getch()
             time.sleep(0.01)
-            if (c in [105, 68]):   # 105 i = ascii
+            if (c in [105, 73]):   # 105 i = ascii
                 saveFormat = 'ascii'
                 prompting = False
             elif (c in [100, 68]): # 100 = d = dur, 68 = D
                 saveFormat = 'dur'
+                prompting = False
+            elif (c in [106, 74]):  # 106 = j, 74 = J
+                saveFormat = 'json'
                 prompting = False
             #elif c == 50:       # 50 == '2'
             #    saveFormat = 'dur2'
@@ -1716,10 +1430,12 @@ class UserInterface():  # Separate view (curses) from this controller
         # For now just skip the checking/backup.
         if (saveFormat == 'ascii'):
             saved = self.saveAsciiFile(filename)
-        if (saveFormat == 'dur'):   # dur = pickled python objects
+        if (saveFormat == 'durOld'):   # dur Old = pickled python objects (ew)
             saved = self.saveDurFile(filename)
-        if (saveFormat == 'dur2'):   # dur2 = serialized json
+        if (saveFormat == 'dur'):   # dur2 = serialized json gzipped
             saved = self.saveDur2File(filename)
+        if (saveFormat == 'json'):   # dur2 = serialized json, plaintext
+            saved = self.saveDur2File(filename, gzipped=False)
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename)
         if (saveFormat == 'png'):  # png = requires ansi love
@@ -1745,16 +1461,20 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveDur2File(self, filename):
+    def saveDur2File(self, filename, gzipped=True):
         # open and write file
         try:
-            f = gzip.open(filename, 'wb')
+            f = gzip.open(filename, 'w')
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
-        json.dump(self.opts, f)
-        json.dump(self.mov, f)
         f.close()
+        #movieDataHeader = {'format': 'Durdraw file', 'framerate': self.opts.framerate, 'sizeX': self.opts.sizeX, 'sizeY': self.opts.sizeY, 'fileFormatVersion': self.opts.saveFileFormat }
+        #movieDump = [self.opts, self.mov]
+        if gzipped:
+            durfile.serialize_to_json_file(self.opts, self.mov, filename)
+        else:
+            durfile.serialize_to_json_file(self.opts, self.mov, filename, gzipped=False)
         return True
 
     def saveAsciiFile(self, filename):
@@ -2025,7 +1745,7 @@ Can use ESC or META instead of ALT
 
 Can use ESC or META instead of ALT
 
-''' % DUR_VER
+''' % self.appState.durVer 
         # remove the blank first line from helpScreenText..
         # it's easier to edit here with the blank first line.
         helpScreenText = '\n'.join(helpScreenText.split('\n')[1:]) 
@@ -2125,260 +1845,3 @@ Can use ESC or META instead of ALT
         """ do argparse stuff, get filename from user """
         pass
 
-class AppState():
-    """ run-time app state, separate from movie options (Options()) """
-    def __init__(self):
-        self.curOpenFileName = ""
-        self.playOnlyMode = False
-        self.playNumberOfTimes = 0  # 0 = loop forever, default
-        self.ansiLove = self.isAppAvail("ansilove")
-        self.PIL = self.checkForPIL()
-        self.undoHistorySize = 100  # How far back our undo history can
-        self.playbackRange = (1,1)
-        self.hasMouse = True # replace with equivalent curses.has_mouse()
-        self.helpMov = None
-        self.hasHelpFile = False
-        self.playingHelpScreen = False
-
-    def checkForPIL(self):
-        try:
-            import PIL
-            return True
-        except ImportError:
-            return False
-
-    def isAppAvail(self, name):   # looks for program 'name' in path
-        try:
-            devnull = open(os.devnull)
-            subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
-        except OSError as e:
-            #if e.errno == os.errno.ENOENT:
-            #    return False
-            return False
-        return True
-
-    def loadHelpFile(self, helpFileName):
-        helpFileName = os.path.expanduser(helpFileName)
-        #self.helpMov = Movie(self.opts) # initialize a new movie to work with
-        try:
-            f = open(helpFileName, 'rb')
-        except:
-            self.hasHelpFile = False
-            self.helpMov = None
-            return False
-        if (f.read(2) == b'\x1f\x8b'): # gzip magic number
-            # file == gzip compressed
-            f.close()
-            try:
-                f = gzip.open(helpFileName, 'rb')
-            except:
-                self.hasHelpFile = False
-                self.helpMov = None
-                return False
-        else:
-            f.seek(0)
-        try:                             # load the help file
-            #self.opts = pickle.load(f)
-            #self.mov = pickle.load(f)
-            self.helpMovOpts = pickle.load(f)
-            self.helpMov = pickle.load(f)
-            self.hasHelpFile = True
-            return True
-        except:
-            self.hasHelpFile = False
-            self.helpMov = None
-            return False
-
-class UndoManager():  # pass it a UserInterface object so Undo can tell UI
-        # when to switch to another saved movie state.
-        """ Manages undo/redo "stack" by storing the last 100 movie states
-            in a list. Takes a UserInterface object for syntax. methods for
-            push, undo and redo """
-        def __init__(self, ui):
-            self.ui = ui
-            self.undoIndex = 0 # will be 0 when populated with 1 state.
-            self.undoList = []
-            self.historySize = 100  # default, but really determined by 
-            # AppState values passed to setHistorySize() below.
-            self.push() # push initial state
-        def push(self): # maybe should be called pushState or saveState?
-            """ Take current movie, add to the end of a list of movie
-                objects - ie, push current state onto the undo stack. """ 
-            if len(self.undoList) >= self.historySize:   # How far back our undo history can
-                # go. Make this configurable.
-                # if undo stack == full, dequeue from the bottom
-                self.undoList.pop(0)
-            # if undoIndex isn't indexing the last item in undoList,
-            # ie we have redo states, remove all items after undoList[undoIndex]
-            self.undoList = self.undoList[0:self.undoIndex]  # trim list
-            # then add the new state to the end of the queue.
-            self.undoList.append(deepcopy(self.ui.mov))
-            # last item added == at the end of the list, so..
-            self.undoIndex = len(self.undoList) # point index to last item
-        def undo(self):
-            if self.undoIndex == 1: # nothing to undo
-                self.ui.notify("Nothing to undo.")
-                return False
-            # if we're at the end of the list, push current state so we can
-            # get back to it. A bit confusing.
-            if self.undoIndex == len(self.undoList):
-                self.push()
-                self.undoIndex -= 1
-            self.undoIndex -= 1
-            self.ui.mov = self.undoList[self.undoIndex] # set UI movie state
-            return True # succeeded
-        def redo(self):
-            if self.undoIndex < (len(self.undoList) -1): # we can redo
-                self.undoIndex += 1 # go to next redo state
-                self.ui.mov = self.undoList[self.undoIndex] 
-            else:
-                self.ui.notify("Nothing to redo.")
-        def setHistorySize(self, historySize):
-            """ Defines the max number of undo states we will save """
-            self.historySize = historySize
-
-class ArgumentChecker: 
-    """ Place to hold any methods for verifying CLI arguments, beyond
-        what argparse can do on its own. Call these methods via
-        argparse.add_argument(.. type= ..) paramaters. """
-    def undosize(size_s):
-        size = int(size_s)  # because it comes as a string
-        if size >= 1 and size <= 1000:
-            return size
-        else:
-            raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
-            
-if (__name__ == "__main__"):
-    DUR_VER = '0.15.2'
-    durlogo = '''
-       __                __
-     _|  |__ __ _____ __|  |_____ _____ __ __ __
-    / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
-   /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-   \_____________________________________________\|  v %s
-    Press esc-h for help.                            
-    ''' % DUR_VER
-    argChecker = ArgumentChecker()
-    parser = argparse.ArgumentParser()
-    parserStartScreenMutex = parser.add_mutually_exclusive_group()
-    parserFilenameMutex = parser.add_mutually_exclusive_group()
-    parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
-    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
-                    nargs='+')
-    parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
-                    action="store_true")
-    parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
-                    action="store_true")
-    parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
-                    nargs=1, type=int)
-    parser.add_argument("-b", "--blackbg", help="Use a black background color instead of terminal default", action="store_true")
-    parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
-    parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
-    parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overwides -W and -H)", action="store_true")
-    parser.add_argument("--nomouse", help="Disable mouse support",
-                    action="store_true")
-    parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
-    
-    #parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default == 100. More requires more RAM, less saves RAM.", nargs=1, type=argChecker.undosize) # y u no work?
-    parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
-    parser.add_argument("-V", "--version", help="Show version number and exit",
-                    action="store_true")
-    args = parser.parse_args()
-    if args.version:
-        print(DUR_VER)
-        exit(0)
-    if args.times and not args.play:
-        print("-x option requires -p")
-        exit(1)
-    app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
-    if args.undosize:
-        app.undoHistorySize = int(args.undosize[0])
-    showStartupScreen=True
-    term_size = os.get_terminal_size()
-    if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
-        app.width = args.width[0]
-    else:
-        app.width = 80      # "sane" default screen size, 80x24.. 
-    if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
-        app.height = args.height[0] - 1
-    else:
-        app.height = 24 - 1
-    if args.max:
-        if term_size[0] > 80:
-            app.width = term_size[0]
-        if term_size[1] > 24:
-            app.height = term_size[1] - 2
-    if args.play:
-        showStartupScreen=False
-    elif args.quick:
-        showStartupScreen=False
-    if args.nomouse:
-        app.hasMouse = False
-    if args.ansi:
-        app.ansiArtMode = True
-        app.charEncoding = 'ibm-pc'
-    else:
-        app.ansiArtMode = False
-        app.charEncoding = 'utf-8'
-    if args.blackbg: app.blackbg = False   # blackbg = black background
-    else: app.blackbg = True
-    if showStartupScreen:
-        print(durlogo)
-        if app.ansiLove:
-            print("ansilove = Found")
-        else:
-            print("ansilove = Not found (no PNG or GIF support)")
-        if app.PIL:
-            print("PIL = Found")
-        else:
-            print("PIL = Not found (no GIF support)")
-        if app.hasMouse:
-            print("Mouse = Enabled")
-        else:
-            print("Mouse = Disabled")
-        if app.loadHelpFile("durhelp.dur"):
-            print("Help file: Found in ./")
-        elif app.loadHelpFile("~/.dur/durhelp.dur"):
-            print("Help file: Found in ~/.dur/")
-        elif app.loadHelpFile("/usr/local/share/durdraw/durhelp.dur"):
-            print("Help file: Found in /usr/local/share/durdraw/")
-        elif app.loadHelpFile("/usr/share/durdraw/durhelp.dur"):
-            print("Help file: Found in /usr/share/durdraw/")
-        elif app.loadHelpFile("durhelp.dur"):
-            print("Help file: Found in current directory")
-        elif app.loadHelpFile("examples/durhelp.dur"):
-            print("Help file: Found in examples directory")
-        else:
-            print("Help file: Not found")
-        print("Undo history size = %d" % app.undoHistorySize)
-        if app.width == 80 and app.height == 24:
-            print("Canvas size: %i columns, %i lines (Default)" % (app.width, app.height))
-        else:
-            print("Canvas size: %i columns, %i lines" % (app.width, app.height))
-        if args.wait:
-            try:
-                choice = input("Press Enter to Continue...")
-            except KeyboardInterrupt:
-                print("\nCaught interrupt, exiting.")
-                exit(0)
-        else:
-            time.sleep(3)
-    ui = UserInterface(app)
-    if app.hasMouse:
-        ui.initMouse()
-    if app.blackbg:
-        ui.enableTransBackground()
-    if args.filename:
-        ui.loadFromFile(args.filename, 'dur')
-    if args.play:
-        # Just play files and exit
-        app.playOnlyMode = True
-        if args.times:
-            app.playNumberOfTimes = args.times[0]
-        for movie in args.play:
-            ui.loadFromFile(movie, 'dur')
-            ui.startPlaying()
-            ui.stdscr.clear()
-        ui.verySafeQuit()
-    ui.refresh()
-    ui.mainLoop()
