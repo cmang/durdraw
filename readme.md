@@ -8,7 +8,6 @@ Durdraw
               \_____________________________________________\|  v 0.16.0
 
 ![durdraw-linux-unicode-ansi](https://user-images.githubusercontent.com/261501/161380487-ac6e2b5f-d44a-493a-ba78-9903a6a9f1ca.png)
-![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
 
 ## OVERVIEW:
 
@@ -26,6 +25,14 @@ control during playback. It supports the mouse.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
 ANSI (.ans), JSON, GIF and PNG formats.
+
+## SCREENSHOTS AND EXAMPLES:
+
+![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
+![eye](https://user-images.githubusercontent.com/261501/210064343-6e68f88d-9e3e-415a-9792-a38684231ba0.gif)
+![bsd-color-new](https://user-images.githubusercontent.com/261501/210064354-5c1c2adc-06a3-43c5-8e21-30b1a81db315.gif)
+![cm-doge](https://user-images.githubusercontent.com/261501/210064365-e9303bee-7842-4068-b356-cd314341098b.gif)
+![dopetrans3](https://user-images.githubusercontent.com/261501/210064369-4c416e85-12d0-47aa-b182-db5435ae0c78.gif)
 
 ## REQUIREMENTS:
 
@@ -67,6 +74,12 @@ Then you can run Durdraw with:
 
 ```
     ./start-durdraw
+```
+
+To demo out the example animations:
+
+```
+    ./start-durdraw -p examples/*.dur
 ```
 
 ## COMMAND LINE USAGE:
