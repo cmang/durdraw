@@ -18,8 +18,10 @@ def serialize_to_json_file(opts, movie, file_path, gzipped=True):
     with opener(file_path, 'wt') as f:
         movieDataHeader = {
             'formatVersion': opts.saveFileFormat,
-            'colorFormat': '16-color-ansi',
-            'preferredFont': 'vga',
+            #'colorFormat': 'ansi-16', # ansi-16, xterm-256 
+            'colorFormat': 'xterm-256', # ansi-16, xterm-256 
+            'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
+            'encoding': 'Utf-8',
             'name': '',
             'artist': '',
             'framerate': opts.framerate,
@@ -105,6 +107,7 @@ def open_json_dur_file(f):
             for y in range(0, height):
                 #pdb.set_trace()
                 newMov.frames[currentFrame].colorMap[y, x] = tuple(frame['colorMap'][x][y])
+                newMov.frames[currentFrame].newColorMap[y][x] = frame['colorMap'][x][y]
         # Add delay for the frame
         newMov.frames[currentFrame].delay = frame['delay']
         currentFrame += 1

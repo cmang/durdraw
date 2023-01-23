@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.16.0
+              \_____________________________________________\|  v 0.17.0
 
 ![durdraw-linux-unicode-ansi](https://user-images.githubusercontent.com/261501/161380487-ac6e2b5f-d44a-493a-ba78-9903a6a9f1ca.png)
 
@@ -14,14 +14,14 @@ Durdraw
 Durdraw is an ASCII and Unicode art editor for UNIX-like systems (Linux, 
 macOS, etc). It runs in the terminal and supports color and frame-based
 animation, attempting to make ANSI and ASCII art animation work more like
-a traditional animation studio.
+a traditional animation studio. It supports 256 color modes when available.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw.
 
 Some animation features include importing ascii files to frames, duplicating
 and deleting frames, switching between frames, and frames-per-second speed
-control during playback. It supports the mouse.
+control during playback. It supports both the mouse and keyboard.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
 ANSI (.ans), JSON, GIF and PNG formats.
@@ -95,9 +95,9 @@ Other command-line options:
 
 <pre>
 
-usage: durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [-b] [-W WIDTH]
-               [-H HEIGHT] [-m] [--nomouse] [-A] [-u UNDOSIZE] [-V]
-               [filename]
+usage: start-durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--256color | --16color] [-b]
+                     [-W WIDTH] [-H HEIGHT] [-m] [--nomouse] [-A] [-u UNDOSIZE] [-V] [--debug]
+                     [filename]
 
 positional arguments:
   filename              .dur or ascii file to load
@@ -110,19 +110,20 @@ optional arguments:
   -w, --wait            Pause at startup screen
   -x TIMES, --times TIMES
                         Play X number of times (requires -p)
-  -b, --blackbg         Use a black background color instead of terminal
-                        default
+  --256color            Try 256 color mode
+  --16color             Try 16 color mode
+  -b, --blackbg         Use a black background color instead of terminal default
   -W WIDTH, --width WIDTH
                         Set canvas width
   -H HEIGHT, --height HEIGHT
                         Set canvas height
-  -m, --max             Maximum canvas size for terminal (overwides -W and -H)
+  -m, --max             Maximum canvas size for terminal (overrides -W and -H)
   --nomouse             Disable mouse support
-  -A, --ansi            ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art
-                        characters (Code Page 437 extended ASCII)
+  -A, --ansi            IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
+                        PC) block characters
   -u UNDOSIZE, --undosize UNDOSIZE
-                        Set the number of undo history states - default is
-                        100. More requires more RAM, less saves RAM.
+                        Set the number of undo history states - default is 100. More requires more
+                        RAM, less saves RAM.
   -V, --version         Show version number and exit
 
 </pre>
@@ -205,17 +206,17 @@ F1-F12 to input ANSI block characters.
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Durdraw is not currently supported on Windows. However, if you can provide a curses-compatible library for Python (like PDCurses), it may work. It may also work in Windows Subsystem for Linux.
+A: Yes, but it's not yet well supported and is considered beta. If you want to help make it work better, please help test it and submit bug reports and patches. It runs in text/terminal windows, such as Command Prompt, Windows Terminal, PowerShell terminal, etc. You can download a release if available, or if you have Python and Pip set up, you can go to the downloaded Durdraw folder and run: python setup.py install
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
-A: No. DurDraw requires a Unix-like system with Python 3. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
+A: Probably not easily. DurDraw requires Python 3 and a unix-like terminal. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
 #### Q: Does DurDraw support IBM-PC ANSI art?
 A: Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
 
 ### CREDITS:
 
-Sam Foster
+Developer: Sam Foster
 
 Homepages:
 
@@ -224,7 +225,7 @@ https://github.com/cmang/durdraw
 
 ### LEGAL:
 
-Durdraw is Copyright (c) 2009-2022 Sam Foster <samfoster@gmail.com>. All rights reserved.
+Durdraw is Copyright (c) 2009-2023 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above

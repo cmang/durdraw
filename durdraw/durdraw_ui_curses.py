@@ -1,6 +1,7 @@
 # This file needs to have all of its non-curses code moved into separate files/libraries
 
 import curses
+import curses.panel
 import gzip
 import json
 import os
@@ -17,6 +18,9 @@ from durdraw.durdraw_color_curses import AnsiArtStuff
 from durdraw.durdraw_movie import Movie
 from durdraw.durdraw_undo import UndoManager
 import durdraw.durdraw_file as durfile
+from durdraw.durdraw_ui_widgets import StatusBar
+import durdraw.durdraw_gui_manager as durgui
+import durdraw.durdraw_movie as durmovie
 
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
@@ -26,13 +30,39 @@ class UserInterface():  # Separate view (curses) from this controller
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         os.environ.setdefault('ESCDELAY', '10')
         # initialize screen and draw the 'canvas'
-        self.stdscr = curses.initscr()
+        self.realstdscr = curses.initscr()
+        realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
+        self.statusBarLineNum = realmaxY - 2
+        self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
+        self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
+        self.panel.bottom()
+        self.panel.show()
+        #self.stdscr.box()
+        self.gui = durgui.Gui(guiType="curses", window=self.stdscr)
         curses.start_color()    # Yeayuhhh
         #curses.use_default_colors() # enable transparent bg in ncurses
         self.ansi = AnsiArtStuff()   # obj for misc ansi-related stuff
-        self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map
+        if self.appState.colorMode == "256":
+            if self.ansi.initColorPairs_hicolor():
+                if self.appState.playOnlyMode == False:
+                    print("High Color Mode Enabled")  # 256 color mode
+                    self.appState.loadHelpFile(self.appState.durhelp256_fullpath)
+            else:
+                self.appState.colorMode = "16"
+                if self.appState.playOnlyMode == False:
+                    print("16 Color Mode Enabled. Change your TERM environment variable for 256 color support")
+                time.sleep(1)
+            time.sleep(2)
+        if self.appState.colorMode == "16":
+            self.ansi.initColorPairs_cga()
+        #if self.appState.colorMode == "16":
+        #    self.ansi.initColorPairs_cga()  # set up ncurses color pairs and fg/bg map - 16 color
+        #self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map 
         self.colorfg = 1    # default fg white
-        self.colorbg = 0    # default bg black
+        if self.appState.colorMode == 256:
+            self.colorbg = 8    # default bg black
+        else:
+            self.colorbg = 0    # default bg black
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self)   # initialize undo/redo system
@@ -44,11 +74,20 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.nonl()
         self.stdscr.keypad(1)
         self.testWindowSize()
-        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
+        #self.statusBar = StatusBar(self.stdscr, x=self.realmaxY - 2, y=0)
+        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0)
+        #self.gui.add_widget(self.statusBar)
+        for button in self.statusBar.buttons:
+            self.gui.add_button(button)
         self.setWindowTitle("Durdraw")
-
+        self.statusBarLineNum = self.realmaxY - 2
+ 
     def initMouse(self):
-        curses.mousemask(1)     # it's a party now.
+        curses.mousemask(1)     # click response without drag support
+        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+        #print('\033[?1003h') # enable mouse tracking with the XTERM API
+        # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
     def enableTransBackground(self):
         curses.use_default_colors()
@@ -170,50 +209,74 @@ class UserInterface():  # Separate view (curses) from this controller
     def setBgColor(self, bg):
         self.colorbg = bg
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
+        #pdb.set_trace()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
-        if (self.colorfg < 16):
-            self.colorfg += 1
-            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
-                self.colorfg += 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
-        else:
-            self.colorfg = 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        if self.appState.colorMode == "256":
+            if (self.colorfg < 255):
+                newColor = self.colorfg + 1
+            else:
+                newColor = 0
+        elif self.appState.colorMode == "16":
+            if (self.colorfg < 16):
+                newColor = self.colorfg + 1
+                if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                    newColor = self.colorfg + 1
+            else:
+                self.colorfg = 1
+        self.setFgColor(newColor)
 
     def prevFgColor(self):
         """ switch to prev fg color, cycle around to end if at beginning """
-        if (self.colorfg > 1):
-            self.colorfg -= 1
-            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
-                self.colorfg -= 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        if (self.colorfg >= 1):
+            newColor = self.colorfg - 1
+            if self.appState.colorMode == "16":
+                if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                    newColor = self.colorfg - 1   # why?
         else:
-            self.colorfg = 16
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+            if self.appState.colorMode == "16":
+                newColor = 16
+            elif self.appState.colorMode == "256":
+                newColor = 255
+        self.setFgColor(newColor)
 
     def nextBgColor(self):
         """ switch to the next bg color, cycle around if at beginning """
-        if (self.colorbg < 8):
-            self.colorbg += 1
-            if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
-                self.colorbg += 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
-        else:
-            self.colorbg = 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        if self.appState.colorMode == "256":
+            if (self.colorbg < 128):
+                #self.colorbg += 1
+                newColor = self.colorbg + 1
+            else:
+                #self.colorbg = 1
+                newColor = 0
+            #self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        elif self.appState.colorMode == "16":
+            if (self.colorbg < 8):
+                #self.colorbg += 1
+                newColor = self.colorbg + 1
+                if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+                    #self.colorbg += 1
+                    newColor = self.colorbg + 1
+            else:
+                newColor = 1
+            #self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        self.setBgColor(newColor)
 
     def prevBgColor(self):
         """ switch to prev bg color, cycle around to end if at beginning """
         if (self.colorbg > 1):
-            self.colorbg -= 1
+            #self.colorbg -= 1
+            newColor = self.colorbg - 1
             if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
-                self.colorbg -= 1
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+                #self.colorbg -= 1
+                newColor = self.colorbg - 1
+            #self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         else:
-            self.colorbg = 8
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+            #self.colorbg = 8
+            newColor = 8
+            #self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        self.setBgColor(newColor)
 
     def cursorOff(self):
         try:
@@ -240,6 +303,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.stdscr.addstr(y, x, str, attr)
             except curses.error:
                 self.testWindowSize()
+
     def move(self, y, x):
         try:
             self.stdscr.move(y, x)
@@ -268,7 +332,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def testWindowSize(self):
         """Test to see if window == too small for program to operate, and
         go into small window mode if necessary"""
-        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx() # test size
+        self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx() # test size
         if (self.realmaxY < self.mov.sizeY+1) or (self.realmaxX < self.mov.sizeX):
             self.smallWindowMode()   # go into small window loop.stdscr
         if self.realmaxX < (self.mov.sizeX-4):
@@ -279,13 +343,18 @@ class UserInterface():  # Separate view (curses) from this controller
         == too small.  Keep doing so until the screen == resized larger."""
         self.stdscr.clear()
         self.stdscr.refresh()
-        self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+        self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         while (self.realmaxY < self.mov.sizeY+1 or self.realmaxX < self.mov.sizeX):
-            self.addstr(0, 0, "Terminal is too small.")
-            self.addstr(1, 0, "Please enlarge to %ix%i or larger." % (self.mov.sizeX, self.mov.sizeY))
+            try:
+                self.addstr(0, 0, "Terminal is too small.")
+                self.addstr(1, 0, "Please enlarge to %ix%i or larger." % (self.mov.sizeX, self.mov.sizeY))
+            except:     # if window is too small for the message ^
+                pass
+            self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
             self.stdscr.refresh()
-            self.realmaxY,self.realmaxX = self.stdscr.getmaxyx()
+            time.sleep(0.01)
         self.stdscr.refresh()
+        self.stdscr.clear()
         self.testWindowSize()
 
     def insertChar(self, c, fg=1, bg=0, frange=None):
@@ -296,14 +365,19 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.mov.frames[fn].content[self.xy[0]][self.xy[1] - 1] = chr(c)
                 self.mov.frames[fn].colorMap.update(
                         {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
+                self.mov.frames[fn].newColorMap[self.xy[0]][self.xy[1] - 1] = [fg, bg]
             if self.xy[1] < self.mov.sizeX:
                 self.xy[1] = self.xy[1] + 1 
         else:
             self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
             self.mov.currentFrame.colorMap.update(
                     {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
+            self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [fg, bg]
             if self.xy[1] < self.mov.sizeX:
                 self.xy[1] = self.xy[1] + 1 
+
+    def clearCanvasPrompt(self):
+        self.clearCanvas(prompting=True)
 
     def clearCanvas(self, prompting = False):
         clearing = True  # assume we are clearing unless we prompt and say "n"
@@ -476,10 +550,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [112]: # alt-p - stop playing
                     self.playing = False
                 elif c in [104, 63]:                # alt-h - help
-                    if self.appState.hasHelpFile:
-                        self.showAnimatedHelpScreen()
-                    else:
-                        self.showHelp()
+                    self.showHelp()
                     c = None
                 elif c == 113:                 # alt-q - quit
                     self.safeQuit()
@@ -501,53 +572,59 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
-                            _, mouseX, mouseY, _, _ = curses.getmouse()
+                            _, mouseX, mouseY, _, mouseState = curses.getmouse()
                         except:
                             pass
-                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: 
-                            # we clicked in edit area
-                            self.xy[1] = mouseX + 1 # set cursor position
-                            self.xy[0] = mouseY
-                        elif mouseX < self.mov.sizeX and mouseY in [self.mov.sizeY, self.mov.sizeY+1]:   # we clicked on the status bar while playing.
-                            if mouseY == self.mov.sizeY: # clicked upper bar
-                                if mouseX in [self.mov.sizeX - 9, self.mov.sizeX - 10]:  # clicked pause button
-                                    self.clickHighlight(self.mov.sizeX - 10, "||")
-                                    self.playing = False
-                                elif mouseX == 12:    # clicked FPS down
-                                    self.clickHighlight(12, "<")
-                                    self.decreaseFPS()
-                                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                                elif mouseX == 16:    # clicked FPS up
-                                    self.clickHighlight(16, ">")
-                                    self.increaseFPS()
-                                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                                #elif mouseX in [self.mov.sizeY, 0]: # clicked "?"
-                                elif mouseX == 0: # clicked "?"
-                                    self.clickHighlight(0, "?")
-                                    if self.appState.hasHelpFile:
-                                        self.showAnimatedHelpScreen()
-                                    else:
-                                        self.showHelp()
-                                    c = None 
-                            elif mouseY == self.mov.sizeY+1:    # clicked bottom bar
-                                if mouseX in range(4,20): 
-                                    fg = mouseX - 3  
-                                    #self.notify("set fg color: " + str(fg))
-                                    self.setFgColor(fg)
-                                elif mouseX in range(25,33):    
-                                    bg = mouseX - 24
-                                    #self.notify("set bg color: " + str(bg))
-                                    self.setBgColor(bg)
-                                elif mouseX == 66:  # clicked next character set
-                                    self.clickHighlight(66, ">", bar='bottom')
-                                    self.nextCharSet()
-                                elif mouseX == 34:  # clicked previous character set
-                                    self.clickHighlight(34, "<", bar='bottom')
-                                    self.prevCharSet()
+                        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+                        if mouseState == curses.BUTTON1_CLICKED:
+                            self.gui.got_click("Click", mouseX, mouseY)
+                            if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: 
+                                # we clicked in edit area
+                                self.xy[1] = mouseX + 1 # set cursor position
+                                self.xy[0] = mouseY
+                            elif mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar while playing.
+                                if mouseY == self.statusBarLineNum: # clicked upper bar
+                                    offset = 6  # making room for the menu bar
+                                    tOffset = realmaxX - (realmaxX - self.transportOffset) + 6
+                                    #pdb.set_trace()
+                                    if mouseX in [tOffset, tOffset + 1]:  # clicked pause button
+                                        self.clickHighlight(tOffset, "||")
+                                        self.playing = False
+                                    elif mouseX == 12 + offset:    # clicked FPS down
+                                        self.clickHighlight(12 + offset, "<")
+                                        self.decreaseFPS()
+                                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                    elif mouseX == 16 + offset:    # clicked FPS up
+                                        self.clickHighlight(16 + offset, ">")
+                                        self.increaseFPS()
+                                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                    #elif mouseX in [self.statusBarLineNum, 0]: # clicked "?"
+                                    #elif mouseX == 0: # clicked "?"
+                                    #    self.clickHighlight(0, "?")
+                                    #    if self.appState.hasHelpFile:
+                                    #        self.showAnimatedHelpScreen()
+                                    #    else:
+                                    #        self.showHelp()
+                                    #    c = None 
+                                elif mouseY == self.statusBarLineNum+1:    # clicked bottom bar
+                                    if mouseX in range(4,20): 
+                                        fg = mouseX - 3  
+                                        #self.notify("set fg color: " + str(fg))
+                                        self.setFgColor(fg)
+                                    elif mouseX in range(25,33):    
+                                        bg = mouseX - 24
+                                        #self.notify("set bg color: " + str(bg))
+                                        self.setBgColor(bg)
+                                    elif mouseX == 66:  # clicked next character set
+                                        self.clickHighlight(66, ">", bar='bottom')
+                                        self.nextCharSet()
+                                    elif mouseX == 34:  # clicked previous character set
+                                        self.clickHighlight(34, "<", bar='bottom')
+                                        self.prevCharSet()
+                                    elif self.appState.debug:
+                                        self.notify("bottom bar. " + str([mouseX, mouseY]))
                                 elif self.appState.debug:
-                                    self.notify("bottom bar. " + str([mouseX, mouseY]))
-                            elif self.appState.debug:
-                                self.notify("clicked. " + str([mouseX, mouseY]))
+                                    self.notify("clicked. " + str([mouseX, mouseY]))
 
                     elif c == curses.KEY_LEFT:      # left - move cursor right a character
                         if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
@@ -561,9 +638,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[1] = 1
                     elif c in [338, curses.KEY_END]:   # 338 = end
                         self.xy[1] = self.mov.sizeX
-                    elif c in [13, curses.KEY_ENTER]:               # enter (10 if we
+                    elif c in [10, 13, curses.KEY_ENTER]:               # enter (10 if we
                         # don't do curses.nonl())
-                        if self.xy[0] < self.mov.sizeX - 1:
+                        if self.xy[0] < self.mov.sizeY - 1:
                             self.xy = [self.xy[0] + 1, 1]
                     elif c in [263, 127]:              # backspace
                         if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
@@ -737,106 +814,146 @@ class UserInterface():  # Separate view (curses) from this controller
         # fyi .. width and height in this context should go into
         # appState, not in Movie(). In other words, this == not
         # the width and height of the movie, but of the editor screen.
-        self.addstr(self.mov.sizeY, 0, " " * self.mov.sizeX)
-        self.addstr(self.mov.sizeY+1, 0, " " * self.mov.sizeX)
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        self.addstr(self.statusBarLineNum, 0, " " * realmaxX)
+        self.addstr(self.statusBarLineNum+1, 0, " " * realmaxX)
 
     def drawStatusBar(self):
+        # This has also become a bit of a window resize handler
         self.clearStatusLine()
+        line_1_offset = 6
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        statusBarLineNum = realmaxY - 2
+        self.statusBar.colorPicker.handler.move(0,realmaxY - 6)
+        self.statusBarLineNum = statusBarLineNum
+        self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
+        if self.appState.colorMode == "256":
+            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
+        canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
+        #canvasSizeOffset = realmaxX - 24   # left of the transport
+        #canvasSizeOffset = realmaxX - 9     # right of transport
+        canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
+        self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar)
         frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
         rangeBar = "R: %i/%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
         fpsBar = "<FPS>: %i " % (self.opts.framerate)
         delayBar = "D: %i " % (self.mov.currentFrame.delay)
-        self.addstr(self.mov.sizeY, 2, frameBar)
-        self.addstr(self.mov.sizeY, 12, fpsBar)
-        self.addstr(self.mov.sizeY, 23, delayBar)
-        self.addstr(self.mov.sizeY, 29, rangeBar)
-        self.addstr(self.mov.sizeY, 0, "?", curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(statusBarLineNum, 2 + line_1_offset, frameBar)
+        self.addstr(statusBarLineNum, 12 + line_1_offset, fpsBar)
+        self.addstr(statusBarLineNum, 23 + line_1_offset, delayBar)
+        self.addstr(statusBarLineNum, 29 + line_1_offset, rangeBar)
+        #self.addstr(statusBarLineNum, 0, "?", curses.color_pair(6) | curses.A_BOLD)
+
+        # Draw FG and BG colors
+        #self.addstr(statusBarLineNum, 38, "FG:", curses.color_pair(6) | curses.A_BOLD)
+        if self.appState.colorMode == "256":
+            self.addstr(statusBarLineNum+1, 0, "FG:", curses.color_pair(6) | curses.A_BOLD)
+            cp = self.ansi.colorPairMap[(self.colorfg, 0)]
+            #pdb.set_trace()
+            fillChar = 9608
+            #self.addstr(statusBarLineNum, 41, chr(fillChar) * 2, curses.color_pair(cp))
+            self.addstr(statusBarLineNum+1, 3, chr(fillChar) * 2, curses.color_pair(cp))
+        if self.appState.showBgColorPicker:
+            self.addstr(statusBarLineNum+1, 6, "BG:", curses.color_pair(6) | curses.A_BOLD)
+            cp = self.ansi.colorPairMap[(1, self.colorbg)]
+            fillChar = ' '
+            self.addstr(statusBarLineNum+1, 9, fillChar * 2, curses.color_pair(cp))
+            #self.addstr(statusBarLineNum+1, 9, "  ", curses.color_pair(cp))
+        #if self.colorfg > 8 and self.colorfg <= 16:
+        #    self.addstr(statusBarLineNum, 41, f"{self.colorfg}", curses.color_pair(cp) | curses.A_BOLD)
+        #else:
+        #    self.addstr(statusBarLineNum, 41, f"{self.colorfg}", curses.color_pair(cp))
+        #self.addstr(statusBarLineNum, 43, "BG:", curses.color_pair(6) | curses.A_BOLD)
 
         # Draw character map for f1-f10 (block characters)
         #chMapOffset = self.mov.sizeX - len(self.chMapString)-1
         #chMapOffset = 37    # how far in to show the character map
         chMapOffset = 35    # how far in to show the character map
-        self.addstr(self.mov.sizeY+1, chMapOffset-1, "<", curses.color_pair(6) | curses.A_BOLD)
-        self.addstr(self.mov.sizeY+1, 66, ">", curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, chMapOffset-1, "<", curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, 66, ">", curses.color_pair(6) | curses.A_BOLD)
         if self.colorfg > 8:    # bright color
-            self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
-            #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
+            self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            #self.addstr(statusBarLineNum, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
-            self.addstr(self.mov.sizeY+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
-            #self.addstr(self.mov.sizeY, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
+            self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            #self.addstr(statusBarLineNum, self.mov.sizeX-7, "Color", curses.color_pair(self.colorpair))
         # draw current character set #
-        self.addstr(self.mov.sizeY+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(1)) 
+        self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(1)) 
         # overlay draw function key names in normal color
         y = 0
         for x in range(1,11): 
-            self.addstr(self.mov.sizeY+1, chMapOffset+y, "F%i" % x, curses.color_pair(1))
+            self.addstr(statusBarLineNum+1, chMapOffset+y, "F%i" % x, curses.color_pair(1))
             y = y + 3
 
-        # draw color picker
-        # fg color
-        colorPickerFGOffset = 0
-        self.addstr(self.mov.sizeY+1, colorPickerFGOffset, "FG:", curses.color_pair(1))
-        for c in range(1,17):
-            cp = self.ansi.colorPairMap[(c, 0)]
-            if c > 8:
-                if c == self.colorfg:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
+        # draw 16-color picker
+        if self.appState.colorMode == "16":
+            colorPickerFGOffset = 0
+            self.addstr(statusBarLineNum+1, colorPickerFGOffset, "FG:", curses.color_pair(1))
+            for c in range(1,17):
+                cp = self.ansi.colorPairMap[(c, 0)]
+                if c > 8:
+                    if c == self.colorfg:
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
+                    else:
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp) | curses.A_BOLD)   # block character
                 else:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp) | curses.A_BOLD)   # block character
-            else:
-                if c == self.colorfg:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp))   
+                    if c == self.colorfg:
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp))   
+                    else:
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp))
+            # bg color
+            colorPickerBGOffset = 21
+            self.addstr(statusBarLineNum+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
+            for c in range(1,9):
+                cp = self.ansi.colorPairMap[(c, 0)]
+                if c == self.colorbg or (c == 8 and self.colorbg == 0):
+                    if c == 8: # black bg
+                        self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(1)) 
+                    else:
+                        self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
                 else:
-                    self.addstr(self.mov.sizeY+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp))
-        # bg color
-        colorPickerBGOffset = 21
-        self.addstr(self.mov.sizeY+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
-        for c in range(1,9):
-            cp = self.ansi.colorPairMap[(c, 0)]
-            if c == self.colorbg or (c == 8 and self.colorbg == 0):
-                if c == 8: # black bg
-                    self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(1)) 
-                else:
-                    self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
-            else:
-                self.addstr(self.mov.sizeY+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
-        # Draw x/y location
-        locationString = "[%i,%i]" % (self.xy[1]-1, self.xy[0])
-        locationStringOffset = self.mov.sizeX - len(locationString) -2
-        self.addstr(self.mov.sizeY+1, locationStringOffset, locationString, curses.color_pair(1))
+                    self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
+        # Draw x/y location/position 
+        locationString = "(%i,%i)" % (self.xy[1]-1, self.xy[0])
+        #locationStringOffset = self.mov.sizeX - len(locationString) -2
+        locationStringOffset = realmaxX - len(locationString) - 1
+        self.addstr(statusBarLineNum+1, locationStringOffset, locationString, curses.color_pair(1))
         # Draw Range, FPS and Delay buttons
-        self.addstr(self.mov.sizeY, 12, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
-        self.addstr(self.mov.sizeY, 16, ">", curses.color_pair(6) | curses.A_BOLD)
+        self.addstr(statusBarLineNum, 12 + line_1_offset, "<", curses.color_pair(6) | curses.A_BOLD)  # FPS buttons
+        self.addstr(statusBarLineNum, 16 + line_1_offset, ">", curses.color_pair(6) | curses.A_BOLD)
         if self.commandMode:
-            self.addstr(self.mov.sizeY, self.mov.sizeX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
+            self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
         else:
-            self.addstr(self.mov.sizeY, self.mov.sizeX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
+            self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
         if not self.playing:
-            self.addstr(self.mov.sizeY, 2, "F", curses.color_pair(6) | curses.A_BOLD)  # Frame button
-            self.addstr(self.mov.sizeY, 29, "R", curses.color_pair(6) | curses.A_BOLD)  # Range button
-            self.addstr(self.mov.sizeY, 23, "D", curses.color_pair(6) | curses.A_BOLD)  # Delay button
+            self.addstr(statusBarLineNum, 2 + line_1_offset, "F", curses.color_pair(6) | curses.A_BOLD)  # Frame button
+            self.addstr(statusBarLineNum, 29 + line_1_offset, "R", curses.color_pair(6) | curses.A_BOLD)  # Range button
+            self.addstr(statusBarLineNum, 23 + line_1_offset, "D", curses.color_pair(6) | curses.A_BOLD)  # Delay button
         # draw transport
         transportString = "|< << |> >> >|" 
         #transportOffset = chMapOffset - len(transportString) - 1
-        transportOffset = self.mov.sizeX - len(transportString) - 2 
+        transportOffset = realmaxX - len(transportString) - 11
+        self.transportOffset = transportOffset
         if self.playing:
             transportString = "|< << || >> >|" 
-            self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(1))
-            self.addstr(self.mov.sizeY, transportOffset+6, "||", curses.color_pair(6) | curses.A_BOLD)
+            self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(1))
+            self.addstr(statusBarLineNum, transportOffset+6, "||", curses.color_pair(6) | curses.A_BOLD)
         else:
             transportString = "|< << |> >> >|" 
-            self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6) | curses.A_BOLD)
+            self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(6) | curses.A_BOLD)
         #transportOffset = chMapOffset - len(transportString) 
         #self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6))
+        # Draw the new status bar
+        self.statusBar.draw()
 
     def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
         # example: self.clickHighlight(52, "|>")
         # Highlight clicked item at "pos" by drawing it as "str" in bright white or yellow, sleep a moment,
         # then back to green
         if bar == 'top':
-            y = self.mov.sizeY
+            y = self.statusBarLineNum
         if bar == 'bottom':
-            y = self.mov.sizeY + 1
+            y = self.statusBarLineNum + 1
         self.addstr(y, pos, buttonString, curses.color_pair(5) | curses.A_BOLD)
         curses.curs_set(0)  # turn off cursor
         self.stdscr.refresh()
@@ -855,6 +972,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.drawStatusBar()
             self.move(self.xy[0], self.xy[1] - 1)  # move cursor to the right
             # spot for refresh
+            curses.panel.update_panels()
+            #curses.doupdate()
             self.stdscr.refresh()
             c = self.stdscr.getch()
             self.testWindowSize()
@@ -878,10 +997,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     else:
                         self.showHelp()
                     c = None
-                elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
+                #elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
+                elif c in [curses.KEY_LEFT]:      # alt-left - prev bg color
                     self.prevBgColor()
                     c = None
-                elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
+                #elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
+                elif c in [curses.KEY_RIGHT]:     # alt-right - next bg color
                     self.nextBgColor()
                     c = None
                 elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
@@ -902,11 +1023,15 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.delLine()
                 elif c == 47:      # alt-/ - insert line
                     self.addLine()
-                elif (c == 109):    # alt-m - mark block
-                    startPoint=(self.xy[0], self.xy[1])
-                    self.startSelecting(startPoint)
-                elif (c == 99):     # alt-c - clear canvas
-                    self.clearCanvas(prompting = True)
+                elif c == 109 or c == 102:    # alt-m or alt-f - load menu
+                    #startPoint=(self.xy[0], self.xy[1])
+                    #self.startSelecting(startPoint)
+                    #self.statusBar.mainMenu.showHide()  # yikes.. 3 levels deep?
+                    self.statusBar.menuButton.on_click()  # yikes.. 3 levels deep?
+                elif (c == 99):     # alt-c - color picker
+                    #self.clearCanvas(prompting = True)
+                    if self.appState.colorMode == "256":
+                        self.statusBar.colorPickerButton.on_click()
                 # Animation Keystrokes
                 elif (c == 68):     #alt-D - set delay for current frame
                     self.getDelayValue()
@@ -979,11 +1104,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None
             elif c == 12:               # ctrl-l - harder refresh
                 self.stdscr.redrawwin()
+                self.stdscr.clear()
+                #self.stdscr.refresh()
                 self.refresh()
                 c = None
-            elif c in [13, curses.KEY_ENTER]:               # enter (10 if we
+            elif c in [10, 13, curses.KEY_ENTER]:               # enter (10 if we
                 # don't do curses.nonl())
-                if self.xy[0] < self.mov.sizeX - 1:
+                #pdb.set_trace()
+                if self.xy[0] < self.mov.sizeY - 1:
                     self.xy = [self.xy[0] + 1, 1]
             elif c in [263, 127]:              # backspace
                 if self.xy[1] > 1: self.xy[1] = self.xy[1] - 1
@@ -1035,79 +1163,88 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.xy[1] = self.mov.sizeX
             elif c == curses.KEY_MOUSE: # We are not playing
                 try:
-                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                    _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
                     pass
-                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX:
-                    self.xy[1] = mouseX + 1 # set cursor position
-                    self.xy[0] = mouseY
-                elif mouseX < self.mov.sizeX and mouseY in [self.mov.sizeY, self.mov.sizeY+1]:   # we clicked on the status bar somewhere..
-                    # Add stuff here to take mouse 'commands' like clicking
-                    # play/next/etc on transport, or clicking "start button"
-                    #if mouseX in [38, 39]:  # clicked play button
-                    if mouseY == self.mov.sizeY: # clicked upper bar 
-                        if mouseX in [self.mov.sizeX - 9, self.mov.sizeX - 10]:  # clicked play button
-                            self.clickHighlight(self.mov.sizeX - 10, "|>")
-                            self.startPlaying()
-                            self.metaKey = 0
-                        elif mouseX in [self.mov.sizeX - 12, self.mov.sizeX - 13]: # goto prev frame
-                            self.clickHighlight(self.mov.sizeX - 13, "<<")
-                            self.mov.prevFrame()
-                        elif mouseX in [self.mov.sizeX - 6, self.mov.sizeX - 7]: # goto next frame
-                            self.clickHighlight(self.mov.sizeX - 7, ">>")
-                            self.mov.nextFrame()
-                        elif mouseX in [self.mov.sizeX - 15, self.mov.sizeX - 16]: # goto first frame
-                            self.clickHighlight(self.mov.sizeX - 16, "|<")
-                            self.mov.gotoFrame(1)
-                        elif mouseX in [self.mov.sizeX - 3, self.mov.sizeX - 4]: # goto last frame
-                            self.clickHighlight(self.mov.sizeX - 4, ">|")
-                            self.mov.nextFrame()
-                            self.mov.gotoFrame(self.mov.frameCount)
-                        #elif mouseX in [self.mov.sizeY, 0]: # help
-                        elif mouseX == 0: # help
-                            self.clickHighlight(0, "?")
-                            if self.appState.hasHelpFile:
-                                self.showAnimatedHelpScreen()
-                            else:
-                                self.showHelp()
-                            c = None
-                        elif mouseX == 12:    # clicked FPS down
-                            self.clickHighlight(12, "<")
-                            self.decreaseFPS()
-                        elif mouseX == 16:    # clicked FPS up
-                            self.clickHighlight(16, ">")
-                            self.increaseFPS()
-                        elif mouseX == 23:  # clicked Delay button
-                            self.clickHighlight(23, "D")
-                            self.getDelayValue()
-                        elif mouseX == 29:  # clicked Range button
-                            self.clickHighlight(29, "R")
-                            self.getPlaybackRange()
-                        elif mouseX == 2:   # clicked Frame button
-                            self.clickHighlight(2, "F")
-                            self.gotoFrameGetInput()
+                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
+                    if self.appState.cursorMode == "sel":   # select mode/move the cursor
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY
+                if mouseState == curses.BUTTON1_CLICKED:
+                    realmaxY,realmaxX = self.realstdscr.getmaxyx()
+                    self.gui.got_click("Click", mouseX, mouseY)
+                    if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
+                        # Add stuff here to take mouse 'commands' like clicking
+                        # play/next/etc on transport, or clicking "start button"
+                        #if mouseX in [38, 39]:  # clicked play button
+                        if mouseY == self.statusBarLineNum: # clicked upper bar 
+                            offset = 6
+                            tOffset = self.transportOffset
+                            #tOffset = realmaxX - (realmaxX - self.transportOffset)
+                            #pdb.set_trace()
+                            if mouseX in [tOffset + 6, tOffset + 7]:  # clicked play button
+                                self.clickHighlight(tOffset + 6, "|>")
+                                self.startPlaying()
+                                self.metaKey = 0
+                            elif mouseX in [tOffset + 3, tOffset + 4]: # goto prev frame
+                                self.clickHighlight(tOffset + 3, "<<")
+                                self.mov.prevFrame()
+                            elif mouseX in [tOffset + 9, tOffset + 10]: # goto next frame
+                                self.clickHighlight(tOffset + 9, ">>")
+                                self.mov.nextFrame()
+                            elif mouseX in [tOffset, tOffset + 1]: # goto first frame
+                                self.clickHighlight(tOffset, "|<")
+                                self.mov.gotoFrame(1)
+                            elif mouseX in [tOffset + 12, tOffset + 13]: # goto last frame
+                                self.clickHighlight(tOffset + 12, ">|")
+                                self.mov.nextFrame()
+                                self.mov.gotoFrame(self.mov.frameCount)
+                            #elif mouseX in [self.statusBarLineNum, 0]: # help
+                            #elif mouseX == 0: # help
+                            #    self.clickHighlight(0, "?")
+                            #    if self.appState.hasHelpFile:
+                            #        self.showAnimatedHelpScreen()
+                            #    else:
+                            #        self.showHelp()
+                            #    c = None
+                            elif mouseX == 12 + offset:    # clicked FPS down
+                                self.clickHighlight(12 + offset, "<")
+                                self.decreaseFPS()
+                            elif mouseX == 16 + offset:    # clicked FPS up
+                                self.clickHighlight(16 + offset, ">")
+                                self.increaseFPS()
+                            elif mouseX == 23 + offset:  # clicked Delay button
+                                self.clickHighlight(23 + offset, "D")
+                                self.getDelayValue()
+                            elif mouseX == 29 + offset:  # clicked Range button
+                                self.clickHighlight(29 + offset, "R")
+                                self.getPlaybackRange()
+                            elif mouseX == 2 + offset:   # clicked Frame button
+                                self.clickHighlight(2 + offset, "F")
+                                self.gotoFrameGetInput()
 
 
-                    elif mouseY == self.mov.sizeY+1: # clicked bottom bar 
-                        if mouseX in range(4,20): # clicked a fg color
-                            fg = mouseX - 3  
-                            #self.notify("set fg color: " + str(fg))
-                            self.setFgColor(fg)
-                        elif mouseX in range(25,33):   # clicked a bg color
-                            bg = mouseX - 24
-                            #self.notify("set bg color: " + str(bg))
-                            self.setBgColor(bg)
-                        elif mouseX == 66:  # clicked next character set
-                            self.clickHighlight(66, ">", bar='bottom')
-                            self.nextCharSet()
-                        elif mouseX == 34:  # clicked previous character set
-                            self.clickHighlight(34, "<", bar='bottom')
-                            self.prevCharSet()
-                        elif self.appState.debug:
-                            self.notify("bottom bar. " + str([mouseX, mouseY]))
-                    else:
-                        if self.appState.debug:
-                            self.notify(str([mouseX, mouseY]))
+                        elif mouseY == self.statusBarLineNum+1: # clicked bottom bar 
+                            if self.appState.colorMode == "16":
+                                if mouseX in range(4,20): # clicked a fg color
+                                    fg = mouseX - 3  
+                                    #self.notify("set fg color: " + str(fg))
+                                    self.setFgColor(fg)
+                                elif mouseX in range(25,33):   # clicked a bg color
+                                    bg = mouseX - 24
+                                    #self.notify("set bg color: " + str(bg))
+                                    self.setBgColor(bg)
+                            if mouseX == 66:  # clicked next character set
+                                self.clickHighlight(66, ">", bar='bottom')
+                                self.nextCharSet()
+                            elif mouseX == 34:  # clicked previous character set
+                                self.clickHighlight(34, "<", bar='bottom')
+                                self.prevCharSet()
+                            elif self.appState.debug:
+                                self.notify("bottom bar. " + str([mouseX, mouseY]))
+                        else:
+                            if self.appState.debug:
+                                self.notify(str([mouseX, mouseY]))
                 #self.mouseClicked(mouseEvent)
             elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
                 # 337 and 520 - shift-up, 336 and 513 = shift-down
@@ -1123,6 +1260,8 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
+            #curses.panel.update_panels()
+            #curses.doupdate() 
             self.refresh()
 
     def getDelayValue(self):
@@ -1231,18 +1370,24 @@ class UserInterface():  # Separate view (curses) from this controller
         # aka "fill in the blanks"
         if self.appState.debug: self.notify(f"Converting to new format. Current format: {self.opts.saveFileFormat}")
         if (self.opts.saveFileFormat < 3):  # version 4 should rename saveFileFormat
-            if self.appState.debug: self.notify(f"Dur format 1 or 2 found. Making color map.")
+            if self.appState.debug: self.notify(f"Upgrading to format 3. Making old color map.")
             # to saveFormatVersion
             # initialize color map for all frames:
             for frame in self.mov.frames:  
                 frame.initColorMap()    
                 self.opts.saveFileFormat = 3
         if (self.opts.saveFileFormat < 4):
-            if self.appState.debug: self.notify(f"Dur format 1, 2 or 3 found. Adding delays.")
+            if self.appState.debug: self.notify(f"Upgrading to format 4. Adding delays.")
             # old file, needs delay times populated.
             for frame in self.mov.frames:
                 frame.setDelayValue(0)
+                #frame.newColorMap = durmovie.init_list_ColorMap(frame.sizeX, frame.sizeY)    
                 self.opts.saveFileFormat = 4
+        if (self.opts.saveFileFormat < 5):
+            if self.appState.debug: self.notify(f"Upgrading to format 5. Making new color map.")
+            for frame in self.mov.frames:
+                frame.newColorMap = durmovie.convert_dict_colorMap(frame.colorMap, frame.sizeX, frame.sizeY)
+            self.opts.saveFileFormat = 5
         self.opts.saveFileFormat = 5
 
     def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename
@@ -1513,10 +1658,14 @@ class UserInterface():  # Separate view (curses) from this controller
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.colorMap[(lineNum, colNum)]
+                color = self.mov.currentFrame.newColorMap[lineNum][colNum]
                 colorFg = color[0]
                 colorBg = color[1]
                 try:
-                    colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                    if self.appState.colorMode == "256":
+                        colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                    else:
+                        colorCode = self.ansi.getColorCode(colorFg,colorBg)
                 except KeyError:
                     colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
                 string = string + colorCode + char
@@ -1614,7 +1763,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def savePngFile(self, filename, lastLineNum=None, firstLineNum=None, firstColNum=None, lastColNum=None, font='ansi'):
         """ Save to ANSI then convert to PNG """
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
-            self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/")
+            self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/", pause=True)
             return False
         tmpAnsiFileName = filename + '.tmp.ans' # remove this file when done
         tmpPngFileName = filename + '.tmp.ans.png' # remove this file when done
@@ -1711,8 +1860,13 @@ class UserInterface():  # Separate view (curses) from this controller
                save_all=True,
                duration=sleeptime * 1000, loop=0)
 
-
     def showHelp(self):
+        if self.appState.hasHelpFile:
+            self.showAnimatedHelpScreen()
+        else:
+            self.showStaticHelp()    
+
+    def showStaticHelp(self):
         self.cursorOff()
         self.stdscr.nodelay(0)
         helpScreenText = '''
@@ -1768,21 +1922,27 @@ Can use ESC or META instead of ALT
         for line in mov.currentFrame.content:
             for colnum in range(mov.sizeX):
                 charColor = mov.currentFrame.colorMap[(linenum, colnum)]
-                cursesColorPair = self.ansi.colorPairMap[charColor] # set ncurss color pair
+                charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                #pdb.set_trace()
+                cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] # set ncurss color pair
                 if (charColor[0] > 8):    # bright color
                     self.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 else:
                     self.addstr(linenum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))
+            # draw border on right edge of line
+            if self.appState.drawBorders:
+                self.addstr(linenum, mov.sizeX, ":", curses.color_pair(1))
             linenum += 1
+        # draw bottom border
+        if self.appState.drawBorders:
+            self.addstr(linenum, 0, "." * mov.sizeX, curses.color_pair(1))
+            self.addstr(linenum, mov.sizeX, ":", curses.color_pair(1))
         for x in range(linenum, mov.sizeY):
             self.addstr(x, 0, " " * mov.sizeX)
         if not self.appState.playOnlyMode:
             self.move(self.xy[0], self.xy[1] - 1)
+        curses.panel.update_panels()
         self.stdscr.refresh()
-
-    def refresh2(self):
-        """Refresh the Screen - rewrite"""
-        pass
 
     def delCol(self):          # This causes ghost characters when refresh() - still? no?
         """Erase column at position of cursor"""
@@ -1790,6 +1950,8 @@ Can use ESC or META instead of ALT
         for x in range(len(self.mov.currentFrame.content)):         # Pop current column from every
             self.mov.currentFrame.content[x].pop(self.xy[1] - 1)     # line & add a blank
             self.mov.currentFrame.content[x].append(' ')         # at the end of each line.
+            self.mov.currentFrame.newColorMap[x].pop(self.xy[1] - 1)     # line & add a blank
+            self.mov.currentFrame.newColorMap[x].append([1,0])         # at the end of each line.
         self.refresh()
 
     def addCol(self):
@@ -1798,6 +1960,8 @@ Can use ESC or META instead of ALT
         for x in range(len(self.mov.currentFrame.content)):
             self.mov.currentFrame.content[x].insert(self.xy[1] - 1, ' ')
             self.mov.currentFrame.content[x].pop()
+            self.mov.currentFrame.newColorMap[x].insert(self.xy[1] - 1, [1,0])
+            self.mov.currentFrame.newColorMap[x].pop()
         # insert bit here to shift color map to the right from the column
         # onward. how: start at top right character, work down to bottom 
         # copying the color from the character to the left.
@@ -1810,6 +1974,9 @@ Can use ESC or META instead of ALT
         self.mov.currentFrame.content.pop(self.xy[0])
         self.mov.currentFrame.content.append([])
         self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
+        self.mov.currentFrame.newColorMap.pop(self.xy[0])
+        self.mov.currentFrame.newColorMap.append([])
+        self.mov.currentFrame.newColorMap[len(self.mov.currentFrame.newColorMap) - 1] = [[1,0]] * self.mov.sizeX
         self.refresh()
 
     def addLine(self):          # This causes ghost characters when refresh(). Sometimes?
@@ -1817,6 +1984,8 @@ Can use ESC or META instead of ALT
         self.undo.push()
         self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
         self.mov.currentFrame.content.pop()
+        self.mov.currentFrame.newColorMap.insert(self.xy[0], [[1,0]] * self.mov.sizeX)
+        self.mov.currentFrame.newColorMap.pop()
         self.refresh()
 
     def startSelecting(self, startPoint):   # startpoint == (y,x) tuple, or (self.xy[0],self.xy[1])

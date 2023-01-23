@@ -24,7 +24,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.16.0'
+    DUR_VER = '0.17.0'
     DUR_FILE_VER = 5
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
@@ -39,6 +39,7 @@ def main():
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
     parserFilenameMutex = parser.add_mutually_exclusive_group()
+    parserColorModeMutex = parser.add_mutually_exclusive_group()
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
                     nargs='+')
@@ -48,13 +49,15 @@ def main():
                     action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
+    parserColorModeMutex.add_argument("--256color", help="Try 256 color mode", action="store_true", dest='hicolor')
+    parserColorModeMutex.add_argument("--16color", help="Try 16 color mode", action="store_true", dest='locolor')
     parser.add_argument("-b", "--blackbg", help="Use a black background color instead of terminal default", action="store_true")
     parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
     parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
-    parser.add_argument("-A", "--ansi", help="ANSI Art Mode - Use F1-F10 keys for IBM-PC ANSI Art characters (Code Page 437 extended ASCII)", action="store_true")
+    parser.add_argument("-A", "--ansi", help="IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-PC) block characters", action="store_true")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
@@ -76,12 +79,14 @@ def main():
         app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
     term_size = os.get_terminal_size()
-    if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
+    #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
+    if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
         app.width = args.width[0]
     else:
         app.width = 80      # "sane" default screen size, 80x24..
-    if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
-        app.height = args.height[0] - 1
+    #if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
+    if args.height and args.height[0] > 1 and args.height[0] < term_size[1]:
+        app.height = args.height[0]
     else:
         app.height = 24 - 1
     if args.max:
@@ -95,12 +100,17 @@ def main():
         showStartupScreen=False
     if args.nomouse:
         app.hasMouse = False
+    if args.hicolor:
+        app.colorMode = "256"
+    if args.locolor:
+        app.colorMode = "16"
     if args.ansi:
         app.ansiArtMode = True
         app.charEncoding = 'ibm-pc'
     else:
         app.ansiArtMode = False
         app.charEncoding = 'utf-8'
+    durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
     if args.blackbg:
         app.blackbg = False
     else: app.blackbg = True
@@ -109,6 +119,8 @@ def main():
     durhelp_fullpath = ''
     #with importlib.resources.path("durdraw.help", "durhelp.dur") as durhelp_fullpath:
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
+    durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256.dur")
+    app.durhelp256_fullpath = durhelp256_fullpath
     #print(f"DEBUG: durhelp_fullpath = {durhelp_fullpath}")
     #print(importlib.resources.path("durdraw.help", "durhelp.dur"))
     #durhelp_fullpath = importlib.resources.path("durdraw.help", "durhelp.dur")
@@ -126,7 +138,7 @@ def main():
         if app.ansiLove:
             print("ansilove = Found")
         else:
-            print("ansilove = Not found (no PNG or GIF support)")
+            print("ansilove = Not found (no PNG or GIF export support)")
         if app.PIL:
             print("PIL = Found")
         else:
@@ -149,6 +161,8 @@ def main():
                 exit(0)
         else:
             time.sleep(3)
+    if args.play:
+        app.playOnlyMode = True
     ui = UI_Curses(app)
     if app.hasMouse:
         ui.initMouse()
@@ -158,7 +172,7 @@ def main():
         ui.loadFromFile(args.filename, 'dur')
     if args.play:
         # Just play files and exit
-        app.playOnlyMode = True
+        app.drawBorders = False
         if args.times:
             app.playNumberOfTimes = args.times[0]
         for movie in args.play:

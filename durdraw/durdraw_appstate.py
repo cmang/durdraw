@@ -3,6 +3,7 @@ import os
 import pdb
 import pickle
 import subprocess
+import sys
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
 
@@ -10,6 +11,8 @@ class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self):
         self.curOpenFileName = ""
+        self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.cursorMode = "sel"  # Select, Paint and Color, or SEL, PNT, CLR 
         self.playOnlyMode = False
         self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
@@ -22,6 +25,12 @@ class AppState():
         self.playingHelpScreen = False
         self.durVer = None
         self.debug = False
+        self.durhelp256_fullpath = None
+        self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
+        if sys.version_info >= (3, 10):
+            if curses.has_extended_color_support(): # Requires Ncures 6
+                self.showBgColorPicker = True   # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
+        self.drawBorders = True
         self.durFileVer = 0
 
     def setDurFileVer(self, durFileVer):  # file format for saving. 1-4 are pickle, 5+ is JSON

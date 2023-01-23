@@ -6,7 +6,7 @@ with open("README.md") as f_readme:
 
 setup(
     name='durdraw',
-    version='0.16.0',
+    version='0.17.0',
     author='Sam Foster',
     author_email='samfoster@gmail.com',
     description='Animated Color ASCII and Unicode Art Editor',
@@ -16,9 +16,9 @@ setup(
     license='ISC',
     # package_dir={'': 'durdraw'},
     packages=['durdraw'],
-    install_requires=["pillow"],
+    install_requires=['pillow', 'windows-curses;platform_system=="Windows"'],
     include_package_data = True, 
-    package_data = {'durdraw': ["help/durhelp.dur"]}, # help/durhelp.dur
+    package_data = {'durdraw': ["help/*"]}, # help/durhelp.dur
     data_files = [
     #    ('share/icons', ['data/durdraw.png']),
     #    ('share/applications', ['data/durdraw.desktop']),
