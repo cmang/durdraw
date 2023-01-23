@@ -24,7 +24,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.17.0'
+    DUR_VER = '0.17.1'
     DUR_FILE_VER = 5
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
