@@ -164,7 +164,9 @@ class MenuHandler:
             #    self.hide()
             #    self.items["Help"]["on_click"]()
             #    prompting = False
+        #pdb.set_trace()
         curses_cursorOn()
+        self.menu.hide()
         if not self.menu.caller.caller.playing:    # lol .. the caller.caller is the main UI thing
             self.window.nodelay(0)
         #curses_addstr(self.window, self.menu.x, self.menu.y, "Show menu")
@@ -256,7 +258,7 @@ class ColorPickerHandler:
         prompting = True
         self.window.nodelay(1)
         #print('\033[?1003l') # disable mouse movement tracking (xterm api)
-        curses.mousemask(1)
+        #curses.mousemask(1)
         curses_cursorOff()
         # populate window with colors
         self.panel.top()
@@ -328,7 +330,7 @@ class ColorPickerHandler:
         self.hide()
         curses_cursorOn()
         self.window.nodelay(0)
-        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+        #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
         #print('\033[?1003h') # enable mouse tracking
         return color
 
