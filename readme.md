@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.18.0
+              \_____________________________________________\|  v 0.18.0-dev
 
 
 ![durdraw-help-screen-256color](https://user-images.githubusercontent.com/261501/214016536-9413463f-2fe4-4298-8022-95daeabbe894.png)
@@ -208,7 +208,7 @@ F1-F12 to input ANSI block characters.
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Short answer: It's not supported, but you can use it in WSL. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and patches. 
+A: Short answer: It's not supported, but you can use it in WSL. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
 A: Probably not easily. DurDraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
