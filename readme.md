@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.17.2
+              \_____________________________________________\|  v 0.18.0
 
 
 ![durdraw-help-screen-256color](https://user-images.githubusercontent.com/261501/214016536-9413463f-2fe4-4298-8022-95daeabbe894.png)
@@ -208,13 +208,13 @@ F1-F12 to input ANSI block characters.
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Yes, but it's not yet well supported and is considered beta. If you want to help make it work better, please help test it and submit bug reports and patches. It runs in text/terminal windows, such as Command Prompt, Windows Terminal, PowerShell terminal, etc. You can download a release if available, or if you have Python and Pip set up, you can go to the downloaded Durdraw folder and run: python setup.py install
+A: Short answer: It's not supported, but you can use it in WSL. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and patches. 
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
-A: Probably not easily. DurDraw requires Python 3 and a unix-like terminal. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
+A: Probably not easily. DurDraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
 #### Q: Does DurDraw support IBM-PC ANSI art?
-A: Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
+A: Yes - Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
 
 ### CREDITS:
 

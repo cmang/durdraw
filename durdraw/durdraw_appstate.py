@@ -1,3 +1,4 @@
+import curses
 import gzip
 import os
 import pdb
@@ -12,13 +13,14 @@ class AppState():
     def __init__(self):
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
-        self.cursorMode = "sel"  # Select, Paint and Color, or SEL, PNT, CLR 
+        self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.playOnlyMode = False
         self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
+        self.drawChar = '$'
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.helpMov = None
         self.hasHelpFile = False
@@ -32,6 +34,21 @@ class AppState():
                 self.showBgColorPicker = True   # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.drawBorders = True
         self.durFileVer = 0
+
+    def setCursorModeSel(self):
+        self.cursorMode="Move"
+
+    def setCursorModePnt(self):
+        self.cursorMode="Draw"
+
+    def setCursorModeCol(self):
+        self.cursorMode="Color"
+
+    def setCursorModeErase(self):
+        self.cursorMode="Erase"
+
+    def setCursorModeEyedrop(self):
+        self.cursorMode="Eyedrop"
 
     def setDurFileVer(self, durFileVer):  # file format for saving. 1-4 are pickle, 5+ is JSON
         self.durFileVer = durFileVer

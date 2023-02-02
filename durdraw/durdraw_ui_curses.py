@@ -37,6 +37,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
         self.panel.bottom()
         self.panel.show()
+        self.pressingButton = False
+        self.pushingToClip = False  # true while we are holding down mouse button to draw or erase
         #self.stdscr.box()
         self.gui = durgui.Gui(guiType="curses", window=self.stdscr)
         curses.start_color()    # Yeayuhhh
@@ -110,7 +112,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0) # wait for input when calling getch
         goodResponse = False
         while goodResponse == False:
-            self.addstr(self.mov.sizeY, 0, "Start frame for playback [currently %i of %i, 0 for All]: " % \
+            self.addstr(self.statusBarLineNum, 0, "Start frame for playback [currently %i of %i, 0 for All]: " % \
                 (self.appState.playbackRange[0], self.mov.frameCount))
             curses.echo()
             lowRange = self.stdscr.getstr()
@@ -136,7 +138,7 @@ class UserInterface():  # Separate view (curses) from this controller
         goodResponse = False
         self.clearStatusLine()
         while goodResponse == False:
-            self.addstr(self.mov.sizeY, 0, "End frame for playback [currently %i of %i]: " % \
+            self.addstr(self.statusBarLineNum, 0, "End frame for playback [currently %i of %i]: " % \
                 (self.appState.playbackRange[0], self.mov.frameCount))
             curses.echo()
             highRange = self.stdscr.getstr()
@@ -170,7 +172,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0) # wait for input when calling getch
         goodResponse = False
         while goodResponse == False:
-            self.addstr(self.mov.sizeY, 0, "Enter frame to go to [currently %i of %i]: " % \
+            self.addstr(self.statusBarLineNum, 0, "Enter frame to go to [currently %i of %i]: " % \
                 (self.mov.currentFrameNumber, self.mov.frameCount))
             curses.echo()
             newFrameNumber = self.stdscr.getstr()
@@ -313,7 +315,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def notify(self, message, pause=False):
         self.cursorOff()
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, message)
+        #self.addstr(self.statusBarLineNum, 0, message)
+        self.addstr(self.statusBarLineNum, 0, message)
         self.stdscr.refresh()
         if pause:
             if self.playing:
@@ -347,34 +350,67 @@ class UserInterface():  # Separate view (curses) from this controller
         while (self.realmaxY < self.mov.sizeY+1 or self.realmaxX < self.mov.sizeX):
             try:
                 self.addstr(0, 0, "Terminal is too small.")
-                self.addstr(1, 0, "Please enlarge to %ix%i or larger." % (self.mov.sizeX, self.mov.sizeY))
+                self.addstr(1, 0, "Please enlarge to %ix%i or larger, or press 'q' to quit" % (self.mov.sizeX, self.mov.sizeY))
             except:     # if window is too small for the message ^
                 pass
+            c = self.stdscr.getch()
+            #c = chr(c).upper()
+            #if (c == ord('Q')):
+            if (c == 113):  # 113 == 'q'
+                #pdb.set_trace() # this should never happen
+                self.verySafeQuit()
             self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
             self.stdscr.refresh()
-            time.sleep(0.01)
+            time.sleep(0.02)
         self.stdscr.refresh()
         self.stdscr.clear()
         self.testWindowSize()
 
-    def insertChar(self, c, fg=1, bg=0, frange=None):
+    def insertColor(self, fg=1, bg=0, frange=None, x=None, y=None, pushClip=True):
+        """ Sets the color for an x/y location on the current frame,
+        or a range of frames """
+        if pushClip:    # push onto the clipboard stack
+            self.undo.push()
+        if x == None:
+            x = self.xy[1]
+        if y == None:
+            y = self.xy[0]
+        if frange:
+            for fn in range(frange[0] - 1, frange[1]):
+                self.mov.frames[fn].newColorMap[y][x - 1] = [fg, bg]
+        else:
+            self.mov.currentFrame.newColorMap[y][x - 1] = [fg, bg]
+        #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
+
+    def insertChar(self, c, fg=1, bg=0, frange=None, x=None, y=None, moveCursor = False, pushClip=True):
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
-        self.undo.push()
+        if pushClip:    # push onto the clipboard stack
+            self.undo.push()
+        if x == None:
+            x = self.xy[1]
+            moveCursor = True
+        if y == None:
+            y = self.xy[0]
         if frange: # frame range
             for fn in range(frange[0] - 1, frange[1]):
-                self.mov.frames[fn].content[self.xy[0]][self.xy[1] - 1] = chr(c)
+                self.mov.frames[fn].content[y][x - 1] = chr(c)
                 self.mov.frames[fn].colorMap.update(
-                        {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
-                self.mov.frames[fn].newColorMap[self.xy[0]][self.xy[1] - 1] = [fg, bg]
-            if self.xy[1] < self.mov.sizeX:
+                        {(y,x - 1):(fg,bg)} )
+                self.mov.frames[fn].newColorMap[y][x - 1] = [fg, bg]
+            if x < self.mov.sizeX and moveCursor:
                 self.xy[1] = self.xy[1] + 1 
         else:
-            self.mov.currentFrame.content[self.xy[0]][self.xy[1] - 1] = chr(c)
+            self.mov.currentFrame.content[y][x - 1] = chr(c)
             self.mov.currentFrame.colorMap.update(
-                    {(self.xy[0],self.xy[1] - 1):(fg,bg)} )
-            self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [fg, bg]
-            if self.xy[1] < self.mov.sizeX:
+                    {(y,x - 1):(fg,bg)} )
+            self.mov.currentFrame.newColorMap[y][x - 1] = [fg, bg]
+            if x < self.mov.sizeX and moveCursor:
                 self.xy[1] = self.xy[1] + 1 
+
+    def eyeDrop(self, col, line):
+        fg, bg = self.mov.currentFrame.newColorMap[line][col]
+        self.colorfg = fg
+        self.colorbg = bg
 
     def clearCanvasPrompt(self):
         self.clearCanvas(prompting=True)
@@ -384,7 +420,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if prompting:
             self.stdscr.nodelay(0) # wait for input when calling getch
             self.clearStatusLine()
-            self.addstr(self.mov.sizeY, 0, "Are you sure you want to clear the canvas? (Y/N) " )
+            self.addstr(self.statusBarLineNum, 0, "Are you sure you want to clear the canvas? (Y/N) " )
             while (prompting):
                 time.sleep(0.01)
                 c = self.stdscr.getch()
@@ -408,7 +444,7 @@ class UserInterface():  # Separate view (curses) from this controller
         newPosition = self.mov.currentFrameNumber
         while prompting:
             time.sleep(0.01)
-            self.addstr(self.mov.sizeY, 0, "Use left/right to move frame, press Enter when done or Esc to cancel. (%i/%i)" % (newPosition, self.mov.frameCount))
+            self.addstr(self.statusBarLineNum, 0, "Use left/right to move frame, press Enter when done or Esc to cancel. (%i/%i)" % (newPosition, self.mov.frameCount))
             c = self.stdscr.getch()
             if c in [98, curses.KEY_LEFT]:
                 # move frame left one position (use pop and push)
@@ -453,7 +489,7 @@ class UserInterface():  # Separate view (curses) from this controller
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "* Press the ANY key (or click) to continue *")
+        self.addstr(self.statusBarLineNum, 0, "* Press the ANY key (or click) to continue *")
         while (self.playingHelpScreen):
             self.move(self.xy[0], self.xy[1])
             self.refresh()
@@ -584,12 +620,59 @@ class UserInterface():  # Separate view (curses) from this controller
                         except:
                             pass
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
-                        if mouseState == curses.BUTTON1_CLICKED:
+                        # enable mouse tracking only when the button is pressed
+                        if mouseState & curses.BUTTON1_PRESSED:
+                            if not self.pressingButton:
+                                self.pressingButton = True
+                                print('\033[?1003h') # enable mouse tracking with the XTERM APIP
+                            if not self.pushingToClip:
+                                cmode = self.appState.cursorMode
+                                if cmode == "Draw" or cmode == "Color" or cmode == "Erase":
+                                    self.undo.push()
+                                    self.pushingToClip = True
+                        elif mouseState & curses.BUTTON1_RELEASED:
+                            if self.pressingButton:
+                                self.pressingButton = False
+                                print('\033[?1003l') # disable mouse reporting
+                                curses.mousemask(1)
+                                curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                            if self.pushingToClip:
+                                self.pushingToClip = False
+                        # deal with mouse clicks
+                        if mouseState == curses.BUTTON1_CLICKED:    # self.playing == True
                             self.gui.got_click("Click", mouseX, mouseY)
                             if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: 
                                 # we clicked in edit area
-                                self.xy[1] = mouseX + 1 # set cursor position
-                                self.xy[0] = mouseY
+                                #self.xy[1] = mouseX + 1 # set cursor position
+                                #self.xy[0] = mouseY
+                                if self.appState.cursorMode == "Move":   # select mode/move the cursor
+                                    self.xy[1] = mouseX + 1 # set cursor position
+                                    self.xy[0] = mouseY
+                                elif self.appState.cursorMode == "Draw":   # Change the color under the cursor
+                                    # also set cursor position
+                                    self.xy[1] = mouseX + 1 # set cursor position
+                                    self.xy[0] = mouseY
+                                    # Insert the selected character.
+                                    #self.undo.push()
+                                    drawChar = self.appState.drawChar
+                                    self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, frange=self.appState.playbackRange, pushClip = False)
+                                    self.refresh()
+                                elif self.appState.cursorMode == "Color":   # Change the color under the cursor
+                                    # also set cursor position
+                                    self.xy[1] = mouseX + 1 # set cursor position
+                                    self.xy[0] = mouseY
+                                    # set the color
+                                    self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, frange=self.appState.playbackRange, pushClip=False)
+                                    # no frange here:
+                                    #for frameno in range(kj^i
+                                    #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
+                                elif self.appState.cursorMode == "Erase":   # Change the color under the cursor
+                                    # also set cursor position
+                                    self.xy[1] = mouseX + 1 # set cursor position
+                                    self.xy[0] = mouseY
+                                    # set the color
+                                    self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, frange=self.appState.playbackRange, pushClip = "False")
+
                             elif mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar while playing.
                                 if mouseY == self.statusBarLineNum: # clicked upper bar
                                     offset = 6  # making room for the menu bar
@@ -829,12 +912,17 @@ class UserInterface():  # Separate view (curses) from this controller
     def drawStatusBar(self):
         # This has also become a bit of a window resize handler
         self.clearStatusLine()
-        line_1_offset = 6
+        self.line_1_offset = 5
+        #self.line_1_offset = 10
+        line_1_offset = self.line_1_offset
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
         statusBarLineNum = realmaxY - 2
         self.statusBar.colorPicker.handler.move(0,realmaxY - 6)
         self.statusBarLineNum = statusBarLineNum
+        # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
+        self.statusBar.toolButton.update_real_xy(x = statusBarLineNum)
+        #self.addstr(statusBarLineNum, 38 + line_1_offset, "Tool:")
         if self.appState.colorMode == "256":
             self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
@@ -950,7 +1038,7 @@ class UserInterface():  # Separate view (curses) from this controller
             transportString = "|< << |> >> >|" 
             self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(6) | curses.A_BOLD)
         #transportOffset = chMapOffset - len(transportString) 
-        #self.addstr(self.mov.sizeY, transportOffset, transportString, curses.color_pair(6))
+        #self.addstr(self.statusBarLineNum, transportOffset, transportString, curses.color_pair(6))
         # Draw the new status bar
         self.statusBar.draw()
 
@@ -974,6 +1062,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.metaKey = 0
         self.commandMode = False
         mouseX, mouseY = 0, 0
+        self.pressingButton = False
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
@@ -988,7 +1077,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #if c == 203: self.notify('Whaaaaat???')
             if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
             if self.metaKey == 1:
-                # self.addstr(self.mov.sizeY, self.mov.sizeX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
+                # self.addstr(self.statusBarLineNum, self.mov.sizeX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
                 # Try for meta-keys, then set metaKey to 1
                 if c == 111:                # alt-o - open
                     self.open()
@@ -1051,8 +1140,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.refresh()
                 elif (c == 103):            # alt-g - go to frame
                     self.gotoFrameGetInput()
-                elif (c == 67):             # alt-C - clone range to new location
-                    self.notify("clone range starting frame: ") # Implement this.
+                #elif (c == 67):             # alt-C - clone range to new location
+                #    self.notify("clone range starting frame: ") # Implement this.
                 elif (c == 110) or (c == 14):          # alt-n - clone to new frame
                     self.undo.push()
                     if self.mov.insertCloneFrame():
@@ -1175,9 +1264,58 @@ class UserInterface():  # Separate view (curses) from this controller
                 except:
                     pass
                 if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
-                    if self.appState.cursorMode == "sel":   # select mode/move the cursor
+                    if mouseState & curses.BUTTON1_PRESSED:
+                        if not self.pressingButton:
+                            self.pressingButton = True
+                            print('\033[?1003h') # enable mouse tracking with the XTERM API
+                        if not self.pushingToClip:
+                            cmode = self.appState.cursorMode
+                            if cmode == "Draw" or cmode == "Color" or cmode == "Erase":
+                                self.undo.push()
+                                self.pushingToClip = True
+                    elif mouseState & curses.BUTTON1_RELEASED:
+                        if self.pressingButton:
+                            self.pressingButton = False
+                            print('\033[?1003l') # disable mouse reporting
+                            curses.mousemask(1)
+                            curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                            if self.pushingToClip:
+                                self.pushingToClip = False
+                    if self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY
+                    elif self.appState.cursorMode == "Draw":   # Change the color under the cursor
+                        # also set cursor position
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY
+                        # Insert the selected character.
+                        #self.undo.push()
+                        drawChar = self.appState.drawChar
+                        self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY, moveCursor=False, pushClip=False)
+                        self.refresh()
+
+                    elif self.appState.cursorMode == "Color":   # Change the color under the cursor
+                        # also set cursor position
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY, pushClip=False)
+                        self.refresh()
+                    elif self.appState.cursorMode == "Erase":   # Erase character under the cursor
+                        #self.undo.push()
+                        # also set cursor position
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY
+                        self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, pushClip=False)
+                    elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY
+                        self.eyeDrop(mouseX, mouseY)
+                elif self.pressingButton:
+                    self.pressingButton = False
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                        #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
                 if mouseState == curses.BUTTON1_CLICKED:
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     self.gui.got_click("Click", mouseX, mouseY)
@@ -1186,7 +1324,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         # play/next/etc on transport, or clicking "start button"
                         #if mouseX in [38, 39]:  # clicked play button
                         if mouseY == self.statusBarLineNum: # clicked upper bar 
-                            offset = 6
+                            #offset = 6
+                            offset = self.line_1_offset # line 1 of the status bar 
                             tOffset = self.transportOffset
                             #tOffset = realmaxX - (realmaxX - self.transportOffset)
                             #pdb.set_trace()
@@ -1276,7 +1415,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Ask the user for the delay value to set for current frame, then
             set it """
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Current frame delay == %i, new value in seconds: " % \
+        self.addstr(self.statusBarLineNum, 0, "Current frame delay == %i, new value in seconds: " % \
             self.mov.currentFrame.delay);
         curses.echo()
         try:
@@ -1293,7 +1432,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def deleteCurrentFramePrompt(self):
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Are you sure you want to delete the current frame? (Y/N) ");
+        self.addstr(self.statusBarLineNum, 0, "Are you sure you want to delete the current frame? (Y/N) ");
         prompting = True
         while prompting:
             time.sleep(0.01)
@@ -1313,7 +1452,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Are you sure you want to Quit? (Y/N) " )
+        #self.addstr(self.statusBarLineNum, 0, "Are you sure you want to Quit? (Y/N) " )
+        self.addstr(self.statusBarLineNum, 0, "Are you sure you want to Quit? (Y/N) " )
         prompting = True
         while (prompting):
             time.sleep(0.01)
@@ -1337,13 +1477,14 @@ class UserInterface():  # Separate view (curses) from this controller
             self.stdscr.keypad(0)
             curses.echo()
             curses.endwin()
-            quit()
+            #quit()
+            exit(0)
 
     def open(self):
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
         self.stdscr.nodelay(0) # wait for input when calling getch
-        self.addstr(self.mov.sizeY, 0, "File format? [I] ASCII, [D] DUR (or JSON), [ESC] Cancel: ")
+        self.addstr(self.statusBarLineNum, 0, "File format? [I] ASCII, [D] DUR (or JSON), [ESC] Cancel: ")
         prompting = True
         while (prompting):
             c = self.stdscr.getch()
@@ -1359,7 +1500,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 return None
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Enter file name to open: ")
+        self.addstr(self.statusBarLineNum, 0, "Enter file name to open: ")
         curses.echo()
         shortfile = self.stdscr.getstr().decode('utf-8')
         curses.noecho()
@@ -1492,8 +1633,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def save(self):
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
-        self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, [J]SON, [P]NG, [G]IF: ")
-        #self.addstr(self.mov.sizeY, 0, "File format? [A]NSI, ASCI[I], [D]UR, DUR[2], [P]NG, [G]IF: ")
+        self.addstr(self.statusBarLineNum, 0, "File format? [A]NSI, ASCI[I], [D]UR, [J]SON, [P]NG, [G]IF: ")
+        #self.addstr(self.statusBarLineNum, 0, "File format? [A]NSI, ASCI[I], [D]UR, DUR[2], [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
         saved = False
@@ -1527,7 +1668,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 return None
         self.clearStatusLine()
         if saveFormat in ['png', 'gif']:
-            self.addstr(self.mov.sizeY, 0, "Which font? IBM PC [A]NSI, AM[I]GA: ")
+            self.addstr(self.statusBarLineNum, 0, "Which font? IBM PC [A]NSI, AM[I]GA: ")
             prompting = True
             while (prompting):
                 time.sleep(0.01)
@@ -1545,7 +1686,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     return None
             if saveFont == 'amiga':
                 self.clearStatusLine()
-                self.addstr(self.mov.sizeY, 0, "Which amiga font? 1=topaz 2=b-strict, 3=microknight, 4=mosoul, 5=pot-noodle: ")
+                self.addstr(self.statusBarLineNum, 0, "Which amiga font? 1=topaz 2=b-strict, 3=microknight, 4=mosoul, 5=pot-noodle: ")
                 prompting = True
                 while (prompting):
                     c = self.stdscr.getch()
@@ -1570,7 +1711,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         return None
         self.clearStatusLine()
-        self.addstr(self.mov.sizeY, 0, "Enter file name to save as: [" + self.appState.curOpenFileName + "] ")
+        self.addstr(self.statusBarLineNum, 0, "Enter file name to save as: [" + self.appState.curOpenFileName + "] ")
         curses.echo()
         filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
@@ -1669,13 +1810,18 @@ class UserInterface():  # Separate view (curses) from this controller
                 color = self.mov.currentFrame.newColorMap[lineNum][colNum]
                 colorFg = color[0]
                 colorBg = color[1]
+                if self.appState.colorMode == "256":
+                    if self.appState.showBgColorPicker == False:
+                        colorBg = 0 # black, I hope
                 try:
                     if self.appState.colorMode == "256":
-                        colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                        colorCode = self.ansi.getColorCode256(colorFg,colorBg)
                     else:
                         colorCode = self.ansi.getColorCode(colorFg,colorBg)
                 except KeyError:
                     colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
+                # If we don't have extended ncurses 6 color pairs,
+                # we don't have background colors.. so write the background as black/0
                 string = string + colorCode + char
             string = string + '\r\n'
         f.write(string)
@@ -1913,7 +2059,7 @@ Can use ESC or META instead of ALT
         helpScreenText = '\n'.join(helpScreenText.split('\n')[1:]) 
         self.clearStatusLine()
         self.addstr(0, 0, helpScreenText)
-        self.addstr(self.mov.sizeY, 0, "* Press the ANY key (or click) to continue *")
+        self.addstr(self.statusBarLineNum, 0, "* Press the ANY key (or click) to continue *")
         self.stdscr.getch()
         self.stdscr.clear()
         self.cursorOn()

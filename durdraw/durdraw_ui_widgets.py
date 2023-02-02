@@ -97,7 +97,8 @@ class Menu():
         item = {label: props}
         self.items.update(item)
         # add button
-        itemButton = Button(label, 0, 0, on_click, self.window)
+        #itemButton = Button(label, 0, 0, on_click, self.window)
+        itemButton = Button(label, 0, self.x, on_click, self.window)
         itemButton.make_invisible()
         self.buttons.append(itemButton)
         self.handler.rebuild()
@@ -105,6 +106,8 @@ class Menu():
 
     def show(self):
         for button in self.buttons:
+            #button.x = self.x
+            #button.update_real_xy(x=self.x)
             self.gui.add_button(button)
             button.show()
             #pdb.set_trace()
@@ -183,7 +186,7 @@ class ColorPicker():
 class MiniSelector():   # for seleting cursor mode
     """ Line up some characters beside each other, and let the user select
     which one by clicking on it. The currently selected one is drawn inverse.
-    Example, for picking between Select, Paint and Color: SPC """
+    Example, for picking between Select, Draw and Color: SPC """
     def __init__(self):
         self.items = []
 
@@ -220,11 +223,11 @@ class StatusBar():
         # Create a menu list item, add menu items to it
         mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self)
         #mainMenu.gui = self.gui
-        mainMenu.add_item(" New  ", caller.clearCanvasPrompt, "n")
-        mainMenu.add_item(" Open ", caller.open, "o")
-        mainMenu.add_item(" Save ", caller.save, "s")
-        mainMenu.add_item(" Help ", caller.showHelp, "h")
-        mainMenu.add_item(" Quit ", caller.safeQuit, "q")
+        mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
+        mainMenu.add_item("Open", caller.open, "o")
+        mainMenu.add_item("Save", caller.save, "s")
+        mainMenu.add_item("Help", caller.showHelp, "h")
+        mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
         menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window)
         menuButton.realX = self.x + menuButton.x
@@ -234,8 +237,28 @@ class StatusBar():
         #mainMenu.y = menuButton.realY
         mainMenu.set_x(menuButton.realX - 1)
         mainMenu.set_y(menuButton.realY)
+
+        toolMenu = Menu(self.window, x=45, y=self.y, caller=self)
+        #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
+        toolMenu.add_item("Move", self.setCursorModeSel, "m")
+        toolMenu.add_item("Draw", self.setCursorModePnt, "d")
+        toolMenu.add_item("Color", self.setCursorModeCol, "c")
+        toolMenu.add_item("Erase", self.setCursorModeErase, "e")
+        toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
+        # Make cursor tool selector button
+        toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window)
+        #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
+        toolButton.label = self.caller.appState.cursorMode
+        toolButton.realX = self.x + toolButton.x
+        toolButton.realY = self.y + toolButton.y
+        toolButton.show()
+        toolMenu.set_x(toolButton.realX - 1)    # line up the menu above the button
+        toolMenu.set_y(toolButton.realY)
+
         self.mainMenu = mainMenu
+        self.toolMenu = toolMenu
         self.menuButton = menuButton
+        self.toolButton = toolButton
 
         colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
         self.colorPicker = colorPicker
@@ -262,10 +285,32 @@ class StatusBar():
         # Initialize individual buttons and items
         #startButton = Button(label="!", callback=self.draw_start_menu)
         self.items.append(menuButton)
+        self.items.append(toolButton)
         #self.items.append(fgBgColors)
         #self.items.append(self.swatch)
         self.buttons.append(menuButton)
+        self.buttons.append(toolButton)
         # Add them to the items
+
+    def setCursorModeSel(self):
+        self.caller.appState.setCursorModeSel()
+        self.toolButton.label = self.caller.appState.cursorMode
+
+    def setCursorModePnt(self):
+        self.caller.appState.setCursorModePnt()
+        self.toolButton.label = self.caller.appState.cursorMode
+
+    def setCursorModeCol(self):
+        self.caller.appState.setCursorModeCol()
+        self.toolButton.label = self.caller.appState.cursorMode
+
+    def setCursorModeErase(self):
+        self.caller.appState.setCursorModeErase()
+        self.toolButton.label = self.caller.appState.cursorMode
+
+    def setCursorModeEyedrop(self):
+        self.caller.appState.setCursorModeEyedrop()
+        self.toolButton.label = self.caller.appState.cursorMode
 
     def updateLocation(self, x, y):
         self.x = x

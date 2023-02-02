@@ -40,7 +40,8 @@ def serialize_to_json_file(opts, movie, file_path, gzipped=True):
             for posX in range(0, opts.sizeX):
                 newColorMap.append(list())
                 for posY in range(0, opts.sizeY):
-                    newColorMap[posX].append(list(frame.colorMap[posY, posX]))
+                    #newColorMap[posX].append(list(frame.colorMap[posY, posX]))
+                    newColorMap[posX].append(frame.newColorMap[posY][posX])
             for line in frame.content:
                 content = ''.join(line)
                 newFrame.append(content)

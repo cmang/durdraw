@@ -82,12 +82,13 @@ class MenuHandler:
             #newButton = Button(button.label, line, 0, button.on_click, self.curses_win)
             #self.menu.buttons.remove(button)
             #self.menu.buttons.add(newButton)
-            curses_addstr(self.curses_win, line, 0, item, textColor)
+            #curses_addstr(self.curses_win, line, 0, item, textColor)
+            curses_addstr(self.curses_win, line, self.menu.y, item, textColor)
             #curses_addstr(self.curses_win, line, 0, item, color)
             top_of_menu = self.menu.caller.y - len(self.menu.buttons)
             #button.update_real_xy(x=self.menu.caller.x, y=top_of_menu + line)
             #button.update_real_xy(x=line, y=0) # working for putting menu on first line
-            button.update_real_xy(x=self.menuOriginLine + line, y=0) # working for putting menu on first line
+            button.update_real_xy(x=self.menuOriginLine + line, y=self.menu.y) # working for putting menu on first line
             button.window = self.window
             line += 1
         self.panel = curses.panel.new_panel(self.curses_win)
@@ -97,7 +98,9 @@ class MenuHandler:
         self.rebuild()
         self.panel.top()
         #self.panel.move(0,0)
-        self.panel.move(self.menuOriginLine, 0)
+        #self.panel.move(self.menuOriginLine, 0)
+        #self.panel.move(self.menuOriginLine, self.menu.x)
+        self.panel.move(self.menuOriginLine, self.menu.y)
         self.panel.show()
         self.curses_win.keypad(True)
         curses.panel.update_panels()
@@ -224,6 +227,7 @@ class ColorPickerHandler:
         self.x = x
         self.y = y
         self.panel.move(y, x)
+        #self.origin = self.x - 2
 
     def updateFgPicker(self):
         line = 0

@@ -56,7 +56,7 @@ class AnsiArtStuff():
         return code
 
     def getColorCode256(self, fg, bg):
-        """ Return a string containing 245-color mode ANSI escape code for
+        """ Return a string containing 256-color mode ANSI escape code for
         given fg/bg """
         code = '\033[38;5;'    # begin escape sequence
         code = code + str(fg)
