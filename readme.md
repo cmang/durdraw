@@ -12,7 +12,7 @@ Durdraw
 
 ## OVERVIEW:
 
-Durdraw is an ASCII and Unicode art editor for UNIX-like systems (Linux, 
+Durdraw is an ASCII, ANSI and Unicode art editor for UNIX-like systems (Linux, 
 macOS, etc). It runs in the terminal and supports color and frame-based
 animation, attempting to make ANSI and ASCII art animation work more like
 a traditional animation studio. It supports 256 color modes when available.
@@ -208,7 +208,7 @@ F1-F12 to input ANSI block characters.
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Short answer: It's not supported, but you can use it in WSL. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
+A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
 A: Probably not easily. DurDraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
@@ -220,10 +220,9 @@ A: Yes - Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII char
 
 Developer: Sam Foster
 
-Homepages:
+Home page: http://durdraw.org
 
-http://durdraw.org
-https://github.com/cmang/durdraw
+Development: https://github.com/cmang/durdraw
 
 ### LEGAL:
 
