@@ -185,6 +185,56 @@ class MenuHandler:
         self.refresh()
         #curses_addstr(self.window, self.menu.x, self.menu.y, "Hide menu")
 
+class DrawCharPickerHandler:
+    def __init__(self, caller, window):
+        self.caller = caller    # drawCharPicker
+        self.window = window
+
+    def pickChar(self):
+        maxLines, maxCol = self.window.getmaxyx()
+        #pdb.set_trace()
+        self.window.addstr(maxLines - 3, 0, "Enter a character to use for drawing: ")
+        prompting = True
+        while prompting:
+            c = self.window.getch()
+            time.sleep(0.01)
+            if c in [curses.KEY_F1]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f1'])
+                prompting = False
+            elif c in [curses.KEY_F2]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f2'])
+                prompting = False
+            elif c in [curses.KEY_F3]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f3'])
+                prompting = False
+            elif c in [curses.KEY_F4]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f4'])
+                prompting = False
+            elif c in [curses.KEY_F5]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f5'])
+                prompting = False
+            elif c in [curses.KEY_F6]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f6'])
+                prompting = False
+            elif c in [curses.KEY_F7]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f7'])
+                prompting = False
+            elif c in [curses.KEY_F8]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f8'])
+                prompting = False
+            elif c in [curses.KEY_F9]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f9'])
+                prompting = False
+            elif c in [curses.KEY_F10]:
+                self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f10'])
+                prompting = False
+            else:
+                self.caller.appState.drawChar = chr(c)
+                prompting = False
+        self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
+        self.window.addstr(maxLines - 3, 0, "                                          ")
+        self.caller.caller.caller.refresh()
+
 class ColorPickerHandler:
     def __init__(self, colorPicker, window):
         self.colorPicker = colorPicker

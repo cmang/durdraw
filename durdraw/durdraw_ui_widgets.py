@@ -9,11 +9,12 @@ import pdb
 import time
 
 from durdraw.durdraw_ui_widgets_curses import ButtonHandler
+from durdraw.durdraw_ui_widgets_curses import ColorPickerHandler
+from durdraw.durdraw_ui_widgets_curses import ColorSwatchHandler
+from durdraw.durdraw_ui_widgets_curses import DrawCharPickerHandler
 from durdraw.durdraw_ui_widgets_curses import MenuHandler
 from durdraw.durdraw_ui_widgets_curses import StatusBarHandler 
 from durdraw.durdraw_ui_widgets_curses import FgBgColorPickerHandler
-from durdraw.durdraw_ui_widgets_curses import ColorPickerHandler
-from durdraw.durdraw_ui_widgets_curses import ColorSwatchHandler
 from durdraw.durdraw_gui_manager import Gui
 
 class Button():
@@ -141,7 +142,18 @@ class FgBgColorPicker:
     def draw(self):
         self.handler.draw()
 
-class ColorPicker():
+class DrawCharPicker:
+    """ Ask the user for the character to draw with """
+    def __init__(self, window, x=0, y=0, caller=None):
+        self.window = window
+        self.caller = caller
+        self.appState = self.caller.caller.appState
+        self.handler = DrawCharPickerHandler(self, self.window)
+
+    def pickChar(self):
+        self.handler.pickChar()
+
+class ColorPicker:
     """ Draw a color palette, let the user click a color.
     Makes the user's selected color available somewhere. """
     def __init__(self, window, x=0, y=0, caller=None):
@@ -249,11 +261,20 @@ class StatusBar():
         toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
         toolButton.label = self.caller.appState.cursorMode
-        toolButton.realX = self.x + toolButton.x
+        toolButton.realX = self.x + toolButton.x    # toolbar shit
         toolButton.realY = self.y + toolButton.y
         toolButton.show()
         toolMenu.set_x(toolButton.realX - 1)    # line up the menu above the button
         toolMenu.set_y(toolButton.realY)
+
+        drawCharPicker = DrawCharPicker(self.window, caller=self)
+
+        drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window)
+        drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
+        drawCharPickerButton.realY = self.y + drawCharPickerButton.y
+        #drawCharPickerButton.show() 
+        drawCharPickerButton.hide() 
+        self.drawCharPickerButton = drawCharPickerButton
 
         self.mainMenu = mainMenu
         self.toolMenu = toolMenu
@@ -286,31 +307,38 @@ class StatusBar():
         #startButton = Button(label="!", callback=self.draw_start_menu)
         self.items.append(menuButton)
         self.items.append(toolButton)
+        self.items.append(drawCharPickerButton)
         #self.items.append(fgBgColors)
         #self.items.append(self.swatch)
         self.buttons.append(menuButton)
         self.buttons.append(toolButton)
+        self.buttons.append(drawCharPickerButton)
         # Add them to the items
 
     def setCursorModeSel(self):
         self.caller.appState.setCursorModeSel()
         self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.hide()
 
     def setCursorModePnt(self):
         self.caller.appState.setCursorModePnt()
         self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.show()
 
     def setCursorModeCol(self):
         self.caller.appState.setCursorModeCol()
         self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.hide()
 
     def setCursorModeErase(self):
         self.caller.appState.setCursorModeErase()
         self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.hide()
 
     def setCursorModeEyedrop(self):
         self.caller.appState.setCursorModeEyedrop()
         self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.hide()
 
     def updateLocation(self, x, y):
         self.x = x
@@ -320,7 +348,8 @@ class StatusBar():
         """ Draw the status bar """
         self.handler.draw()
         for item in self.items:
-            item.handler.draw(plusX=self.x, plusY=self.y)
+            if item.hidden is False:
+                item.handler.draw(plusX=self.x, plusY=self.y)
 
 
 
