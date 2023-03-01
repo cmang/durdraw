@@ -195,7 +195,7 @@ Terminal.app:
     * In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
       and "Use bright colors for bold text" are checked
     * In Keyboard tab, "Use option as meta key" selected
-    * In "Advanced" tab, Character encoding set to "Western (ASCII)"
+    * In "Advanced" tab, Character encoding set to "Western (ISO Latin 1)"
     * Set background color to black (low or no transprency) and foreground
       color to white
 
