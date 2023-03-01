@@ -299,7 +299,7 @@ class ColorPickerHandler:
             if fg == self.colorPicker.caller.colorfg:
                 curses_addstr(self.window, line, col, '*', color_pair)
             else:
-                curses_addstr(self.window, line, col, chr(self.fillChar), color_pair)
+                curses_addstr(self.window, line, col, self.fillChar, color_pair)
             col += 1
 
     def showFgPicker(self):
