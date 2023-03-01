@@ -242,6 +242,7 @@ class ColorPickerHandler:
         self.x = colorPicker.x
         self.y = colorPicker.y
         self.parentWindow = colorPicker.caller.stdscr
+        self.appState = colorPicker.caller.appState
         # figure out picker size
         total = curses.COLORS
         realmaxY,realmaxX = self.parentWindow.getmaxyx()
@@ -261,7 +262,8 @@ class ColorPickerHandler:
         self.curses_win = self.window
         self.panel = curses.panel.new_panel(self.curses_win)
         self.panel.hide()
-        self.fillChar = 9608    # unicode block
+        #self.fillChar = 9608    # unicode block
+        self.fillChar = self.appState.colorPickChar# unicode block
         self.origin = self.x - 2
         #self.move(0,self.x - 2)
         self.move(0,self.origin)

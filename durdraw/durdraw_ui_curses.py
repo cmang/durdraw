@@ -226,12 +226,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
                     newColor = self.colorfg + 1
             else:
-                self.colorfg = 1
+                newColor = 1
         self.setFgColor(newColor)
 
     def prevFgColor(self):
         """ switch to prev fg color, cycle around to end if at beginning """
-        if (self.colorfg >= 1):
+        if (self.colorfg > 1):
             newColor = self.colorfg - 1
             if self.appState.colorMode == "16":
                 if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
@@ -241,6 +241,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 newColor = 16
             elif self.appState.colorMode == "256":
                 newColor = 255
+            else:
+                newColor = 16   # default to 16 color
         self.setFgColor(newColor)
 
     def nextBgColor(self):
@@ -870,6 +872,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Map a dict of F1-f10 to character values """ 
         if self.appState.charEncoding == 'ibm-pc':
             self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
+            self.fullCharMap = [ self.chMap ]
+            self.appState.colorPickChar = chr(219)  # ibm-pc/cp437 ansi block character
         else:
             #self.chMap = {'f1':2591, 'f2':2592, 'f3':2593, 'f4':2588, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
             #self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 }
@@ -946,9 +950,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum+1, 0, "FG:", curses.color_pair(6) | curses.A_BOLD)
             cp = self.ansi.colorPairMap[(self.colorfg, 0)]
             #pdb.set_trace()
-            fillChar = 9608
+            #fillChar = 9608
             #self.addstr(statusBarLineNum, 41, chr(fillChar) * 2, curses.color_pair(cp))
-            self.addstr(statusBarLineNum+1, 3, chr(fillChar) * 2, curses.color_pair(cp))
+            self.addstr(statusBarLineNum+1, 3, self.appState.colorPickChar * 2, curses.color_pair(cp))
         if self.appState.showBgColorPicker:
             self.addstr(statusBarLineNum+1, 6, "BG:", curses.color_pair(6) | curses.A_BOLD)
             cp = self.ansi.colorPairMap[(1, self.colorbg)]
@@ -991,12 +995,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     if c == self.colorfg:
                         self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp) | curses.A_BOLD)   # block character
                     else:
-                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp) | curses.A_BOLD)   # block character
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, self.appState.colorPickChar, curses.color_pair(cp) | curses.A_BOLD)   # block character
                 else:
                     if c == self.colorfg:
                         self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c,'X', curses.color_pair(cp))   
                     else:
-                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, chr(9608), curses.color_pair(cp))
+                        self.addstr(statusBarLineNum+1, colorPickerFGOffset+3+c, self.appState.colorPickChar, curses.color_pair(cp))
             # bg color
             colorPickerBGOffset = 21
             self.addstr(statusBarLineNum+1, colorPickerBGOffset, "BG:", curses.color_pair(1))
@@ -1008,7 +1012,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     else:
                         self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
                 else:
-                    self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, chr(9608), curses.color_pair(cp))
+                    self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, self.appState.colorPickChar, curses.color_pair(cp))
         # Draw x/y location/position 
         locationString = "(%i,%i)" % (self.xy[1]-1, self.xy[0])
         #locationStringOffset = self.mov.sizeX - len(locationString) -2

@@ -102,7 +102,7 @@ class Menu():
         itemButton = Button(label, 0, self.x, on_click, self.window)
         itemButton.make_invisible()
         self.buttons.append(itemButton)
-        self.handler.rebuild()
+        #self.handler.rebuild()
         #itemButton.update_real_xy(x=self.caller.x)
 
     def show(self):

@@ -21,6 +21,7 @@ class AppState():
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.drawChar = '$'
+        self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.helpMov = None
         self.hasHelpFile = False
