@@ -78,10 +78,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.testWindowSize()
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         #self.statusBar = StatusBar(self.stdscr, x=self.realmaxY - 2, y=0)
-        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0)
         #self.gui.add_widget(self.statusBar)
-        for button in self.statusBar.buttons:
-            self.gui.add_button(button)
+        if self.appState.playOnlyMode is False:
+            self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0)
+            for button in self.statusBar.buttons:
+                self.gui.add_button(button)
         self.setWindowTitle("Durdraw")
         self.statusBarLineNum = self.realmaxY - 2
  
