@@ -92,7 +92,10 @@ class MenuHandler:
             button.window = self.window
             line += 1
         self.panel = curses.panel.new_panel(self.curses_win)
-        self.panel.hide()
+        try:
+            self.panel.hide()
+        except:
+            pass
 
     def show(self):
         self.rebuild()
@@ -181,7 +184,10 @@ class MenuHandler:
         curses.doupdate()
 
     def hide(self):
-        self.panel.hide()
+        try:
+            self.panel.hide()
+        except:
+            pass 
         self.refresh()
         #curses_addstr(self.window, self.menu.x, self.menu.y, "Hide menu")
 
@@ -273,7 +279,10 @@ class ColorPickerHandler:
 
     def hide(self):
         self.panel.bottom()
-        self.panel.hide()
+        try:
+            self.panel.hide()
+        except:
+            pass
 
     def move(self, x, y):
         self.x = x
