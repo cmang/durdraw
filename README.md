@@ -162,7 +162,7 @@ Can use ESC or META instead of ALT
     * If IBM-PC characters (-A) are not working in gnu screen, try running the
       following screen command (by pressing ctrl-a and typing):
         :utf8 off off
-      then type "clrl-a l" to redraw the window.
+      then type "ctrl-a l" to redraw the window.
       Also see "OPTIONAL INSTALLATION" notes below
 
 ## OPTIONAL INSTALLATION:
