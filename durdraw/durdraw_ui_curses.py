@@ -67,7 +67,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.colorbg = 0    # default bg black
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
-        self.undo = UndoManager(self)   # initialize undo/redo system
+        self.undo = UndoManager(self, appState = self.appState)   # initialize undo/redo system
         self.undo.setHistorySize(self.appState.undoHistorySize)
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         self.playing = False
@@ -104,7 +104,8 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.init_pair(8, curses.COLOR_BLACK, -1) # black - 8 (and 0)
 
     def setWindowTitle(self, title):
-        sys.stdout.write("\x1b]2;%s\x07" % title)
+        title = f"Durdraw - {title}"
+        sys.stdout.write(f"\x1b]2;{title}\x07")
 
     def getPlaybackRange(self):
         """ ask for playback range presses cmd-r """
@@ -477,6 +478,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.opts.framerate -= 1
 
     def showAnimatedHelpScreen(self):
+        self.appState.drawBorders = False
         wasPlaying = self.playing
         self.playing = False
         self.stdscr.nodelay(1) # do not wait for input when calling getch
@@ -523,6 +525,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.playingHelpScreen = False
         self.stdscr.clear()
         self.playing = wasPlaying
+        self.appState.drawBorders = True
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
@@ -535,7 +538,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.cursorOff()
         self.playing = True
         self.metaKey = 0
-        if not self.appState.playOnlyMode: # if we're not in play-only
+        if self.appState.playOnlyMode: 
+            self.appState.drawBorders = False
+        if not self.appState.playOnlyMode:
             # mode, show extra stuff.
             self.drawStatusBar()
         playedTimes = 1
@@ -1026,6 +1031,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
         else:
             self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
+        if self.appState.modified:
+            self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
+        else:
+            self.addstr(statusBarLineNum + 1, realmaxX - 1, " ", curses.color_pair(4) | curses.A_BOLD)
         if not self.playing:
             self.addstr(statusBarLineNum, 2 + line_1_offset, "F", curses.color_pair(6) | curses.A_BOLD)  # Frame button
             self.addstr(statusBarLineNum, 29 + line_1_offset, "R", curses.color_pair(6) | curses.A_BOLD)  # Range button
@@ -1458,7 +1467,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0) # wait for input when calling getch
         self.clearStatusLine()
         #self.addstr(self.statusBarLineNum, 0, "Are you sure you want to Quit? (Y/N) " )
-        self.addstr(self.statusBarLineNum, 0, "Are you sure you want to Quit? (Y/N) " )
+        if self.appState.modified:
+            self.addstr(self.statusBarLineNum, 0, "Changes have not been saved! Are you sure you want to Quit? (Y/N) " )
+        else:
+            self.addstr(self.statusBarLineNum, 0, "Are you sure you want to Quit? (Y/N) " )
         prompting = True
         while (prompting):
             time.sleep(0.01)
@@ -1605,6 +1617,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.setPlaybackRange(1, self.mov.frameCount)
                 if self.appState.debug: self.notify(f"{self.opts}")
                 if self.appState.debug: self.notify(f"Finished loading JSON dur file")
+                self.appState.curOpenFileName = os.path.basename(filename)
+                self.appState.modified = False
+                self.setWindowTitle(shortfile)
                 return True
             try:
                 if self.appState.debug: self.notify(f"Unpickling..")
@@ -1630,6 +1645,7 @@ class UserInterface():  # Separate view (curses) from this controller
             f.close()
             if (loadFormat == 'ascii'):  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
+            self.appState.modified = False
         self.setWindowTitle(shortfile)
         self.mov.gotoFrame(1)
 
@@ -1638,7 +1654,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def save(self):
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
-        self.addstr(self.statusBarLineNum, 0, "File format? [A]NSI, ASCI[I], [D]UR, [J]SON, [P]NG, [G]IF: ")
+        self.addstr(self.statusBarLineNum, 0, "File format? [A]NSI, ASCI[I], [M]IRC, [D]UR, [J]SON, [P]NG, [G]IF: ")
         #self.addstr(self.statusBarLineNum, 0, "File format? [A]NSI, ASCI[I], [D]UR, DUR[2], [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
@@ -1661,6 +1677,13 @@ class UserInterface():  # Separate view (curses) from this controller
             elif (c in [97, 65]): # a = ansi
                 saveFormat = 'ansi'
                 prompting = False
+            elif (c in [109]): # m = mIRC
+                prompting = False
+                if self.appState.colorMode == '16':
+                    saveFormat = 'irc'
+                else:
+                    self.notify("Sorry, mIRC export only works in 16-color mode. Try starting durdraw with --16color", pause=True)
+                    return None
             elif (c in [112, 80]): # p = png
                 saveFormat = 'png'
                 prompting = False
@@ -1716,7 +1739,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         return None
         self.clearStatusLine()
-        self.addstr(self.statusBarLineNum, 0, "Enter file name to save as: [" + self.appState.curOpenFileName + "] ")
+        self.addstr(self.statusBarLineNum, 0, f"Enter file name to save as ({saveFormat}) [{self.appState.curOpenFileName}]: ")
         curses.echo()
         filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
@@ -1724,9 +1747,20 @@ class UserInterface():  # Separate view (curses) from this controller
             self.notify("File name cannot be empty.")
             return False
         filename = os.path.expanduser(filename)
-        # Check and see if file exists. If it does, make backup pablodraw-style.
-        # Or just ask if you would like to overwrite.  haven't decided yet.
-        # For now just skip the checking/backup.
+        # If file exists.. ask if it should overwrite.
+        if os.path.exists(filename):
+            self.clearStatusLine()
+            self.addstr(self.statusBarLineNum, 0, f"This file already exists. Overwrite? ")
+            prompting = True
+            while (prompting):
+                c = self.stdscr.getch()
+                time.sleep(0.01)
+                if (c in [121, 89]): # y or Y
+                    prompting = False
+                if (c in [110, 78]): # n or N
+                    prompting = False
+                    self.notify("Canceled. File not saved.")
+                    return False
         if (saveFormat == 'ascii'):
             saved = self.saveAsciiFile(filename)
         if (saveFormat == 'durOld'):   # dur Old = pickled python objects (ew)
@@ -1737,6 +1771,8 @@ class UserInterface():  # Separate view (curses) from this controller
             saved = self.saveDur2File(filename, gzipped=False)
         if (saveFormat == 'ansi'):  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename)
+        if (saveFormat == 'irc'):  # ansi = escape codes for colors+ascii
+            saved = self.saveAnsiFile(filename, ircColors = True)
         if (saveFormat == 'png'):  # png = requires ansi love
             saved = self.savePngFile(filename, font=saveFont)
         if (saveFormat == 'gif'):  # gif = requires PIL
@@ -1744,6 +1780,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if saved:
             self.notify("*Saved* (Press any key to continue)", pause=True)
             self.appState.curOpenFileName = os.path.basename(filename)
+            self.appState.modified = False
+            self.undo.modifications = 0
             self.setWindowTitle(self.appState.curOpenFileName)
         elif not saved:
             self.notify("Save failed.")
@@ -1789,7 +1827,7 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None):
+    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False):
         """ Saves current frame of current movie to ansi file """
         try:
             f = open(filename, 'w')
@@ -1819,19 +1857,28 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.showBgColorPicker == False:
                         colorBg = 0 # black, I hope
                 try:
-                    if self.appState.colorMode == "256":
-                        colorCode = self.ansi.getColorCode256(colorFg,colorBg)
+                    if ircColors:
+                        colorCode = self.ansi.getColorCodeIrc(colorFg,colorBg)
                     else:
-                        colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                        if self.appState.colorMode == "256":
+                            colorCode = self.ansi.getColorCode256(colorFg,colorBg)
+                        else:
+                            colorCode = self.ansi.getColorCode(colorFg,colorBg)
                 except KeyError:
                     colorCode = "Error: " + str(colorFg) + "," + str(colorBg) + "."
                 # If we don't have extended ncurses 6 color pairs,
                 # we don't have background colors.. so write the background as black/0
                 string = string + colorCode + char
-            string = string + '\r\n'
+            if ircColors:
+                string = string + '\n'
+            else:
+                string = string + '\r\n'
         f.write(string)
-        f.write('\033[0m') # color attributes off
-        string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        if ircColors:
+            string2 = string + '\n'
+        else:
+            f.write('\033[0m') # color attributes off
+            string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
         f.close()
         return True
 
@@ -2051,13 +2098,8 @@ class UserInterface():  # Separate view (curses) from this controller
       alt-R - set playback/edit Range     alt-pgdn - next character set
       alt-g - Go to frame #               alt-pgup - prev character set
 
-
+Help file could not be found. You might want to reinstsall Durdraw...
 Can use ESC or META instead of ALT
-
-
-
-Can use ESC or META instead of ALT
-
 ''' % self.appState.durVer 
         # remove the blank first line from helpScreenText..
         # it's easier to edit here with the blank first line.

@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.18.4
+              \_____________________________________________\|  v 0.19.0
 
 
 ![durdraw-help-screen-256color](https://user-images.githubusercontent.com/261501/214016536-9413463f-2fe4-4298-8022-95daeabbe894.png)
@@ -25,7 +25,7 @@ and deleting frames, switching between frames, and frames-per-second speed
 control during playback. It supports both the mouse and keyboard.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
-ANSI (.ans), JSON, GIF and PNG formats.
+ANSI (.ans), JSON, GIF, mIRC color, and PNG formats.
 
 ## SCREENSHOTS AND EXAMPLES:
 

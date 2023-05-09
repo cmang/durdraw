@@ -5,16 +5,21 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         """ Manages undo/redo "stack" by storing the last 100 movie states
             in a list. Takes a UserInterface object for syntax. methods for
             push, undo and redo """
-        def __init__(self, ui):
+        def __init__(self, ui, appState = None):
             self.ui = ui
             self.undoIndex = 0 # will be 0 when populated with 1 state.
+            self.modifications = 0 #
             self.undoList = []
             self.historySize = 100  # default, but really determined by
+            self.appState = appState
             # AppState values passed to setHistorySize() below.
             self.push() # push initial state
         def push(self): # maybe should be called pushState or saveState?
             """ Take current movie, add to the end of a list of movie
                 objects - ie, push current state onto the undo stack. """
+            if self.appState.modified == False:
+                self.appState.modified = True
+            self.modifications += 1
             if len(self.undoList) >= self.historySize:   # How far back our undo history can
                 # go. Make this configurable.
                 # if undo stack == full, dequeue from the bottom
@@ -27,6 +32,10 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             # last item added == at the end of the list, so..
             self.undoIndex = len(self.undoList) # point index to last item
         def undo(self):
+            if self.modifications > 1:
+                self.modifications = self.modifications - 1
+            if self.modifications == 2:
+                self.appState.modified = False
             if self.undoIndex == 1: # nothing to undo
                 self.ui.notify("Nothing to undo.")
                 return False
@@ -41,7 +50,10 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         def redo(self):
             if self.undoIndex < (len(self.undoList) -1): # we can redo
                 self.undoIndex += 1 # go to next redo state
+                self.modifications += 1
                 self.ui.mov = self.undoList[self.undoIndex]
+                if self.appState.modified == False:
+                    self.appState.modified = True
             else:
                 self.ui.notify("Nothing to redo.")
         def setHistorySize(self, historySize):

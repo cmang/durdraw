@@ -287,7 +287,10 @@ class ColorPickerHandler:
     def move(self, x, y):
         self.x = x
         self.y = y
-        self.panel.move(y, x)
+        try:
+            self.panel.move(y, x)
+        except:
+            pass
         #self.origin = self.x - 2
 
     def updateFgPicker(self):

@@ -28,6 +28,7 @@ class AppState():
         self.playingHelpScreen = False
         self.durVer = None
         self.debug = False
+        self.modified = False
         self.durhelp256_fullpath = None
         self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         if sys.version_info >= (3, 10):
@@ -52,7 +53,7 @@ class AppState():
         self.cursorMode="Eyedrop"
 
     def setDurFileVer(self, durFileVer):  # file format for saving. 1-4 are pickle, 5+ is JSON
-        self.durFileVer = durFileVer
+       self.durFileVer = durFileVer
 
     def setDurVer(self, version):
         self.durVer = version

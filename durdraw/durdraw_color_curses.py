@@ -55,6 +55,43 @@ class AnsiArtStuff():
         code += 'm'
         return code
 
+    def getColorCodeIrc(self, fg, bg):
+        """ Return a string containing the IRC coolor code to color the next
+        character, for given fg/bg """
+        # references: https://www.mirc.com/colors.html
+        # http://anti.teamidiot.de/static/nei/*/extended_mirc_color_proposal.html
+        # map Durdraw -> IRC colors
+        colorMap16color = { 0: 1, # black
+                            1: 15, # grey
+                            2: 10, # cyan
+                            3: 6,   # purple
+                            4: 2,   # blue
+                            5: 7,   # brown
+                            6: 3,   # green
+                            7: 5,   # red
+                            8: 1,   # black
+                            9: 0,   # white/brwhite
+                            10: 11, # br cyan
+                            11: 13, # br purple
+                            12: 12, # br blue
+                            13: 8,  # br yellow
+                            14: 9,  # br green
+                            15: 4,  # br red
+                            16: 14, # br black/dark grey
+                            }
+        fg = colorMap16color[fg]
+        bg = colorMap16color[bg]
+
+        # build the code
+        code = '\x03'
+        #code = code + str(fg)
+        code = code + f'{fg:02d}'
+        code = code + ','
+        #code = code + str(bg)
+        code = code + f'{bg:02d}'
+        # code = code + '\x03'
+        return code
+
     def getColorCode256(self, fg, bg):
         """ Return a string containing 256-color mode ANSI escape code for
         given fg/bg """
