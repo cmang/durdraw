@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.19.0
+              \_____________________________________________\|  v 0.19.1
 
 
 ![durdraw-help-screen-256color](https://user-images.githubusercontent.com/261501/214016536-9413463f-2fe4-4298-8022-95daeabbe894.png)
@@ -121,7 +121,7 @@ optional arguments:
                         Set canvas height
   -m, --max             Maximum canvas size for terminal (overrides -W and -H)
   --nomouse             Disable mouse support
-  -A, --ansi            IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
+  -A, --ibmpc           IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
                         PC) block characters
   -u UNDOSIZE, --undosize UNDOSIZE
                         Set the number of undo history states - default is 100. More requires more

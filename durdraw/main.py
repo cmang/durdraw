@@ -24,7 +24,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.19.0'
+    DUR_VER = '0.19.1'
     DUR_FILE_VER = 5
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
@@ -57,7 +57,7 @@ def main():
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
-    parser.add_argument("-A", "--ansi", help="IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-PC) block characters", action="store_true")
+    parser.add_argument("-A", "--ibmpc", help="IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-PC/MS-DOS) block characters. (Needs CP437 capable terminal and font)", action="store_true")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
@@ -104,11 +104,10 @@ def main():
         app.colorMode = "256"
     if args.locolor:
         app.colorMode = "16"
-    if args.ansi:
-        app.ansiArtMode = True
+    if args.ibmpc:
         app.charEncoding = 'ibm-pc'
+        app.drawChar = '$'
     else:
-        app.ansiArtMode = False
         app.charEncoding = 'utf-8'
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
     if args.blackbg:
@@ -160,7 +159,8 @@ def main():
                 print("\nCaught interrupt, exiting.")
                 exit(0)
         else:
-            time.sleep(3)
+            pass
+            #time.sleep(3)
     if args.play:
         app.playOnlyMode = True
     ui = UI_Curses(app)

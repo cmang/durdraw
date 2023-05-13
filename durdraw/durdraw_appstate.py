@@ -10,9 +10,10 @@ import durdraw.durdraw_file as durfile
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
-    def __init__(self):
+    def __init__(self): # User friendly defeaults
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.playOnlyMode = False
         self.playNumberOfTimes = 0  # 0 = loop forever, default
@@ -20,7 +21,8 @@ class AppState():
         self.PIL = self.checkForPIL()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
-        self.drawChar = '$'
+        #self.drawChar = '$'
+        self.drawChar = b'\xE2\x96\x88'
         self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.helpMov = None

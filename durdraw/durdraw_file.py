@@ -8,9 +8,10 @@ import json
 from durdraw.durdraw_options import Options
 from durdraw.durdraw_movie import Movie
 
-def serialize_to_json_file(opts, movie, file_path, gzipped=True):
+def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
     """ Takes live Durdraw movie objects and serializes them out to a JSON files
     """
+    colorMode = appState.colorMode
     if gzipped:
         opener = gzip.open
     else:
@@ -18,10 +19,11 @@ def serialize_to_json_file(opts, movie, file_path, gzipped=True):
     with opener(file_path, 'wt') as f:
         movieDataHeader = {
             'formatVersion': opts.saveFileFormat,
-            #'colorFormat': 'ansi-16', # ansi-16, xterm-256 
-            'colorFormat': 'xterm-256', # ansi-16, xterm-256 
+            #'colorFormat': 'xterm-256', # ansi-16, xterm-256 
+            'colorFormat': colorMode, # ansi-16, xterm-256 
             'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
-            'encoding': 'Utf-8',
+            #'encoding': 'Utf-8',
+            'encoding': appState.charEncoding,
             'name': '',
             'artist': '',
             'framerate': opts.framerate,
@@ -74,6 +76,22 @@ def clean_up_json_output(json_str):
     json_data = json_data.replace("\n          ],", "],")
     return json_data
 
+def get_dur_file_colorMode_and_charMode(f):
+    """ Returns the color mode and encoding used by the file """
+    f.seek(0)
+    try:
+        loadedMovieData = json.load(f)
+    except Exception as E:
+        return False
+    colorMode = loadedMovieData['DurMovie']['colorFormat']
+    charEncoding = loadedMovieData['DurMovie']['encoding']
+    # convert from file format 5 to 6
+    if colorMode == 'xterm-256':
+        colorMode = '256'
+    if charEncoding == 'Utf-8':
+        charEncoding = 'utf-8'
+    return colorMode, charEncoding
+
 def open_json_dur_file(f):
     """ Loads json file into opts and movie objects.  Takes an open file
     object. Returns the opts and mov objects, encased in a list object.
@@ -84,6 +102,7 @@ def open_json_dur_file(f):
         loadedMovieData = json.load(f)
     except Exception as E:
         return False
+
     width = loadedMovieData['DurMovie']['sizeX']
     height = loadedMovieData['DurMovie']['sizeY']
     newOpts = Options(width=width, height=height)

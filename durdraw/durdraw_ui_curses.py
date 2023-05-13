@@ -47,16 +47,18 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.colorMode == "256":
             if self.ansi.initColorPairs_hicolor():
                 if self.appState.playOnlyMode == False:
-                    print("High Color Mode Enabled")  # 256 color mode
+                    #print("High Color Mode Enabled")  # 256 color mode
                     self.appState.loadHelpFile(self.appState.durhelp256_fullpath)
             else:
                 self.appState.colorMode = "16"
-                if self.appState.playOnlyMode == False:
-                    print("16 Color Mode Enabled. Change your TERM environment variable for 256 color support")
+                #if self.appState.playOnlyMode == False:
+                #    print("16 Color Mode Enabled. Change your TERM environment variable for 256 color support")
                 time.sleep(1)
             time.sleep(2)
         if self.appState.colorMode == "16":
             self.ansi.initColorPairs_cga()
+        print(f"Color mode: {self.appState.colorMode}")
+        time.sleep(2)
         #if self.appState.colorMode == "16":
         #    self.ansi.initColorPairs_cga()  # set up ncurses color pairs and fg/bg map - 16 color
         #self.ansi.initColorPairs()  # set up ncurses color pairs and fg/bg map 
@@ -344,6 +346,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.smallWindowMode()   # go into small window loop.stdscr
         if self.realmaxX < (self.mov.sizeX-4):
             self.smallWindowMode()   # go into small window loop.stdscr
+        if (self.realmaxY <= self.mov.sizeY):
+            self.appState.drawBorders = False
+        if (self.realmaxY > self.mov.sizeY):
+            self.appState.drawBorders = True
 
     def smallWindowMode(self):
         """Clear the screen, draw a small message near 0,0 that the window
@@ -1321,8 +1327,6 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[0] = mouseY
                         self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, pushClip=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
-                        self.xy[1] = mouseX + 1 # set cursor position
-                        self.xy[0] = mouseY
                         self.eyeDrop(mouseX, mouseY)
                 elif self.pressingButton:
                     self.pressingButton = False
@@ -1611,6 +1615,11 @@ class UserInterface():  # Separate view (curses) from this controller
             if (f.read(12) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x4d\x6f\x76\x69'): # {.  "DurMov
                 if self.appState.debug: self.notify(f"JSON found. Loading JSON dur file.")
                 f.seek(0)
+                fileColorMode, fileCharEncoding = durfile.get_dur_file_colorMode_and_charMode(f)
+                if fileColorMode != self.appState.colorMode:
+                    self.notify(f"Warning: File uses {fileColorMode} color mode, but Durdraw is in {self.appState.colorMode} color mode.", pause=True)
+                if fileCharEncoding != self.appState.charEncoding:
+                    self.notify(f"Warning: File uses {fileCharEncoding} character encoding, but Durdraw is in {self.appState.charEncoding} mode.", pause=True)
                 newMovie =  durfile.open_json_dur_file(f)
                 self.opts = newMovie['opts']
                 self.mov = newMovie['mov']
@@ -1809,9 +1818,9 @@ class UserInterface():  # Separate view (curses) from this controller
         #movieDataHeader = {'format': 'Durdraw file', 'framerate': self.opts.framerate, 'sizeX': self.opts.sizeX, 'sizeY': self.opts.sizeY, 'fileFormatVersion': self.opts.saveFileFormat }
         #movieDump = [self.opts, self.mov]
         if gzipped:
-            durfile.serialize_to_json_file(self.opts, self.mov, filename)
+            durfile.serialize_to_json_file(self.opts, self.appState, self.mov, filename)
         else:
-            durfile.serialize_to_json_file(self.opts, self.mov, filename, gzipped=False)
+            durfile.serialize_to_json_file(self.opts, self.appSTate, self.mov, filename, gzipped=False)
         return True
 
     def saveAsciiFile(self, filename):
