@@ -84,7 +84,10 @@ def get_dur_file_colorMode_and_charMode(f):
     except Exception as E:
         return False
     colorMode = loadedMovieData['DurMovie']['colorFormat']
-    charEncoding = loadedMovieData['DurMovie']['encoding']
+    try:
+        charEncoding = loadedMovieData['DurMovie']['encoding']
+    except Exception as E:
+        charEncoding = 'utf-8'
     # convert from file format 5 to 6
     if colorMode == 'xterm-256':
         colorMode = '256'
@@ -136,6 +139,37 @@ def open_json_dur_file(f):
     newMov.gotoFrame(1)
     container = {'opts':newOpts, 'mov':newMov}
     return container
+
+def load_ascii_file(file):
+    width = 0   # will increase as we load the file
+    height = 0  # dito
+    newOpts = Options(width=width, height=height)
+    newOpts.framerate = loadedMovieData['DurMovie']['framerate']
+    newOpts.saveFileFormat = loadedMovieData['DurMovie']['formatVersion']
+    # load frames into a new movie object
+    newMov = Movie(newOpts)
+    currentFrame = 0
+    lineNum = 0
+    try:
+        if self.appState.debug: self.notify("Trying to open() file as ascii.")
+        f = open(filename, 'r')
+        self.appState.curOpenFileName = os.path.basename(filename)
+    except Exception as e:
+        #if self.appState.debug: self.notify(f"self.opts = pickle.load(f)")
+        self.notify(f"Could not open file for reading: {e}")
+        return None
+    # here we add the stuff to load the file into self.mov.currentFrame.content[][]
+    self.undo.push()
+    self.mov.currentFrame.initColorMap()
+    linecount = 0
+    for line in f:
+        if (linecount < self.mov.sizeY):    # don't exceed canvas size
+            inBuffer = list(line.strip('\n').ljust(self.mov.sizeX)) # Returns line as 80 column list of chars
+            self.mov.currentFrame.content[linecount] = inBuffer
+        linecount += 1
+    f.close()
+    for x in range(linecount, self.mov.sizeY):   # clear out rest of contents.
+         self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
 
 class DurUnpickler(pickle.Unpickler):
     """" Custom Unpickler to remove serialized module names (like __main__) from
