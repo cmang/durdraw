@@ -58,7 +58,9 @@ class Frame():
         self.colorMap = {}
         self.newColorMap = init_list_colorMap(width, height)   # [[1,0], [3, 1], ...]
         self.sizeX = width
+        self.width = width
         self.sizeY = height
+        self.height = height
         self.delay = 0  # delay == # of sec to wait at this frame.
         for x in range(0, height):
             self.content.append([])
@@ -68,6 +70,17 @@ class Frame():
         #self.initColorMap()
         self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
         self.setDelayValue(0)
+
+    def setWidth(self, width):
+        self.sizeX = width
+        self.width = width
+        return true
+
+    def setHeight(self, height):
+        self.sizeY = height
+        self.height = height
+        return true
+
 
     def setDelayValue(self, delayValue):
         self.delay = delayValue
@@ -79,9 +92,9 @@ class Frame():
             for y in range(0, self.sizeX):
                 self.colorMap.update( {(x,y):(1,0)} )  # tuple keypair (xy), tuple value (fg and bg)
 
-    def initColorMap(self):
+    def initColorMap(self, fg=7, bg=0):
         """ Builds a list of lists """
-        return [[[1,0] * self.sizeY] * self.sizeX]
+        return [[[fg,0] * self.sizeY] * self.sizeX]
 
 class MovieSettings():  # config, prefs, preferences, etc. Per movie. Separate from AppState options. Formerly Options()
     """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
@@ -98,6 +111,7 @@ class Movie():
         self.currentFrameNumber = 0
         self.sizeX = opts.sizeX
         self.sizeY = opts.sizeY
+        self.opts = opts
         self.frames = []
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
@@ -108,6 +122,27 @@ class Movie():
         self.frames.append(newFrame)
         self.frameCount += 1
         return True
+
+    def insertCanvasColumn(self, col):
+        """ col is the column in which to insert a new column, across all
+        frames of the movie """
+        for frame in self.frames:
+            for line in frame.content:
+                line.insert(' ', col - 1)
+
+    def deleteCanvasColumn(self, col):
+        """ col is the column in which to delete a new column, across all
+        frames of the movie """
+        for frame in self.frames:
+            for line in frame.content:
+                line.pop(col - 1)
+
+    def insertCanvasLine(self, line):
+        """ col is the column in which to insert a new column, across all
+        frames of the movie """
+        for frame in self.frames:
+            for line in frame.content:
+                line.insert(' ', col - 1)
 
     def insertCloneFrame(self):
         """ clone current frame after current frame """
@@ -165,8 +200,24 @@ class Movie():
             self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
 
-    def lastMovieLine():
-        pass
+    def growCanvasWidth(self, growth):
+        self.sizeX += growth
+        self.opts.sizeX += growth
+        #self.width += growth
+
+    def shrinkCanvasWidth(self, shrinkage):
+        self.sizeY = self.sizeY - shrinkage
+        self.opts.sizeY = self.opts.sizeY - shrinkage 
+        #self.width = self.width - shrinkage
+
+    def contains_high_colors(self):
+        """ Returns True if any color above 16 is used, False otherwise """
+        for frame in self.frames:
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[0] > 16:
+                        return True
+        return False
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,

@@ -17,8 +17,9 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         def push(self): # maybe should be called pushState or saveState?
             """ Take current movie, add to the end of a list of movie
                 objects - ie, push current state onto the undo stack. """
-            if self.appState.modified == False:
-                self.appState.modified = True
+            if self.modifications > 0:
+                if self.appState.modified == False:
+                    self.appState.modified = True
             self.modifications += 1
             if len(self.undoList) >= self.historySize:   # How far back our undo history can
                 # go. Make this configurable.

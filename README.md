@@ -4,30 +4,26 @@ Durdraw
                   __                __
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
-              /_____|_____|__|__|_____|__|___\____|________| |  Durr....
-              \_____________________________________________\|  v 0.19.2
+              /_____|_____|__|__|_____|__|___\____|________| | 
+              \_____________________________________________\|  v 0.20.0
 
 
-![durdraw-help-screen-256color](https://user-images.githubusercontent.com/261501/214016536-9413463f-2fe4-4298-8022-95daeabbe894.png)
+![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
 
-## OVERVIEW:
+## OVERVIEW
 
 Durdraw is an ASCII, ANSI and Unicode art editor for UNIX-like systems (Linux, 
-macOS, etc). It runs in the terminal and supports color and frame-based
-animation, attempting to make ANSI and ASCII art animation work more like
-a traditional animation studio. It supports 256 color modes when available.
+macOS, etc). It runs in the terminal and supports frame-based animation,
+custom themes, 256 color, terminal mouse input, IRC color export, Unicode
+and Code Page 437 block characters, and other interesting features.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
-Windows, such as TheDraw, Aciddraw and Pablodraw.
-
-Some animation features include importing ascii files to frames, duplicating
-and deleting frames, switching between frames, and frames-per-second speed
-control during playback. It supports both the mouse and keyboard.
+Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
 ANSI (.ans), JSON, GIF, mIRC color, and PNG formats.
 
-## SCREENSHOTS AND EXAMPLES:
+## SCREENSHOTS AND EXAMPLES
 
 ![dopetrans3](https://user-images.githubusercontent.com/261501/210064369-4c416e85-12d0-47aa-b182-db5435ae0c78.gif)
 ![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
@@ -36,12 +32,12 @@ ANSI (.ans), JSON, GIF, mIRC color, and PNG formats.
 ![cm-doge](https://user-images.githubusercontent.com/261501/210064365-e9303bee-7842-4068-b356-cd314341098b.gif)
 ![bsd-color-new](https://user-images.githubusercontent.com/261501/210064354-5c1c2adc-06a3-43c5-8e21-30b1a81db315.gif)
 
-## REQUIREMENTS:
+## REQUIREMENTS
 
 * Python 3
 * Linux, macOS, or other Unix-like System
 
-## INSTALLATION:
+## INSTALLATION
 
 1: Download and extract, or use git to download:
 
@@ -61,6 +57,13 @@ Or run the installer:
 ```
    python3 setup.py install
 ```
+
+3: Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
+
+```
+    ./installconf.sh
+```
+
 
 You should now be able to run `durdraw`
 
@@ -84,7 +87,86 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
-## COMMAND LINE USAGE:
+## CONFIGURATION
+
+You can create a custom startup file where you can set a theme.
+
+
+If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
+
+```
+    ./installconf.sh
+```
+
+This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
+
+Here is an example durdraw.ini file:
+
+<pre>
+; Durdraw 0.20.0 Configuration File
+[Theme]
+theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
+theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+</pre>
+
+The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
+
+Note that you can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
+
+Here is an example 16-color theme:
+
+<pre>
+[Theme-16]
+name: 'Purple Drank'
+mainColor: 6
+clickColor: 3
+borderColor: 6
+clickHighlightColor: 5
+notificationColor: 4
+promptColor: 4
+</pre>
+
+and a 256-color theme:
+
+<pre>
+[Theme-256]
+name: 'Muted Form'
+mainColor: 104
+clickColor: 37
+borderColor: 236
+clickHighlightColor: 15
+notificationColor: 87
+promptColor: 189
+menuItemColor: 189
+menuTitleColor: 159
+menuBorderColor: 24
+</pre>
+
+The colors and theme options are as follows:
+
+colors for 16-color mode:
+1 black
+2 blue
+3 green
+4 cyan
+5 red
+6 magenta
+7 yellow
+8 white
+
+color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
+
+mainColor: the color of most text
+clickColor: the color of buttons (clickable items)
+clickHighlightColor: the color the button changes to for a moment when clicked
+borderColor: the color of the border around a drawing
+notificationColor: the color of notification messages
+promptColor: the color of user prompt messages
+menuItemColor: the color of menu items
+menuTitleColor: the color of menu titles
+menuBorderColor: the color of the border around menus
+
+## COMMAND LINE USAGE
 
 You can play a .dur file or series of .dur files with:
 
@@ -121,6 +203,8 @@ optional arguments:
                         Set canvas height
   -m, --max             Maximum canvas size for terminal (overrides -W and -H)
   --nomouse             Disable mouse support
+  --notheme             Disable theme support
+  --theme THEME         Load a custom theme file
   -A, --ibmpc           IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
                         PC) block characters
   -u UNDOSIZE, --undosize UNDOSIZE
@@ -130,7 +214,7 @@ optional arguments:
 
 </pre>
 
-## INTERACTIVE USAGE/EDITING:
+## INTERACTIVE USAGE/EDITING
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 Also:
@@ -139,8 +223,8 @@ Also:
       alt-j - prev frame                  alt-/ - insert line
       alt-n - iNsert current frame clone  alt-, - delete current column.
       alt-N - appeNd empty frame          alt-. - insert new column
-      alt-p - start/stop Playback         alt-c - Clear canvas/movie
-      alt-d - Delete current frame        alt-m - Mark selection
+      alt-p - start/stop Playback         alt-c - Color menu (256 only)
+      alt-d - Delete current frame        alt-m - Menu
       alt-D - set current frame Delay     F1-F10 - insert character
       alt-+/alt-- increase/decrease FPS   alt-z - undo
       alt-M - Move current frame          alt-r - Redo
@@ -150,10 +234,14 @@ Also:
       alt-left - prev bg color            alt-h - Help
       alt-R - set playback/edit Range     alt-pgdn - next character set
       alt-g - Go to frame #               alt-pgup - prev character set
+      ctrl-l - redraw the Screen          alt-t - mouse Tools menu
 
 Can use ESC or META instead of ALT
 
-## OTHER TIPS:
+## OTHER TIPS
+
+    * To use themes, copy durdraw.ini to ~/.durdraw/ and edit it. Durdraw
+      will also check in the current directory for durdraw.ini.
 
     * The mouse can be used for moving the cursor (even over SSH) and
       clicking buttons, if your terminal supports Xterm mouse reporting.
@@ -165,13 +253,14 @@ Can use ESC or META instead of ALT
       then type "ctrl-a l" to redraw the window.
       Also see "OPTIONAL INSTALLATION" notes below
 
-## OPTIONAL INSTALLATION:
+## OPTIONAL INSTALLATION
 
-For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. (Recommended)
+For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now.
 
 If you want to try making animated IBM-PC/MS-DOS ANSI art with durdraw, you
 need a terminal and font that supports ASCII encoding and IBM's Code Page 437.
-You can find fonts in the "extras" directory for this purpose.
+You can find fonts in the "extras" directory for this purpose. Once this is done,
+start Durdraw with the -A or --ibmpc command-line argument.
 
 Note that ANSI art character support is experimental (see FAQ).
 
@@ -205,18 +294,18 @@ F1-F12 to input ANSI block characters.
 ## FAQ
 
 #### Q: Don't TheDraw and some other programs already do ANSI animation?
-A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. DurDraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while DurDraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
+A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
 A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
-A: Probably not easily. DurDraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
+A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
-#### Q: Does DurDraw support IBM-PC ANSI art?
+#### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes - Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
 
-### CREDITS:
+### CREDITS
 
 Developer: Sam Foster
 
@@ -224,7 +313,7 @@ Home page: http://durdraw.org
 
 Development: https://github.com/cmang/durdraw
 
-### LEGAL:
+### LEGAL
 
 Durdraw is Copyright (c) 2009-2023 Sam Foster <samfoster@gmail.com>. All rights reserved.
 

@@ -1,7 +1,8 @@
-# Stuff to draw widgets, status bars, etc.
+# Stuff to draw widgets, status bars, etc. The logical parts, separate from
+# the drawing/ncurses part. 
 # For example, in the status bar, we have a color swatches widget.
 # The color swatch widget should know everything about itself except curses.
-# NO CURSES CODE IN THIS FILE!!!! Can we do it?
+# NO CURSES CODE IN THIS FILE!!!!
 # Instead make a durdraw_ui_widgets_curses that handles the curses bits. Then do the same with kivy, etc.
 # # it should know its location inside of the Status Bar
 
@@ -18,10 +19,11 @@ from durdraw.durdraw_ui_widgets_curses import FgBgColorPickerHandler
 from durdraw.durdraw_gui_manager import Gui
 
 class Button():
-    def __init__(self, label, x, y, callback, window, invisible = False):
+    def __init__(self, label, x, y, callback, window, invisible = False, appState=None):
         #self.location = 0;  # 0 = beginning of /tring
         self.x = x
         self.y = y
+        self.appState = appState
         self.realX = x
         self.realY = y
         self.label = label  # What you should click
@@ -33,11 +35,13 @@ class Button():
         self.parameter = None
         self.hidden = False
         self.selected = False
+        self.picker= False
         self.invisible = invisible # If true, responds to clicks but does not show. Useful for "overlays"
-        self.handler = ButtonHandler(self, self.window, callback)
+        self.handler = ButtonHandler(self, self.window, callback, appState=self.appState)
 
     def hide(self):
         self.hidden = True
+        self.handler.hidden = True
 
     def show(self):
         self.hidden = False
@@ -75,23 +79,32 @@ class Button():
         return self.handler.handle_event(event)
 
 class Menu():
-    def __init__(self, window, x=0, y=0, caller=None):
+    def __init__(self, window, x=0, y=0, caller=None, appState=None, statusBar=None):
         """ init menu items """ 
         self.window = window
         self.caller = caller
+        self.appState=appState
         self.items = {}
         self.buttons = []
         self.hidden = True
+        self.title = None
+        self.statusBar = None
         self.x = x
         self.y = y
-        self.handler = MenuHandler(self, window)
+        self.handler = MenuHandler(self, window, appState=appState)
         self.gui = Gui(window=self.window)
 
     def set_x(self, x):
         self.x = x
+        self.handler.x = x
 
     def set_y(self, y):
         self.y = y
+        self.handler.y = y
+
+    def set_title(self, title):
+        self.title = title
+        self.handler.title = self.title
 
     def add_item(self, label, on_click, hotkey):
         props = {"on_click": on_click, "hotkey": hotkey}
@@ -99,7 +112,7 @@ class Menu():
         self.items.update(item)
         # add button
         #itemButton = Button(label, 0, 0, on_click, self.window)
-        itemButton = Button(label, 0, self.x, on_click, self.window)
+        itemButton = Button(label, 0, self.x, on_click, self.window, appState=self.appState)
         itemButton.make_invisible()
         self.buttons.append(itemButton)
         #self.handler.rebuild()
@@ -164,7 +177,6 @@ class ColorPicker:
         self.y = y
         self.caller = caller
         self.handler = ColorPickerHandler(self, window)
-        
 
     def showHide(self):
         #pdb.set_trace()
@@ -222,18 +234,23 @@ class ColorSwatch():
 
 
 class StatusBar():
-    def __init__(self, caller, x=0, y=0):
+    def __init__(self, caller, x=0, y=0, appState=None):
         window = caller.stdscr
         self.caller=caller
+        self.appState = appState
         self.window = window
         self.gui = caller.gui   # top level gui handler thing
         self.handler = StatusBarHandler(self, window)
         self.items = []
         self.buttons = []
+        self.colorPickerEnabled = False
+        self.hidden = False
         self.x = x
         self.y = y
+        # menu items 
+        self.menuButton = None
         # Create a menu list item, add menu items to it
-        mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self)
+        mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
         #mainMenu.gui = self.gui
         mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
         mainMenu.add_item("Open", caller.open, "o")
@@ -241,7 +258,8 @@ class StatusBar():
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
-        menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window)
+        menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
+        self.menuButton = menuButton
         menuButton.realX = self.x + menuButton.x
         menuButton.realY = self.y + menuButton.y
         menuButton.show()
@@ -250,7 +268,8 @@ class StatusBar():
         mainMenu.set_x(menuButton.realX - 1)
         mainMenu.set_y(menuButton.realY)
 
-        toolMenu = Menu(self.window, x=45, y=self.y, caller=self)
+        toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
+        toolMenu.set_title("Mouse Tools:")
         #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
         toolMenu.add_item("Move", self.setCursorModeSel, "m")
         toolMenu.add_item("Draw", self.setCursorModePnt, "d")
@@ -258,9 +277,10 @@ class StatusBar():
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
         # Make cursor tool selector button
-        toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window)
+        toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
         toolButton.label = self.caller.appState.cursorMode
+        toolButton.picker = True
         toolButton.realX = self.x + toolButton.x    # toolbar shit
         toolButton.realY = self.y + toolButton.y
         toolButton.show()
@@ -269,7 +289,8 @@ class StatusBar():
 
         drawCharPicker = DrawCharPicker(self.window, caller=self)
 
-        drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window)
+        drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window, appState=self.appState)
+        drawCharPickerButton.picker = True
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
         drawCharPickerButton.realY = self.y + drawCharPickerButton.y
         #drawCharPickerButton.show() 
@@ -285,7 +306,7 @@ class StatusBar():
         self.colorPicker = colorPicker
 
         if self.caller.appState.colorMode == "256":
-            self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window)
+            self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
             self.colorPickerButton.invisible = True
             self.colorPickerButton.realX = self.x + self.colorPickerButton.x
             self.colorPickerButton.realY = self.y + self.colorPickerButton.y + 1
@@ -314,6 +335,26 @@ class StatusBar():
         self.buttons.append(toolButton)
         self.buttons.append(drawCharPickerButton)
         # Add them to the items
+
+    def hide(self):
+        self.hidden = True
+        for item in self.items:
+            item.hide()
+        for item in self.buttons:
+            item.hide()
+
+    def show(self):
+        self.hidden = False
+        for item in self.items:
+            item.show()
+        for item in self.buttons:
+            item.show()
+
+    def enableColorPicker(self):
+        pass
+
+    def disableColorPicker(self):
+        pass
 
     def setCursorModeSel(self):
         self.caller.appState.setCursorModeSel()
@@ -346,6 +387,8 @@ class StatusBar():
 
     def draw(self):
         """ Draw the status bar """
+        if self.hidden:
+            return False
         self.handler.draw()
         for item in self.items:
             if item.hidden is False:

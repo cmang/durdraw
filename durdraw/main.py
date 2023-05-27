@@ -2,6 +2,8 @@
 # main() entry point
 
 import argparse
+import configparser
+import curses
 import os
 import sys
 import time
@@ -24,14 +26,14 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.19.2'
-    DUR_FILE_VER = 5
+    DUR_VER = '0.20.0'
+    DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
        __                __
      _|  |__ __ _____ __|  |_____ _____ __ __ __
     / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
-   /_____|_____|__|__|_____|__|___\____|________| |  Durr....
+   /_____|_____|__|__|_____|__|___\____|________| |
    \_____________________________________________\|  v %s
     Press esc-h for help.
     ''' % DUR_VER
@@ -57,6 +59,9 @@ def main():
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
+    parser.add_argument("--notheme", help="Disable theme support",
+                    action="store_true")
+    parser.add_argument("--theme", help="Load a custom theme file", nargs=1)
     parser.add_argument("-A", "--ibmpc", help="IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-PC/MS-DOS) block characters. (Needs CP437 capable terminal and font)", action="store_true")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
@@ -75,9 +80,11 @@ def main():
     app.setDebug(DEBUG_MODE)
     if args.debug:
         app.setDebug(True)
-    if args.undosize:
+    if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
     showStartupScreen=True
+
+
     term_size = os.get_terminal_size()
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
     if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
@@ -100,19 +107,34 @@ def main():
         showStartupScreen=False
     if args.nomouse:
         app.hasMouse = False
+    if args.notheme:
+        app.themesEnabled = False
     if args.hicolor:
         app.colorMode = "256"
     if args.locolor:
         app.colorMode = "16"
     if args.ibmpc:
         app.charEncoding = 'ibm-pc'
-        app.drawChar = '$'
+        #app.drawChar = '$'
     else:
         app.charEncoding = 'utf-8'
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
     if args.blackbg:
         app.blackbg = False
     else: app.blackbg = True
+
+    # load configuration file and theme
+    if app.loadConfigFile():
+        if app.colorMode == "256":
+            app.loadThemeFromConfig("Theme-256")
+        else:
+            app.loadThemeFromConfig("Theme-16")
+    if args.theme:
+        if app.colorMode == "256":
+            app.loadThemeFile(args.theme[0], "Theme-256")
+        else:
+            app.loadThemeFile(args.theme[0], "Theme-16")
+        app.customThemeFile = args.theme[0]
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
@@ -146,6 +168,12 @@ def main():
             print("Mouse = Enabled")
         else:
             print("Mouse = Disabled")
+        if app.configFileLoaded:
+            print(f"Configuration file found: {app.configFileName}")
+        else:
+            print(f"Configuration file not found.")
+
+        print(f"Theme: {app.themeName}")
 
         print("Undo history size = %d" % app.undoHistorySize)
         if app.width == 80 and app.height == 24:
@@ -160,9 +188,10 @@ def main():
                 exit(0)
         else:
             pass
-            #time.sleep(3)
+            time.sleep(3)
     if args.play:
         app.playOnlyMode = True
+    #ui = curses.wrapper(UI_Curses, app)
     ui = UI_Curses(app)
     if app.hasMouse:
         ui.initMouse()

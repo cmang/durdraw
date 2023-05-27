@@ -8,6 +8,52 @@ import json
 from durdraw.durdraw_options import Options
 from durdraw.durdraw_movie import Movie
 
+
+old_16_pal_to_new = {
+    # maps old durdraw colors, found in file version 5 and lower
+    # for 16 color
+    0: 0,   # black
+    1: 7,   # white/grey
+    2: 3,   # cyan
+    3: 5,   # magenta/purple
+    4: 1,   # blue
+    5: 6,   # brown/yellow
+    6: 2,   # green
+    7: 4,   # red
+    8: 0,   # black
+    9: 15,  # bright white
+    10: 11, # bright cyan
+    11: 13, # bright magenta
+    12: 9,  # bright blue
+    13: 14, # bright yellow
+    14: 10, # bright green
+    15: 12, # bright red
+    16: 16, # bright black
+}
+
+old_256_pal_to_new = {
+    # maps old durdraw colors, found in file version 5 and lower
+    # for 16 color
+    0: 0,   # black
+    1: 7,   # white/grey
+    2: 3,   # cyan
+    3: 5,   # magenta/purple
+    4: 1,   # blue
+    5: 6,   # brown/yellow
+    6: 2,   # green
+    7: 4,   # red
+    8: 241,   # bright black
+    9: 8,  # bright red
+    10: 9, # bright green
+    11: 10, # bright yellow
+    12: 11,  # bright blue
+    13: 12, # bright magenta
+    14: 13, # bright cyan
+    15: 14, # bright white
+    16: 15, # bright white
+}
+
+
 def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
     """ Takes live Durdraw movie objects and serializes them out to a JSON files
     """
@@ -29,7 +75,7 @@ def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
             'framerate': opts.framerate,
             'sizeX': opts.sizeX,
             'sizeY': opts.sizeY,
-            'sauce': None,
+            'extra': None,
             'frames': None,
             }
         frameNumber = 1
@@ -89,8 +135,8 @@ def get_dur_file_colorMode_and_charMode(f):
     except Exception as E:
         charEncoding = 'utf-8'
     # convert from file format 5 to 6
-    if colorMode == 'xterm-256':
-        colorMode = '256'
+    #if colorMode == 'xterm-256':
+    #    colorMode = '256'
     if charEncoding == 'Utf-8':
         charEncoding = 'utf-8'
     return colorMode, charEncoding
@@ -108,6 +154,7 @@ def open_json_dur_file(f):
 
     width = loadedMovieData['DurMovie']['sizeX']
     height = loadedMovieData['DurMovie']['sizeY']
+    colorMode = loadedMovieData['DurMovie']['colorFormat']
     newOpts = Options(width=width, height=height)
     newOpts.framerate = loadedMovieData['DurMovie']['framerate']
     newOpts.saveFileFormat = loadedMovieData['DurMovie']['formatVersion']
@@ -129,8 +176,13 @@ def open_json_dur_file(f):
         for x in range(0, width):
             for y in range(0, height):
                 #pdb.set_trace()
-                newMov.frames[currentFrame].colorMap[y, x] = tuple(frame['colorMap'][x][y])
-                newMov.frames[currentFrame].newColorMap[y][x] = frame['colorMap'][x][y]
+                colorPair = frame['colorMap'][x][y]
+                #if newOpts.saveFileFormat < 6:
+                #    colorPair = convert_old_color_to_new(oldColorPair)
+                #    if colorPair == None:
+                #        pdb.set_trace()
+                newMov.frames[currentFrame].colorMap[y, x] = tuple(colorPair)
+                newMov.frames[currentFrame].newColorMap[y][x] = colorPair
         # Add delay for the frame
         newMov.frames[currentFrame].delay = frame['delay']
         currentFrame += 1
@@ -139,6 +191,29 @@ def open_json_dur_file(f):
     newMov.gotoFrame(1)
     container = {'opts':newOpts, 'mov':newMov}
     return container
+
+def convert_old_color_to_new(oldPair, colorMode="16"):
+    """ takes in a frame['colorMap'][x][y] list, returns a new list with
+    [0] replaced by appropriately mapped # """
+    #newPair = oldPair
+    newFg = oldPair[0]
+    newBg = oldPair[1]
+    if colorMode == "16":
+        if oldPair[0] in old_16_pal_to_new.keys():
+            newFg = old_16_pal_to_new[oldPair[0]]
+            newFg += 1
+        if oldPair[1] in old_16_pal_to_new.keys():
+            newBg = old_16_pal_to_new[oldPair[1]]
+            #newBg += 1
+    if colorMode == "256":
+        if oldPair[0] in old_256_pal_to_new.keys():
+            newFg = old_256_pal_to_new[oldPair[0]]
+            newFg += 1
+        #if oldPair[1] in old_16_pal_to_new.keys():
+        #    newBg = old_16_pal_to_new[oldPair[1]]
+        newBg = oldPair[1]    # 256 does not use bg color, so don't change it
+    #pdb.set_trace()
+    return [newFg, newBg]
 
 def load_ascii_file(file):
     width = 0   # will increase as we load the file

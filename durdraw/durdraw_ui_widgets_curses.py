@@ -56,41 +56,62 @@ def curses_addstr(window, y, x, text, attr=None): # addstr(y, x, str[, attr]) an
 class MenuHandler:
     """ hook into Curses to draw menu 
     """
-    def __init__(self, menu, window):
+    def __init__(self, menu, window, appState=None, statusBar=None):
         self.menu = menu
         self.window = window
+        self.appState=appState
         self.parentWindow = self.menu.caller.window
         self.x = menu.x
         self.y = menu.y
+        self.width = None
+        self.height = None
+        self.title = menu.title # show the title if one is set
         self.menuOriginLine = 0
         #self.rebuild()
         #self.panel = curses.panel.new_panel(self.curses_win)
 
     def rebuild(self):
-        height = len(self.menu.items) 
+        height = len(self.menu.items) + 2  # 2 for top and bottom border lines
+        if self.title:
+            height += 1
         # find widest item in list, go a few characters larger 
-        width = len(max(self.menu.items, key = len)) + 4
+        width = len(max(self.menu.items, key = len)) + 4  # 4 for padding and side borders
+        if self.menu.title:
+            titleWidth = len(self.menu.title) + 4 
+            if titleWidth> width:
+                width = titleWidth
+        self.width = width
         self.x = self.menu.x - height
         self.curses_win = curses.newwin(height, width, self.x, self.y)
         #self.curses_win.border()
-        line = 0
-        textColor = curses.color_pair(1) | curses.A_BOLD
-        buttonColor = curses.color_pair(6) | curses.A_BOLD
+        line = 1
+        if self.title:
+            line += 1
+        textColor = curses.color_pair(self.appState.theme['mainColor']) | curses.A_BOLD
+        buttonColor = curses.color_pair(self.appState.theme['clickColor'])
+        borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
+        menuTitleColor = curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD | curses.A_UNDERLINE
         maxX, maxY = self.parentWindow.getmaxyx()
         self.menuOriginLine = maxX - 2 - height
+        # Draw a pretty border
+        curses_addstr(self.curses_win, 0, 0, ".", borderColor)
+        curses_addstr(self.curses_win, 0, 1, ("." * (self.width - 2)), borderColor)
+        curses_addstr(self.curses_win, 0, width - 1, ".", borderColor)
+        if self.title:
+            curses_addstr(self.curses_win, 1, 0, ':', borderColor)
+            curses_addstr(self.curses_win, 1, 2, self.menu.title, menuTitleColor) # Menu title
+            curses_addstr(self.curses_win, 1, width - 1, ':', borderColor)
         for (item, button) in zip(self.menu.items, self.menu.buttons):
-            #newButton = Button(button.label, line, 0, button.on_click, self.curses_win)
-            #self.menu.buttons.remove(button)
-            #self.menu.buttons.add(newButton)
-            #curses_addstr(self.curses_win, line, 0, item, textColor)
-            curses_addstr(self.curses_win, line, self.menu.y, item, textColor)
-            #curses_addstr(self.curses_win, line, 0, item, color)
+            curses_addstr(self.curses_win, line, 0, ':', borderColor)
+            curses_addstr(self.curses_win, line, width - 1, ':', borderColor)
+            curses_addstr(self.curses_win, line, 2, item, textColor)    # Menu item
             top_of_menu = self.menu.caller.y - len(self.menu.buttons)
-            #button.update_real_xy(x=self.menu.caller.x, y=top_of_menu + line)
-            #button.update_real_xy(x=line, y=0) # working for putting menu on first line
             button.update_real_xy(x=self.menuOriginLine + line, y=self.menu.y) # working for putting menu on first line
             button.window = self.window
             line += 1
+        curses_addstr(self.curses_win, line, 0, ':', borderColor)
+        curses_addstr(self.curses_win, line,  width - 1, ':', borderColor)
+        curses_addstr(self.curses_win, line, 1, ("." * (width - 2)), borderColor)
         self.panel = curses.panel.new_panel(self.curses_win)
         try:
             self.panel.hide()
@@ -122,18 +143,31 @@ class MenuHandler:
         #pdb.set_trace()
         #curses.mousemask(1)
         #print('\033[?1003l') # disable mouse reporting
+        borderColor = curses.color_pair(self.appState.theme['borderColor'])
+        menuItemColor = curses.color_pair(self.appState.theme['menuItemColor'])
         while(prompting):
             time.sleep(0.01)
-            line = 0
+            line = 1
+            if self.title:
+                line += 1
             c = self.window.getch()
             for item in self.menu.items:
                 if item == options[current_option]: # selected item
-                    textColor = curses.color_pair(1) | curses.A_REVERSE
+                    textColor = menuItemColor | curses.A_REVERSE
                 else:
-                    textColor = curses.color_pair(1) | curses.A_BOLD
-                curses_addstr(self.curses_win, line, 0, item, textColor)
+                    textColor = menuItemColor
+                curses_addstr(self.curses_win, line, 2, item, textColor)
+
+                hotkeyIndex = 0
+                itemString = next(iter(item))
+                foundHotkey = False
+                for letter in item:
+                    if letter.lower() == self.menu.items[item]["hotkey"] and foundHotkey == False:
+                        curses_addstr(self.curses_win, line, 2 + hotkeyIndex, letter, textColor | curses.A_UNDERLINE | curses.A_BOLD)
+                        foundHotkey = True
+                    hotkeyIndex += 1
+
                 line += 1
-                #pdb.set_trace()
                 curses.panel.update_panels()
                 self.window.refresh()
                 if c == ord(self.menu.items[item]["hotkey"]):    # hotkey pressed
@@ -151,6 +185,17 @@ class MenuHandler:
                 prompting = False
                 # yikes lol
                 self.menu.items[options[current_option]]["on_click"]() 
+            elif c in [98, curses.KEY_LEFT]:
+                pass
+                #self.hide()
+                #prompting = False
+                # Here: Launch a different menu
+                #self.menu.statusBar.menuButton.on_click
+            elif c in [102, curses.KEY_RIGHT]:
+                pass
+                #self.hide()
+                #prompting = False
+                # Here: Launch a different menu
             elif c == 27:  # normal esc
                 self.hide()
                 prompting = False
@@ -250,7 +295,8 @@ class ColorPickerHandler:
         self.parentWindow = colorPicker.caller.stdscr
         self.appState = colorPicker.caller.appState
         # figure out picker size
-        total = curses.COLORS
+        #total = curses.COLORS
+        #total = curses.COLORS
         realmaxY,realmaxX = self.parentWindow.getmaxyx()
         self.realmaxY = realmaxY
         self.realmaxX = realmaxX
@@ -291,14 +337,15 @@ class ColorPickerHandler:
             self.panel.move(y, x)
         except:
             pass
-        #self.origin = self.x - 2
+        self.origin = self.y
 
     def updateFgPicker(self):
         line = 0
         col = 0
         #maxWidth = self.realmaxX
         #maxHeight = self.realmaxY
-        for fg in range(1,curses.COLORS):  # 0-255
+        #for fg in range(0,curses.COLORS):  # 0-255
+        for fg in range(1,self.appState.totalFgColors+1):  # 0-255
             color_pair = curses.color_pair(fg)
             if col >= self.width - 2:
                 col = 0
@@ -309,10 +356,16 @@ class ColorPickerHandler:
             #curses_addstr(self.window, self.colorPicker.y + line, self.colorPicker.x + col, chr(self.fillChar), color_pair)
             # if fg == app's current fg, draw it as a * instead of self.fillChar
             if fg == self.colorPicker.caller.colorfg:
-                curses_addstr(self.window, line, col, '*', color_pair)
+                if fg == 1: # black
+                    plain_color_pair = curses.color_pair(9)
+                    curses_addstr(self.window, line, col, 'X', plain_color_pair)
+                else:
+                    curses_addstr(self.window, line, col, 'X', color_pair)
             else:
                 curses_addstr(self.window, line, col, self.fillChar, color_pair)
             col += 1
+        curses_addstr(self.window, line, col + 5, "     ", color_pair)
+        curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
 
     def showFgPicker(self):
         self.showColorPicker(type="fg")
@@ -379,13 +432,10 @@ class ColorPickerHandler:
                 if mouseY >= self.origin and mouseX < len(self.colorGrid[0])-2:   # cpicked in the color picker
                     clickedCol = mouseX
                     clickedLine = mouseY - self.origin
-                    #if clickedCol < len(self.colorGrid[clickedLine])-2:
                     if mouseY < self.origin + self.height:
                         if self.colorGrid[clickedLine][clickedCol] != 0:
                             color = self.colorGrid[clickedLine][clickedCol]
                             self.colorPicker.caller.setFgColor(color)
-                    #curses_notify(self.parentWindow, f"clicked col: {clickedCol}, line: {clickedLine}, color: {color}")
-                    #pdb.set_trace()
                 self.hide()
                 prompting = False
             elif c == 27:  # normal esc, Cancel
@@ -429,23 +479,29 @@ class FgBgColorPickerHandler:
 class ButtonHandler:
     """ hook into Curses to draw button
     """
-    def __init__(self, button, window, on_click):
+    def __init__(self, button, window, on_click, appState=None):
         #self.label = button.label
         self.button = button
         self.window = window
         self.x = self.button.x
         self.y = self.button.y
         self.on_click = on_click
-        self.color = curses.color_pair(6) | curses.A_BOLD   # bright green, clickable
+        self.appState = appState
+        self.color = curses.color_pair(self.appState.theme['clickColor']) | curses.A_BOLD   # bright green, clickable
 
     def draw(self, plusX=0, plusY=9):
         if not self.button.invisible:
             textColor = self.color
             if self.button.selected:
                 textColor = textColor | curses.A_REVERSE
+            if self.button:   # a selector type button, to be iframed in []s
+                buttonString = f"[{self.button.label}]"
+            else:
+                buttonString = self.button.label
             #curses_addstr(self.window, plusX + self.button.x, plusY + self.button.y, self.button.label)
             #curses_addstr(self.window, plusX + self.button.x, plusY + self.button.y, self.button.label, self.color)
-            curses_addstr(self.window, self.button.realX, self.button.realY, self.button.label, textColor)
+            #curses_addstr(self.window, self.button.realX, self.button.realY, self.button.label, textColor)
+            curses_addstr(self.window, self.button.realX, self.button.realY, buttonString, textColor)
             # render the button on the window
 
     def on_click(self):
