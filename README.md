@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.20.0
+              \_____________________________________________\|  v 0.20.1
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
@@ -103,7 +103,7 @@ This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/them
 Here is an example durdraw.ini file:
 
 <pre>
-; Durdraw 0.20.0 Configuration File
+; Durdraw 0.20 Configuration File
 [Theme]
 theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini

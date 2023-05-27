@@ -6,7 +6,7 @@ with open("README.md") as f_readme:
 
 setup(
     name='durdraw',
-    version='0.20.0',
+    version='0.20.1',
     author='Sam Foster',
     author_email='samfoster@gmail.com',
     description='Animated Color ASCII and Unicode Art Editor',
@@ -25,7 +25,8 @@ setup(
     #    ('share/durdraw', ['examples/*.dur']),
         ('share/durdraw', ['examples/cm-doge.asc']),
         ('share/durdraw', ['examples/cm-doge.dur']),
-        ('share/durdraw', ['examples/eye.dur']),
+        ('share/durdraw', ['examples/cm-eye.dur']),
+        ('share/durdraw', ['examples/dopehax.dur']),
         ('share/durdraw', ['examples/mane.dur']),
         ('share/durdraw', ['examples/rain.dur']),
     ],
