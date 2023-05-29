@@ -156,6 +156,7 @@ colors for 16-color mode:
 
 color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
 
+```
 mainColor: the color of most text
 clickColor: the color of buttons (clickable items)
 clickHighlightColor: the color the button changes to for a moment when clicked
@@ -165,6 +166,7 @@ promptColor: the color of user prompt messages
 menuItemColor: the color of menu items
 menuTitleColor: the color of menu titles
 menuBorderColor: the color of the border around menus
+```
 
 ## COMMAND LINE USAGE
 
