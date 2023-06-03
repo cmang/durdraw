@@ -1423,6 +1423,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                             if self.pushingToClip:
                                 self.pushingToClip = False
+                            self.stdscr.redrawwin()
                     if self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY

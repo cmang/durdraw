@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--notheme", help="Disable theme support",
                     action="store_true")
     parser.add_argument("--theme", help="Load a custom theme file", nargs=1)
-    parser.add_argument("-A", "--ibmpc", help="IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-PC/MS-DOS) block characters. (Needs CP437 capable terminal and font)", action="store_true")
+    parser.add_argument("-A", "--ibmpc", "--cp437", help="Use Code Page 437 (IBM-PC/MS-DOS) block character encoding instead of Unicode. (Needs CP437 capable terminal and font)", action="store_true")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
