@@ -433,6 +433,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def deleteKeyPop(self, frange=None):
         if self.xy[1] > 1:
+            self.undo.push()
             if frange:  # framge range
                 for frameNum in range(frange[0] - 1, frange[1]):
                     self.mov.frames[frameNum].content[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
@@ -440,7 +441,6 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.mov.frames[frameNum].newColorMap[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
                     self.mov.frames[frameNum].newColorMap[self.xy[0]].append([1,0])         # at the end of each line.
             else:
-                self.undo.push()
                 self.mov.currentFrame.content[self.xy[0]].pop(self.xy[1] - 1)
                 self.mov.currentFrame.content[self.xy[0]].append(' ')
                 self.mov.currentFrame.newColorMap[self.xy[0]].pop(self.xy[1] - 1)
@@ -986,7 +986,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.fullCharMap.append(self.genCharSet(0x2825)) # braile u+
         self.fullCharMap.append(self.genCharSet(0x2b2c)) # ellipses
 
-        """ Map a dict of F1-f10 to character values """ 
+        # Map a dict of F1-f10 to character values 
         if self.appState.charEncoding == 'ibm-pc':
             self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
             self.fullCharMap = [ self.chMap ]
