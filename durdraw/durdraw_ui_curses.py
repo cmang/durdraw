@@ -1048,6 +1048,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
         self.statusBar.toolButton.update_real_xy(x = statusBarLineNum)
+        self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
         #self.addstr(statusBarLineNum, 38 + line_1_offset, "Tool:")
         if self.appState.colorMode == "256":
             self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
@@ -1059,11 +1060,11 @@ class UserInterface():  # Separate view (curses) from this controller
         frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
         rangeBar = "R: %i/%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
         fpsBar = "<FPS>: %i " % (self.opts.framerate)
-        delayBar = "D: %i " % (self.mov.currentFrame.delay)
+        delayBar = "D: %.2f " % (self.mov.currentFrame.delay)
         self.addstr(statusBarLineNum, 2 + line_1_offset, frameBar, curses.color_pair(mainColor))
         self.addstr(statusBarLineNum, 12 + line_1_offset, fpsBar, curses.color_pair(mainColor))
         self.addstr(statusBarLineNum, 23 + line_1_offset, delayBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, 29 + line_1_offset, rangeBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, 31 + line_1_offset, rangeBar, curses.color_pair(mainColor))
         #self.addstr(statusBarLineNum, 0, "?", curses.color_pair(clickColor) | curses.A_BOLD)
 
         if self.appState.debug:
@@ -1154,7 +1155,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum + 1, realmaxX - 1, " ", curses.color_pair(4) | curses.A_BOLD)
         if not self.playing:
             self.addstr(statusBarLineNum, 2 + line_1_offset, "F", curses.color_pair(clickColor) | curses.A_BOLD)  # Frame button
-            self.addstr(statusBarLineNum, 29 + line_1_offset, "R", curses.color_pair(clickColor) | curses.A_BOLD)  # Range button
+            self.addstr(statusBarLineNum, 31 + line_1_offset, "R", curses.color_pair(clickColor) | curses.A_BOLD)  # Range button
             self.addstr(statusBarLineNum, 23 + line_1_offset, "D", curses.color_pair(clickColor) | curses.A_BOLD)  # Delay button
         # draw transport
         transportString = "|< << |> >> >|" 
@@ -1508,8 +1509,8 @@ class UserInterface():  # Separate view (curses) from this controller
                             elif mouseX == 23 + offset:  # clicked Delay button
                                 self.clickHighlight(23 + offset, "D")
                                 self.getDelayValue()
-                            elif mouseX == 29 + offset:  # clicked Range button
-                                self.clickHighlight(29 + offset, "R")
+                            elif mouseX == 31 + offset:  # clicked Range button
+                                self.clickHighlight(31 + offset, "R")
                                 self.getPlaybackRange()
                             elif mouseX == 2 + offset:   # clicked Frame button
                                 self.clickHighlight(2 + offset, "F")
@@ -1564,12 +1565,13 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov.currentFrame.delay);
         curses.echo()
         try:
-            delayValue = int(self.stdscr.getstr())
+            #delayValue = int(self.stdscr.getstr())
+            delayValue = float(self.stdscr.getstr())
         except ValueError:
             delayValue = -1
         curses.noecho()
         self.clearStatusLine()
-        if (delayValue >= 0 and delayValue <= 120): # hard limit of 0 to 120 seconds
+        if (delayValue >= 0.0 and delayValue <= 120.0): # hard limit of 0 to 120 seconds
             self.undo.push()
             self.mov.currentFrame.setDelayValue(delayValue)
         else:
