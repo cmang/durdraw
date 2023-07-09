@@ -80,6 +80,8 @@ To look at some included example animations:
 
 ## SCREENSHOTS AND EXAMPLES
 
+[![Watch the video](https://github.com/cmang/durdraw/assets/261501/fe3786e0-01ab-419c-babd-cd6a2bbb95cb)](https://youtu.be/7Icf08bkJxg)
+
 ![dopetrans3](https://user-images.githubusercontent.com/261501/210064369-4c416e85-12d0-47aa-b182-db5435ae0c78.gif)
 ![durdraw-screenshot](https://user-images.githubusercontent.com/261501/142838691-9eaf58b0-8a1f-4636-a41a-fe8617937d1d.gif)
 ![durdraw-linux-unicode-ansi](https://user-images.githubusercontent.com/261501/161380487-ac6e2b5f-d44a-493a-ba78-9903a6a9f1ca.png)
