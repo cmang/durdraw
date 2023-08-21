@@ -7,7 +7,7 @@ import json
 
 from durdraw.durdraw_options import Options
 from durdraw.durdraw_movie import Movie
-
+# import durdraw.durdraw_ansiparse as ansiparse
 
 old_16_pal_to_new = {
     # maps old durdraw colors, found in file version 5 and lower
@@ -53,6 +53,112 @@ old_256_pal_to_new = {
     16: 15, # bright white
 }
 
+colors_to_html = {
+    # Maps Durdraw color numbers to HTML values
+    0: '#000000',   # black
+    1: '#000000',   # black
+    2: '#0000AA',   # blue
+    3: '#00AA00',   # green
+    4: '#00AAAA',   # cyan
+    5: '#AA0000',   # red
+    6: '#AA00AA',   # magenta
+    7: '#AA5500',   # brown/dark yellow
+    8: '#AAAAAA',   # light gray/white
+    9: '#555555',   # dark grey
+    10: '#5555FF',   # bright blue
+    11: '#55FF55',   # bright green
+    12: '#55FFFF',  # bright cyan
+    13: '#FF5555',  # bright red
+    14: '#FF55FF',  # bright magenta
+    15: '#FFFF00',  # bright yellow
+    16: '#FFFFFF',  # bright white
+}
+
+def write_frame_to_html_file(mov, appState, frame, file_path, gzipped=False):
+    """ Writes a single frame to an HTML file
+    """
+    colorMode = appState.colorMode
+    if gzipped:
+        opener = gzip.open
+    else:
+        opener = open
+    with opener(file_path, 'wt') as f:
+        movieDataHeader = '<!DOCTYPE html>\n'
+        movieDataHeader += '<html lang="en">\n'
+        movieDataHeader += ''
+        movieDataHeader += '    <head>\n'
+        movieDataHeader += '        <meta charset="utf-8">\n'
+        movieDataHeader += '        <meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        movieDataHeader += '        <title>DurDraw Generated Output</title>\n'
+        movieDataHeader += '        <style>\n'
+        movieDataHeader += '            body {\n'
+        movieDataHeader += '                color: #FFFFFF;\n'
+        movieDataHeader += '                background-color: #000000;\n'
+        movieDataHeader += '            }\n'
+        movieDataHeader += '            #duroutput {\n'
+        movieDataHeader += '                font-size:12pt;\n'
+        movieDataHeader += '                font-family: "Courier New", monospace;\n'
+        # movieDataHeader += '              font-family: monospace,monospace;\n'
+        movieDataHeader += '                line-height:13pt;\n'
+        movieDataHeader += '                color: #FFFFFF;\n'
+        movieDataHeader += '            }\n'
+        movieDataHeader += '        </style>\n'
+        movieDataHeader += '    </head>\n'
+        movieDataHeader += '    <body>\n'
+        movieDataHeader += '        <pre id="duroutput">\n'
+
+        fileContent = movieDataHeader
+        #lineNum = 0
+        #colNum = 0
+        newColorMap = []
+        for posY in range(0, mov.sizeY):
+            #newColorMap.append(list())
+            for posX in range(0, mov.sizeX):
+                #newColorMap[posX].append(list(frame.colorMap[posY, posX]))
+                #newColorMap[posX].append(frame.newColorMap[posY][posX])
+                durDolor = frame.newColorMap[posY][posX]
+                fgColor = frame.newColorMap[posY][posX][0]
+                bgColor = frame.newColorMap[posY][posX][1]
+                c = frame.content[posY][posX]
+        #for line in frame.content:
+        #    for c in line: 
+                try:
+                    #fgColor = frame.newColorMap[colNum][lineNum][0]
+                    #bgColor = frame.newColorMap[colNum][lineNum][1]
+                    if appState.colorMode == "16":
+                        bgColor += 1
+                        if bgColor == 9:    # black duplicate
+                            bgColor = 0
+                    if appState.colorMode == "256":
+                        fgColor += 1
+                        bgColor += 1
+                    if fgColor in colors_to_html.keys():
+                        fgHtmlColor = colors_to_html[fgColor]
+                    else:
+                        fgHtmlColor = '#AAAAAA'
+                    if bgColor in colors_to_html.keys():
+                        bgHtmlColor = colors_to_html[bgColor]
+                    else:
+                        bgHtmlColor = '#000000'
+                    #fileContent += f"<div style=\"color: {fgHtmlColor}; background-color: {bgHtmlColor}; display: inline;\">"
+                    fileContent += f"<span style=\"color: {fgHtmlColor}; background-color: {bgHtmlColor};\">"
+                    #fileContent += f"<font color={fgHtmlColor} style=\"background-color: {bgHtmlColor};\">"
+                    #fileContent += f"<font color={fgHtmlColor} background-color={bgHtmlColor}>"
+                    fileContent += str(c)
+                    fileContent += "</span>"
+                    #fileContent += "</div>"
+                    #colNum += 1
+                except Exception as e:
+                    print(str(e))
+                    pdb.set_trace()
+            fileContent += '\n'
+            #lineNum += 1
+        
+        fileContent += '        </pre>\n'
+        fileContent += '    </body>\n'
+        fileContent += '</html>\n'
+        f.write(fileContent)
+    f.close()
 
 def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
     """ Takes live Durdraw movie objects and serializes them out to a JSON files
@@ -65,16 +171,14 @@ def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
     with opener(file_path, 'wt') as f:
         movieDataHeader = {
             'formatVersion': opts.saveFileFormat,
-            #'colorFormat': 'xterm-256', # ansi-16, xterm-256 
-            'colorFormat': colorMode, # ansi-16, xterm-256 
+            'colorFormat': colorMode, # 16, 256
             'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
-            #'encoding': 'Utf-8',
             'encoding': appState.charEncoding,
             'name': '',
             'artist': '',
             'framerate': opts.framerate,
-            'sizeX': opts.sizeX,
-            'sizeY': opts.sizeY,
+            'sizeX': movie.sizeX,
+            'sizeY': movie.sizeY,
             'extra': None,
             'frames': None,
             }
@@ -85,11 +189,15 @@ def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
             content = ''
             newFrame = []
             newColorMap = []
-            for posX in range(0, opts.sizeX):
+            for posX in range(0, movie.sizeX):
                 newColorMap.append(list())
-                for posY in range(0, opts.sizeY):
+                for posY in range(0, movie.sizeY):
                     #newColorMap[posX].append(list(frame.colorMap[posY, posX]))
-                    newColorMap[posX].append(frame.newColorMap[posY][posX])
+                    try:
+                        newColorMap[posX].append(frame.newColorMap[posY][posX])
+                    except Exception as E:
+                        print(E)
+                        pdb.set_trace()
             for line in frame.content:
                 content = ''.join(line)
                 newFrame.append(content)
@@ -127,12 +235,12 @@ def get_dur_file_colorMode_and_charMode(f):
     f.seek(0)
     try:
         loadedMovieData = json.load(f)
-    except Exception as E:
+    except Exception as e:
         return False
     colorMode = loadedMovieData['DurMovie']['colorFormat']
     try:
         charEncoding = loadedMovieData['DurMovie']['encoding']
-    except Exception as E:
+    except Exception as e:
         charEncoding = 'utf-8'
     # convert from file format 5 to 6
     #if colorMode == 'xterm-256':
@@ -141,7 +249,7 @@ def get_dur_file_colorMode_and_charMode(f):
         charEncoding = 'utf-8'
     return colorMode, charEncoding
 
-def open_json_dur_file(f):
+def open_json_dur_file(f, appState):
     """ Loads json file into opts and movie objects.  Takes an open file
     object. Returns the opts and mov objects, encased in a list object.
      Or return False if the open fails.
@@ -149,7 +257,7 @@ def open_json_dur_file(f):
     f.seek(0)
     try:
         loadedMovieData = json.load(f)
-    except Exception as E:
+    except Exception as e:
         return False
 
     width = loadedMovieData['DurMovie']['sizeX']
@@ -169,14 +277,21 @@ def open_json_dur_file(f):
             #pdb.set_trace()
             if lineNum < len(newMov.frames[currentFrame].content):
                 newMov.frames[currentFrame].content[lineNum] = [c for c in line]
+                #newMov.frames[currentFrame].content[lineNum] = [c for c in line.encode(appState.charEncoding)]
+                #newMov.frames[currentFrame].content[lineNum] = [c for c in bytes(line).decode('cp437')]
             #newMov.frames[currentFrame].content = line
             lineNum += 1
         lineNum = 0
         # load color map into new movie
+        #pdb.set_trace()
         for x in range(0, width):
             for y in range(0, height):
                 #pdb.set_trace()
                 colorPair = frame['colorMap'][x][y]
+                if appState.colorMode == '16' and colorMode == '256':
+                    # set a default color when down-converting color modes:
+                    if colorPair[0] > 16:
+                        colorPair = [8,0]
                 #if newOpts.saveFileFormat < 6:
                 #    colorPair = convert_old_color_to_new(oldColorPair)
                 #    if colorPair == None:
@@ -191,6 +306,38 @@ def open_json_dur_file(f):
     newMov.gotoFrame(1)
     container = {'opts':newOpts, 'mov':newMov}
     return container
+
+def load_ansi_file(text):
+    """ This should load an ANSI either as a new movie, or import to an
+    existing movie as a new frame. Will return either a new movie or a
+    new frame.  Or.. just import into the current frame.
+    """
+    parsed_text = ''
+    #color_codes = ''
+    i = 0
+    fg_color = 7
+    bg_color = 0
+    while i < len(text):
+        if text[i:i + 2] == '\x1B[':
+            # Find the index of 'm' after the escape sequence
+            end_index = text.find('m', i)
+            if end_index != -1:
+                escape_sequence = text[i + 2:end_index]
+                escape_codes = escape_sequence.split(';')
+                if len(escape_codes) > 2:
+                    fg_color_ansi = escape_sequence.split(';')[1]
+                    bg_color_ansi = escape_sequence.split(';')[2]
+                print(str(escape_sequence.split(';')))
+                #color_codes += str(color_code) + ' '
+                #if color_code in color_translation:
+                #    parsed_text += color_translation[color_code]
+                i = end_index + 1
+                continue
+        parsed_text += str(fg_color) + ', '
+        parsed_text += str(bg_color)
+        parsed_text += text[i]
+        i += 1
+    return parsed_text, fg_color, bg_color
 
 def convert_old_color_to_new(oldPair, colorMode="16"):
     """ takes in a frame['colorMap'][x][y] list, returns a new list with
@@ -230,7 +377,7 @@ def load_ascii_file(file):
         f = open(filename, 'r')
         self.appState.curOpenFileName = os.path.basename(filename)
     except Exception as e:
-        #if self.appState.debug: self.notify(f"self.opts = pickle.load(f)")
+        #if self.appState.debug: self.notify(f"self.pts = pickle.load(f)")
         self.notify(f"Could not open file for reading: {e}")
         return None
     # here we add the stuff to load the file into self.mov.currentFrame.content[][]

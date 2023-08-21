@@ -61,6 +61,8 @@ class Button():
             should_draw = False
         if self.hidden:
             should_draw = False
+        if self.appState.playOnlyMode:
+            should_draw = False
         if should_draw:
             self.handler.draw()
 
@@ -253,7 +255,7 @@ class StatusBar():
         mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
         #mainMenu.gui = self.gui
         mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
-        mainMenu.add_item("Open", caller.open, "o")
+        mainMenu.add_item("Open", caller.openFromMenu, "o")
         mainMenu.add_item("Save", caller.save, "s")
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")

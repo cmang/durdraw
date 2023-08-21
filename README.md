@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.20.3
+              \_____________________________________________\|  v 0.21.0
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
@@ -14,14 +14,15 @@ Durdraw
 
 Durdraw is an ASCII, ANSI and Unicode art editor for UNIX-like systems (Linux, 
 macOS, etc). It runs in the terminal and supports frame-based animation,
-custom themes, 256 color, terminal mouse input, IRC color export, Unicode
-and Code Page 437 block characters, and other interesting features.
+custom themes, 256 and 16 color modes, terminal mouse input, IRC color export,
+Unicode and Code Page 437 block characters, HTML output, and other interesting
+features.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
-ANSI (.ans), JSON, GIF, mIRC color, and PNG formats.
+ANSI (.ans), JSON, GIF, mIRC color, HTML, and PNG formats.
 
 ## REQUIREMENTS
 
@@ -221,26 +222,43 @@ optional arguments:
 ## INTERACTIVE USAGE/EDITING
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
-Also:
+You can use the "Esc" (or "Meta") key to access commands:
 
-      alt-k - next frame                  alt-' - delete current line
-      alt-j - prev frame                  alt-/ - insert line
-      alt-n - iNsert current frame clone  alt-, - delete current column.
-      alt-N - appeNd empty frame          alt-. - insert new column
-      alt-p - start/stop Playback         alt-c - Color menu (256 only)
-      alt-d - Delete current frame        alt-m - Menu
-      alt-D - set current frame Delay     F1-F10 - insert character
-      alt-+/alt-- increase/decrease FPS   alt-z - undo
-      alt-M - Move current frame          alt-r - Redo
-      alt-up - next fg color              alt-s - Save
-      alt-down - prev fg color            alt-o - Open
-      alt-right - next bg color           alt-q - Quit
-      alt-left - prev bg color            alt-h - Help
-      alt-R - set playback/edit Range     alt-pgdn - next character set
-      alt-g - Go to frame #               alt-pgup - prev character set
-      ctrl-l - redraw the Screen          alt-t - mouse Tools menu
-
-Can use ESC or META instead of ALT
+   .. Art Editing ....................  .. Animation .......................    
+   : F1-F10 - insert character       :  : esc-k - next frame               :    
+   : esc-up - next fg color          :  : esc-j - previous frame           :    
+   : esc-dow1 - prev fg color        :  : esc-p - start/stop payback       :    
+   : esc-right - next bg color       :  : esc-n - clone frame              :    
+   : esc-left - prev bg color        :  : esc-N - append empty frame       :    
+   : esc-/ - insert line             :  : esc-d - delete frame             :    
+   : esc-' - delete line             :  : esc-D - set frame delay          :    
+   : esc-. - insert column           :  : esc-+/esc-- - faster/slower      :    
+   : esc-, - delete column           :  : esc-R - set playback/edit range  :    
+   : esc-] - next character set      :  : esc-g - go to frame #            :    
+   : esc-[ - previous character set  :  : esc-M - move frame               :    
+   : esc-y - eyedrop (pick up color) :  :..................................:    
+   : esc-c - color picker (256 mode) :                                         
+   : shift-arrows - select for copy  :
+   : esc-v - paste                   :
+   :.................................:                                          
+   .. File Operations ................  .. Canvas Size .....................    
+   : esc-C - new/clear canvas        :  : esc-" - insert line              :    
+   : esc-o - open                    :  : esc-: - delete line              :    
+   : esc-s - save                    :  : esc-> - insert column            :    
+   :.................................:  : esc-< - delete column            :    
+   .. UI/Misc ........................  :..................................:    
+   : esc-m - main menu               :
+   : esc-t - mouse tools             :
+   : esc-z - undo                    :
+   : esc-r - redo                    :
+   : esc-h - help                    : 
+   : esc-q - quit                    :                      Prev   Next         
+   :.................................:                      Frame  Frame        
+                                                            |      |            
+Main   Frame     Speed     Frame   Play/Edit  Mouse   First | Play |  Last      
+Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame     
+ |     |           |        |       |          |         |  |  |   |  |         
+[Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|     
 
 ## OTHER TIPS
 

@@ -12,6 +12,7 @@ import durdraw.durdraw_file as durfile
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self): # User friendly defeaults
+        self.quickStart = False
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.totalFgColors = "128"
@@ -35,12 +36,17 @@ class AppState():
         self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.helpMov = None
+        self.helpMov_2 = None
         self.hasHelpFile = False
         self.playingHelpScreen = False
+        self.playingHelpScreen_2 = False    # on page 2 of help screen
         self.durVer = None
         self.debug = False
         self.modified = False
         self.durhelp256_fullpath = None
+        self.durhelp256_page2_fullpath = None
+        self.durhelp16_fullpath = None
+        self.durhelp16_page2_fullpath = None
         self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
 
         # This doesn't work yet (color pairs past 256 colors. They set, but the background color doesn't get set.
@@ -182,7 +188,7 @@ class AppState():
             return False
         return True
 
-    def loadHelpFile(self, helpFileName):
+    def loadHelpFile(self, helpFileName, page=1):
         helpFileName = os.path.expanduser(helpFileName)
         #self.helpMov = Movie(self.opts) # initialize a new movie to work with
         try:
@@ -199,27 +205,33 @@ class AppState():
             except Exception as e:
                 self.hasHelpFile = False
                 self.helpMov = None
+                self.helpMov_2 = None
                 return False
         else:
             f.seek(0)
         try:    # Load json help file
             #pdb.set_trace()
-            loadedContainer = durfile.open_json_dur_file(f)
-            self.helpMovOpts = loadedContainer['opts']
-            self.helpMov = loadedContainer['mov']
+            loadedContainer = durfile.open_json_dur_file(f, self)
+            if page == 1:
+                self.helpMovOpts = loadedContainer['opts']
+                self.helpMov = loadedContainer['mov']
+            elif page == 2:
+                self.helpMovOpts_2 = loadedContainer['opts']
+                self.helpMov_2 = loadedContainer['mov']
             self.hasHelpFile = True
             return True
         except:
-            pass    # loading json help file failed for some reason, so...
-        try:                             # load dur help file
-            #self.opts = pickle.load(f)
-            #self.mov = pickle.load(f)
-            self.helpMovOpts = pickle.load(f)
-            self.helpMov = pickle.load(f)
-            self.hasHelpFile = True
-            return True
-        except Exception as e:
-            self.hasHelpFile = False
-            self.helpMov = None
+            #pass    # loading json help file failed for some reason, so...
             return False
+        #try:    # Load pickle file. This should never happen anymore, so...
+        #    #self.opts = pickle.load(f)
+        #    #self.mov = pickle.load(f)
+        #    self.helpMovOpts = pickle.load(f)
+        #    self.helpMov = pickle.load(f)
+        #    self.hasHelpFile = True
+        #    return True
+        #except Exception as e:
+        #    self.hasHelpFile = False
+        #    self.helpMov = None
+        #    return False
 

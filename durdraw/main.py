@@ -26,7 +26,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.20.3'
+    DUR_VER = '0.21.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
@@ -59,7 +59,7 @@ def main():
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
-    parser.add_argument("--notheme", help="Disable theme support",
+    parser.add_argument("--notheme", help="Disable theme support (use default theme)",
                     action="store_true")
     parser.add_argument("--theme", help="Load a custom theme file", nargs=1)
     parser.add_argument("-A", "--ibmpc", "--cp437", help="Use Code Page 437 (IBM-PC/MS-DOS) block character encoding instead of Unicode. (Needs CP437 capable terminal and font)", action="store_true")
@@ -105,6 +105,7 @@ def main():
         showStartupScreen=False
     elif args.quick:
         showStartupScreen=False
+        app.quickStart = True
     if args.nomouse:
         app.hasMouse = False
     if args.notheme:
@@ -138,14 +139,18 @@ def main():
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
-    #with importlib.resources.path("durdraw.help", "durhelp.dur") as durhelp_fullpath:
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
-    durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256.dur")
+    durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page1.dur")
+    durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
+    durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page1.dur")
+    durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
     app.durhelp256_fullpath = durhelp256_fullpath
-    #print(f"DEBUG: durhelp_fullpath = {durhelp_fullpath}")
-    #print(importlib.resources.path("durdraw.help", "durhelp.dur"))
-    #durhelp_fullpath = importlib.resources.path("durdraw.help", "durhelp.dur")
-    app.loadHelpFile(durhelp_fullpath)
+    app.durhelp256_page2_fullpath = durhelp256_page2_fullpath
+    app.durhelp16_fullpath = durhelp16_fullpath
+    app.durhelp16_page2_fullpath = durhelp16_page2_fullpath
+    #app.loadHelpFile(durhelp_fullpath)
+    app.loadHelpFile(durhelp16_fullpath)
+    app.loadHelpFile(durhelp16_page2_fullpath, page=2)
     if not app.hasHelpFile:
         durhelp_fullpath = 'durdraw/help/durhelp.dur'
         app.loadHelpFile(durhelp_fullpath)

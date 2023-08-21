@@ -68,7 +68,7 @@ legacy_16_to_16 = {   # used when loading an old 16 color file in 16 color mode
         5: 6,    # yellow/brown
         6: 2,    # green
         7: 4,    # red
-        8: 0,   # black
+        8: 8,   # black
     }
 }
 
@@ -133,6 +133,36 @@ color_256_to_mirc_16 = {
     16: 0, # br white
 }
 
+ansi_code_to_dur_16_color = {
+    '30': 0,  # black
+    '31': 5,  # red
+    '32': 3,  # green
+    '33': 7,  # yellow/brown
+    '34': 2,  # blue
+    '35': 6,  # magenta
+    '36': 4,  # cyan
+    '37': 8,  # grey/white
+
+    '40': 0,  # black
+    '41': 5,  # red
+    '42': 3,  # green
+    '43': 7,  # yellow/brown
+    '44': 2,  # blue
+    '45': 6,  # magenta
+    '46': 4,  # cyan
+    '47': 8,  # grey/white
+}
+
+#ansi_code_to_dur_16_color = {
+#    '30': 0,  # black
+#    '31': 8,  # white # red
+#    '32': 7,  # yellow/brown # green
+#    '33': 6,  # magenta # yellow/brown
+#    '34': 5,  # red # blue
+#    '35': 4,  # cyan # magenta
+#    '36': 3,  # green # cyan
+#    '37': 2,  # blue # grey/white
+#}
 
 class AnsiArtStuff():
     """ Ansi specific stuff.. escape codes, any refs to code page 437, ncurses
@@ -253,7 +283,7 @@ class AnsiArtStuff():
     def getColorCode256(self, fg, bg):
         """ Return a string containing 256-color mode ANSI escape code for
         given fg/bg """
-        if fg <= 16:
+        if fg <= 16 and fg > 0:
             fg = color_256_to_ansi_16[fg]
         code = '\033[38;5;'    # begin escape sequence
         code = code + str(fg)
