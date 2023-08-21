@@ -38,10 +38,10 @@ ANSI (.ans), JSON, GIF, mIRC color, HTML, and PNG formats.
    cd durdraw 
 ```
 
-2: Install using pip:
+2: Install or upgrade using pip:
 
 ```
-    pip install .
+    pip install --upgrade .
 ```
 
 Or run the installer:
