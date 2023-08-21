@@ -224,6 +224,7 @@ optional arguments:
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 You can use the "Esc" (or "Meta") key to access commands:
 
+```
    .. Art Editing ....................  .. Animation .......................    
    : F1-F10 - insert character       :  : esc-k - next frame               :    
    : esc-up - next fg color          :  : esc-j - previous frame           :    
@@ -259,6 +260,7 @@ Main   Frame     Speed     Frame   Play/Edit  Mouse   First | Play |  Last
 Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame     
  |     |           |        |       |          |         |  |  |   |  |         
 [Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|     
+```
 
 ## OTHER TIPS
 
