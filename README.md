@@ -90,87 +90,6 @@ To look at some included example animations:
 ![cm-doge](https://user-images.githubusercontent.com/261501/210064365-e9303bee-7842-4068-b356-cd314341098b.gif)
 ![bsd-color-new](https://user-images.githubusercontent.com/261501/210064354-5c1c2adc-06a3-43c5-8e21-30b1a81db315.gif)
 
-## CONFIGURATION
-
-You can create a custom startup file where you can set a theme.
-
-
-If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
-
-```
-    ./installconf.sh
-```
-
-This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
-
-Here is an example durdraw.ini file:
-
-<pre>
-; Durdraw 0.20 Configuration File
-[Theme]
-theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
-theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
-</pre>
-
-The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
-
-Note that you can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
-
-Here is an example 16-color theme:
-
-<pre>
-[Theme-16]
-name: 'Purple Drank'
-mainColor: 6
-clickColor: 3
-borderColor: 6
-clickHighlightColor: 5
-notificationColor: 4
-promptColor: 4
-</pre>
-
-and a 256-color theme:
-
-<pre>
-[Theme-256]
-name: 'Muted Form'
-mainColor: 104
-clickColor: 37
-borderColor: 236
-clickHighlightColor: 15
-notificationColor: 87
-promptColor: 189
-menuItemColor: 189
-menuTitleColor: 159
-menuBorderColor: 24
-</pre>
-
-The colors and theme options are as follows:
-
-colors for 16-color mode:
-1 black
-2 blue
-3 green
-4 cyan
-5 red
-6 magenta
-7 yellow
-8 white
-
-color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
-
-```
-mainColor: the color of most text
-clickColor: the color of buttons (clickable items)
-clickHighlightColor: the color the button changes to for a moment when clicked
-borderColor: the color of the border around a drawing
-notificationColor: the color of notification messages
-promptColor: the color of user prompt messages
-menuItemColor: the color of menu items
-menuTitleColor: the color of menu titles
-menuBorderColor: the color of the border around menus
-```
-
 ## COMMAND LINE USAGE
 
 You can play a .dur file or series of .dur files with:
@@ -261,6 +180,88 @@ Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame
  |     |           |        |       |          |         |  |  |   |  |         
 [Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|     
 ```
+
+## CONFIGURATION
+
+You can create a custom startup file where you can set a theme.
+
+
+If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
+
+```
+    ./installconf.sh
+```
+
+This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
+
+Here is an example durdraw.ini file:
+
+<pre>
+; Durdraw 0.20 Configuration File
+[Theme]
+theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
+theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+</pre>
+
+The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
+
+Note that you can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
+
+Here is an example 16-color theme:
+
+<pre>
+[Theme-16]
+name: 'Purple Drank'
+mainColor: 6
+clickColor: 3
+borderColor: 6
+clickHighlightColor: 5
+notificationColor: 4
+promptColor: 4
+</pre>
+
+and a 256-color theme:
+
+<pre>
+[Theme-256]
+name: 'Muted Form'
+mainColor: 104
+clickColor: 37
+borderColor: 236
+clickHighlightColor: 15
+notificationColor: 87
+promptColor: 189
+menuItemColor: 189
+menuTitleColor: 159
+menuBorderColor: 24
+</pre>
+
+The colors and theme options are as follows:
+
+colors for 16-color mode:
+1 black
+2 blue
+3 green
+4 cyan
+5 red
+6 magenta
+7 yellow
+8 white
+
+color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
+
+```
+mainColor: the color of most text
+clickColor: the color of buttons (clickable items)
+clickHighlightColor: the color the button changes to for a moment when clicked
+borderColor: the color of the border around a drawing
+notificationColor: the color of notification messages
+promptColor: the color of user prompt messages
+menuItemColor: the color of menu items
+menuTitleColor: the color of menu titles
+menuBorderColor: the color of the border around menus
+```
+
 
 ## OTHER TIPS
 
