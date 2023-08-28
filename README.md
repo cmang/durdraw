@@ -144,41 +144,38 @@ Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 You can use the "Esc" (or "Meta") key to access commands:
 
 ```
-   .. Art Editing ....................  .. Animation .......................    
-   : F1-F10 - insert character       :  : esc-k - next frame               :    
-   : esc-up - next fg color          :  : esc-j - previous frame           :    
-   : esc-dow1 - prev fg color        :  : esc-p - start/stop payback       :    
-   : esc-right - next bg color       :  : esc-n - clone frame              :    
-   : esc-left - prev bg color        :  : esc-N - append empty frame       :    
-   : esc-/ - insert line             :  : esc-d - delete frame             :    
-   : esc-' - delete line             :  : esc-D - set frame delay          :    
-   : esc-. - insert column           :  : esc-+/esc-- - faster/slower      :    
-   : esc-, - delete column           :  : esc-R - set playback/edit range  :    
-   : esc-] - next character set      :  : esc-g - go to frame #            :    
-   : esc-[ - previous character set  :  : esc-M - move frame               :    
-   : esc-y - eyedrop (pick up color) :  :..................................:    
-   : esc-c - color picker (256 mode) :                                         
-   : shift-arrows - select for copy  :
-   : esc-v - paste                   :
-   :.................................:                                          
-   .. File Operations ................  .. Canvas Size .....................    
-   : esc-C - new/clear canvas        :  : esc-" - insert line              :    
-   : esc-o - open                    :  : esc-: - delete line              :    
-   : esc-s - save                    :  : esc-> - insert column            :    
-   :.................................:  : esc-< - delete column            :    
-   .. UI/Misc ........................  :..................................:    
-   : esc-m - main menu               :
-   : esc-t - mouse tools             :
-   : esc-z - undo                    :
-   : esc-r - redo                    :
-   : esc-h - help                    : 
-   : esc-q - quit                    :                      Prev   Next         
-   :.................................:                      Frame  Frame        
-                                                            |      |            
-Main   Frame     Speed     Frame   Play/Edit  Mouse   First | Play |  Last      
-Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame     
- |     |           |        |       |          |         |  |  |   |  |         
-[Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|     
+   .. Art Editing ....................  .. Animation .......................
+   : F1-F10 - insert character       :  : esc-k - next frame               :
+   : esc-up - next fg color          :  : esc-j - previous frame           :
+   : esc-dow1 - prev fg color        :  : esc-p - start/stop payback       :
+   : esc-right - next bg color       :  : esc-n - clone frame              :
+   : esc-left - prev bg color        :  : esc-N - append empty frame       :
+   : esc-/ - insert line             :  : esc-d - delete frame             :
+   : esc-' - delete line             :  : esc-D - set frame delay          :
+   : esc-. - insert column           :  : esc-+/esc-- - faster/slower      :
+   : esc-, - delete column           :  : esc-R - set playback/edit range  :
+   : esc-] - next character set      :  : esc-g - go to frame #            :
+   : esc-[ - previous character set  :  : esc-M - move frame               :
+   : esc-y - eyedrop (pick up color) :  :..................................:
+   : esc-c - color picker (256 mode) :  .. File Operations .................
+   : shift-arrows - select for copy  :  : esc-C - new/clear canvas         :
+   : esc-v - paste                   :  : esc-o - open                     :
+   :.................................:  : esc-s - save                     :
+   .. UI/Misc ......................... :..................................:
+   : esc-m - main menu                : .. Canvas Size .....................
+   : esc-t - mouse tools              : : esc-" - insert line              :
+   : esc-z - undo                     : : esc-: - delete line              :
+   : esc-r - redo                     : : esc-> - insert column            :
+   : esc-h - help                     : : esc-< - delete column            :
+   : esc-q - quit                     : :..................................:
+   :..................................:
+                                                            Prev   Next
+                                                            Frame  Frame
+                                                            |      |
+Main   Frame     Speed     Frame   Play/Edit  Mouse   First | Play |  Last
+Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame
+ |     |           |        |       |          |         |  |  |   |  |
+[Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|  
 ```
 
 ## CONFIGURATION
