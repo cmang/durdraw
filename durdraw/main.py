@@ -67,6 +67,7 @@ def main():
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an ANSI file and exit")
     args = parser.parse_args()
     if args.version:
         print(DUR_VER)
@@ -213,6 +214,10 @@ def main():
             ui.loadFromFile(movie, 'dur')
             ui.startPlaying()
             ui.stdscr.clear()
+        ui.verySafeQuit()
+    if args.export_ansi:
+        # Export ansi and exit
+        ui.saveAnsiFile(os.path.splitext(args.filename)[0] + ".ansi")
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()

@@ -30,6 +30,8 @@ class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
     #def __init__(self, stdscr, app):
     def __init__(self, app):
+        # Set cursor shape to block
+        sys.stdout.write(f"\x1b[1 q")
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
         self.clipBoard = None   # frame object
@@ -2403,8 +2405,11 @@ class UserInterface():  # Separate view (curses) from this controller
         filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
         if filename.replace(' ', '') == '':
-            self.notify("File name cannot be empty.")
-            return False
+            if saveFormat == "dur":
+                filename = self.appState.curOpenFileName
+            else:
+                self.notify("File name cannot be empty.")
+                return False
         filename = os.path.expanduser(filename)
         # If file exists.. ask if it should overwrite.
         if os.path.exists(filename):
