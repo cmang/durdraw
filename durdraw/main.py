@@ -26,7 +26,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.21.0'
+    DUR_VER = '0.21.1'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends more notifications
     durlogo = '''
@@ -82,7 +82,7 @@ def main():
         app.setDebug(True)
     if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
-    showStartupScreen=True
+    app.showStartupScreen=True
 
 
     term_size = os.get_terminal_size()
@@ -102,9 +102,9 @@ def main():
         if term_size[1] > 24:
             app.height = term_size[1] - 2
     if args.play:
-        showStartupScreen=False
+        app.showStartupScreen=False
     elif args.quick:
-        showStartupScreen=False
+        app.showStartupScreen=False
         app.quickStart = True
     if args.nomouse:
         app.hasMouse = False
@@ -155,7 +155,7 @@ def main():
         durhelp_fullpath = 'durdraw/help/durhelp.dur'
         app.loadHelpFile(durhelp_fullpath)
 
-    if showStartupScreen:
+    if app.showStartupScreen:
         print(durlogo)
         if app.hasHelpFile:
             print(f"Help file: Found in {durhelp_fullpath}")
@@ -178,7 +178,10 @@ def main():
         else:
             print(f"Configuration file not found.")
 
-        print(f"Theme: {app.themeName}")
+        if app.themesEnabled:
+            print(f"Theme: {app.themeName}")
+        else:
+            print(f"Theme: Default (none)")
 
         print("Undo history size = %d" % app.undoHistorySize)
         if app.width == 80 and app.height == 24:

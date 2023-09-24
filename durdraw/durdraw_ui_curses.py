@@ -83,7 +83,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #time.sleep(2)
         if self.appState.colorMode == "16":
             self.ansi.initColorPairs_cga()
-        if not app.quickStart:
+        if not app.quickStart and app.showStartupScreen:
             print(f"Color mode: {self.appState.colorMode}")
             time.sleep(2)
         #if self.appState.colorMode == "16":
@@ -2513,7 +2513,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if not lastColNum:
             lastColNum = self.findFrameLastCol(self.mov.currentFrame)
         if not firstColNum:
-            firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
+            #firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
+            firstColNum = 0 # Don't crop leftmost blank columns
         if not firstLineNum:
             firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
         #for lineNum in range(0, lastLineNum):  # y == lines
@@ -2797,7 +2798,8 @@ Can use ESC or META instead of ALT
 
     def refresh(self):          # rename to redraw()?
         """Refresh the screen"""
-        linenum = 0
+        #linenum = 0
+        linenum = self.appState.topLine
         if self.appState.playingHelpScreen_2:
             mov = self.appState.helpMov_2
         elif self.appState.playingHelpScreen:

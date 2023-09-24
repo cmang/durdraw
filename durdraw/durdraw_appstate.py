@@ -13,6 +13,7 @@ class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self): # User friendly defeaults
         self.quickStart = False
+        self.showStartupScreen = True
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.totalFgColors = "128"
@@ -48,12 +49,11 @@ class AppState():
         self.durhelp16_fullpath = None
         self.durhelp16_page2_fullpath = None
         self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
-
         # This doesn't work yet (color pairs past 256 colors. They set, but the background color doesn't get set.
         #if sys.version_info >= (3, 10):
         #    if curses.has_extended_color_support(): # Requires Ncures 6
         #        self.showBgColorPicker = True   # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
-
+        self.topLine = 0    # the top line visible on the screen, used in refresh() for scrolling
         self.drawBorders = True
         self.durFileVer = 0     # gets set in main() from DUR_FILE_VER
         self.themesEnabled = True
