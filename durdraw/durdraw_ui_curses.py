@@ -1131,7 +1131,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.xy[0] - self.appState.topLine > realmaxY - 3:
             self.xy[0] = realmaxY - 3 + self.appState.topLine
         if self.xy[1] < 0:
-            self.xy[1] = 0
+            self.xy[1] = 1
         self.move(self.xy[0], self.xy[1] - 1)
 
     def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
@@ -1547,7 +1547,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def move_cursor_topleft(self):
         self.xy[0] = 0
-        self.xy[1] = 0
+        self.xy[1] = 1
         self.refresh()
 
     def move_cursor_left(self):     # pressed LEFT key
