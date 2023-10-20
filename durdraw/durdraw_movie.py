@@ -123,27 +123,6 @@ class Movie():
         self.frameCount += 1
         return True
 
-    def insertCanvasColumn(self, col):
-        """ col is the column in which to insert a new column, across all
-        frames of the movie """
-        for frame in self.frames:
-            for line in frame.content:
-                line.insert(' ', col - 1)
-
-    def deleteCanvasColumn(self, col):
-        """ col is the column in which to delete a new column, across all
-        frames of the movie """
-        for frame in self.frames:
-            for line in frame.content:
-                line.pop(col - 1)
-
-    def insertCanvasLine(self, line):
-        """ col is the column in which to insert a new column, across all
-        frames of the movie """
-        for frame in self.frames:
-            for line in frame.content:
-                line.insert(' ', col - 1)
-
     def insertCloneFrame(self):
         """ clone current frame after current frame """
         newFrame = Frame(self.sizeX, self.sizeY)
