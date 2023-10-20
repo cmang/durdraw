@@ -1121,6 +1121,18 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(clickColor) | curses.A_BOLD)
         # Draw the new status bar
         self.statusBar.draw()
+        # if cursor is outside of canvas, fix it
+        bottomLine = self.realmaxY - 3 + self.appState.topLine
+        if self.xy[0] > self.mov.sizeY - 1:  # cursor is past bottom of the canvas
+            self.xy[0] = self.mov.sizeY - 1
+        if self.xy[1] > self.opts.sizeX:    # cursor is past right edge of the canvas
+            self.xy[1] = self.opts.sizeX
+        # if it's off screen.. fix that, too
+        if self.xy[0] - self.appState.topLine > realmaxY - 3:
+            self.xy[0] = realmaxY - 3 + self.appState.topLine
+        if self.xy[1] < 0:
+            self.xy[1] = 0
+        self.move(self.xy[0], self.xy[1] - 1)
 
     def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
         # example: self.clickHighlight(52, "|>")
@@ -2708,14 +2720,6 @@ Can use ESC or META instead of ALT
             pass
         for x in range(screenLineNum, mov.sizeY):
             self.addstr(x, 0, " " * mov.sizeX)
-        if not self.appState.playOnlyMode:
-            # if cursor is outside of canvas, fix it
-            bottomLine = self.realmaxY - 3 + self.appState.topLine
-            if self.xy[0] > self.mov.sizeY - 1:  # cursor is past bottom of the canvas
-                self.xy[0] = self.mov.sizeY - 1
-            if self.xy[1] > self.opts.sizeX:    # cursor is past right edge of the canvas
-                self.xy[1] = self.opts.sizeX
-            self.move(self.xy[0], self.xy[1] - 1)
         curses.panel.update_panels()
         self.stdscr.refresh()
 
