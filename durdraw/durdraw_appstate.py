@@ -22,8 +22,8 @@ class AppState():
         self.defaultBgColor = 0
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
-        #self.characterSet = "Durdraw Default"
-        self.characterSet = "Unicode Block"
+        self.characterSet = "Durdraw Default"
+        #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"
         self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.playOnlyMode = False
