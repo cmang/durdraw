@@ -21,6 +21,10 @@ class AppState():
         self.defaultFgColor = 7
         self.defaultBgColor = 0
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
+        self.unicodeBlockList = []
+        #self.characterSet = "Durdraw Default"
+        self.characterSet = "Unicode Block"
+        self.unicodeBlock = "Braille Patterns"
         self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.playOnlyMode = False
         self.playNumberOfTimes = 0  # 0 = loop forever, default
@@ -54,6 +58,7 @@ class AppState():
         #    if curses.has_extended_color_support(): # Requires Ncures 6
         #        self.showBgColorPicker = True   # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.topLine = 0    # the top line visible on the screen, used in refresh() for scrolling
+        self.firstCol = 0    # leftmost visbile column, to facilitate left/right scrolling
         self.drawBorders = True
         self.durFileVer = 0     # gets set in main() from DUR_FILE_VER
         self.themesEnabled = True

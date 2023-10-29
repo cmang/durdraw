@@ -5,6 +5,7 @@ import curses.panel
 import fnmatch
 import glob
 import gzip
+import locale
 import os
 import os.path
 import pdb
@@ -25,6 +26,7 @@ from durdraw.durdraw_ui_widgets import StatusBar
 import durdraw.durdraw_gui_manager as durgui
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
+import durdraw.durdraw_charsets as durchar
 
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
@@ -38,9 +40,12 @@ class UserInterface():  # Separate view (curses) from this controller
         self.charMapNumber = 0
         self.chMap = {}
         self.chMapString = ""
+        self.statusBar = None
+        self.appState.unicodeBlockList = durchar.get_unicode_blocks_list()
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         os.environ.setdefault('ESCDELAY', '10')
         # initialize screen and draw the 'canvas'
+        locale.setlocale(locale.LC_ALL, '')    # set your locale
         self.realstdscr = curses.initscr()
         realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
         self.statusBarLineNum = realmaxY - 2
@@ -331,12 +336,18 @@ class UserInterface():  # Separate view (curses) from this controller
             crashing cureses if it fails """
         if not attr:
             try:
-                self.stdscr.addstr(y, x, str)
+                if self.appState.charEncoding == 'utf-8':
+                    self.stdscr.addstr(y, x, str.encode('utf-8'))
+                else:
+                    self.stdscr.addstr(y, x, str)
             except curses.error:
                 self.testWindowSize()
         else:
             try:
-                self.stdscr.addstr(y, x, str, attr)
+                if self.appState.charEncoding == 'utf-8':
+                    self.stdscr.addstr(y, x, str.encode('utf-8'), attr)
+                else:
+                    self.stdscr.addstr(y, x, str, attr)
             except curses.error:
                 self.testWindowSize()
 
@@ -664,6 +675,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.prevCharSet() # during playback, c == -1, so 339 is alt-pgup, as a backup
                 elif c == 93 or c == 338:   # alt-] (93) or aplt-pagdown next character set
                     self.nextCharSet()
+                elif c == 83:       # alt-S - pick a character set
+                    self.showCharSetPicker()
                 elif c == 46:       # alt-. - insert column
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
@@ -892,59 +905,98 @@ class UserInterface():  # Separate view (curses) from this controller
     def initCharSet(self): # we can have nextCharSet and PrevCharSet to switch between chars in set
         # Can also add encoding= paramater for different encodings, eg: ascii, utf-8, etc.
         self.charMapNumber = 0
-        self.fullCharMap = [ \
-            # All of our unicode templates live here. Blank template:
-            #{'f1':, 'f2':, 'f3':, 'f4':, 'f5':, 'f6':, 'f7':, 'f8':, 'f9':, 'f10':},
+        if self.appState.characterSet == "Durdraw Default":
+            self.fullCharMap = [ \
+                # All of our unicode templates live here. Blank template:
+                #{'f1':, 'f2':, 'f3':, 'f4':, 'f5':, 'f6':, 'f7':, 'f8':, 'f9':, 'f10':},
 
-            # block characters
-            {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 },    # ibm-pc looking block characters (but unicode instead of ascii)
-            {'f1':9601, 'f2':9602, 'f3':9603, 'f4':9604, 'f5':9605, 'f6':9606, 'f7': 9607, 'f8':9608, 'f9'     :9600, 'f10':0x2594 },   # more block elements - mostly bottom half fills
-            {'f1':0x2588, 'f2':0x2589, 'f3':0x258A, 'f4':0x258B, 'f5':0x258C, 'f6':0x258D, 'f7':0x258E, 'f8':0x258F, 'f9':0x2590, 'f10':0x2595},    # partial left and right fills
+                # block characters
+                {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 },    # ibm-pc looking block characters (but unicode instead of ascii)
+                {'f1':9601, 'f2':9602, 'f3':9603, 'f4':9604, 'f5':9605, 'f6':9606, 'f7': 9607, 'f8':9608, 'f9'     :9600, 'f10':0x2594 },   # more block elements - mostly bottom half fills
+                {'f1':0x2588, 'f2':0x2589, 'f3':0x258A, 'f4':0x258B, 'f5':0x258C, 'f6':0x258D, 'f7':0x258E, 'f8':0x258F, 'f9':0x2590, 'f10':0x2595},    # partial left and right fills
 
-            # geometric shapes
-            #{'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
-            {'f1':0x25e2, 'f2':0x25e3, 'f3':0x25e5, 'f4':0x25e4, 'f5':0x25c4, 'f6':0x25ba, 'f7':0x25b2, 'f8':0x25bc, 'f9':0x25c0, 'f10':0x25b6 },    # little curves and triangles
+                # geometric shapes
+                #{'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
+                {'f1':0x25e2, 'f2':0x25e3, 'f3':0x25e5, 'f4':0x25e4, 'f5':0x25c4, 'f6':0x25ba, 'f7':0x25b2, 'f8':0x25bc, 'f9':0x25c0, 'f10':0x25b6 },    # little curves and triangles
 
-            # terminal graphic characters
-            {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
-            #{'f1':0x1FB9C, 'f2':0x1FB9D, 'f3':0x1FB9F, 'f4':0x1FB9E, 'f5':0x1FB9A, 'f6':0x1FB9B, 'f7':0x1FB65, 'f8':0x1FB5A, 'f9':0x1FB4B, 'f10':0x1FB40},  # legacy computing smooth terminal mosaic characters - newer versions of unicode Triangles and shit.. not sure why it isn't working
-            #{'f1':9581, 'f2':9582, 'f3':9583, 'f4':9584, 'f5':9585, 'f6':9586, 'f7':9587, 'f8':9472, 'f9':9474, 'f10':9532 },   # character cell arcs, aka curved pipes
-            {'f1':9581, 'f2':9582, 'f3':9584, 'f4':9583, 'f5':9472, 'f6':9474, 'f7':9585, 'f8':9586, 'f9':9587, 'f10':9532 },   # character cell arcs, aka curved pipes
-            #{'f1':130032, 'f2':0x1FBF2, 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
-            #{'f1':0x1FB8C, 'f2':ord('🭀'), 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
-            ]
-        # generate some unicode sets via offset
-        self.fullCharMap.append(self.genCharSet(0x25a0)) # geometric shapes
-        self.fullCharMap.append(self.genCharSet(0x25e6)) # more geometric shapes
-        self.fullCharMap.append(self.genCharSet(0x25c6)) # geometrics - diamond and circles
-        self.fullCharMap.append(self.genCharSet(0x02ef)) # UPA modifiers
-        self.fullCharMap.append(self.genCharSet(0x02c2)) # UPA modifiers
-        self.fullCharMap.append(self.genCharSet(0x2669)) # music symbols
-        self.fullCharMap.append(self.genCharSet(0xFF66)) # half-width kanji letters
-        self.fullCharMap.append(self.genCharSet(0xFF70)) # half-width kanji letters
-        self.fullCharMap.append(self.genCharSet(0xFF7a)) # half-width kanji letters
-        self.fullCharMap.append(self.genCharSet(0xFF84)) # half-width kanji letters
-        self.fullCharMap.append(self.genCharSet(0xFF8e)) # half-width kanji letters
-        #self.fullCharMap.append(self.genCharSet(0xFF98)) # half-width kanji letters
-        #self.fullCharMap.append(self.genCharSet(0x1F603)) # smiley emojis
-        self.fullCharMap.append(self.genCharSet(0x2801)) # braile a-j
-        self.fullCharMap.append(self.genCharSet(0x2805)) # braile k-t
-        self.fullCharMap.append(self.genCharSet(0x2825)) # braile u+
-        self.fullCharMap.append(self.genCharSet(0x2b2c)) # ellipses
+                # terminal graphic characters
+                {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
+                #{'f1':0x1FB9C, 'f2':0x1FB9D, 'f3':0x1FB9F, 'f4':0x1FB9E, 'f5':0x1FB9A, 'f6':0x1FB9B, 'f7':0x1FB65, 'f8':0x1FB5A, 'f9':0x1FB4B, 'f10':0x1FB40},  # legacy computing smooth terminal mosaic characters - newer versions of unicode Triangles and shit.. not sure why it isn't working
+                #{'f1':9581, 'f2':9582, 'f3':9583, 'f4':9584, 'f5':9585, 'f6':9586, 'f7':9587, 'f8':9472, 'f9':9474, 'f10':9532 },   # character cell arcs, aka curved pipes
+                {'f1':9581, 'f2':9582, 'f3':9584, 'f4':9583, 'f5':9472, 'f6':9474, 'f7':9585, 'f8':9586, 'f9':9587, 'f10':9532 },   # character cell arcs, aka curved pipes
+                #{'f1':130032, 'f2':0x1FBF2, 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
+                #{'f1':0x1FB8C, 'f2':ord('🭀'), 'f3':0x1FBF3, 'f4':0x1FBF4, 'f5':0x1FBF5, 'f6':0x1FBF6, 'f7':0x1FBF7, 'f8':0x1FBF8, 'f9':0x1FBF9, 'f10':0x1FBF0},   # lcd/led-style digits
+                ]
+            # generate some unicode sets via offset
+            self.fullCharMap.append(self.genCharSet(0x25a0)) # geometric shapes
+            self.fullCharMap.append(self.genCharSet(0x25e6)) # more geometric shapes
+            self.fullCharMap.append(self.genCharSet(0x25c6)) # geometrics - diamond and circles
+            self.fullCharMap.append(self.genCharSet(0x02ef)) # UPA modifiers
+            self.fullCharMap.append(self.genCharSet(0x02c2)) # UPA modifiers
+            self.fullCharMap.append(self.genCharSet(0x2669)) # music symbols
+            self.fullCharMap.append(self.genCharSet(0xFF66)) # half-width kanji letters
+            self.fullCharMap.append(self.genCharSet(0xFF70)) # half-width kanji letters
+            self.fullCharMap.append(self.genCharSet(0xFF7a)) # half-width kanji letters
+            self.fullCharMap.append(self.genCharSet(0xFF84)) # half-width kanji letters
+            self.fullCharMap.append(self.genCharSet(0xFF8e)) # half-width kanji letters
+            #self.fullCharMap.append(self.genCharSet(0xFF98)) # half-width kanji letters
+            #self.fullCharMap.append(self.genCharSet(0x1F603)) # smiley emojis
+            self.fullCharMap.append(self.genCharSet(0x2801)) # braile a-j
+            self.fullCharMap.append(self.genCharSet(0x2805)) # braile k-t
+            self.fullCharMap.append(self.genCharSet(0x2825)) # braile u+
+            self.fullCharMap.append(self.genCharSet(0x2b2c)) # ellipses
+            self.chMap = self.fullCharMap[self.charMapNumber]
 
-        # Map a dict of F1-f10 to character values 
-        if self.appState.charEncoding == 'ibm-pc':
-            self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
-            self.fullCharMap = [ self.chMap ]
-            self.appState.colorPickChar = chr(219)  # ibm-pc/cp437 ansi block character
-        else:
+            # Map a dict of F1-f10 to character values 
+            if self.appState.charEncoding == 'ibm-pc':
+                self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
+                self.fullCharMap = [ self.chMap ]
+                self.appState.colorPickChar = chr(219)  # ibm-pc/cp437 ansi block character
+        elif self.appState.characterSet == "Unicode Block":
             #self.chMap = {'f1':2591, 'f2':2592, 'f3':2593, 'f4':2588, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
             #self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 }
+            #self.setUnicodeBlock(block="Symbols for Legacy Computing")
+            #self.setUnicodeBlock(block="Latin-1 Supplement")
+            #self.setUnicodeBlock(block="Cyrillic")
+            #self.setUnicodeBlock(block="Dingbats")
+            #self.setUnicodeBlock(block="Block Elements")
+            #self.setUnicodeBlock(block="Box Drawing")
+            #self.setUnicodeBlock(block="Control Pictures")
+            #self.setUnicodeBlock(block="Miscellaneous Technical")
+            #self.setUnicodeBlock(block="Chess Symbols")
+            #self.setUnicodeBlock(block="Egyptian Hieroglyphs")
+            #self.setUnicodeBlock(block="Emoticons")
+            #self.setUnicodeBlock(block="Alchemical Symbols")
+            #self.setUnicodeBlock(block="Miscellaneous Symbols")
+            #self.setUnicodeBlock(block="Playing Cards")
+            #self.setUnicodeBlock(block="Domino Tiles")
+            self.setUnicodeBlock(block=self.appState.unicodeBlock)
             self.chMap = self.fullCharMap[self.charMapNumber]
+
+        # What the character map looks like on the screen
         self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
                 self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
                 #self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
+
+    def setCharacterSet(self, set_name):
+        """ Set a Durdraw character set (not a Unicode block name) """
+        self.appState.characterSet = set_name
+        miniSetName = f"{self.appState.characterSet[:3]}.."
+        self.statusBar.charSetButton.label = miniSetName  # [Name..]
+
+    def setUnicodeBlock(self, block="Symbols for Legacy Computing"):
+        self.fullCharMap = durchar.load_unicode_block(block)
+        self.chMap = self.fullCharMap[self.charMapNumber]
+        if self.statusBar:
+            if self.appState.characterSet == "Unicode Block":
+                miniSetName = f"{self.appState.unicodeBlock[:3]}.."
+            else:
+                miniSetName = f"{self.appState.characterSet[:3]}.."
+            self.statusBar.charSetButton.label = miniSetName  # [Name..]
+        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
+                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
 
     def nextCharSet(self):
         if self.charMapNumber == len(self.fullCharMap) - 1:
@@ -1004,6 +1056,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
         self.statusBar.toolButton.update_real_xy(x = statusBarLineNum)
+        self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
         self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
         if self.appState.colorMode == "256":
             self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
@@ -1050,7 +1103,9 @@ class UserInterface():  # Separate view (curses) from this controller
         else:   # normal color
             self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
         # draw current character set #
-        self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
+        charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
+        self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+        #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0
         for x in range(1,11): 
@@ -1200,6 +1255,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.prevCharSet()
                 elif c == 93 or c == 338:   # alt-] or alt-pgdown, next character set
                     self.nextCharSet()
+                elif c == 83:       # alt-S - pick a character set or unicode block
+                    self.showCharSetPicker()
                 elif c == 44:      # alt-, - erase/pop current column in frame
                     self.delCol()
                 elif c == 46:       # alt-. - insert column in frame
@@ -1653,138 +1710,409 @@ class UserInterface():  # Separate view (curses) from this controller
             self.loadFromFile(load_filename, 'dur')
             self.move_cursor_topleft()
 
+    def showCharSetPicker(self):
+        set_list = ["Durdraw Default"]
+        block_list = self.appState.unicodeBlockList.copy()
+
+        for set_name in set_list:
+            block_list.insert(0, set_name)
+        
+        # draw ui
+        selected_item_number = 0
+        current_line_number = 0
+        search_string = ""
+        mask_all = False
+        top_line = 0    # topmost viewable line, for scrolling
+        prompting = True
+        # Turn on keyboard buffer waiting here, if necessary..
+        self.stdscr.nodelay(0)
+        self.stdscr.clear()
+        while prompting:
+            # draw list of files from top of the window to bottomk
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            page_size = realmaxY - 4
+            current_line_number = 0
+            if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
+                top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            for blockname in block_list:
+                if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
+                    if  selected_item_number == current_line_number:    # if block is selected
+                        self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.A_REVERSE)
+                    else:
+                        if block_list[current_line_number] in set_list:
+                            self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
+                        else:
+                            self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
+                current_line_number += 1
+
+            #if mask_all:
+            #    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
+            #else:
+            #    self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
+            #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
+            if search_string != "":
+                self.addstr(realmaxY - 2, 0, f"search: ")
+                self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
+            # debug
+            self.addstr(realmaxY - 1, 0, f"block name: {block_list[selected_item_number]}")
+
+            self.stdscr.refresh()
+            c = self.stdscr.getch()
+            self.stdscr.clear()
+            if c == curses.KEY_LEFT:
+                pass
+            elif c == curses.KEY_RIGHT:
+                pass
+            elif c == curses.KEY_UP:
+                # move cursor up
+                if selected_item_number > 0:
+                    if selected_item_number == top_line and top_line != 0:
+                        top_line -= 1
+                    selected_item_number -= 1
+                pass
+            elif c == curses.KEY_DOWN:
+                if selected_item_number < len(block_list) - 1:
+                    # move cursor down
+                    selected_item_number += 1
+                    # if we're at the bottom of the screen...
+                    if selected_item_number - top_line == page_size and top_line < len(block_list) - page_size:
+                        top_line += 1
+            elif c in [339, curses.KEY_PPAGE]:  # page up
+                if selected_item_number - top_line > 0:  # first go to the top of the page
+                    selected_item_number = top_line
+                else:   # if already there, go up a full page
+                    selected_item_number -= page_size
+                    top_line -= page_size 
+                # correct any overflow
+                if selected_item_number < 0:
+                    selected_item_number = 0
+                if top_line < 0:
+                    top_line = 0
+            elif c in [338, curses.KEY_NPAGE]:  # page down
+                if selected_item_number - top_line < page_size - 1: # first go to bottom of the page
+                    selected_item_number = page_size + top_line - 1
+                else:   # if already there, go down afull page
+                    selected_item_number += page_size
+                    top_line += page_size
+                # correct any overflow
+                if selected_item_number >= len(block_list):
+                    selected_item_number = len(block_list) - 1
+                if top_line >= len(block_list):
+                    top_line = len(block_list) - page_size
+            elif c in [339, curses.KEY_HOME]:  # 339 = home
+                selected_item_number = 0
+                top_line = 0
+            elif c in [338, curses.KEY_END]:   # 338 = end
+                selected_item_number = len(block_list) - 1
+                top_line = selected_item_number - page_size + 1
+                if top_line < 0:    # for small file lists
+                    top_line = 0
+            elif c in [13, curses.KEY_ENTER]:
+                if block_list[selected_item_number] in set_list:
+                    # Durdraw character set selected. Set it
+                    self.setCharacterSet(block_list[selected_item_number])
+                    #self.appState.characterSet = block_list[selected_item_number]
+                    self.charMapNumber = 0
+                    self.initCharSet()
+                    self.stdscr.clear()
+                    prompting = False
+                else:
+                    # Unicode block selected.
+                    self.appState.characterSet = "Unicode Block"
+                    self.charMapNumber = 0
+                    self.appState.unicodeBlock = block_list[selected_item_number]
+                    self.setUnicodeBlock(block=self.appState.unicodeBlock)
+                    self.stdscr.clear()
+                    prompting = False
+                    #pdb.set_trace()
+                    #full_path = f"{current_directory}/{block_list[selected_item_number]}"
+                    #return full_path
+            elif c == 27:   # esc key
+                if search_string != "":
+                    search_string = ""
+                else:
+                    self.stdscr.clear()
+                    prompting = False
+                    if self.playing:
+                        elf.stdscr.nodelay(1)
+                    return False
+            elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
+                if search_string != "":
+                    # if string is not empty, remove last character
+                    search_string = search_string[:len(search_string)-1]
+            elif c == curses.KEY_MOUSE:
+                try:
+                    _, mouseCol, mouseLine, _, mouseState = curses.getmouse()
+                except:
+                    pass
+                if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                    if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
+                        if mouseLine < len(block_list) - top_line:   # clicked item line
+                            if mouseCol < len(block_list[top_line+mouseLine]): # clicked within item width
+                                selected_item_number = top_line+mouseLine
+                                if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                                    if block_list[selected_item_number] in set_list:    # clicked set, not block
+                                        # holy fuck this is deep
+                                        self.appState.characterSet = block_list[selected_item_number]
+                                        self.charMapNumber = 0
+                                        self.initCharSet()
+                                        self.stdscr.clear()
+                                        prompting = False
+                                    else:   # clicked a unicode block
+                                        self.appState.characterSet = "Unicode Block"
+                                        self.charMapNumber = 0
+                                        self.setUnicodeBlock(block=block_list[selected_item_number])
+                                        self.stdscr.clear()
+                                        prompting = False
+                    #if mouseLine == realmaxY - 4:    # on the button bar
+                    #    if mouseCol in range(0,3):  # clicked [X] All
+                    #        if mask_all:
+                    #            mask_all = False
+                    #            masks = default_masks
+                    #        else:
+                    #            mask_all = True
+                    #            masks = ['*.*']
+                        # update file list
+                elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    # scroll up
+                    # if the item isn't at the top of teh screen, move it up
+                    if selected_item_number > top_line:
+                        selected_item_number -= 1
+                    elif top_line > 0:
+                        top_line -= 1
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    # scroll down 
+                    if selected_item_number < len(block_list) - 1:
+                        selected_item_number += 1
+                        if selected_item_number == len(block_list) - top_line:
+                            top_line += 1
+            else: # add to search string
+                search_string += chr(c)
+                for blockname in block_list:  # search list for search_string
+                    if blockname not in set_list and blockname.startswith(search_string):
+                        selected_item_number = block_list.index(blockname)
+                        break   # stop at the first match
 
     def openFilePicker(self):
-            """ Draw UI for selecting a file to load, return the filename """
-            # get file list
-            folders =  ["../"]
-            folders += glob.glob("*/")
-            default_masks = ['*.dur', '*.asc', '*.ans', '*.txt']
-            masks = default_masks
-            current_directory = os.getcwd()
-            matched_files = []
-            file_list = []
-            for file in os.listdir(current_directory):
-                for mask in masks:
-                    if fnmatch.fnmatch(file.lower(), mask.lower()):
-                        matched_files.append(file)
-                        break
-            for dirname in folders:
-                file_list.append(dirname)
-            file_list += sorted(matched_files)
+        """ Draw UI for selecting a file to load, return the filename """
+        # get file list
+        folders =  ["../"]
+        folders += glob.glob("*/")
+        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt']
+        masks = default_masks
+        current_directory = os.getcwd()
+        matched_files = []
+        file_list = []
+        for file in os.listdir(current_directory):
+            for mask in masks:
+                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                    matched_files.append(file)
+                    break
+        for dirname in folders:
+            file_list.append(dirname)
+        file_list += sorted(matched_files)
 
-            # draw ui
-            selected_item_number = 0
+        # draw ui
+        selected_item_number = 0
+        current_line_number = 0
+        search_string = ""
+        mask_all = False
+        top_line = 0    # topmost viewable line, for scrolling
+        prompting = True
+        # Turn on keyboard buffer waiting here, if necessary..
+        self.stdscr.nodelay(0)
+        self.stdscr.clear()
+        while prompting:
+            # draw list of files from top of the window to bottomk
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            page_size = realmaxY - 4
             current_line_number = 0
-            search_string = ""
-            mask_all = False
-            top_line = 0    # topmost viewable line, for scrolling
-            prompting = True
-            # Turn on keyboard buffer waiting here, if necessary..
-            self.stdscr.nodelay(0)
+            if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
+                top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            for filename in file_list:
+                if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
+                    if  selected_item_number == current_line_number:    # if file is selected
+                        self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
+                    else:
+                        if file_list[current_line_number] in folders:
+                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
+                        else:
+                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
+                current_line_number += 1
+
+            if mask_all:
+                self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
+            else:
+                self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+            self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
+            #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
+            #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
+            self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
+            if search_string != "":
+                self.addstr(realmaxY - 2, 0, f"search: ")
+                self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
+            # debug
+            self.addstr(realmaxY - 1, 0, f"filename: {file_list[selected_item_number]}")
+
+            self.stdscr.refresh()
+            c = self.stdscr.getch()
             self.stdscr.clear()
-            while prompting:
-                # draw list of files from top of the window to bottomk
-                realmaxY,realmaxX = self.realstdscr.getmaxyx()
-                page_size = realmaxY - 4
-                current_line_number = 0
-                if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
-                    top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
-                for filename in file_list:
-                    if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
-                        if  selected_item_number == current_line_number:    # if file is selected
-                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
-                        else:
-                            if file_list[current_line_number] in folders:
-                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
-                            else:
-                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
-                    current_line_number += 1
-
-                if mask_all:
-                    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
-                else:
-                    self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
-                self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
-                #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
-                #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
-                #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
-                #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
-                self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
-                if search_string != "":
-                    self.addstr(realmaxY - 2, 0, f"search: ")
-                    self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
-                # debug
-                self.addstr(realmaxY - 1, 0, f"filename: {file_list[selected_item_number]}")
-
-                self.stdscr.refresh()
-                c = self.stdscr.getch()
-                self.stdscr.clear()
-                if c == curses.KEY_LEFT:
-                    pass
-                elif c == curses.KEY_RIGHT:
-                    pass
-                elif c == curses.KEY_UP:
-                    # move cursor up
-                    if selected_item_number > 0:
-                        if selected_item_number == top_line and top_line != 0:
-                            top_line -= 1
-                        selected_item_number -= 1
-                    pass
-                elif c == curses.KEY_DOWN:
-                    if selected_item_number < len(file_list) - 1:
-                        # move cursor down
-                        selected_item_number += 1
-                        # if we're at the bottom of the screen...
-                        if selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
-                            top_line += 1
-                elif c in [339, curses.KEY_PPAGE]:  # page up
-                    if selected_item_number - top_line > 0:  # first go to the top of the page
-                        selected_item_number = top_line
-                    else:   # if already there, go up a full page
-                        selected_item_number -= page_size
-                        top_line -= page_size 
-                    # correct any overflow
-                    if selected_item_number < 0:
-                        selected_item_number = 0
-                    if top_line < 0:
-                        top_line = 0
-                elif c in [338, curses.KEY_NPAGE]:  # page down
-                    if selected_item_number - top_line < page_size - 1: # first go to bottom of the page
-                        selected_item_number = page_size + top_line - 1
-                    else:   # if already there, go down afull page
-                        selected_item_number += page_size
-                        top_line += page_size
-                    # correct any overflow
-                    if selected_item_number >= len(file_list):
-                        selected_item_number = len(file_list) - 1
-                    if top_line >= len(file_list):
-                        top_line = len(file_list) - page_size
-                elif c in [339, curses.KEY_HOME]:  # 339 = home
+            if c == curses.KEY_LEFT:
+                pass
+            elif c == curses.KEY_RIGHT:
+                pass
+            elif c == curses.KEY_UP:
+                # move cursor up
+                if selected_item_number > 0:
+                    if selected_item_number == top_line and top_line != 0:
+                        top_line -= 1
+                    selected_item_number -= 1
+                pass
+            elif c == curses.KEY_DOWN:
+                if selected_item_number < len(file_list) - 1:
+                    # move cursor down
+                    selected_item_number += 1
+                    # if we're at the bottom of the screen...
+                    if selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
+                        top_line += 1
+            elif c in [339, curses.KEY_PPAGE]:  # page up
+                if selected_item_number - top_line > 0:  # first go to the top of the page
+                    selected_item_number = top_line
+                else:   # if already there, go up a full page
+                    selected_item_number -= page_size
+                    top_line -= page_size 
+                # correct any overflow
+                if selected_item_number < 0:
                     selected_item_number = 0
+                if top_line < 0:
                     top_line = 0
-                elif c in [338, curses.KEY_END]:   # 338 = end
+            elif c in [338, curses.KEY_NPAGE]:  # page down
+                if selected_item_number - top_line < page_size - 1: # first go to bottom of the page
+                    selected_item_number = page_size + top_line - 1
+                else:   # if already there, go down afull page
+                    selected_item_number += page_size
+                    top_line += page_size
+                # correct any overflow
+                if selected_item_number >= len(file_list):
                     selected_item_number = len(file_list) - 1
-                    top_line = selected_item_number - page_size + 1
-                    if top_line < 0:    # for small file lists
-                        top_line = 0
-                elif c in [13, curses.KEY_ENTER]:
-                    if file_list[selected_item_number] in folders:
-                        # change directories
-                        if file_list[selected_item_number] == "../":
-                            # "cd .."
-                            current_directory = os.path.split(current_directory)[0]
-                        else:
-                            current_directory = f"{current_directory}/{file_list[selected_item_number]}"
-                            if current_directory[-1] == "/":
-                                current_directory = current_directory[:-1]
-                        # get file list
-                        folders =  ["../"]
-                        folders += glob.glob("*/", root_dir=current_directory)
-                        if mask_all:
-                            masks = ['*.*']
-                        else:
-                            masks = default_masks
+                if top_line >= len(file_list):
+                    top_line = len(file_list) - page_size
+            elif c in [339, curses.KEY_HOME]:  # 339 = home
+                selected_item_number = 0
+                top_line = 0
+            elif c in [338, curses.KEY_END]:   # 338 = end
+                selected_item_number = len(file_list) - 1
+                top_line = selected_item_number - page_size + 1
+                if top_line < 0:    # for small file lists
+                    top_line = 0
+            elif c in [13, curses.KEY_ENTER]:
+                if file_list[selected_item_number] in folders:
+                    # change directories
+                    if file_list[selected_item_number] == "../":
+                        # "cd .."
+                        current_directory = os.path.split(current_directory)[0]
+                    else:
+                        current_directory = f"{current_directory}/{file_list[selected_item_number]}"
+                        if current_directory[-1] == "/":
+                            current_directory = current_directory[:-1]
+                    # get file list
+                    folders =  ["../"]
+                    folders += glob.glob("*/", root_dir=current_directory)
+                    if mask_all:
+                        masks = ['*.*']
+                    else:
+                        masks = default_masks
+                    matched_files = []
+                    file_list = []
+                    for file in os.listdir(current_directory):
+                        for mask in masks:
+                            if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                matched_files.append(file)
+                                break
+                    for dirname in folders:
+                        file_list.append(dirname)
+                    file_list += sorted(matched_files)
+                    # reset ui
+                    selected_item_number = 0
+                    search_string = ""
+                else:
+                    # return the selected file
+                    self.stdscr.clear()
+                    prompting = False
+                    full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                    return full_path
+            elif c == 27:   # esc key
+                if search_string != "":
+                    search_string = ""
+                else:
+                    self.stdscr.clear()
+                    prompting = False
+                    if self.playing:
+                        elf.stdscr.nodelay(1)
+                    return False
+            elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
+                if search_string != "":
+                    # if string is not empty, remove last character
+                    search_string = search_string[:len(search_string)-1]
+            elif c == curses.KEY_MOUSE:
+                try:
+                    _, mouseCol, mouseLine, _, mouseState = curses.getmouse()
+                except:
+                    pass
+                if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                    if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
+                        if mouseLine < len(file_list) - top_line:   # clicked item line
+                            if mouseCol < len(file_list[top_line+mouseLine]): # clicked within item width
+                                selected_item_number = top_line+mouseLine
+                                if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                                    if file_list[selected_item_number] in folders:  # clicked directory
+                                        # change directories. holy fuck this is deep
+                                        if file_list[selected_item_number] == "../":
+                                            # "cd .."
+                                            current_directory = os.path.split(current_directory)[0]
+                                        else:
+                                            current_directory = f"{current_directory}/{file_list[selected_item_number]}"
+                                            if current_directory[-1] == "/":
+                                                current_directory = current_directory[:-1]
+                                        # get file list
+                                        folders =  ["../"]
+                                        folders += glob.glob("*/", root_dir=current_directory)
+                                        if mask_all:
+                                            masks = ['*.*']
+                                        else:
+                                            masks = default_masks
+                                        matched_files = []
+                                        file_list = []
+                                        for file in os.listdir(current_directory):
+                                            for mask in masks:
+                                                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                                    matched_files.append(file)
+                                                    break
+                                        for dirname in folders:
+                                            file_list.append(dirname)
+                                        file_list += sorted(matched_files)
+                                        # reset ui
+                                        selected_item_number = 0
+                                        search_string = ""
+                                    else:   # clicked a file, try to load it
+                                        full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                                        return full_path
+                    if mouseLine == realmaxY - 4:    # on the button bar
+                        if mouseCol in range(0,3):  # clicked [X] All
+                            if mask_all:
+                                mask_all = False
+                                masks = default_masks
+                            else:
+                                mask_all = True
+                                masks = ['*.*']
+                        # update file list
                         matched_files = []
                         file_list = []
                         for file in os.listdir(current_directory):
@@ -1798,109 +2126,25 @@ class UserInterface():  # Separate view (curses) from this controller
                         # reset ui
                         selected_item_number = 0
                         search_string = ""
-                    else:
-                        # return the selected file
-                        self.stdscr.clear()
-                        prompting = False
-                        full_path = f"{current_directory}/{file_list[selected_item_number]}"
-                        return full_path
-                elif c == 27:   # esc key
-                    if search_string != "":
-                        search_string = ""
-                    else:
-                        self.stdscr.clear()
-                        prompting = False
-                        if self.playing:
-                            elf.stdscr.nodelay(1)
-                        return False
-                elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
-                    if search_string != "":
-                        # if string is not empty, remove last character
-                        search_string = search_string[:len(search_string)-1]
-                elif c == curses.KEY_MOUSE:
-                    try:
-                        _, mouseCol, mouseLine, _, mouseState = curses.getmouse()
-                    except:
-                        pass
-                    if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                        if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
-                            if mouseLine < len(file_list) - top_line:   # clicked item line
-                                if mouseCol < len(file_list[top_line+mouseLine]): # clicked within item width
-                                    selected_item_number = top_line+mouseLine
-                                    if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                        if file_list[selected_item_number] in folders:  # clicked directory
-                                            # change directories. holy fuck this is deep
-                                            if file_list[selected_item_number] == "../":
-                                                # "cd .."
-                                                current_directory = os.path.split(current_directory)[0]
-                                            else:
-                                                current_directory = f"{current_directory}/{file_list[selected_item_number]}"
-                                                if current_directory[-1] == "/":
-                                                    current_directory = current_directory[:-1]
-                                            # get file list
-                                            folders =  ["../"]
-                                            folders += glob.glob("*/", root_dir=current_directory)
-                                            if mask_all:
-                                                masks = ['*.*']
-                                            else:
-                                                masks = default_masks
-                                            matched_files = []
-                                            file_list = []
-                                            for file in os.listdir(current_directory):
-                                                for mask in masks:
-                                                    if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                                        matched_files.append(file)
-                                                        break
-                                            for dirname in folders:
-                                                file_list.append(dirname)
-                                            file_list += sorted(matched_files)
-                                            # reset ui
-                                            selected_item_number = 0
-                                            search_string = ""
-                                        else:   # clicked a file, try to load it
-                                            full_path = f"{current_directory}/{file_list[selected_item_number]}"
-                                            return full_path
-                        if mouseLine == realmaxY - 4:    # on the button bar
-                            if mouseCol in range(0,3):  # clicked [X] All
-                                if mask_all:
-                                    mask_all = False
-                                    masks = default_masks
-                                else:
-                                    mask_all = True
-                                    masks = ['*.*']
-                            # update file list
-                            matched_files = []
-                            file_list = []
-                            for file in os.listdir(current_directory):
-                                for mask in masks:
-                                    if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                        matched_files.append(file)
-                                        break
-                            for dirname in folders:
-                                file_list.append(dirname)
-                            file_list += sorted(matched_files)
-                            # reset ui
-                            selected_item_number = 0
-                            search_string = ""
-                    elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        # scroll up
-                        # if the item isn't at the top of teh screen, move it up
-                        if selected_item_number > top_line:
-                            selected_item_number -= 1
-                        elif top_line > 0:
-                            top_line -= 1
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        # scroll down 
-                        if selected_item_number < len(file_list) - 1:
-                            selected_item_number += 1
-                            if selected_item_number == len(file_list) - top_line:
-                                top_line += 1
-                else: # add to search string
-                    search_string += chr(c)
-                    for filename in file_list:  # search list for search_string
-                        if filename not in folders and filename.startswith(search_string):
-                            selected_item_number = file_list.index(filename)
-                            break   # stop at the first match
+                elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    # scroll up
+                    # if the item isn't at the top of teh screen, move it up
+                    if selected_item_number > top_line:
+                        selected_item_number -= 1
+                    elif top_line > 0:
+                        top_line -= 1
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    # scroll down 
+                    if selected_item_number < len(file_list) - 1:
+                        selected_item_number += 1
+                        if selected_item_number == len(file_list) - top_line:
+                            top_line += 1
+            else: # add to search string
+                search_string += chr(c)
+                for filename in file_list:  # search list for search_string
+                    if filename not in folders and filename.startswith(search_string):
+                        selected_item_number = file_list.index(filename)
+                        break   # stop at the first match
 
     def open(self):
         self.clearStatusLine()

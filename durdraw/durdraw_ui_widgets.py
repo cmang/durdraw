@@ -265,10 +265,12 @@ class StatusBar():
         menuButton.realX = self.x + menuButton.x
         menuButton.realY = self.y + menuButton.y
         menuButton.show()
+        self.menuButton = menuButton
         #mainMenu.x = menuButton.realX - 1
         #mainMenu.y = menuButton.realY
         mainMenu.set_x(menuButton.realX - 1)
         mainMenu.set_y(menuButton.realY)
+        self.mainMenu = mainMenu
 
         toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
         toolMenu.set_title("Mouse Tools:")
@@ -278,6 +280,7 @@ class StatusBar():
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
+        self.toolMenu = toolMenu
         # Make cursor tool selector button
         toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
@@ -288,9 +291,19 @@ class StatusBar():
         toolButton.show()
         toolMenu.set_x(toolButton.realX - 1)    # line up the menu above the button
         toolMenu.set_y(toolButton.realY)
+        self.toolButton = toolButton
+
+        charSetButton = Button("CharSet", 1, 26, caller.showCharSetPicker, self.window, appState=self.appState)
+        # make proper label for character set button
+        charSetLabel = self.caller.appState.characterSet
+        if charSetLabel == "Unicode Block":
+            charSetLabel = self.caller.appState.unicodeBlock
+        charSetLabel = f"{charSetLabel[:3]}.."
+        charSetButton.label = charSetLabel
+        charSetButton.show()
+        self.charSetButton = charSetButton
 
         drawCharPicker = DrawCharPicker(self.window, caller=self)
-
         drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window, appState=self.appState)
         drawCharPickerButton.picker = True
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
@@ -299,10 +312,6 @@ class StatusBar():
         drawCharPickerButton.hide() 
         self.drawCharPickerButton = drawCharPickerButton
 
-        self.mainMenu = mainMenu
-        self.toolMenu = toolMenu
-        self.menuButton = menuButton
-        self.toolButton = toolButton
 
         colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
         self.colorPicker = colorPicker
@@ -331,11 +340,13 @@ class StatusBar():
         self.items.append(menuButton)
         self.items.append(toolButton)
         self.items.append(drawCharPickerButton)
+        self.items.append(charSetButton)
         #self.items.append(fgBgColors)
         #self.items.append(self.swatch)
         self.buttons.append(menuButton)
         self.buttons.append(toolButton)
         self.buttons.append(drawCharPickerButton)
+        self.buttons.append(charSetButton)
         # Add them to the items
 
     def hide(self):

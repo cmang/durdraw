@@ -1,0 +1,330 @@
+   <blocks>
+      <block first-cp="0000" last-cp="007F" name="Basic Latin"/>
+      <block first-cp="0080" last-cp="00FF" name="Latin-1 Supplement"/>
+      <block first-cp="0100" last-cp="017F" name="Latin Extended-A"/>
+      <block first-cp="0180" last-cp="024F" name="Latin Extended-B"/>
+      <block first-cp="0250" last-cp="02AF" name="IPA Extensions"/>
+      <block first-cp="02B0" last-cp="02FF" name="Spacing Modifier Letters"/>
+      <block first-cp="0300" last-cp="036F" name="Combining Diacritical Marks"/>
+      <block first-cp="0370" last-cp="03FF" name="Greek and Coptic"/>
+      <block first-cp="0400" last-cp="04FF" name="Cyrillic"/>
+      <block first-cp="0500" last-cp="052F" name="Cyrillic Supplement"/>
+      <block first-cp="0530" last-cp="058F" name="Armenian"/>
+      <block first-cp="0590" last-cp="05FF" name="Hebrew"/>
+      <block first-cp="0600" last-cp="06FF" name="Arabic"/>
+      <block first-cp="0700" last-cp="074F" name="Syriac"/>
+      <block first-cp="0750" last-cp="077F" name="Arabic Supplement"/>
+      <block first-cp="0780" last-cp="07BF" name="Thaana"/>
+      <block first-cp="07C0" last-cp="07FF" name="NKo"/>
+      <block first-cp="0800" last-cp="083F" name="Samaritan"/>
+      <block first-cp="0840" last-cp="085F" name="Mandaic"/>
+      <block first-cp="0860" last-cp="086F" name="Syriac Supplement"/>
+      <block first-cp="0870" last-cp="089F" name="Arabic Extended-B"/>
+      <block first-cp="08A0" last-cp="08FF" name="Arabic Extended-A"/>
+      <block first-cp="0900" last-cp="097F" name="Devanagari"/>
+      <block first-cp="0980" last-cp="09FF" name="Bengali"/>
+      <block first-cp="0A00" last-cp="0A7F" name="Gurmukhi"/>
+      <block first-cp="0A80" last-cp="0AFF" name="Gujarati"/>
+      <block first-cp="0B00" last-cp="0B7F" name="Oriya"/>
+      <block first-cp="0B80" last-cp="0BFF" name="Tamil"/>
+      <block first-cp="0C00" last-cp="0C7F" name="Telugu"/>
+      <block first-cp="0C80" last-cp="0CFF" name="Kannada"/>
+      <block first-cp="0D00" last-cp="0D7F" name="Malayalam"/>
+      <block first-cp="0D80" last-cp="0DFF" name="Sinhala"/>
+      <block first-cp="0E00" last-cp="0E7F" name="Thai"/>
+      <block first-cp="0E80" last-cp="0EFF" name="Lao"/>
+      <block first-cp="0F00" last-cp="0FFF" name="Tibetan"/>
+      <block first-cp="1000" last-cp="109F" name="Myanmar"/>
+      <block first-cp="10A0" last-cp="10FF" name="Georgian"/>
+      <block first-cp="1100" last-cp="11FF" name="Hangul Jamo"/>
+      <block first-cp="1200" last-cp="137F" name="Ethiopic"/>
+      <block first-cp="1380" last-cp="139F" name="Ethiopic Supplement"/>
+      <block first-cp="13A0" last-cp="13FF" name="Cherokee"/>
+      <block first-cp="1400" last-cp="167F" name="Unified Canadian Aboriginal Syllabics"/>
+      <block first-cp="1680" last-cp="169F" name="Ogham"/>
+      <block first-cp="16A0" last-cp="16FF" name="Runic"/>
+      <block first-cp="1700" last-cp="171F" name="Tagalog"/>
+      <block first-cp="1720" last-cp="173F" name="Hanunoo"/>
+      <block first-cp="1740" last-cp="175F" name="Buhid"/>
+      <block first-cp="1760" last-cp="177F" name="Tagbanwa"/>
+      <block first-cp="1780" last-cp="17FF" name="Khmer"/>
+      <block first-cp="1800" last-cp="18AF" name="Mongolian"/>
+      <block first-cp="18B0" last-cp="18FF" name="Unified Canadian Aboriginal Syllabics Extended"/>
+      <block first-cp="1900" last-cp="194F" name="Limbu"/>
+      <block first-cp="1950" last-cp="197F" name="Tai Le"/>
+      <block first-cp="1980" last-cp="19DF" name="New Tai Lue"/>
+      <block first-cp="19E0" last-cp="19FF" name="Khmer Symbols"/>
+      <block first-cp="1A00" last-cp="1A1F" name="Buginese"/>
+      <block first-cp="1A20" last-cp="1AAF" name="Tai Tham"/>
+      <block first-cp="1AB0" last-cp="1AFF" name="Combining Diacritical Marks Extended"/>
+      <block first-cp="1B00" last-cp="1B7F" name="Balinese"/>
+      <block first-cp="1B80" last-cp="1BBF" name="Sundanese"/>
+      <block first-cp="1BC0" last-cp="1BFF" name="Batak"/>
+      <block first-cp="1C00" last-cp="1C4F" name="Lepcha"/>
+      <block first-cp="1C50" last-cp="1C7F" name="Ol Chiki"/>
+      <block first-cp="1C80" last-cp="1C8F" name="Cyrillic Extended-C"/>
+      <block first-cp="1C90" last-cp="1CBF" name="Georgian Extended"/>
+      <block first-cp="1CC0" last-cp="1CCF" name="Sundanese Supplement"/>
+      <block first-cp="1CD0" last-cp="1CFF" name="Vedic Extensions"/>
+      <block first-cp="1D00" last-cp="1D7F" name="Phonetic Extensions"/>
+      <block first-cp="1D80" last-cp="1DBF" name="Phonetic Extensions Supplement"/>
+      <block first-cp="1DC0" last-cp="1DFF" name="Combining Diacritical Marks Supplement"/>
+      <block first-cp="1E00" last-cp="1EFF" name="Latin Extended Additional"/>
+      <block first-cp="1F00" last-cp="1FFF" name="Greek Extended"/>
+      <block first-cp="2000" last-cp="206F" name="General Punctuation"/>
+      <block first-cp="2070" last-cp="209F" name="Superscripts and Subscripts"/>
+      <block first-cp="20A0" last-cp="20CF" name="Currency Symbols"/>
+      <block first-cp="20D0" last-cp="20FF" name="Combining Diacritical Marks for Symbols"/>
+      <block first-cp="2100" last-cp="214F" name="Letterlike Symbols"/>
+      <block first-cp="2150" last-cp="218F" name="Number Forms"/>
+      <block first-cp="2190" last-cp="21FF" name="Arrows"/>
+      <block first-cp="2200" last-cp="22FF" name="Mathematical Operators"/>
+      <block first-cp="2300" last-cp="23FF" name="Miscellaneous Technical"/>
+      <block first-cp="2400" last-cp="243F" name="Control Pictures"/>
+      <block first-cp="2440" last-cp="245F" name="Optical Character Recognition"/>
+      <block first-cp="2460" last-cp="24FF" name="Enclosed Alphanumerics"/>
+      <block first-cp="2500" last-cp="257F" name="Box Drawing"/>
+      <block first-cp="2580" last-cp="259F" name="Block Elements"/>
+      <block first-cp="25A0" last-cp="25FF" name="Geometric Shapes"/>
+      <block first-cp="2600" last-cp="26FF" name="Miscellaneous Symbols"/>
+      <block first-cp="2700" last-cp="27BF" name="Dingbats"/>
+      <block first-cp="27C0" last-cp="27EF" name="Miscellaneous Mathematical Symbols-A"/>
+      <block first-cp="27F0" last-cp="27FF" name="Supplemental Arrows-A"/>
+      <block first-cp="2800" last-cp="28FF" name="Braille Patterns"/>
+      <block first-cp="2900" last-cp="297F" name="Supplemental Arrows-B"/>
+      <block first-cp="2980" last-cp="29FF" name="Miscellaneous Mathematical Symbols-B"/>
+      <block first-cp="2A00" last-cp="2AFF" name="Supplemental Mathematical Operators"/>
+      <block first-cp="2B00" last-cp="2BFF" name="Miscellaneous Symbols and Arrows"/>
+      <block first-cp="2C00" last-cp="2C5F" name="Glagolitic"/>
+      <block first-cp="2C60" last-cp="2C7F" name="Latin Extended-C"/>
+      <block first-cp="2C80" last-cp="2CFF" name="Coptic"/>
+      <block first-cp="2D00" last-cp="2D2F" name="Georgian Supplement"/>
+      <block first-cp="2D30" last-cp="2D7F" name="Tifinagh"/>
+      <block first-cp="2D80" last-cp="2DDF" name="Ethiopic Extended"/>
+      <block first-cp="2DE0" last-cp="2DFF" name="Cyrillic Extended-A"/>
+      <block first-cp="2E00" last-cp="2E7F" name="Supplemental Punctuation"/>
+      <block first-cp="2E80" last-cp="2EFF" name="CJK Radicals Supplement"/>
+      <block first-cp="2F00" last-cp="2FDF" name="Kangxi Radicals"/>
+      <block first-cp="2FF0" last-cp="2FFF" name="Ideographic Description Characters"/>
+      <block first-cp="3000" last-cp="303F" name="CJK Symbols and Punctuation"/>
+      <block first-cp="3040" last-cp="309F" name="Hiragana"/>
+      <block first-cp="30A0" last-cp="30FF" name="Katakana"/>
+      <block first-cp="3100" last-cp="312F" name="Bopomofo"/>
+      <block first-cp="3130" last-cp="318F" name="Hangul Compatibility Jamo"/>
+      <block first-cp="3190" last-cp="319F" name="Kanbun"/>
+      <block first-cp="31A0" last-cp="31BF" name="Bopomofo Extended"/>
+      <block first-cp="31C0" last-cp="31EF" name="CJK Strokes"/>
+      <block first-cp="31F0" last-cp="31FF" name="Katakana Phonetic Extensions"/>
+      <block first-cp="3200" last-cp="32FF" name="Enclosed CJK Letters and Months"/>
+      <block first-cp="3300" last-cp="33FF" name="CJK Compatibility"/>
+      <block first-cp="3400" last-cp="4DBF" name="CJK Unified Ideographs Extension A"/>
+      <block first-cp="4DC0" last-cp="4DFF" name="Yijing Hexagram Symbols"/>
+      <block first-cp="4E00" last-cp="9FFF" name="CJK Unified Ideographs"/>
+      <block first-cp="A000" last-cp="A48F" name="Yi Syllables"/>
+      <block first-cp="A490" last-cp="A4CF" name="Yi Radicals"/>
+      <block first-cp="A4D0" last-cp="A4FF" name="Lisu"/>
+      <block first-cp="A500" last-cp="A63F" name="Vai"/>
+      <block first-cp="A640" last-cp="A69F" name="Cyrillic Extended-B"/>
+      <block first-cp="A6A0" last-cp="A6FF" name="Bamum"/>
+      <block first-cp="A700" last-cp="A71F" name="Modifier Tone Letters"/>
+      <block first-cp="A720" last-cp="A7FF" name="Latin Extended-D"/>
+      <block first-cp="A800" last-cp="A82F" name="Syloti Nagri"/>
+      <block first-cp="A830" last-cp="A83F" name="Common Indic Number Forms"/>
+      <block first-cp="A840" last-cp="A87F" name="Phags-pa"/>
+      <block first-cp="A880" last-cp="A8DF" name="Saurashtra"/>
+      <block first-cp="A8E0" last-cp="A8FF" name="Devanagari Extended"/>
+      <block first-cp="A900" last-cp="A92F" name="Kayah Li"/>
+      <block first-cp="A930" last-cp="A95F" name="Rejang"/>
+      <block first-cp="A960" last-cp="A97F" name="Hangul Jamo Extended-A"/>
+      <block first-cp="A980" last-cp="A9DF" name="Javanese"/>
+      <block first-cp="A9E0" last-cp="A9FF" name="Myanmar Extended-B"/>
+      <block first-cp="AA00" last-cp="AA5F" name="Cham"/>
+      <block first-cp="AA60" last-cp="AA7F" name="Myanmar Extended-A"/>
+      <block first-cp="AA80" last-cp="AADF" name="Tai Viet"/>
+      <block first-cp="AAE0" last-cp="AAFF" name="Meetei Mayek Extensions"/>
+      <block first-cp="AB00" last-cp="AB2F" name="Ethiopic Extended-A"/>
+      <block first-cp="AB30" last-cp="AB6F" name="Latin Extended-E"/>
+      <block first-cp="AB70" last-cp="ABBF" name="Cherokee Supplement"/>
+      <block first-cp="ABC0" last-cp="ABFF" name="Meetei Mayek"/>
+      <block first-cp="AC00" last-cp="D7AF" name="Hangul Syllables"/>
+      <block first-cp="D7B0" last-cp="D7FF" name="Hangul Jamo Extended-B"/>
+      <block first-cp="D800" last-cp="DB7F" name="High Surrogates"/>
+      <block first-cp="DB80" last-cp="DBFF" name="High Private Use Surrogates"/>
+      <block first-cp="DC00" last-cp="DFFF" name="Low Surrogates"/>
+      <block first-cp="E000" last-cp="F8FF" name="Private Use Area"/>
+      <block first-cp="F900" last-cp="FAFF" name="CJK Compatibility Ideographs"/>
+      <block first-cp="FB00" last-cp="FB4F" name="Alphabetic Presentation Forms"/>
+      <block first-cp="FB50" last-cp="FDFF" name="Arabic Presentation Forms-A"/>
+      <block first-cp="FE00" last-cp="FE0F" name="Variation Selectors"/>
+      <block first-cp="FE10" last-cp="FE1F" name="Vertical Forms"/>
+      <block first-cp="FE20" last-cp="FE2F" name="Combining Half Marks"/>
+      <block first-cp="FE30" last-cp="FE4F" name="CJK Compatibility Forms"/>
+      <block first-cp="FE50" last-cp="FE6F" name="Small Form Variants"/>
+      <block first-cp="FE70" last-cp="FEFF" name="Arabic Presentation Forms-B"/>
+      <block first-cp="FF00" last-cp="FFEF" name="Halfwidth and Fullwidth Forms"/>
+      <block first-cp="FFF0" last-cp="FFFF" name="Specials"/>
+      <block first-cp="10000" last-cp="1007F" name="Linear B Syllabary"/>
+      <block first-cp="10080" last-cp="100FF" name="Linear B Ideograms"/>
+      <block first-cp="10100" last-cp="1013F" name="Aegean Numbers"/>
+      <block first-cp="10140" last-cp="1018F" name="Ancient Greek Numbers"/>
+      <block first-cp="10190" last-cp="101CF" name="Ancient Symbols"/>
+      <block first-cp="101D0" last-cp="101FF" name="Phaistos Disc"/>
+      <block first-cp="10280" last-cp="1029F" name="Lycian"/>
+      <block first-cp="102A0" last-cp="102DF" name="Carian"/>
+      <block first-cp="102E0" last-cp="102FF" name="Coptic Epact Numbers"/>
+      <block first-cp="10300" last-cp="1032F" name="Old Italic"/>
+      <block first-cp="10330" last-cp="1034F" name="Gothic"/>
+      <block first-cp="10350" last-cp="1037F" name="Old Permic"/>
+      <block first-cp="10380" last-cp="1039F" name="Ugaritic"/>
+      <block first-cp="103A0" last-cp="103DF" name="Old Persian"/>
+      <block first-cp="10400" last-cp="1044F" name="Deseret"/>
+      <block first-cp="10450" last-cp="1047F" name="Shavian"/>
+      <block first-cp="10480" last-cp="104AF" name="Osmanya"/>
+      <block first-cp="104B0" last-cp="104FF" name="Osage"/>
+      <block first-cp="10500" last-cp="1052F" name="Elbasan"/>
+      <block first-cp="10530" last-cp="1056F" name="Caucasian Albanian"/>
+      <block first-cp="10570" last-cp="105BF" name="Vithkuqi"/>
+      <block first-cp="10600" last-cp="1077F" name="Linear A"/>
+      <block first-cp="10780" last-cp="107BF" name="Latin Extended-F"/>
+      <block first-cp="10800" last-cp="1083F" name="Cypriot Syllabary"/>
+      <block first-cp="10840" last-cp="1085F" name="Imperial Aramaic"/>
+      <block first-cp="10860" last-cp="1087F" name="Palmyrene"/>
+      <block first-cp="10880" last-cp="108AF" name="Nabataean"/>
+      <block first-cp="108E0" last-cp="108FF" name="Hatran"/>
+      <block first-cp="10900" last-cp="1091F" name="Phoenician"/>
+      <block first-cp="10920" last-cp="1093F" name="Lydian"/>
+      <block first-cp="10980" last-cp="1099F" name="Meroitic Hieroglyphs"/>
+      <block first-cp="109A0" last-cp="109FF" name="Meroitic Cursive"/>
+      <block first-cp="10A00" last-cp="10A5F" name="Kharoshthi"/>
+      <block first-cp="10A60" last-cp="10A7F" name="Old South Arabian"/>
+      <block first-cp="10A80" last-cp="10A9F" name="Old North Arabian"/>
+      <block first-cp="10AC0" last-cp="10AFF" name="Manichaean"/>
+      <block first-cp="10B00" last-cp="10B3F" name="Avestan"/>
+      <block first-cp="10B40" last-cp="10B5F" name="Inscriptional Parthian"/>
+      <block first-cp="10B60" last-cp="10B7F" name="Inscriptional Pahlavi"/>
+      <block first-cp="10B80" last-cp="10BAF" name="Psalter Pahlavi"/>
+      <block first-cp="10C00" last-cp="10C4F" name="Old Turkic"/>
+      <block first-cp="10C80" last-cp="10CFF" name="Old Hungarian"/>
+      <block first-cp="10D00" last-cp="10D3F" name="Hanifi Rohingya"/>
+      <block first-cp="10E60" last-cp="10E7F" name="Rumi Numeral Symbols"/>
+      <block first-cp="10E80" last-cp="10EBF" name="Yezidi"/>
+      <block first-cp="10EC0" last-cp="10EFF" name="Arabic Extended-C"/>
+      <block first-cp="10F00" last-cp="10F2F" name="Old Sogdian"/>
+      <block first-cp="10F30" last-cp="10F6F" name="Sogdian"/>
+      <block first-cp="10F70" last-cp="10FAF" name="Old Uyghur"/>
+      <block first-cp="10FB0" last-cp="10FDF" name="Chorasmian"/>
+      <block first-cp="10FE0" last-cp="10FFF" name="Elymaic"/>
+      <block first-cp="11000" last-cp="1107F" name="Brahmi"/>
+      <block first-cp="11080" last-cp="110CF" name="Kaithi"/>
+      <block first-cp="110D0" last-cp="110FF" name="Sora Sompeng"/>
+      <block first-cp="11100" last-cp="1114F" name="Chakma"/>
+      <block first-cp="11150" last-cp="1117F" name="Mahajani"/>
+      <block first-cp="11180" last-cp="111DF" name="Sharada"/>
+      <block first-cp="111E0" last-cp="111FF" name="Sinhala Archaic Numbers"/>
+      <block first-cp="11200" last-cp="1124F" name="Khojki"/>
+      <block first-cp="11280" last-cp="112AF" name="Multani"/>
+      <block first-cp="112B0" last-cp="112FF" name="Khudawadi"/>
+      <block first-cp="11300" last-cp="1137F" name="Grantha"/>
+      <block first-cp="11400" last-cp="1147F" name="Newa"/>
+      <block first-cp="11480" last-cp="114DF" name="Tirhuta"/>
+      <block first-cp="11580" last-cp="115FF" name="Siddham"/>
+      <block first-cp="11600" last-cp="1165F" name="Modi"/>
+      <block first-cp="11660" last-cp="1167F" name="Mongolian Supplement"/>
+      <block first-cp="11680" last-cp="116CF" name="Takri"/>
+      <block first-cp="11700" last-cp="1174F" name="Ahom"/>
+      <block first-cp="11800" last-cp="1184F" name="Dogra"/>
+      <block first-cp="118A0" last-cp="118FF" name="Warang Citi"/>
+      <block first-cp="11900" last-cp="1195F" name="Dives Akuru"/>
+      <block first-cp="119A0" last-cp="119FF" name="Nandinagari"/>
+      <block first-cp="11A00" last-cp="11A4F" name="Zanabazar Square"/>
+      <block first-cp="11A50" last-cp="11AAF" name="Soyombo"/>
+      <block first-cp="11AB0" last-cp="11ABF" name="Unified Canadian Aboriginal Syllabics Extended-A"/>
+      <block first-cp="11AC0" last-cp="11AFF" name="Pau Cin Hau"/>
+      <block first-cp="11B00" last-cp="11B5F" name="Devanagari Extended-A"/>
+      <block first-cp="11C00" last-cp="11C6F" name="Bhaiksuki"/>
+      <block first-cp="11C70" last-cp="11CBF" name="Marchen"/>
+      <block first-cp="11D00" last-cp="11D5F" name="Masaram Gondi"/>
+      <block first-cp="11D60" last-cp="11DAF" name="Gunjala Gondi"/>
+      <block first-cp="11EE0" last-cp="11EFF" name="Makasar"/>
+      <block first-cp="11F00" last-cp="11F5F" name="Kawi"/>
+      <block first-cp="11FB0" last-cp="11FBF" name="Lisu Supplement"/>
+      <block first-cp="11FC0" last-cp="11FFF" name="Tamil Supplement"/>
+      <block first-cp="12000" last-cp="123FF" name="Cuneiform"/>
+      <block first-cp="12400" last-cp="1247F" name="Cuneiform Numbers and Punctuation"/>
+      <block first-cp="12480" last-cp="1254F" name="Early Dynastic Cuneiform"/>
+      <block first-cp="12F90" last-cp="12FFF" name="Cypro-Minoan"/>
+      <block first-cp="13000" last-cp="1342F" name="Egyptian Hieroglyphs"/>
+      <block first-cp="13430" last-cp="1345F" name="Egyptian Hieroglyph Format Controls"/>
+      <block first-cp="14400" last-cp="1467F" name="Anatolian Hieroglyphs"/>
+      <block first-cp="16800" last-cp="16A3F" name="Bamum Supplement"/>
+      <block first-cp="16A40" last-cp="16A6F" name="Mro"/>
+      <block first-cp="16A70" last-cp="16ACF" name="Tangsa"/>
+      <block first-cp="16AD0" last-cp="16AFF" name="Bassa Vah"/>
+      <block first-cp="16B00" last-cp="16B8F" name="Pahawh Hmong"/>
+      <block first-cp="16E40" last-cp="16E9F" name="Medefaidrin"/>
+      <block first-cp="16F00" last-cp="16F9F" name="Miao"/>
+      <block first-cp="16FE0" last-cp="16FFF" name="Ideographic Symbols and Punctuation"/>
+      <block first-cp="17000" last-cp="187FF" name="Tangut"/>
+      <block first-cp="18800" last-cp="18AFF" name="Tangut Components"/>
+      <block first-cp="18B00" last-cp="18CFF" name="Khitan Small Script"/>
+      <block first-cp="18D00" last-cp="18D7F" name="Tangut Supplement"/>
+      <block first-cp="1AFF0" last-cp="1AFFF" name="Kana Extended-B"/>
+      <block first-cp="1B000" last-cp="1B0FF" name="Kana Supplement"/>
+      <block first-cp="1B100" last-cp="1B12F" name="Kana Extended-A"/>
+      <block first-cp="1B130" last-cp="1B16F" name="Small Kana Extension"/>
+      <block first-cp="1B170" last-cp="1B2FF" name="Nushu"/>
+      <block first-cp="1BC00" last-cp="1BC9F" name="Duployan"/>
+      <block first-cp="1BCA0" last-cp="1BCAF" name="Shorthand Format Controls"/>
+      <block first-cp="1CF00" last-cp="1CFCF" name="Znamenny Musical Notation"/>
+      <block first-cp="1D000" last-cp="1D0FF" name="Byzantine Musical Symbols"/>
+      <block first-cp="1D100" last-cp="1D1FF" name="Musical Symbols"/>
+      <block first-cp="1D200" last-cp="1D24F" name="Ancient Greek Musical Notation"/>
+      <block first-cp="1D2C0" last-cp="1D2DF" name="Kaktovik Numerals"/>
+      <block first-cp="1D2E0" last-cp="1D2FF" name="Mayan Numerals"/>
+      <block first-cp="1D300" last-cp="1D35F" name="Tai Xuan Jing Symbols"/>
+      <block first-cp="1D360" last-cp="1D37F" name="Counting Rod Numerals"/>
+      <block first-cp="1D400" last-cp="1D7FF" name="Mathematical Alphanumeric Symbols"/>
+      <block first-cp="1D800" last-cp="1DAAF" name="Sutton SignWriting"/>
+      <block first-cp="1DF00" last-cp="1DFFF" name="Latin Extended-G"/>
+      <block first-cp="1E000" last-cp="1E02F" name="Glagolitic Supplement"/>
+      <block first-cp="1E030" last-cp="1E08F" name="Cyrillic Extended-D"/>
+      <block first-cp="1E100" last-cp="1E14F" name="Nyiakeng Puachue Hmong"/>
+      <block first-cp="1E290" last-cp="1E2BF" name="Toto"/>
+      <block first-cp="1E2C0" last-cp="1E2FF" name="Wancho"/>
+      <block first-cp="1E4D0" last-cp="1E4FF" name="Nag Mundari"/>
+      <block first-cp="1E7E0" last-cp="1E7FF" name="Ethiopic Extended-B"/>
+      <block first-cp="1E800" last-cp="1E8DF" name="Mende Kikakui"/>
+      <block first-cp="1E900" last-cp="1E95F" name="Adlam"/>
+      <block first-cp="1EC70" last-cp="1ECBF" name="Indic Siyaq Numbers"/>
+      <block first-cp="1ED00" last-cp="1ED4F" name="Ottoman Siyaq Numbers"/>
+      <block first-cp="1EE00" last-cp="1EEFF" name="Arabic Mathematical Alphabetic Symbols"/>
+      <block first-cp="1F000" last-cp="1F02F" name="Mahjong Tiles"/>
+      <block first-cp="1F030" last-cp="1F09F" name="Domino Tiles"/>
+      <block first-cp="1F0A0" last-cp="1F0FF" name="Playing Cards"/>
+      <block first-cp="1F100" last-cp="1F1FF" name="Enclosed Alphanumeric Supplement"/>
+      <block first-cp="1F200" last-cp="1F2FF" name="Enclosed Ideographic Supplement"/>
+      <block first-cp="1F300" last-cp="1F5FF" name="Miscellaneous Symbols and Pictographs"/>
+      <block first-cp="1F600" last-cp="1F64F" name="Emoticons"/>
+      <block first-cp="1F650" last-cp="1F67F" name="Ornamental Dingbats"/>
+      <block first-cp="1F680" last-cp="1F6FF" name="Transport and Map Symbols"/>
+      <block first-cp="1F700" last-cp="1F77F" name="Alchemical Symbols"/>
+      <block first-cp="1F780" last-cp="1F7FF" name="Geometric Shapes Extended"/>
+      <block first-cp="1F800" last-cp="1F8FF" name="Supplemental Arrows-C"/>
+      <block first-cp="1F900" last-cp="1F9FF" name="Supplemental Symbols and Pictographs"/>
+      <block first-cp="1FA00" last-cp="1FA6F" name="Chess Symbols"/>
+      <block first-cp="1FA70" last-cp="1FAFF" name="Symbols and Pictographs Extended-A"/>
+      <block first-cp="1FB00" last-cp="1FBFF" name="Symbols for Legacy Computing"/>
+      <block first-cp="20000" last-cp="2A6DF" name="CJK Unified Ideographs Extension B"/>
+      <block first-cp="2A700" last-cp="2B73F" name="CJK Unified Ideographs Extension C"/>
+      <block first-cp="2B740" last-cp="2B81F" name="CJK Unified Ideographs Extension D"/>
+      <block first-cp="2B820" last-cp="2CEAF" name="CJK Unified Ideographs Extension E"/>
+      <block first-cp="2CEB0" last-cp="2EBEF" name="CJK Unified Ideographs Extension F"/>
+      <block first-cp="2EBF0" last-cp="2EE5F" name="CJK Unified Ideographs Extension I"/>
+      <block first-cp="2F800" last-cp="2FA1F" name="CJK Compatibility Ideographs Supplement"/>
+      <block first-cp="30000" last-cp="3134F" name="CJK Unified Ideographs Extension G"/>
+      <block first-cp="31350" last-cp="323AF" name="CJK Unified Ideographs Extension H"/>
+      <block first-cp="E0000" last-cp="E007F" name="Tags"/>
+      <block first-cp="E0100" last-cp="E01EF" name="Variation Selectors Supplement"/>
+      <block first-cp="F0000" last-cp="FFFFF" name="Supplementary Private Use Area-A"/>
+      <block first-cp="100000" last-cp="10FFFF" name="Supplementary Private Use Area-B"/>
+   </blocks>
