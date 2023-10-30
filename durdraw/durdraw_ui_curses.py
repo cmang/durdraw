@@ -1749,7 +1749,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
             self.addstr(realmaxY - 1, 0, f"block name: {block_list[selected_item_number]}")
             # print preview characters
+            errorLoadingBlock = False
             if block_list[selected_item_number] in set_list:    # not a unicode block
+                errorLoadingBlock = False
                 pass
             else:
                 previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
