@@ -8,6 +8,8 @@
 # 899             # block characters
 # 900             {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':     9632, 'f10':183 },    # ibm-pc looking block characters (but unicode instead of ascii)
 
+import pdb
+
 import pathlib
 import xml.etree.ElementTree as ET
 
@@ -91,7 +93,9 @@ def load_unicode_block(block_name: str):
         return charMap
     else:
         #print(f"Block '{block_name}' not found in the XML data.")
-        return none
+        # this should not happen, so...
+        #pdb.set_trace()
+        return None
 
 def get_unicode_blocks_list():
     xml_block_filename = pathlib.Path(__file__).parent.joinpath("charsets/unicode-groups.xml")

@@ -953,31 +953,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.fullCharMap = [ self.chMap ]
                 self.appState.colorPickChar = chr(219)  # ibm-pc/cp437 ansi block character
         elif self.appState.characterSet == "Unicode Block":
-            #self.chMap = {'f1':2591, 'f2':2592, 'f3':2593, 'f4':2588, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
-            #self.chMap = {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':9632, 'f10':183 }
-            #self.setUnicodeBlock(block="Symbols for Legacy Computing")
-            #self.setUnicodeBlock(block="Latin-1 Supplement")
-            #self.setUnicodeBlock(block="Cyrillic")
-            #self.setUnicodeBlock(block="Dingbats")
-            #self.setUnicodeBlock(block="Block Elements")
-            #self.setUnicodeBlock(block="Box Drawing")
-            #self.setUnicodeBlock(block="Control Pictures")
-            #self.setUnicodeBlock(block="Miscellaneous Technical")
-            #self.setUnicodeBlock(block="Chess Symbols")
-            #self.setUnicodeBlock(block="Egyptian Hieroglyphs")
-            #self.setUnicodeBlock(block="Emoticons")
-            #self.setUnicodeBlock(block="Alchemical Symbols")
-            #self.setUnicodeBlock(block="Miscellaneous Symbols")
-            #self.setUnicodeBlock(block="Playing Cards")
-            #self.setUnicodeBlock(block="Domino Tiles")
             self.setUnicodeBlock(block=self.appState.unicodeBlock)
             self.chMap = self.fullCharMap[self.charMapNumber]
-
-        # What the character map looks like on the screen
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
-                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
-                #self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'], )
+        self.refreshCharMap()
 
     def setCharacterSet(self, set_name):
         """ Set a Durdraw character set (not a Unicode block name) """
@@ -994,9 +972,11 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 miniSetName = f"{self.appState.characterSet[:3]}.."
             self.statusBar.charSetButton.label = miniSetName  # [Name..]
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
-                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        self.refreshCharMap()
+        #self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+        #self.chMapString = "F1%c F2%c F3%c F4%c F5%c F6%c F7%c F8%c F9%c F10%c " % \
+        #        (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
+        #        self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
 
     def nextCharSet(self):
         if self.charMapNumber == len(self.fullCharMap) - 1:
@@ -1015,6 +995,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def refreshCharMap(self):
         # checks self.charMapNumber and does the rest
         self.chMap = self.fullCharMap[self.charMapNumber]
+        #self.chMapString = "F1%c F2%c F3%c F4%c F5%c F6%c F7%c F8%c F9%c F10%c " % \
         self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
                 self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
@@ -1104,13 +1085,14 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
-        self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+        #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+        self.addstr(statusBarLineNum+1, chMapOffset-16, charSetNumberString, curses.color_pair(mainColor)) 
         #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0
-        for x in range(1,11): 
-            self.addstr(statusBarLineNum+1, chMapOffset+y, "F%i" % x, curses.color_pair(mainColor))
-            y = y + 3
+        #for x in range(1,11): 
+        #    self.addstr(statusBarLineNum+1, chMapOffset+y, "F%i" % x, curses.color_pair(mainColor))
+        #    y = y + 3
 
         # draw 16-color picker
         if self.appState.colorMode == "16":
@@ -1339,6 +1321,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.increaseFPS()
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
+                elif c in [75]: # alt-K = start marking selection
+                    startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
+                    self.startSelecting(firstkey=c)  # start selecting text
                 else:
                     if self.appState.debug: 
                         self.notify("keystroke: %d" % c) # alt-unknown
@@ -1471,6 +1456,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
                         self.eyeDrop(mouseX, mouseY)
+                    elif self.appState.cursorMode == "Select":   # Change the color under the cursor
+                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[0] = mouseY + self.appState.topLine
+                        self.startSelecting(mouse=True)
                 elif self.pressingButton:
                     self.pressingButton = False
                     print('\033[?1003l') # disable mouse reporting
@@ -1549,7 +1538,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # shift-up and shift-down not defined in ncurses :(
                 # doesn't seem to work in screen?
                 startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
-                self.startSelectingShift(c)  # start selecting text
+                self.startSelecting(firstkey=c)  # start selecting text
                 # pass c to something here that starts selecting and moves
                 # the cursor based on c, and knows whether it's selecting
                 # via shift-arrow or mouse.
@@ -1758,8 +1747,26 @@ class UserInterface():  # Separate view (curses) from this controller
             if search_string != "":
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
-            # debug
             self.addstr(realmaxY - 1, 0, f"block name: {block_list[selected_item_number]}")
+            # print preview characters
+            if block_list[selected_item_number] in set_list:    # not a unicode block
+                pass
+            else:
+                previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
+                previewChars = ""
+                maxChars = 80
+                totalChars = 0
+                for miniMap in previewCharMap:  # for all character sin this block...
+                    for key in miniMap:
+                        if totalChars <= maxChars:  # If we're within range,
+                            previewChars += chr(miniMap[key])   # add to the preview string
+                        totalChars += 1 
+                try:
+                    self.addstr(realmaxY - 4, 0, previewChars)
+                    errorLoadingBlock = False
+                except Exception as E:
+                    errorLoadingBlock = True
+                    self.addstr(realmaxY - 4, 0, "Cannot load this block")
 
             self.stdscr.refresh()
             c = self.stdscr.getch()
@@ -1813,7 +1820,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 if top_line < 0:    # for small file lists
                     top_line = 0
             elif c in [13, curses.KEY_ENTER]:
-                if block_list[selected_item_number] in set_list:
+                if errorLoadingBlock:
+                    pass
+                elif block_list[selected_item_number] in set_list:
                     # Durdraw character set selected. Set it
                     self.setCharacterSet(block_list[selected_item_number])
                     #self.appState.characterSet = block_list[selected_item_number]
@@ -3082,16 +3091,7 @@ Can use ESC or META instead of ALT
             self.mov.currentFrame.newColorMap.pop()
         self.refresh()
 
-    def startSelecting(self, startPoint):   # startpoint == (y,x) tuple, or (self.xy[0],self.xy[1])
-        """Mark selection for copy/cut/move - trigger with alt-m"""
-        # set start point to where the cursor is, wait for arrow keys, enter to select, or esc to cancel.
-        # when arrows are pressed, call a markBlock(x,y) function which redraws the block to be inverse.
-        # then ask the user what to do with it - copy, move, cut
-        # print message: "Select mode - Enter to select, Esc to cancel"
-        if self.appState.debug:
-            self.notify("Selection mode not yet implemented.")
-
-    def startSelectingShift(self, firstkey):   # firstkey is the key the user was
+    def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was
         #pressing. left, right, etc
         """Mark selection for copy/cut/move - trigger with shift-arrow-keys"""
         # any other key returns (cancels)
@@ -3301,11 +3301,6 @@ Can use ESC or META instead of ALT
         self.addstr(self.statusBarLineNum + 1, 0, " " * self.mov.sizeX) # clear upper status bar
         self.refresh()
  
-    def startSelectingMouse(self, c, startPoint):
-        """Mark selection for copy/cut/move - trigger with mouse click-drag"""
-        if self.appState.debug:
-            self.notify("Selection mode not yet implemented.")
-
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
         pass

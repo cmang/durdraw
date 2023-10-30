@@ -89,8 +89,11 @@ class AppState():
             }
         self.theme = self.theme_16
 
-    def setCursorModeSel(self):
+    def setCursorModeMove(self):
         self.cursorMode="Move"
+
+    def setCursorModeSelect(self):
+        self.cursorMode="Select"
 
     def setCursorModePnt(self):
         self.cursorMode="Draw"

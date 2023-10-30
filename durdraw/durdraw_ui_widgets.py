@@ -275,7 +275,8 @@ class StatusBar():
         toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
         toolMenu.set_title("Mouse Tools:")
         #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
-        toolMenu.add_item("Move", self.setCursorModeSel, "m")
+        toolMenu.add_item("Move", self.setCursorModeMove, "m")
+        toolMenu.add_item("Select", self.setCursorModeSelect, "s")
         toolMenu.add_item("Draw", self.setCursorModePnt, "d")
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
@@ -369,8 +370,13 @@ class StatusBar():
     def disableColorPicker(self):
         pass
 
-    def setCursorModeSel(self):
-        self.caller.appState.setCursorModeSel()
+    def setCursorModeMove(self):
+        self.caller.appState.setCursorModeMove()
+        self.toolButton.label = self.caller.appState.cursorMode
+        self.drawCharPickerButton.hide()
+
+    def setCursorModeSelect(self):
+        self.caller.appState.setCursorModeSelect()
         self.toolButton.label = self.caller.appState.cursorMode
         self.drawCharPickerButton.hide()
 
