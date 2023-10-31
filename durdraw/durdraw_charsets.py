@@ -94,7 +94,6 @@ def load_unicode_block(block_name: str):
     else:
         #print(f"Block '{block_name}' not found in the XML data.")
         # this should not happen, so...
-        #pdb.set_trace()
         return None
 
 def get_unicode_blocks_list():

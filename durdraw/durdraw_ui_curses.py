@@ -1725,13 +1725,19 @@ class UserInterface():  # Separate view (curses) from this controller
                 top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
             for blockname in block_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
+                    if blockname == self.appState.characterSet:     # currently used character set
+                        block_label = f"{block_list[current_line_number]} *"
+                    elif self.appState.characterSet == "Unicode Block" and blockname == self.appState.unicodeBlock:
+                        block_label = f"{block_list[current_line_number]} *"
+                    else:
+                        block_label = block_list[current_line_number]
                     if  selected_item_number == current_line_number:    # if block is selected
-                        self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.A_REVERSE)
+                        self.addstr(current_line_number - top_line, 0, block_label, curses.A_REVERSE)
                     else:
                         if block_list[current_line_number] in set_list:
-                            self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
+                            self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['menuTitleColor']))
                         else:
-                            self.addstr(current_line_number - top_line, 0, block_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
+                            self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']))
                 current_line_number += 1
 
             #if mask_all:
@@ -1747,18 +1753,18 @@ class UserInterface():  # Separate view (curses) from this controller
             if search_string != "":
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
-            self.addstr(realmaxY - 1, 0, f"block name: {block_list[selected_item_number]}")
             # print preview characters
             errorLoadingBlock = False
             if block_list[selected_item_number] in set_list:    # not a unicode block
                 errorLoadingBlock = False
-                pass
+                self.addstr(realmaxY - 1, 0, f"Character set: {block_list[selected_item_number]}")
             else:
                 previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
-                previewChars = ""
-                maxChars = 80
+                self.addstr(realmaxY - 1, 0, f"Unicode block: {block_list[selected_item_number]}")
+                previewChars = "Preview: "
+                maxChars = 100
                 totalChars = 0
-                for miniMap in previewCharMap:  # for all character sin this block...
+                for miniMap in previewCharMap:  # for all characters in this block...
                     for key in miniMap:
                         if totalChars <= maxChars:  # If we're within range,
                             previewChars += chr(miniMap[key])   # add to the preview string
@@ -1904,8 +1910,19 @@ class UserInterface():  # Separate view (curses) from this controller
                             top_line += 1
             else: # add to search string
                 search_string += chr(c)
+                search_string = search_string.lower()   # case insensitive search
                 for blockname in block_list:  # search list for search_string
-                    if blockname not in set_list and blockname.startswith(search_string):
+                    # prioritize unicode block names for some reason
+                    if blockname not in set_list and blockname.lower().startswith(search_string):
+                        selected_item_number = block_list.index(blockname)
+                        break   # stop at the first match
+                    # then search character sets
+                    elif blockname in set_list and blockname.lower().startswith(search_string):
+                        selected_item_number = block_list.index(blockname)
+                        break   # stop at the first match
+                    # Finally if nothing begins with the search string, see if
+                    # any items contain the search string
+                    elif search_string in blockname.lower():
                         selected_item_number = block_list.index(blockname)
                         break   # stop at the first match
 
