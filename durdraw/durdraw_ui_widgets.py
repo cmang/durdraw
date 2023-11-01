@@ -184,9 +184,11 @@ class ColorPicker:
         #pdb.set_trace()
         if self.hidden == True:
             self.hidden = False
+            self.caller.appState.colorPickerSelected = True
             self.show()
         elif self.hidden == False:
             self.hidden = True
+            self.caller.appState.colorPickerSelected = False
             self.hide()
 
     def show(self):
@@ -257,6 +259,9 @@ class StatusBar():
         mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
         mainMenu.add_item("Open", caller.openFromMenu, "o")
         mainMenu.add_item("Save", caller.save, "s")
+        mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
+        mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)

@@ -255,16 +255,28 @@ class UserInterface():  # Separate view (curses) from this controller
         self.colorbg = bg
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
 
+    def switchTo16ColorMode(self):
+        self.switchToColorMode("16")
+
+    def switchTo256ColorMode(self):
+        self.switchToColorMode("256")
+
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
             self.ansi.initColorPairs_cga()
-            if self.statusBar.colorPickerEnabled:
-                self.statusBar.enableColorPicker()
+            self.appState.colorMode = "16"
+            self.appState.loadThemeFromConfig("Theme-16")
+            self.statusBar.charSetButton.hide()
+            #if self.statusBar.colorPickerEnabled:
+            #    self.statusBar.enableColorPicker()
         if newMode == "256":
             self.ansi.initColorPairs_256color()
-            if not self.statusBar.colorPickerEnabled:
-                self.statusBar.disableColorPicker()
+            self.appState.colorMode = "256"
+            self.appState.loadThemeFromConfig("Theme-256")
+            self.statusBar.charSetButton.show()
+            #if not self.statusBar.colorPickerEnabled:
+            #    self.statusBar.disableColorPicker()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -1086,7 +1098,11 @@ class UserInterface():  # Separate view (curses) from this controller
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
         #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
-        self.addstr(statusBarLineNum+1, chMapOffset-16, charSetNumberString, curses.color_pair(mainColor)) 
+        if self.appState.colorMode == "16":   # put it to the right instead of the left, to make room for BG colors
+            self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+        #if self.appState.colorMode == 256:
+        else:
+            self.addstr(statusBarLineNum+1, chMapOffset-16, charSetNumberString, curses.color_pair(mainColor)) 
         #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0

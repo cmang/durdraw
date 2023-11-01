@@ -20,9 +20,13 @@ class AppState():
         self.totalBgColors = "128"
         self.defaultFgColor = 7
         self.defaultBgColor = 0
+        self.stickyColorPicker = True # true to keep color picker on screen
+        self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
         self.characterSet = "Durdraw Default"
+        # if self.characterSet == "Unicode Block" then Durdraw knows to use a
+        # unicode block:
         #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"
         self.cursorMode = "Move"  # Move/Select, Draw and Color

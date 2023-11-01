@@ -315,7 +315,7 @@ class ColorPickerHandler:
         self.panel = curses.panel.new_panel(self.curses_win)
         self.panel.hide()
         #self.fillChar = 9608    # unicode block
-        self.fillChar = self.appState.colorPickChar# unicode block
+        self.fillChar = self.appState.colorPickChar # unicode block
         self.origin = self.x - 2
         #self.move(0,self.x - 2)
         self.move(0,self.origin)
@@ -385,9 +385,12 @@ class ColorPickerHandler:
         self.panel.top()
         #self.move(0,self.x - 6)
         self.panel.show()
-        prompting = True
         oldColor = self.colorPicker.caller.colorfg
         color = self.colorPicker.caller.colorfg
+        if self.appState.colorPickerSelected:
+            prompting = True
+        else:
+            prompting = False
         while(prompting):
             time.sleep(0.01)
             self.colorPicker.caller.drawStatusBar()
@@ -421,7 +424,8 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
             elif c in [13, curses.KEY_ENTER]:   # Return, Accept color
-                self.hide()
+                if not self.appState.stickyColorPicker:
+                    self.hide()
                 prompting = False
                 pass
             elif c == curses.KEY_MOUSE:
@@ -436,16 +440,23 @@ class ColorPickerHandler:
                         if self.colorGrid[clickedLine][clickedCol] != 0:
                             color = self.colorGrid[clickedLine][clickedCol]
                             self.colorPicker.caller.setFgColor(color)
-                self.hide()
+                if not self.appState.stickyColorPicker:
+                    self.hide()
+                #self.hide()
                 prompting = False
             elif c == 27:  # normal esc, Cancel
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
                     self.colorPicker.caller.setFgColor(oldColor)
-                    self.hide()
+                    if not self.appState.stickyColorPicker:
+                        self.hide()
+                    #self.hide()
                     prompting = False
                     color = oldColor
-        self.hide()
+        self.appState.colorPickerSelected = False   # done prompting
+        if not self.appState.stickyColorPicker:
+            self.hide()
+        #self.hide()
         curses_cursorOn()
         self.window.nodelay(0)
         #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
