@@ -1,12 +1,4 @@
 # Load character sets from files, initialize them 
-# <block first-cp="1FB00" last-cp="1FBFF" name="Symbols for Legacy Computing"/>
-# We can return a charMap that looks like this: [ {'f1':\x1FB00, 
-# 895         self.fullCharMap = [ \
-# 896             # All of our unicode templates live here. Blank template:
-# 897             #{'f1':, 'f2':, 'f3':, 'f4':, 'f5':, 'f6':, 'f7':, 'f8':, 'f9':, 'f10':},
-# 898
-# 899             # block characters
-# 900             {'f1':9617, 'f2':9618, 'f3':9619, 'f4':9608, 'f5':9600, 'f6':9604, 'f7':9612, 'f8':9616, 'f9':     9632, 'f10':183 },    # ibm-pc looking block characters (but unicode instead of ascii)
 
 import pdb
 

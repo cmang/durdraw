@@ -145,6 +145,7 @@ class MenuHandler:
         #print('\033[?1003l') # disable mouse reporting
         borderColor = curses.color_pair(self.appState.theme['borderColor'])
         menuItemColor = curses.color_pair(self.appState.theme['menuItemColor'])
+        response = "Close"  # default thing to do when done, returned to menu wrapper
         while(prompting):
             time.sleep(0.01)
             line = 1
@@ -186,13 +187,17 @@ class MenuHandler:
                 # yikes lol
                 self.menu.items[options[current_option]]["on_click"]() 
             elif c in [98, curses.KEY_LEFT]:
-                pass
+                self.hide()
+                prompting = False
+                response = "Left"
                 #self.hide()
                 #prompting = False
                 # Here: Launch a different menu
                 #self.menu.statusBar.menuButton.on_click
             elif c in [102, curses.KEY_RIGHT]:
-                pass
+                self.hide()
+                prompting = False
+                response = "Right"
                 #self.hide()
                 #prompting = False
                 # Here: Launch a different menu
@@ -220,6 +225,8 @@ class MenuHandler:
         self.menu.hide()
         if not self.menu.caller.caller.playing:    # lol .. the caller.caller is the main UI thing
             self.window.nodelay(0)
+        #pdb.set_trace()
+        return response
         #curses_addstr(self.window, self.menu.x, self.menu.y, "Show menu")
 
     def refresh(self):

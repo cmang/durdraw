@@ -1274,9 +1274,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c ==121:       # alt-y - Eyedrop
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
-                    self.statusBar.menuButton.on_click() 
+                    self.openMenu("File")
+                    #self.statusBar.menuButton.on_click() 
                 elif c == 116: # or c =- 84:    # alt-t or alt-T - mouse tools menu
-                    self.statusBar.toolButton.on_click() 
+                    self.openMenu("Mouse Tools")
+                    #self.statusBar.toolButton.on_click() 
                 elif c == 99:     # alt-c - color picker
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPickerButton.on_click()
@@ -1707,6 +1709,37 @@ class UserInterface():  # Separate view (curses) from this controller
     def promptPrint(self, promptText):
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
+
+    def openMenu(self, current_menu: str):
+        menu_open = True
+        response = "Right"
+        menus = ["File", "Mouse Tools"]
+        #fail_count = 0  # debug
+        while menu_open:
+            if current_menu == "File":
+                response = self.statusBar.menuButton.on_click()
+            elif current_menu == "Mouse Tools":
+                response = self.statusBar.toolButton.on_click()
+            if response == "Close":
+                menu_open = False
+            elif response == "Right":
+                # if we're at the rightmost menu
+                if menus.index(current_menu) == len(menus) - 1:
+                    current_menu = menus[0] # circle back around
+                else:
+                    next_menu_index = menus.index(current_menu) + 1
+                    current_menu = menus[next_menu_index]
+            elif response == "Left":
+                # If we're at the leftmose menu
+                if menus.index(current_menu) == 0:
+                    next_menu_index = len(menus) - 1
+                    current_menu = menus[next_menu_index]
+                else:
+                    next_menu_index = menus.index(current_menu) - 1
+                    current_menu = menus[next_menu_index]
+            #fail_count += 1 # debug
+            #if fail_count > 3:
+            #    pdb.set_trace()
 
     def openFromMenu(self):
         load_filename = self.openFilePicker()

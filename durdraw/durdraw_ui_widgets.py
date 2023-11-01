@@ -73,9 +73,10 @@ class Button():
         if self.hidden == False:
             self.selected = True
             self.handler.draw()
-            self.handler.on_click()
+            result = self.handler.on_click()
             self.selected = False
             #self.handler.draw()
+        return result
 
     def handle_event(self, event):
         return self.handler.handle_event(event)
@@ -128,7 +129,8 @@ class Menu():
             button.show()
             #pdb.set_trace()
         self.hidden = False
-        self.handler.show()
+        response = self.handler.show()
+        return response
 
     def tryHotKey(self, key):
         """ Try a hotkey to see if it works """
@@ -142,7 +144,7 @@ class Menu():
 
     def showHide(self):
         if self.hidden == True:
-            self.show()
+            return self.show()
         else:
             self.hide()
 
