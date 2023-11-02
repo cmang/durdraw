@@ -559,7 +559,11 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def showAnimatedHelpScreen(self, page=1):
         self.appState.drawBorders = False
-        wasPlaying = self.playing
+        wasPlaying = self.playing   # push, to pop when we're done
+        oldTopLine = self.appState.topLine  # dito
+        oldFirstCol = self.appState.firstCol    # dito
+        self.appState.topLine = 0
+        self.appState.firstCol = 0
         self.playing = False
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
@@ -622,6 +626,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.playingHelpScreen = False
         self.stdscr.clear()
         self.playing = wasPlaying
+        self.topLine = oldTopLine
+        self.firstCol = oldFirstCol
         self.appState.drawBorders = True
 
     def startPlaying(self):
@@ -1774,9 +1780,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
             for blockname in block_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
+                    currentActiveSet = False
                     if blockname == self.appState.characterSet:     # currently used character set
+                        currentActiveSet = True
                         block_label = f"{block_list[current_line_number]} *"
                     elif self.appState.characterSet == "Unicode Block" and blockname == self.appState.unicodeBlock:
+                        currentActiveSet = True
                         block_label = f"{block_list[current_line_number]} *"
                     else:
                         block_label = block_list[current_line_number]
@@ -1784,9 +1793,15 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.addstr(current_line_number - top_line, 0, block_label, curses.A_REVERSE)
                     else:
                         if block_list[current_line_number] in set_list:
-                            self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['menuTitleColor']))
+                            if currentActiveSet:     # currently used character set
+                                self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD)
+                            else:
+                                self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['menuTitleColor']))
                         else:
-                            self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']))
+                            if currentActiveSet:
+                                self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']) | curses.A_BOLD)
+                            else:
+                                self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']))
                 current_line_number += 1
 
             #if mask_all:
