@@ -1464,20 +1464,20 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[0] = mouseY + self.appState.topLine
                         # Insert the selected character.
                         drawChar = self.appState.drawChar
-                        self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY, moveCursor=False, pushUndo=False)
+                        self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, moveCursor=False, pushUndo=False)
                         self.refresh()
 
                     elif self.appState.cursorMode == "Color":   # Change the color under the cursor
                         # also set cursor position
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
-                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY, pushUndo=False)
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, pushUndo=False)
                         self.refresh()
                     elif self.appState.cursorMode == "Erase":   # Erase character under the cursor
                         # also set cursor position
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
-                        self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY, pushUndo=False)
+                        self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
                         self.eyeDrop(mouseX, mouseY)
                     elif self.appState.cursorMode == "Select":   # Change the color under the cursor
