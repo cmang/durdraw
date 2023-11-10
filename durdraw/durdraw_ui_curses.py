@@ -489,11 +489,16 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.xy[1] = self.xy[1] + 1 
 
     def eyeDrop(self, col, line):
+        old_fg = self.colorfg
+        old_bg = self.colorbg
         fg, bg = self.mov.currentFrame.newColorMap[line][col]
-        self.colorfg = fg
-        self.colorbg = bg
-        self.setFgColor(self.colorfg)
-        self.setBgColor(self.colorbg)
+        fg, bg = self.mov.currentFrame.newColorMap[line][col]
+        try:
+            self.setFgColor(fg)
+            self.setBgColor(bg)
+        except:
+            self.setFgColor(old_fg)
+            self.setBgColor(old_bg)
 
     def clearCanvasPrompt(self):
         self.clearCanvas(prompting=True)
@@ -519,6 +524,31 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov = Movie(self.opts) # initialize a new movie
             self.setPlaybackRange(1, self.mov.frameCount)
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
+
+    def showTransformer(self):
+        """ Let the user pick transformations: Bounce, Repeat, Reverse """
+        self.clearStatusLine()
+        prompting = True
+        while prompting:
+            self.promptPrint("[B]ounce, [R]epeat, or Re[v]erse?")
+            c = self.stdscr.getch()
+            if c in [98]:  # b - bounce |> -> |><|
+                prompting = False
+            if c in [114]:  # r - repeat |> -> |>|>
+                prompting = False
+                self.transform_repeat()
+            if c in [118]:  # v - reverse |> -> <|
+                prompting = False
+                self.transform_reverse()
+            if c in [27]: # escape - cancel
+                prompting = False
+
+    def transform_repeat(self):
+        """ |>|> Clone all the frames in the range so they repeat once """
+        pass
+
+    def transform_reverse(self):
+        pass
 
     def moveCurrentFrame(self):
         self.undo.push()
@@ -704,7 +734,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 39:        # alt-' - erase line
                     self.delLine(frange=self.appState.playbackRange)
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
-                    self.statusBar.menuButton.on_click() 
+                    #self.statusBar.menuButton.on_click() 
+                    self.openMenu("File")
                 elif c == 99:     # alt-c - color picker
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPickerButton.on_click()
@@ -1045,7 +1076,11 @@ class UserInterface():  # Separate view (curses) from this controller
         clickColor = self.appState.theme['clickColor']
         
         # This has also become a bit of a window resize handler
-        self.clearStatusLine()
+        if not self.playing:
+            self.clearStatusLine()
+        else:
+            #self.clearStatusBarNoRefresh()
+            pass
         self.line_1_offset = 5
         line_1_offset = self.line_1_offset
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
@@ -1076,7 +1111,7 @@ class UserInterface():  # Separate view (curses) from this controller
             cp2 = self.colorpair
             pairs = len(self.ansi.colorPairMap) 
             try:
-                extColors =  curses.has_extended_color_support()
+                extColors = curses.has_extended_color_support()
             except:
                 extColors = False
             colorValue = curses.color_content(self.colorfg)
@@ -1724,8 +1759,10 @@ class UserInterface():  # Separate view (curses) from this controller
         while menu_open:
             if current_menu == "File":
                 response = self.statusBar.menuButton.on_click()
+                self.statusBar.menuButton.draw()    # redraw as unselected/not-inverse
             elif current_menu == "Mouse Tools":
                 response = self.statusBar.toolButton.on_click()
+                self.statusBar.toolButton.draw()    # redraw as unselected/not-inverse
             if response == "Close":
                 menu_open = False
             elif response == "Right":
@@ -2508,6 +2545,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
             try:    # Maybe it's a really old Pickle file...
                 if self.appState.debug: self.notify(f"Unpickling..")
+                pickle_fail = False
                 f.seek(0)
                 unpickler = durfile.DurUnpickler(f)
                 if self.appState.debug: self.notify(f"self.opts = unpickler.load()")
@@ -2519,8 +2557,25 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.debug: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
                 self.appState.playbackRange = (1,self.mov.frameCount)
             except Exception as e:
+                pickle_fail = True
                 if self.appState.debug:
                     self.notify(f"Exception in unpickling: {type(e)}: {e}", pause=True)
+            # If the first unpickling fails, try looking for another pickle format
+            if pickle_fail:
+                try:
+                    f.seek(0)
+                    if self.appState.debug: self.notify(f"self.opts = pickle.load(f ")
+                    self.opts = pickle.load(f)
+                    if self.appState.debug: self.notify(f"self.mov = pickle.load(f ")
+                    self.mov = pickle.load(f)
+                    self.appState.playbackRange = (1,self.mov.frameCount)
+                    pickle_fail = False
+                except Exception as e:
+                    if self.appState.debug:
+                        self.notify(f"Exception in unpickling other format: {type(e)}: {e}", pause=True)
+                    pickle_fail = True
+
+            if pickle_fail: # pickle is still failing
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
                 # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
                 # change this whole method to call loadDurFile(), loadAnsiFile(),
@@ -3378,6 +3433,11 @@ Can use ESC or META instead of ALT
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
                     else:
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
+    def clearStatusBarNoRefresh(self):
+        self.addstr(self.statusBarLineNum, 0, " " * self.mov.sizeX) # clear lower status bar
+        self.addstr(self.statusBarLineNum + 1, 0, " " * self.mov.sizeX) # clear upper status bar
+
    
     def clearStatusBar(self):
         self.addstr(self.statusBarLineNum, 0, " " * self.mov.sizeX) # clear lower status bar
