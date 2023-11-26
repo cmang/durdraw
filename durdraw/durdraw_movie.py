@@ -68,7 +68,7 @@ class Frame():
                 self.content[x].append(' ')
         self.initOldColorMap()
         #self.initColorMap()
-        self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
+        #self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
         self.setDelayValue(0)
 
     def setWidth(self, width):
@@ -96,14 +96,6 @@ class Frame():
         """ Builds a list of lists """
         return [[[fg,0] * self.sizeY] * self.sizeX]
 
-class MovieSettings():  # config, prefs, preferences, etc. Per movie. Separate from AppState options. Formerly Options()
-    """ Member variables are canvas X/Y size, Framerate, Video resolution, etc """
-    def __init__(self, width=80, height=23):         # default options
-        self.framerate = 2.0
-        self.sizeX = width
-        self.sizeY = height
-        #self.saveFileFormat = 4 # save file format version number
-
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
     def __init__(self, opts):
@@ -116,6 +108,12 @@ class Movie():
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+    def addFrame(self, frame):
+        """ takes a Frame object, adds it into the movie """
+        self.frames.append(frame)
+        self.frameCount += 1
+        return True
 
     def addEmptyFrame(self):
         newFrame = Frame(self.sizeX, self.sizeY)

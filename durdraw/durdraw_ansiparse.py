@@ -1,0 +1,300 @@
+#!/usr/bin/env python3 
+
+# Theory of operation:
+# A code starts with '\x1B[' or ^[ and ends with a LETTER.
+# The ltter is usually 'm' (for Select Graphic Rendition).
+# Note that it may end with a letter other than 'm' for some features,
+# like cursor movements. For example:
+# ^[3A means "move cursor up 3 lines"
+# A code looks like this: ^[1;32m for bold color 32. ^[0m for reset.
+# ^[0;4;3;42m for reset (0), underline (4), italic (3), background color (42).
+# We have a state machine that has attributes. Color, bold, underline, italic, etc.
+# 
+# Reference: https://en.wikipedia.org/wiki/ANSI_escape_code
+
+import sys
+import re
+import pdb
+import durdraw.durdraw_movie as durmovie
+import durdraw.durdraw_color_curses as dur_ansilib
+
+def ansi_color_to_durcolor(ansiColor):
+    colorName = ansi_color_to_durcolor_table[ansiColor]
+    durColor = color_name_to_durcolor_table[colorName]
+    return durColor
+
+ansi_color_to_durcolor_table = {
+    # foreground
+    '30': 'Black',
+    '31': 'Red',
+    '32': 'Green',
+    '33': 'Yellow',
+    '34': 'Blue',
+    '35': 'Magenta',
+    '36': 'Cyan',
+    '37': 'White',
+    # background
+    '40': 'Black',
+    '41': 'Red',
+    '42': 'Green',
+    '43': 'Yellow',
+    '44': 'Blue',
+    '45': 'Magenta',
+    '46': 'Cyan',
+    '47': 'White'
+}
+
+color_name_to_durcolor_table = {
+    'Black': 0,
+    'Red': 5,
+    'Green': 3,
+    'Yellow': 7,
+    'Blue': 2,
+    'Magenta': 6,
+    'Cyan': 4,
+    'White': 8,
+    
+    'Black': 00,
+    'Red': 00,
+    'Green': 00,
+    'Yellow': 00,
+    'Blue': 00,
+    'Magenta': 00,
+    'Cyan': 00,
+    'White': 00
+}
+
+
+def get_width_and_height_of_ansi_blob(text):
+    i = 0   # index into the file blob
+    col_num = 0
+    line_num = 0
+    max_col = 0
+    while i < len(text):
+        # If there's an escape code, extract data from it
+        if text[i:i + 2] == '\x1B[':    # Match ^[
+            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
+            end_index = match.start() + i   # where the code ends
+            i = end_index + 1
+            continue    # jump the while
+        # Or, not an escape character
+        elif text[i] == '\n':   # new line (LF)
+            line_num += 1
+            if col_num > max_col:
+                max_col = col_num
+            col_num = 0
+        elif text[i] == '\r':  # windows style newline (CR)
+            pass    # pfft
+        else:   # printable character (hopefully)
+            character = text[i]
+            col_num += 1
+        i += 1
+    print("")
+    width = max_col
+    height = line_num
+    return width, height
+
+def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, debug=False):
+    """ Take an ANSI file blob, load it into a DUR frame object, return 
+        frame """
+    width, height = get_width_and_height_of_ansi_blob(text)
+    width = max(width, 80)
+    height = max(height, 24)
+    new_frame = durmovie.Frame(width, height + 1)
+    #parsed_text = ''
+    #color_codes = ''
+    i = 0   # index into the file blob
+    col_num = 0
+    line_num = 0
+    max_col = 0
+    if appState:
+        default_fg_color = appState.defaultFgColor
+        default_bg_color = appState.defaultBgColor
+    else:
+        default_fg_color = 7
+        default_bg_color = 0
+    #default_fg_color = 8
+    fg_color = default_fg_color 
+    bg_color = default_bg_color 
+    bold = False
+    while i < len(text):
+        # If there's an escape code, extract data from it
+        if text[i:i + 2] == '\x1B[':    # Match ^[[
+            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
+            end_index = match.start() + i   # where the code ends
+            if text[end_index] == 'm':      # Color/SGR control code
+                escape_sequence = text[i + 2:end_index]
+                escape_codes = escape_sequence.split(';')
+                codeList = []
+                for code in escape_codes:
+                    try:
+                        codeList.append(int(code))
+                    except:
+                        if caller:
+                            pass
+                            #caller.notify(f"Error in byte {i}, char: {code}, line: {line_num}, col: {col_num}")
+                # 256 foreground color
+                if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3 and appState.colorMode == "256":
+                    fg_color = codeList.pop()
+                    codeList = [fg_color]
+                # 256 background color
+                elif codeList[0] == 48 and codeList[1] == 5 and len(codeList) == 3 and appState.colorMode == "256":
+                    bg_color = codeList.pop()
+                    codeList = [fg_color]
+                # Not a 256 color code - treat as 16 color
+                for code in codeList:
+                    if code == 0:   # reset
+                        fg_color = default_fg_color
+                        bg_color = default_bg_color
+                        bold = False
+                    if code == 1:   # bold
+                        bold = True
+                    # 16 Colors
+                    elif code > 29 and code < 38: # FG colors 0-8, or 30-37
+                        if appState.colorMode == "256":
+                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                        else:
+                            if bold:
+                                code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
+                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
+                    elif code > 39 and code < 48: # BG colors 0-8, or 40-47
+                        if appState.colorMode == "256":
+                            #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                            bg_color = 0
+                        else:
+                            #if bold:
+                            #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
+                            bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                            if bg_color == -1:
+                                bg_color = 0
+                    # 256 Colors
+                if console:    
+                    print(str(escape_codes), end="")
+
+                # Add color to color map
+                try:
+                    new_frame.newColorMap[line_num][col_num] = [fg_color, bg_color]
+                except Exception as E:
+                    if console:    
+                        print(str(E))
+                        print(f"line num: {line_num}")
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'A':      # Move the cursor up X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) > 0:
+                    move_by_amount = int(escape_sequence)
+                    line_num = line_num - move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'B':      # Move the cursor down X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) > 0:
+                    move_by_amount = int(escape_sequence)
+                    line_num += move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'C':      # Move the cursor forward X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) > 0:
+                    move_by_amount = int(escape_sequence)
+                    col_num += move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'D':      # Move the cursor back X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) > 0:
+                    move_by_amount = int(escape_sequence)
+                    col_num = col_num - move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'H':      # Move the cursor to row/column
+                escape_sequence = text[i + 2:end_index]
+                escape_codes = escape_sequence.split(';')
+                if len(escape_codes) > 1:   # row ; column
+                    line_num = int(escape_codes[0])
+                    col_num = int(escape_codes[0])
+                elif len(escape_codes) == 1:   # row, column=1
+                    #line_num = 1
+                    col_num = int(escape_codes[0])
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'J':      # Clear screen
+                # 0 or none = clear from cursor to end of screen
+                # 1 = from cursor to top of screen
+                # 2 = clear screen and move cursor to top left
+                # 3 = clear entire screen and delete all lines saved in the scrollback buffer
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = '0'   # default - clear from cursor to end
+                if escape_sequence == '2':  # cls, move to top left
+                    # using a sledgehammer to claer the screen
+                    new_frame = durmovie.Frame(width, height + 1)
+                    col_num, line_num = 0, 0
+                i = end_index + 1   # move on to next byte
+                continue
+            else:   # Some other escape code, who cares for now
+                i = end_index + 1   # move on to next byte
+                continue
+        # Or, not an escape character
+        elif text[i] == '\n':   # new line (LF)
+            line_num += 1
+            if col_num > max_col:
+                max_col = col_num
+            col_num = 0
+        elif text[i] == '\r':  # windows style newline (CR)
+            pass    # pfft
+        elif text[i] == '\x00': # Null byte
+            pass
+        else:   # printable character (hopefully)
+            character = text[i]
+            try:
+                new_frame.content[line_num][col_num] = character
+            except IndexError:
+                if debug:
+                    caller.notify(f"Error writing content. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}")
+            try:
+                new_frame.newColorMap[line_num][col_num] = [fg_color, bg_color]
+            except IndexError:
+                if debug:
+                    caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}")
+            if console:    
+                print(character, end='')
+            col_num += 1
+        i += 1
+    if console:    
+        print("")
+        print(f"Lines: {line_num}, Columns: {max_col}")
+    height = line_num
+    width = max_col
+    frame = durmovie.Frame(height, width)
+    line_num = 0
+    col_num = 0
+    # maybe usethis for the color: dur_ansilib.ansi_code_to_dur_16_color[fg_ansi]
+    return new_frame
+
+
+if __name__ == "__main__":
+    # Example usage
+    #file_path = 'kali.ans'
+    #file_path = '11.ANS'
+    file_path = '../rainbow.ans'
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+
+    with open(file_path, 'r') as file:
+        try:
+            text_with_escape_codes = file.read()
+        except UnicodeDecodeError:
+            file.close()
+            file = open(file_path, "r", encoding="cp437")
+            text_with_escape_codes = file.read()
+        #parsed_text, fg, bg = parse_ansi_escape_codes(text_with_escape_codes)
+        newFrame = parse_ansi_escape_codes(text_with_escape_codes,  console=True)
+        print(str(newFrame.newColorMap))
+        print(str(newFrame.content))
+        print(str(newFrame))
+        #print(parsed_text)
+        #print(f"Fg: {fg}, bg: {bg}")
+
+

@@ -26,6 +26,7 @@ from durdraw.durdraw_ui_widgets import StatusBar
 import durdraw.durdraw_gui_manager as durgui
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
+import durdraw.durdraw_ansiparse as dur_ansiparse
 import durdraw.durdraw_charsets as durchar
 
 class UserInterface():  # Separate view (curses) from this controller
@@ -2416,75 +2417,25 @@ class UserInterface():  # Separate view (curses) from this controller
                 raw_text = f.read() 
             except UnicodeDecodeError:
                 f.close()
+                if self.appState.charEncoding == 'utf-8':
+                    self.notify("This appears to be a CP437 ANSI/ASCII - Converting to Unicode.")
                 f = open(filename, 'r', encoding='cp437')
                 raw_text = f.read()
-            # Parse ansi escape codes, otherwise read text into buffer
-            while i < len(raw_text):
-                #if raw_text[i:i + 2] == '\x1B[':
-                #    # Find the index of 'm' after the escape sequence
-                #    end_index = raw_text.find('m', i)
-                #    if end_index != -1:
-                #        escape_sequence = raw_text[i + 2:end_index]
-                #        escape_codes = escape_sequence.split(';')
-                #        if len(escape_codes) > 2:
-                #            bg_ansi = escape_sequence.split(';')[2]
-                #            fg_ansi = escape_sequence.split(';')[1]
-                #            if self.appState.colorMode == '16':
-                #                try:
-                #                    fg = dur_ansilib.ansi_code_to_dur_16_color[fg_ansi]
-                #                    bg = dur_ansilib.ansi_code_to_dur_16_color[bg_ansi]
-                #                    if escape_sequence.split(';')[0] == 1:  # bold/bright color
-                #                        fg += 8
-                #                except:
-                #                    pass
-                #        #print(str(escape_sequence.split(';')))
-                #        #color_codes += str(color_code) + ' '
-                #        #if color_code in color_translation:
-                #        #    parsed_raw_text += color_translation[color_code]
-                #        i = end_index + 1
-                #        continue
-                #elif raw_text[i] in ['\n']:
-                if raw_text[i] in ['\n']:
-                    lineNum += 1
-                    colNum = 0
-                else:   # not an escape code..
-                    # write into movie
-                    if lineNum >= self.mov.sizeY:
-                        self.addLineToCanvas()
-                    if colNum >= self.mov.sizeX:
-                        self.addColToCanvas()
-                    try:
-                        self.mov.currentFrame.content[lineNum][colNum] = raw_text[i]
-                        self.mov.currentFrame.newColorMap[lineNum][colNum] = [fg, bg]
-                    except Exception as E:
-                        pdb.set_trace()
-                    #pdb.set_trace()
-                    colNum += 1
-                i +=1
+            # Load file into a new frame, make a new movie,
+            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, appState=self.appState, caller=self, debug=self.appState.debug)
+            self.appState.topLine = 0
+            newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
+            newMovie = Movie(newMovieOpts)
+            # add the frame with the loaded ANSI file to the movie
+            newMovie.addFrame(newFrame)
+            newMovie.deleteCurrentFrame()   # remove the blank first frame
 
-            #try:   # old ASCII file loading code
-            #    for line in f:
-            #        colNum = 0
-            #        if (lineNum < self.mov.sizeY):    # don't exceed canvas size
-            #            inBuffer = list(line.strip('\n').ljust(self.mov.sizeX)) # Returns line as 80 colNumumn list of chars
-            #            self.mov.currentFrame.content[lineNum] = inBuffer
-            #            #self.mov.currentFrame.newColorMap[lineNum][colNum] = [fg, bg]
-            #            self.mov.currentFrame.newColorMap[lineNum][colNum] = [3, 0]
-            #            #self.mov.currentFrame.newColorMap[colNum][lineNum] = [fg, bg]
-            #            colNum += 1
-            #        lineNum += 1
-            #except Exception as e:
-            #    print(str(e))
-            #    pdb.set_trace()
-            #    pass
-            #self.notify(f"Final fg/bg: {fg} {bg}")
-            #self.notify(f"Final line/col: {lineNum} {colNum}")
-            #self.notify(f"From color map: ({lineNum, colNum}), {self.mov.currentFrame.newColorMap[lineNum - 1][colNum]}")
+            self.mov = newMovie
 
             f.close()
             #self.notify(f"From color map at 1, 1: {self.mov.currentFrame.newColorMap[1][1]}")
-            for x in range(lineNum, self.mov.sizeY):   # clear out rest of contents.
-                self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
+            #for x in range(lineNum, self.mov.sizeY):   # clear out rest of contents.
+            #    self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
         elif loadFormat == 'dur':
             try:
                 f = open(filename, 'rb')

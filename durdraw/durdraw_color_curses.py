@@ -143,6 +143,15 @@ ansi_code_to_dur_16_color = {
     '36': 4,  # cyan
     '37': 8,  # grey/white
 
+    '90': 9,    # bright black?
+    '91': 13,   # bright red?
+    '92': 11,   # bright green?
+    '93': 15,   # bright yellow
+    '94': 10,   # bright blue
+    '95': 14,   # bright magenta
+    '96': 12,   # bright cyan
+    '97': 16,   # bright white
+
     '40': 0,  # black
     '41': 5,  # red
     '42': 3,  # green

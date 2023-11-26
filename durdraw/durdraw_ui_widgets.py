@@ -349,7 +349,8 @@ class StatusBar():
         self.items.append(menuButton)
         self.items.append(toolButton)
         self.items.append(drawCharPickerButton)
-        self.items.append(charSetButton)
+        if self.appState.colorMode != '16': # in 16 color mode, don't cover up the bg color picker
+            self.items.append(charSetButton)
         #self.items.append(fgBgColors)
         #self.items.append(self.swatch)
         self.buttons.append(menuButton)
