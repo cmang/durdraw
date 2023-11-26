@@ -2036,10 +2036,16 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         folders =  ["../"]
-        folders += glob.glob("*/")
         default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz']
         masks = default_masks
-        current_directory = os.getcwd()
+        if self.appState.workingLoadDirectory: 
+            if os.path.exists(self.appState.workingLoadDirectory):
+                current_directory = self.appState.workingLoadDirectory
+            else:
+                current_directory = os.getcwd()
+        else:
+            current_directory = os.getcwd()
+        folders += glob.glob(f"{current_directory}/*/")
         matched_files = []
         file_list = []
         for file in os.listdir(current_directory):
@@ -2181,6 +2187,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.stdscr.clear()
                     prompting = False
                     full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                    self.appState.workingLoadDirectory = current_directory
                     return full_path
             elif c == 27:   # esc key
                 if search_string != "":
@@ -2426,7 +2433,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 f = open(filename, 'r', encoding='cp437')
                 raw_text = f.read()
             # Load file into a new frame, make a new movie,
-            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, appState=self.appState, caller=self, debug=self.appState.debug)
+            default_width= 80   # default with for ANSI file
+            if filename[-4].lower() == ".diz" or filename.lower().endswith("file_id.ans"):
+                default_width = 44   # default with for file_id.diz
+            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=default_width)
             self.appState.topLine = 0
             newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
             newMovie = Movie(newMovieOpts)

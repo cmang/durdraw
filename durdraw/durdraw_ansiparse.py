@@ -65,7 +65,7 @@ color_name_to_durcolor_table = {
 }
 
 
-def get_width_and_height_of_ansi_blob(text):
+def get_width_and_height_of_ansi_blob(text, width=80):
     i = 0   # index into the file blob
     col_num = 0
     line_num = 0
@@ -86,7 +86,7 @@ def get_width_and_height_of_ansi_blob(text):
         elif text[i] == '\r':  # windows style newline (CR)
             pass    # pfft
         else:   # printable character (hopefully)
-            if col_num == 80:
+            if col_num == width:
                 col_num = 0
                 line_num += 1
             character = text[i]
@@ -98,13 +98,15 @@ def get_width_and_height_of_ansi_blob(text):
     height = line_num
     return width, height
 
-def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, debug=False):
+def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, debug=False, maxWidth=80):
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
-    width, height = get_width_and_height_of_ansi_blob(text)
-    width = max(width, 80)
+    width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
+    #width = max(width, maxWidth)
+    width = min(width, maxWidth)
     height = max(height, 24)
     new_frame = durmovie.Frame(width, height + 1)
+    caller.notify(f"debug: maxWidth = {maxWidth}")
     #parsed_text = ''
     #color_codes = ''
     i = 0   # index into the file blob
@@ -260,7 +262,7 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
         #elif text[i] == '\x02': # CTRL-B, STX (start text)
         #    pass
         else:   # printable character (hopefully)
-            if col_num == 80:
+            if col_num == maxWidth:
                 col_num = 0
                 line_num += 1
             character = text[i]

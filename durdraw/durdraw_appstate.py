@@ -25,6 +25,7 @@ class AppState():
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
         self.characterSet = "Durdraw Default"
+        self.workingLoadDirectory = None
         # if self.characterSet == "Unicode Block" then Durdraw knows to use a
         # unicode block:
         #self.characterSet = "Unicode Block"
