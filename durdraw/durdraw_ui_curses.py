@@ -1491,6 +1491,10 @@ class UserInterface():  # Separate view (curses) from this controller
                             if self.pushingToClip:
                                 self.pushingToClip = False
                             self.stdscr.redrawwin()
+                    #elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    #    self.move_cursor_down()
+                    #elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    #    self.move_cursor_down()
                     if self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1     # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
@@ -2033,7 +2037,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # get file list
         folders =  ["../"]
         folders += glob.glob("*/")
-        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt']
+        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz']
         masks = default_masks
         current_directory = os.getcwd()
         matched_files = []

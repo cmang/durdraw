@@ -307,38 +307,6 @@ def open_json_dur_file(f, appState):
     container = {'opts':newOpts, 'mov':newMov}
     return container
 
-def load_ansi_file(text):
-    """ This should load an ANSI either as a new movie, or import to an
-    existing movie as a new frame. Will return either a new movie or a
-    new frame.  Or.. just import into the current frame.
-    """
-    parsed_text = ''
-    #color_codes = ''
-    i = 0
-    fg_color = 7
-    bg_color = 0
-    while i < len(text):
-        if text[i:i + 2] == '\x1B[':
-            # Find the index of 'm' after the escape sequence
-            end_index = text.find('m', i)
-            if end_index != -1:
-                escape_sequence = text[i + 2:end_index]
-                escape_codes = escape_sequence.split(';')
-                if len(escape_codes) > 2:
-                    fg_color_ansi = escape_sequence.split(';')[1]
-                    bg_color_ansi = escape_sequence.split(';')[2]
-                print(str(escape_sequence.split(';')))
-                #color_codes += str(color_code) + ' '
-                #if color_code in color_translation:
-                #    parsed_text += color_translation[color_code]
-                i = end_index + 1
-                continue
-        parsed_text += str(fg_color) + ', '
-        parsed_text += str(bg_color)
-        parsed_text += text[i]
-        i += 1
-    return parsed_text, fg_color, bg_color
-
 def convert_old_color_to_new(oldPair, colorMode="16"):
     """ takes in a frame['colorMap'][x][y] list, returns a new list with
     [0] replaced by appropriately mapped # """
@@ -362,36 +330,6 @@ def convert_old_color_to_new(oldPair, colorMode="16"):
     #pdb.set_trace()
     return [newFg, newBg]
 
-def load_ascii_file(file):
-    width = 0   # will increase as we load the file
-    height = 0  # dito
-    newOpts = Options(width=width, height=height)
-    newOpts.framerate = loadedMovieData['DurMovie']['framerate']
-    newOpts.saveFileFormat = loadedMovieData['DurMovie']['formatVersion']
-    # load frames into a new movie object
-    newMov = Movie(newOpts)
-    currentFrame = 0
-    lineNum = 0
-    try:
-        if self.appState.debug: self.notify("Trying to open() file as ascii.")
-        f = open(filename, 'r')
-        self.appState.curOpenFileName = os.path.basename(filename)
-    except Exception as e:
-        #if self.appState.debug: self.notify(f"self.pts = pickle.load(f)")
-        self.notify(f"Could not open file for reading: {e}")
-        return None
-    # here we add the stuff to load the file into self.mov.currentFrame.content[][]
-    self.undo.push()
-    self.mov.currentFrame.initColorMap()
-    linecount = 0
-    for line in f:
-        if (linecount < self.mov.sizeY):    # don't exceed canvas size
-            inBuffer = list(line.strip('\n').ljust(self.mov.sizeX)) # Returns line as 80 column list of chars
-            self.mov.currentFrame.content[linecount] = inBuffer
-        linecount += 1
-    f.close()
-    for x in range(linecount, self.mov.sizeY):   # clear out rest of contents.
-         self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
 
 class DurUnpickler(pickle.Unpickler):
     """" Custom Unpickler to remove serialized module names (like __main__) from

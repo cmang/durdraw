@@ -86,6 +86,10 @@ def get_width_and_height_of_ansi_blob(text):
         elif text[i] == '\r':  # windows style newline (CR)
             pass    # pfft
         else:   # printable character (hopefully)
+            if col_num == 80:
+                col_num = 0
+                line_num += 1
+            character = text[i]
             character = text[i]
             col_num += 1
         i += 1
@@ -157,6 +161,8 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                             if bold:
                                 code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
                             fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
+                            if fg_color == -1:
+                                fg_color = 0
                     elif code > 39 and code < 48: # BG colors 0-8, or 40-47
                         if appState.colorMode == "256":
                             #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
@@ -234,6 +240,8 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                 i = end_index + 1   # move on to next byte
                 continue
             else:   # Some other escape code, who cares for now
+                if appState.debug:
+                    caller.notify(f"Unknown escape character type encountered: {text[end_index]}")
                 i = end_index + 1   # move on to next byte
                 continue
         # Or, not an escape character
@@ -246,7 +254,15 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
             pass    # pfft
         elif text[i] == '\x00': # Null byte
             pass
+        #elif text[i] == '\x01': # CTRL-A, SOH (start header).
+        #    # Q: Why is this in some ANSIs? A: Because it's a smiley face in CP437
+        #    pass
+        #elif text[i] == '\x02': # CTRL-B, STX (start text)
+        #    pass
         else:   # printable character (hopefully)
+            if col_num == 80:
+                col_num = 0
+                line_num += 1
             character = text[i]
             try:
                 new_frame.content[line_num][col_num] = character
