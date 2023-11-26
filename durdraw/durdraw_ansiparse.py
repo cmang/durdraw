@@ -102,23 +102,28 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
     width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
-    #width = max(width, maxWidth)
-    width = min(width, maxWidth)
+    width = max(width, maxWidth)
+    #width = min(width, maxWidth)
     height = max(height, 24)
     new_frame = durmovie.Frame(width, height + 1)
-    caller.notify(f"debug: maxWidth = {maxWidth}")
+    if appState.debug:
+        caller.notify(f"debug: maxWidth = {maxWidth}")
     #parsed_text = ''
     #color_codes = ''
     i = 0   # index into the file blob
     col_num = 0
     line_num = 0
     max_col = 0
-    if appState:
-        default_fg_color = appState.defaultFgColor
-        default_bg_color = appState.defaultBgColor
-    else:
-        default_fg_color = 7
-        default_bg_color = 0
+    #if appState:
+    #    default_fg_color = appState.defaultFgColor
+    #    default_bg_color = appState.defaultBgColor
+    #else:
+    #    default_fg_color = 7
+    #    default_fg_color = 7
+    #default_fg_color = 8
+    #default_bg_color = 0
+    default_fg_color = appState.defaultFgColor
+    default_bg_color = appState.defaultBgColor
     #default_fg_color = 8
     fg_color = default_fg_color 
     bg_color = default_bg_color 
@@ -165,6 +170,8 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                             fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
                             if fg_color == -1:
                                 fg_color = 0
+                            #if bold:
+                            #    fg_color += 8
                     elif code > 39 and code < 48: # BG colors 0-8, or 40-47
                         if appState.colorMode == "256":
                             #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
@@ -190,30 +197,34 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                 continue    # jump the while
             elif text[end_index] == 'A':      # Move the cursor up X spaces
                 escape_sequence = text[i + 2:end_index]
-                if len(escape_sequence) > 0:
-                    move_by_amount = int(escape_sequence)
-                    line_num = line_num - move_by_amount
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                line_num = line_num - move_by_amount
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'B':      # Move the cursor down X spaces
                 escape_sequence = text[i + 2:end_index]
-                if len(escape_sequence) > 0:
-                    move_by_amount = int(escape_sequence)
-                    line_num += move_by_amount
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                line_num += move_by_amount
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'C':      # Move the cursor forward X spaces
                 escape_sequence = text[i + 2:end_index]
-                if len(escape_sequence) > 0:
-                    move_by_amount = int(escape_sequence)
-                    col_num += move_by_amount
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                col_num += move_by_amount
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'D':      # Move the cursor back X spaces
                 escape_sequence = text[i + 2:end_index]
-                if len(escape_sequence) > 0:
-                    move_by_amount = int(escape_sequence)
-                    col_num = col_num - move_by_amount
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                col_num = col_num - move_by_amount
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'H':      # Move the cursor to row/column

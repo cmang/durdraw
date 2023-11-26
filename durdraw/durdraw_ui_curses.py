@@ -95,6 +95,7 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             self.colorfg = 8    # default fg white
             self.colorbg = 8    # default bg black
+            self.appState.defaultFgColor = 8
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self, appState = self.appState)   # initialize undo/redo system
@@ -2045,7 +2046,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 current_directory = os.getcwd()
         else:
             current_directory = os.getcwd()
-        folders += glob.glob(f"{current_directory}/*/")
+        folders += sorted(glob.glob(f"{current_directory}/*/"))
         matched_files = []
         file_list = []
         for file in os.listdir(current_directory):
@@ -2164,7 +2165,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             current_directory = current_directory[:-1]
                     # get file list
                     folders =  ["../"]
-                    folders += glob.glob("*/", root_dir=current_directory)
+                    folders += sorted(glob.glob("*/", root_dir=current_directory))
                     if mask_all:
                         masks = ['*.*']
                     else:
@@ -3060,7 +3061,7 @@ Can use ESC or META instead of ALT
                     cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
-                if charColor[0] > 8 and charColor[0] < 16 and self.appState.colorMode == "16":    # bright color
+                if charColor[0] >= 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
                     self.addstr(screenLineNum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 else:
                     self.addstr(screenLineNum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))

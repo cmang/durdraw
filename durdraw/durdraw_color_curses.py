@@ -495,8 +495,9 @@ class AnsiArtStuff():
              (7,1):51, (7,2):52, (7,3):53, (7,4):54, (7,5):55, (7,6):56, (7,7):57,
              # black with background colors
              (8,1):58, (8,2):59, (8,3):60, (8,4):61, (8,5):62, (8,6):63, 
-             (8,7):57,  # 57 instead of 64, because we switch color maps for black
+             #(8,7):57,  # 57 instead of 64, because we switch color maps for black
              # on red
+             (8,7):64, 
              # BRIGHT COLORS 9-16
              # white with backround colors 
              (9,0):1, (9,8):1, (9,1):9, (9,2):10, (9,3):11, (9,4):12, (9,5):13, (9,6):14, (9,7):15,
@@ -514,7 +515,8 @@ class AnsiArtStuff():
              (15,0):7, (15,8):7, (15,1):51, (15,2):52, (15,3):53, (15,4):54, (15,5):55, (15,6):56, (15,7):57,
              # black with background colors
              (16,0):8, (16,8):8, (16,1):58, (16,2):59, (16,3):60, (16,4):61, (16,5):62, (16,6):63, 
-             (16,7):57,  # 57 instead of 64, because we switch color maps for black
+             #(16,7):57,  # 57 instead of 64, because we switch color maps for black
+             (16,7):64,  
              } # (fg,bg):cursespair
 
     def initColorPairs_cga_old(self):
