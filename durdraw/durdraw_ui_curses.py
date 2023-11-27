@@ -527,6 +527,21 @@ class UserInterface():  # Separate view (curses) from this controller
             self.setPlaybackRange(1, self.mov.frameCount)
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
 
+    def showCharInspector(self):
+        line = self.xy[0]
+        col = self.xy[1] - 1
+        character = self.mov.currentFrame.content[line][col]
+        fg = self.mov.currentFrame.newColorMap[line][col][0]
+        bg = self.mov.currentFrame.newColorMap[line][col][1]
+        inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}"
+        self.notify(inspectorString, pause=True)
+
+    def showFileInformation(self):
+        # eventually show a pop-up window with editable sauce info
+        fileName = self.appState.curOpenFileName
+        infoString = f"Name: {fileName}"
+        self.notify(infoString, pause=True)
+
     def showTransformer(self):
         """ Let the user pick transformations: Bounce, Repeat, Reverse """
         self.clearStatusLine()
@@ -1298,7 +1313,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.nextCharSet()
                 elif c == 83:       # alt-S - pick a character set or unicode block
                     self.showCharSetPicker()
-                elif c == 44:      # alt-, - erase/pop current column in frame
+                elif c == 44:       # alt-, - erase/pop current column in frame
                     self.delCol()
                 elif c == 46:       # alt-. - insert column in frame
                     self.addCol()
@@ -1308,14 +1323,18 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.delColFromCanvas()
                 elif c == 34:       # alt-" - insert line in canvas
                     self.addLineToCanvas()
-                elif c == 58:        # alt-: - erase line from canvas
+                elif c == 58:       # alt-: - erase line from canvas
                     self.delLineFromCanvas()
-                elif c == 47:      # alt-/ - insert line
+                elif c == 47:       # alt-/ - insert line
                     self.addLine()
-                elif c == 39:        # alt-' - erase line
+                elif c == 39:       # alt-' - erase line
                     self.delLine()
-                elif c ==121:       # alt-y - Eyedrop
+                elif c == 121:      # alt-y - Eyedrop
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
+                elif c == 73:       # alt-I - Character Inspector
+                    self.showCharInspector()
+                elif c == 105:      # alt-i - File/Canvas Information
+                    self.showFileInformation()
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.openMenu("File")
                     #self.statusBar.menuButton.on_click() 
@@ -3061,7 +3080,7 @@ Can use ESC or META instead of ALT
                     cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
-                if charColor[0] >= 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
+                if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
                     self.addstr(screenLineNum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 else:
                     self.addstr(screenLineNum, colnum, str(line[colnum]), curses.color_pair(cursesColorPair))

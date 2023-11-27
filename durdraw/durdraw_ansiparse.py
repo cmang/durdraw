@@ -75,6 +75,69 @@ def get_width_and_height_of_ansi_blob(text, width=80):
         if text[i:i + 2] == '\x1B[':    # Match ^[
             match = re.search('[a-zA-Z]', text[i:]) # match any control code 
             end_index = match.start() + i   # where the code ends
+            if text[end_index] == 'A':      # Move the cursor up X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                line_num = line_num - move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'B':      # Move the cursor down X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                line_num += move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'C':      # Move the cursor forward X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                col_num += move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'D':      # Move the cursor back X spaces
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = 1
+                move_by_amount = int(escape_sequence)
+                col_num = col_num - move_by_amount
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'H':      # Move the cursor to row/column
+                escape_sequence = text[i + 2:end_index]
+                escape_codes = escape_sequence.split(';')
+                if len(escape_codes) > 1:   # row ; column
+                    line_num = int(escape_codes[0])
+                    col_num = int(escape_codes[0])
+                elif len(escape_codes) == 1:   # row, column=1
+                    #line_num = 1
+                    col_num = int(escape_codes[0])
+                i = end_index + 1
+                continue    # jump the while
+            elif text[end_index] == 'J':      # Clear screen
+                # 0 or none = clear from cursor to end of screen
+                # 1 = from cursor to top of screen
+                # 2 = clear screen and move cursor to top left
+                # 3 = clear entire screen and delete all lines saved in the scrollback buffer
+                escape_sequence = text[i + 2:end_index]
+                if len(escape_sequence) == 0:
+                    escape_sequence = '0'   # default - clear from cursor to end
+                if escape_sequence == '2':  # cls, move to top left
+                    # using a sledgehammer to claer the screen
+                    #new_frame = durmovie.Frame(width, height + 1)
+                    col_num, line_num = 0, 0
+                i = end_index + 1   # move on to next byte
+                continue
+            elif text[end_index] == 's':    # save current position/state
+                saved_col_num = col_num
+                saved_line_num = line_num
+            elif text[end_index] == 'u':    # restore saved position/state
+                col_num = saved_col_num
+                line_num = saved_line_num
             i = end_index + 1
             continue    # jump the while
         # Or, not an escape character
@@ -103,8 +166,11 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
         frame """
     width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
     width = max(width, maxWidth)
+    height += 1
+    if appState.debug:
+        caller.notify(f"Guessed width: {width}, height: {height}")
     #width = min(width, maxWidth)
-    height = max(height, 24)
+    height = max(height, 25)
     new_frame = durmovie.Frame(width, height + 1)
     if appState.debug:
         caller.notify(f"debug: maxWidth = {maxWidth}")
@@ -128,6 +194,9 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
     fg_color = default_fg_color 
     bg_color = default_bg_color 
     bold = False
+    saved_col_num = 0
+    saved_line_num = 0
+    saved_byte_location = 0
     while i < len(text):
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
@@ -252,6 +321,19 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                     col_num, line_num = 0, 0
                 i = end_index + 1   # move on to next byte
                 continue
+            elif text[end_index] == 's':    # save current position/state
+                #saved_col_num = col_num
+                #saved_line_num = line_num
+                i = end_index + 1   # move on to next byte
+                #saved_byte_location = i
+                continue
+            elif text[end_index] == 'u':    # restore saved position/state
+                #col_num = saved_col_num
+                #line_num = saved_line_num
+                #i = saved_byte_location
+                i = end_index + 1   # move on to next byte
+                #pdb.set_trace()
+                continue
             else:   # Some other escape code, who cares for now
                 if appState.debug:
                     caller.notify(f"Unknown escape character type encountered: {text[end_index]}")
@@ -281,7 +363,7 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                 new_frame.content[line_num][col_num] = character
             except IndexError:
                 if debug:
-                    caller.notify(f"Error writing content. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}")
+                    caller.notify(f"Error writing content. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, char: {character}")
             try:
                 new_frame.newColorMap[line_num][col_num] = [fg_color, bg_color]
             except IndexError:
