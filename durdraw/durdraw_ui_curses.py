@@ -1676,7 +1676,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[0] = bottomLine
 
     def move_cursor_topleft(self):
-        self.xy[0] = 0
+        self.xy[0] = 1
         self.xy[1] = 1
         self.refresh()
 
@@ -2544,7 +2544,7 @@ class UserInterface():  # Separate view (curses) from this controller
             except Exception as e:
                 pickle_fail = True
                 if self.appState.debug:
-                    self.notify(f"Exception in unpickling: {type(e)}: {e}", pause=True)
+                    self.notify(f"Exception in unpickling: {type(e)}: {e}")
             # If the first unpickling fails, try looking for another pickle format
             if pickle_fail:
                 try:
@@ -2557,7 +2557,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     pickle_fail = False
                 except Exception as e:
                     if self.appState.debug:
-                        self.notify(f"Exception in unpickling other format: {type(e)}: {e}", pause=True)
+                        self.notify(f"Exception in unpickling other format: {type(e)}: {e}")
                     pickle_fail = True
 
             if pickle_fail: # pickle is still failing

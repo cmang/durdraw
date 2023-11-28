@@ -498,6 +498,9 @@ class AnsiArtStuff():
              #(8,7):57,  # 57 instead of 64, because we switch color maps for black
              # on red
              (8,7):64, 
+             # Again, this time with feeling
+             (0,1):58, (0,2):59, (0,3):60, (0,4):61, (0,5):62, (0,6):63, 
+             (0,7):57,  
              # BRIGHT COLORS 9-16
              # white with backround colors 
              (9,0):1, (9,8):1, (9,1):9, (9,2):10, (9,3):11, (9,4):12, (9,5):13, (9,6):14, (9,7):15,

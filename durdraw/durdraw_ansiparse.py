@@ -197,6 +197,7 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
     saved_col_num = 0
     saved_line_num = 0
     saved_byte_location = 0
+    parse_error = False
     while i < len(text):
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
@@ -229,18 +230,36 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                         bold = False
                     if code == 1:   # bold
                         bold = True
+                    # In case we're still using a previous color with new attributes
+                    if fg_color < 9:  # sledgehammer
+                        if bold:
+                            fg_color += 8
                     # 16 Colors
-                    elif code > 29 and code < 38: # FG colors 0-8, or 30-37
+                    if code > 29 and code < 38: # FG colors 0-8, or 30-37
+                        if bold:
+                            code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
+                            #bold = False
                         if appState.colorMode == "256":
                             fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
                         else:
-                            if bold:
-                                code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
+                            #if bold:
+                            #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
                             fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
-                            if fg_color == -1:
-                                fg_color = 0
                             #if bold:
                             #    fg_color += 8
+                        # fix for durdraw color pair stupidity
+                        if fg_color == -1 or fg_color == 0: # black fg and bright black fg fix
+                            if bold:
+                                fg_color = 9
+                            else:
+                                fg_color = 1
+                        #if fg_color == 8:   # bright white fix
+                        #    if bold:
+                        #        fg_color = 16
+                        #bold = False
+                        if fg_color < 9:  # sledgehammer
+                            if bold:
+                                fg_color += 8
                     elif code > 39 and code < 48: # BG colors 0-8, or 40-47
                         if appState.colorMode == "256":
                             #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
@@ -251,6 +270,11 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
                             bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
                             if bg_color == -1:
                                 bg_color = 0
+                    if fg_color == -1 or fg_color == 0: # black fg and bright black fg fix
+                        if bold:
+                            fg_color = 9
+                        else:
+                            fg_color = 1
                     # 256 Colors
                 if console:    
                     print(str(escape_codes), end="")
@@ -362,13 +386,15 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
             try:
                 new_frame.content[line_num][col_num] = character
             except IndexError:
+                parse_error = True
                 if debug:
-                    caller.notify(f"Error writing content. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, char: {character}")
+                    caller.notify(f"Error writing content. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, char: {character}, pos: {i}")
             try:
                 new_frame.newColorMap[line_num][col_num] = [fg_color, bg_color]
             except IndexError:
+                parse_error = True
                 if debug:
-                    caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}")
+                    caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, pos: {i}")
             if console:    
                 print(character, end='')
             col_num += 1
@@ -376,6 +402,8 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
     if console:    
         print("")
         print(f"Lines: {line_num}, Columns: {max_col}")
+    if parse_error:
+        caller.notify(f"There were errors detected while loading this file. It may not display correctly.")
     height = line_num
     width = max_col
     frame = durmovie.Frame(height, width)
