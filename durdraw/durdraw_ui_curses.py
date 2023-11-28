@@ -2056,7 +2056,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         folders =  ["../"]
-        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz']
+        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo']
         masks = default_masks
         if self.appState.workingLoadDirectory: 
             if os.path.exists(self.appState.workingLoadDirectory):
@@ -2065,7 +2065,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 current_directory = os.getcwd()
         else:
             current_directory = os.getcwd()
-        folders += sorted(glob.glob(f"{current_directory}/*/"))
+        #folders += sorted(glob.glob(f"{current_directory}/*/"))
+        folders += sorted(glob.glob("*/", root_dir=current_directory))
         matched_files = []
         file_list = []
         for file in os.listdir(current_directory):
