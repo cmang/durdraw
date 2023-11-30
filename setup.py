@@ -18,7 +18,8 @@ setup(
     packages=['durdraw'],
     install_requires=['pillow', 'windows-curses;platform_system=="Windows"'],
     include_package_data = True, 
-    package_data = {'durdraw': ["help/*"]}, # help/durhelp.dur
+    package_data = {'durdraw': ["help/*", "charsets/*", "themes/*"]},
+    #package_data = {'durdraw': ["charsets/*"]},
     data_files = [
     #    ('share/icons', ['data/durdraw.png']),
     #    ('share/applications', ['data/durdraw.desktop']),

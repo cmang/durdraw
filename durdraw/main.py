@@ -141,9 +141,11 @@ def main():
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
-    durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page1.dur")
+    durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur")
+    #durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page1.dur")
     durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
-    durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page1.dur")
+    durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-long.dur")
+    #durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page1.dur")
     durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
     app.durhelp256_fullpath = durhelp256_fullpath
     app.durhelp256_page2_fullpath = durhelp256_page2_fullpath

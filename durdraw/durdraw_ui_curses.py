@@ -533,13 +533,20 @@ class UserInterface():  # Separate view (curses) from this controller
         character = self.mov.currentFrame.content[line][col]
         fg = self.mov.currentFrame.newColorMap[line][col][0]
         bg = self.mov.currentFrame.newColorMap[line][col][1]
-        inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}"
+        charType = self.appState.charEncoding
+        if charType == "utf-8":
+            charValue = "U+" + str(hex(ord(character)))[2:]    # aye chihuahua
+        else:
+            charValue = ord(character)  # ascii/cp437
+        inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         self.notify(inspectorString, pause=True)
 
     def showFileInformation(self):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
-        infoString = f"Name: {fileName}"
+        author = self.appState.sauce.author
+        title = self.appState.sauce.title
+        infoString = f"file: {fileName}, author: {author}, title: {title}"
         self.notify(infoString, pause=True)
 
     def showTransformer(self):
@@ -604,6 +611,96 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.opts.framerate != 1.0: # min 1fps
             self.opts.framerate -= 1
 
+    def showScrollingHelpScreen(self):
+        self.appState.drawBorders = False
+
+        wasPlaying = self.playing   # push, to pop when we're done
+        oldTopLine = self.appState.topLine  # dito
+        oldFirstCol = self.appState.firstCol    # dito
+
+        self.appState.topLine = 0
+        self.appState.firstCol = 0
+        self.playing = False
+        self.stdscr.nodelay(1) # do not wait for input when calling getch
+        last_time = time.time()
+        self.cursorOff()
+        self.playingHelpScreen = True
+        self.appState.playingHelpScreen = True
+        new_time = time.time()
+        helpMov = self.appState.helpMov
+        #if page == 1:
+        #    sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #elif page == 2:
+        #    sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
+        sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        helpMov.gotoFrame(1)
+        self.stdscr.clear()
+        self.clearStatusLine()
+        self.promptPrint("* Press the any key (or click) to continue *")
+        clickColor = self.appState.theme['clickColor']
+        promptColor = self.appState.theme['promptColor']
+        self.addstr(self.statusBarLineNum - 1, 0, "You can use ALT or META instead of ESC. Everything this color is clickable", curses.color_pair(promptColor))
+        self.addstr(self.statusBarLineNum - 1, 51, "this color", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(self.statusBarLineNum - 1, 65, "clickable", curses.color_pair(clickColor) | curses.A_BOLD)
+        while self.playingHelpScreen:
+            self.move(self.xy[0], self.xy[1])
+            self.refresh()
+            # Instead, search and replace the darwing for durVer, colorMode etc
+            #if page == 2:
+            #    self.addstr(12, 51, f"{self.appState.durVer}", curses.color_pair(promptColor))
+            #    self.addstr(13, 54, f"{self.appState.colorMode}", curses.color_pair(promptColor))
+            #    self.addstr(14, 62, f"{self.appState.charEncoding}", curses.color_pair(promptColor))
+            c = self.stdscr.getch()
+            if c in [curses.KEY_UP, ord('k')]:
+                if self.appState.topLine > 0:
+                    self.appState.topLine = self.appState.topLine - 1
+            elif c in [curses.KEY_DOWN, ord('j')]:
+                if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
+                    self.appState.topLine += 1
+            elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+                self.appState.topLine = self.appState.topLine - self.realmaxY + 3
+                if self.appState.topLine < 0:
+                    self.appState.topLine = 0
+            elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+                self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+                if self.appState.topLine > helpMov.sizeY - self.realmaxY:
+                    self.appState.topLine = helpMov.sizeY - self.realmaxY + 2
+            elif c in [339, curses.KEY_HOME]:  # 339 = home
+                self.appState.topLine = 0
+            elif c in [338, curses.KEY_END]:   # 338 = end
+                self.appState.topLine = helpMov.sizeY - self.realmaxY + 2
+            #elif c != -1:   # -1 means no keys are pressed.
+            #elif c == curses.KEY_ENTER:
+            elif c in [10, 13, curses.KEY_ENTER, 27, ord('q')]:   # 27 == escape key
+                self.playingHelpScreen = False
+            new_time = time.time()
+            frame_delay = helpMov.currentFrame.delay
+            if frame_delay > 0:
+                realDelayTime = frame_delay
+            else:
+                realDelayTime = sleep_time
+            if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+                last_time = new_time
+                # draw animation
+                if helpMov.currentFrameNumber == helpMov.frameCount:
+                    helpMov.gotoFrame(1)
+                else:
+                    helpMov.nextFrame()
+            else:
+                time.sleep(0.008) # to keep from sucking up cpu
+        if not wasPlaying:
+            self.stdscr.nodelay(0) # back to wait for input when calling getch
+        self.cursorOn()
+        self.appState.playingHelpScreen = False
+        self.appState.playingHelpScreen_2 = False
+        self.playingHelpScreen = False
+        self.stdscr.clear()
+        # pop old state
+        self.playing = wasPlaying
+        self.appState.topLine = oldTopLine
+        self.appState.firstCol = oldFirstCol
+        self.appState.drawBorders = True
+
     def showAnimatedHelpScreen(self, page=1):
         self.appState.drawBorders = False
         wasPlaying = self.playing   # push, to pop when we're done
@@ -621,7 +718,6 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.playingHelpScreen_2 = True
         else:
             self.appState.playingHelpScreen_2 = False
-        playedTimes=1
         new_time = time.time()
         if page == 2:
             helpMov = self.appState.helpMov_2
@@ -673,8 +769,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.playingHelpScreen = False
         self.stdscr.clear()
         self.playing = wasPlaying
-        self.topLine = oldTopLine
-        self.firstCol = oldFirstCol
+        self.appState.topLine = oldTopLine
+        self.appState.firstCol = oldFirstCol
         self.appState.drawBorders = True
 
     def startPlaying(self):
@@ -2056,7 +2152,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         folders =  ["../"]
-        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo']
+        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice']
         masks = default_masks
         if self.appState.workingLoadDirectory: 
             if os.path.exists(self.appState.workingLoadDirectory):
@@ -2457,7 +2553,7 @@ class UserInterface():  # Separate view (curses) from this controller
             default_width= 80   # default with for ANSI file
             if filename[-4].lower() == ".diz" or filename.lower().endswith("file_id.ans"):
                 default_width = 44   # default with for file_id.diz
-            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=default_width)
+            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=default_width)
             self.appState.topLine = 0
             newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
             newMovie = Movie(newMovieOpts)
@@ -3006,8 +3102,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def showHelp(self):
         if self.appState.hasHelpFile:
-            self.showAnimatedHelpScreen()
-            self.showAnimatedHelpScreen(page=2)
+            #self.showAnimatedHelpScreen()
+            #self.showAnimatedHelpScreen(page=2)
+            self.showScrollingHelpScreen()
         else:
             self.showStaticHelp()    
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3 
 
-# Theory of operation:
+# Theory of operation notes:
 # A code starts with '\x1B[' or ^[ and ends with a LETTER.
 # The ltter is usually 'm' (for Select Graphic Rendition).
 # Note that it may end with a letter other than 'm' for some features,
@@ -10,13 +10,18 @@
 # ^[0;4;3;42m for reset (0), underline (4), italic (3), background color (42).
 # We have a state machine that has attributes. Color, bold, underline, italic, etc.
 # 
-# Reference: https://en.wikipedia.org/wiki/ANSI_escape_code
+# References: 
+# Escape code bible: https://en.wikipedia.org/wiki/ANSI_escape_code
+# ANSI Sauce (metadata) spec: https://www.acid.org/info/sauce/sauce.htm
+
 
 import sys
+import struct
 import re
 import pdb
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
+import durdraw.durdraw_sauce as dursauce
 
 def ansi_color_to_durcolor(ansiColor):
     colorName = ansi_color_to_durcolor_table[ansiColor]
@@ -148,6 +153,9 @@ def get_width_and_height_of_ansi_blob(text, width=80):
             col_num = 0
         elif text[i] == '\r':  # windows style newline (CR)
             pass    # pfft
+        elif text[i:i + 5] == 'SAUCE' and len(text) - i == 128:   # SAUCE record found
+            i += 128
+            # Wee, I'm flying
         else:   # printable character (hopefully)
             if col_num == width:
                 col_num = 0
@@ -161,11 +169,24 @@ def get_width_and_height_of_ansi_blob(text, width=80):
     height = line_num
     return width, height
 
-def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, debug=False, maxWidth=80):
+def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, maxWidth=80):
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
-    width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
-    width = max(width, maxWidth)
+    if filename:
+        # If we can just pull it from the Sauce, cool
+        sauce = dursauce.SauceParser(filename)
+        #caller.notify(f"sauce found: {sauce.sauce_found}, author: {sauce.author}, title: {sauce.title}")
+        if sauce.sauce_found:
+            appState.sauce = sauce
+            if sauce.height > 0 and sauce.width > 0:
+                maxWidth = sauce.width
+                width = sauce.width
+                height = sauce.height
+                #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
+    if not sauce.sauce_found:   # let the dodgy function guess
+        width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
+    #width = max(width, maxWidth)
+    width = max(width, 80)
     height += 1
     if appState.debug:
         caller.notify(f"Guessed width: {width}, height: {height}")
@@ -373,11 +394,15 @@ def parse_ansi_escape_codes(text, appState=None, caller=None, console=False, deb
             pass    # pfft
         elif text[i] == '\x00': # Null byte
             pass
+        elif text[i] == '\x1a': # ctl-z code, EOF, just before the SAUCE
+            pass
         #elif text[i] == '\x01': # CTRL-A, SOH (start header).
         #    # Q: Why is this in some ANSIs? A: Because it's a smiley face in CP437
         #    pass
         #elif text[i] == '\x02': # CTRL-B, STX (start text)
         #    pass
+        elif text[i:i + 5] == 'SAUCE' and len(text) - i == 128:   # SAUCE record found
+            i += 128
         else:   # printable character (hopefully)
             if col_num == maxWidth:
                 col_num = 0

@@ -8,6 +8,7 @@ import subprocess
 import sys
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
+import durdraw.durdraw_sauce as dursauce
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
@@ -42,6 +43,7 @@ class AppState():
         self.configFileLoaded = False
         self.configFileName = None
         self.customThemeFile = None
+        self.sauce = dursauce.EmptySauce()
         #self.drawChar = b'\xE2\x96\x88'
         self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()
