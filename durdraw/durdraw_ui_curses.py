@@ -27,6 +27,7 @@ import durdraw.durdraw_gui_manager as durgui
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_ansiparse as dur_ansiparse
+import durdraw.durdraw_sauce as dursauce
 import durdraw.durdraw_charsets as durchar
 
 class UserInterface():  # Separate view (curses) from this controller
@@ -526,6 +527,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov = Movie(self.opts) # initialize a new movie
             self.setPlaybackRange(1, self.mov.frameCount)
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
+            self.appState.sauce = dursauce.EmptySauce()
+            self.appState.curOpenFileName = None
+            self.hardRefresh()
 
     def showCharInspector(self):
         line = self.xy[0]
@@ -546,7 +550,31 @@ class UserInterface():  # Separate view (curses) from this controller
         fileName = self.appState.curOpenFileName
         author = self.appState.sauce.author
         title = self.appState.sauce.title
-        infoString = f"file: {fileName}, author: {author}, title: {title}"
+        group = self.appState.sauce.group
+
+        infoString = ''
+        infoStringList = []
+
+        if fileName:
+            infoStringList.append(f"File: {fileName}")
+
+        if author:
+            infoStringList.append(f"Author: {author}")
+
+        if title:
+            infoStringList.append(f"Title: {title}")
+
+        if group:
+            infoStringList.append(f"Group: {group}")
+
+        infoStringList.append(f"Width: {self.mov.sizeX}")
+        infoStringList.append(f"Height: {self.mov.sizeY}")
+
+        if len(infoStringList) > 0:
+            infoString = ', '.join(infoStringList)
+
+        #infoString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
+
         self.notify(infoString, pause=True)
 
     def showTransformer(self):

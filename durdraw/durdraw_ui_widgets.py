@@ -265,6 +265,7 @@ class StatusBar():
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
+        #mainMenu.add_item("Canvas Info", caller.showFileInformation, "i")
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)

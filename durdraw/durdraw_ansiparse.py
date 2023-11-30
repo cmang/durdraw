@@ -175,7 +175,6 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     if filename:
         # If we can just pull it from the Sauce, cool
         sauce = dursauce.SauceParser(filename)
-        #caller.notify(f"sauce found: {sauce.sauce_found}, author: {sauce.author}, title: {sauce.title}")
         if sauce.sauce_found:
             appState.sauce = sauce
             if sauce.height > 0 and sauce.width > 0:
@@ -201,17 +200,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     col_num = 0
     line_num = 0
     max_col = 0
-    #if appState:
-    #    default_fg_color = appState.defaultFgColor
-    #    default_bg_color = appState.defaultBgColor
-    #else:
-    #    default_fg_color = 7
-    #    default_fg_color = 7
-    #default_fg_color = 8
-    #default_bg_color = 0
     default_fg_color = appState.defaultFgColor
     default_bg_color = appState.defaultBgColor
-    #default_fg_color = 8
     fg_color = default_fg_color 
     bg_color = default_bg_color 
     bold = False
