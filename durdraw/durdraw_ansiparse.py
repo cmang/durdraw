@@ -418,7 +418,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         print("")
         print(f"Lines: {line_num}, Columns: {max_col}")
     if parse_error:
-        caller.notify(f"There were errors detected while loading this file. It may not display correctly.")
+        caller.notify(f"Possible errors detected while loading this file. It may not display correctly.")
     height = line_num
     width = max_col
     frame = durmovie.Frame(height, width)

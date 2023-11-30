@@ -15,6 +15,8 @@ class EmptySauce():
         self.tinfo2 = None
         self.width = None
         self.height = None
+        self.sauce_blob = None
+        self.sauce_found = False
 
 
 class SauceParser():

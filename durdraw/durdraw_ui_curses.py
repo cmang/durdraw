@@ -2201,11 +2201,14 @@ class UserInterface():  # Separate view (curses) from this controller
         for dirname in folders:
             file_list.append(dirname)
         file_list += sorted(matched_files)
+        # stash away file list so we can use it for search, and pop it back
+        # in when user hits esc
+        full_file_list = file_list
 
         # draw ui
         selected_item_number = 0
         current_line_number = 0
-        search_string = ""
+        search_string = ''
         mask_all = False
         top_line = 0    # topmost viewable line, for scrolling
         prompting = True
@@ -2213,6 +2216,15 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0)
         self.stdscr.clear()
         while prompting:
+            # Set search matching
+            filtered_list = [item for item in full_file_list if search_string.lower() in item.lower()]
+            if search_string != '':
+                file_list = [item for item in full_file_list if search_string.lower() in item.lower()]
+                if len(file_list) == 0:
+                    file_list = ["../"]
+            else:
+                file_list = full_file_list
+
             # draw list of files from top of the window to bottomk
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             page_size = realmaxY - 4
@@ -2243,10 +2255,36 @@ class UserInterface():  # Separate view (curses) from this controller
             if search_string != "":
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
-            # debug
-            self.addstr(realmaxY - 1, 0, f"filename: {file_list[selected_item_number]}")
+
+            if selected_item_number > len(file_list) - 1:
+                selected_item_number = 0
+            filename = file_list[selected_item_number]
+            full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                
+            # read sauce, if available
+            if filename not in folders:
+                file_sauce = dursauce.SauceParser(full_path)
+                if file_sauce.sauce_found:
+                    file_title = file_sauce.title
+                    file_author = file_sauce.author
+                    file_width = file_sauce.width
+                    file_height = file_sauce.height
+            else:
+                file_sauce = dursauce.EmptySauce()
+                file_title = None
+                file_author = None
+                file_width = None
+                file_height = None
+
+            # display file info - format data
+            file_info = f"File: {filename}"
+            if file_sauce.sauce_found:
+                file_info += f", Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}"
+            # show it on screen
+            self.addstr(realmaxY - 1, 0, f"filename: {file_info}")
 
             self.stdscr.refresh()
+            # Read keyboard input
             c = self.stdscr.getch()
             self.stdscr.clear()
             if c == curses.KEY_LEFT:
@@ -2327,6 +2365,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     # reset ui
                     selected_item_number = 0
                     search_string = ""
+                    full_file_list = file_list
+
                 else:
                     # return the selected file
                     self.stdscr.clear()
@@ -2429,7 +2469,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 search_string += chr(c)
                 for filename in file_list:  # search list for search_string
                     if filename not in folders and filename.startswith(search_string):
-                        selected_item_number = file_list.index(filename)
+                        #selected_item_number = file_list.index(filename)
+                        selected_item_number = 0
                         break   # stop at the first match
 
     def open(self):
@@ -2479,7 +2520,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.undo = UndoManager(self, appState = self.appState) # reset undo system
         self.stdscr.redrawwin()
         self.stdscr.clear()
-        self.refresh()      # so we can see the new ascii in memory.
+        #self.refresh()      # so we can see the new ascii in memory.
+        self.hardRefresh()      # so we can see the new ascii in memory.
 
     def convertToCurrentFormat(self, fileColorMode = None):   # should this and loadFromFile be in a
         # separate class for file operations? or into Movie() or Options() ?
@@ -3178,8 +3220,8 @@ Can use ESC or META instead of ALT
             self.stdscr.nodelay(1)
 
     def hardRefresh(self):
-        self.stdscr.redrawwin()
         self.stdscr.clear()
+        self.stdscr.redrawwin()
         self.refresh()
 
     def refresh(self):          # rename to redraw()?
