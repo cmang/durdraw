@@ -558,11 +558,11 @@ class UserInterface():  # Separate view (curses) from this controller
         if fileName:
             infoStringList.append(f"File: {fileName}")
 
-        if author:
-            infoStringList.append(f"Author: {author}")
-
         if title:
             infoStringList.append(f"Title: {title}")
+
+        if author:
+            infoStringList.append(f"Artist: {author}")
 
         if group:
             infoStringList.append(f"Group: {group}")
@@ -673,16 +673,24 @@ class UserInterface():  # Separate view (curses) from this controller
         while self.playingHelpScreen:
             self.move(self.xy[0], self.xy[1])
             self.refresh()
+            mouseState = False
             # Instead, search and replace the darwing for durVer, colorMode etc
             #if page == 2:
             #    self.addstr(12, 51, f"{self.appState.durVer}", curses.color_pair(promptColor))
             #    self.addstr(13, 54, f"{self.appState.colorMode}", curses.color_pair(promptColor))
             #    self.addstr(14, 62, f"{self.appState.charEncoding}", curses.color_pair(promptColor))
             c = self.stdscr.getch()
-            if c in [curses.KEY_UP, ord('k')]:
+            if c == curses.KEY_MOUSE: # get some mouse input if available
+                try:
+                    _, mouseX, mouseY, _, mouseState = curses.getmouse()
+                    #pdb.set_trace()
+                except:
+                    pass
+
+            if c in [curses.KEY_UP, ord('k')]:  # scroll up
                 if self.appState.topLine > 0:
                     self.appState.topLine = self.appState.topLine - 1
-            elif c in [curses.KEY_DOWN, ord('j')]:
+            elif c in [curses.KEY_DOWN, ord('j')]:  # scroll down
                 if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
                     self.appState.topLine += 1
             elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
@@ -701,6 +709,15 @@ class UserInterface():  # Separate view (curses) from this controller
             #elif c == curses.KEY_ENTER:
             elif c in [10, 13, curses.KEY_ENTER, 27, ord('q')]:   # 27 == escape key
                 self.playingHelpScreen = False
+            
+
+            if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                if self.appState.topLine > 0:
+                    self.appState.topLine = self.appState.topLine - 1
+            elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
+                    self.appState.topLine += 1
+
             new_time = time.time()
             frame_delay = helpMov.currentFrame.delay
             if frame_delay > 0:
@@ -1635,11 +1652,11 @@ class UserInterface():  # Separate view (curses) from this controller
                             if self.pushingToClip:
                                 self.pushingToClip = False
                             self.stdscr.redrawwin()
-                    #elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                    #    self.move_cursor_down()
-                    #elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    #    self.move_cursor_down()
-                    if self.appState.cursorMode == "Move":   # select mode/move the cursor
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        self.move_cursor_up()
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        self.move_cursor_down()
+                    elif self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1     # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                     elif self.appState.cursorMode == "Draw":   # Change the color under the cursor
@@ -3484,7 +3501,13 @@ Can use ESC or META instead of ALT
                     pass
                 realmaxY,realmaxX = self.realstdscr.getmaxyx()
                 # enable mouse tracking only when the button is pressed
-                if mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                        self.move_cursor_up()
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                        self.move_cursor_down()
+                elif mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY
