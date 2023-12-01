@@ -2677,7 +2677,8 @@ class UserInterface():  # Separate view (curses) from this controller
             except UnicodeDecodeError:
                 f.close()
                 if self.appState.charEncoding == 'utf-8':
-                    self.notify("This appears to be a CP437 ANSI/ASCII - Converting to Unicode.")
+                    if not self.appState.playOnlyMode:
+                        self.notify("This appears to be a CP437 ANSI/ASCII - Converting to Unicode.")
                 f = open(filename, 'r', encoding='cp437')
                 raw_text = f.read()
             # Load file into a new frame, make a new movie,
