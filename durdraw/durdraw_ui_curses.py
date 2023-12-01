@@ -928,8 +928,52 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None 
             elif c != -1:   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
-                if self.appState.playOnlyMode:  # quit on any keystroke
-                    self.playing = False
+                if self.appState.playOnlyMode:  # UI for Play-only mode
+                    mouseState = False
+                    if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
+                        try:
+                            _, mouseX, mouseY, _, mouseState = curses.getmouse()
+                        except:
+                            pass
+                        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        if self.appState.topLine > 0:
+                            self.appState.topLine = self.appState.topLine - 1
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
+                            self.appState.topLine += 1
+                    elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+                        self.appState.topLine = self.appState.topLine - self.realmaxY + 3
+                        if self.appState.topLine < 0:
+                            self.appState.topLine = 0
+                    elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+                        self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+                        if self.appState.topLine > self.mov.sizeY - self.realmaxY:
+                            self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+                    elif c in [339, curses.KEY_HOME]:  # 339 = home
+                        self.appState.topLine = 0
+                    elif c in [338, curses.KEY_END]:   # 338 = end
+                        self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+
+                    if c in [ord('q'), ord('Q')]:
+                        self.playing = False
+                        self.appState.topLine = 0
+                        self.verySafeQuit()
+
+                    elif c in [10, 13, curses.KEY_ENTER, 27]:   # 27 = esc
+                        self.playing = False
+                        self.appState.topLine = 0
+
+                    elif c in [ord('i'), ord('I')]:
+                        self.showFileInformation()
+
+                    elif c == curses.KEY_DOWN:
+                        if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
+                            self.appState.topLine += 1
+                    elif c == curses.KEY_UP:
+                        if self.appState.topLine > 0:
+                            self.appState.topLine = self.appState.topLine - 1
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
