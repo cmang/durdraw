@@ -51,8 +51,11 @@ class SauceParser():
         self.load_and_parse_file(filename)
 
     def load_and_parse_file(self, filename):
-        with open(filename, 'rb') as file:
-            file_blob = file.read()
+        try:
+            with open(filename, 'rb') as file:
+                file_blob = file.read()
+        except Exception as E:
+            return False
 
         sauce_blob = file_blob[-128:]
         self.sauce_blob = sauce_blob
