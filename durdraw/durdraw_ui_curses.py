@@ -2273,8 +2273,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 file_sauce = dursauce.EmptySauce()
                 file_title = None
                 file_author = None
-                file_width = None
-                file_height = None
+                file_width = 80
+                file_height = 24
 
             # display file info - format data
             file_info = f"File: {filename}"

@@ -116,11 +116,14 @@ def get_width_and_height_of_ansi_blob(text, width=80):
                 escape_sequence = text[i + 2:end_index]
                 escape_codes = escape_sequence.split(';')
                 if len(escape_codes) > 1:   # row ; column
-                    line_num = int(escape_codes[0])
-                    col_num = int(escape_codes[0])
+                    if escape_codes[0].isnumeric():
+                        line_num = int(escape_codes[0])
+                    if escape_codes[1].isnumeric():
+                        col_num = int(escape_codes[1])
                 elif len(escape_codes) == 1:   # row, column=1
                     #line_num = 1
-                    col_num = int(escape_codes[0])
+                    if escape_codes[0].isnumeric():
+                        col_num = int(escape_codes[0])
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'J':      # Clear screen
@@ -177,13 +180,20 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         sauce = dursauce.SauceParser(filename)
         if sauce.sauce_found:
             appState.sauce = sauce
-            if sauce.height > 0 and sauce.width > 0:
-                maxWidth = sauce.width
-                width = sauce.width
-                height = sauce.height
-                #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
-    if not sauce.sauce_found:   # let the dodgy function guess
-        width, height = get_width_and_height_of_ansi_blob(text, width=maxWidth)
+            #if sauce.height > 0 and sauce.width > 0:
+            #if sauce.height == None:
+            #    sauce.height = 25
+            if sauce.width == None:
+                sauce.width = 80
+            maxWidth = sauce.width
+            width = sauce.width
+            height = sauce.height
+            #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
+    if not sauce.height:
+        width, height = get_width_and_height_of_ansi_blob(text, width=80)
+        width = sauce.width
+    if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
+        width, height = get_width_and_height_of_ansi_blob(text, width=80)
     #width = max(width, maxWidth)
     width = max(width, 80)
     height += 1
@@ -335,11 +345,14 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 escape_sequence = text[i + 2:end_index]
                 escape_codes = escape_sequence.split(';')
                 if len(escape_codes) > 1:   # row ; column
-                    line_num = int(escape_codes[0])
-                    col_num = int(escape_codes[0])
+                    if escape_codes[0].isnumeric():
+                        line_num = int(escape_codes[0])
+                    if escape_codes[1].isnumeric():
+                        col_num = int(escape_codes[1])
                 elif len(escape_codes) == 1:   # row, column=1
                     #line_num = 1
-                    col_num = int(escape_codes[0])
+                    if escape_codes[0].isnumeric():
+                        col_num = int(escape_codes[0])
                 i = end_index + 1
                 continue    # jump the while
             elif text[end_index] == 'J':      # Clear screen
@@ -394,7 +407,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         elif text[i:i + 5] == 'SAUCE' and len(text) - i == 128:   # SAUCE record found
             i += 128
         else:   # printable character (hopefully)
-            if col_num == maxWidth:
+            if col_num >= maxWidth:
                 col_num = 0
                 line_num += 1
             character = text[i]

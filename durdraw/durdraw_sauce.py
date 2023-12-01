@@ -13,8 +13,8 @@ class EmptySauce():
         self.fileType = None
         self.tinfo1 = None
         self.tinfo2 = None
-        self.width = None
-        self.height = None
+        self.width = 80
+        self.height = 25
         self.sauce_blob = None
         self.sauce_found = False
 
@@ -64,9 +64,18 @@ class SauceParser():
             self.group = struct.unpack_from('20s', sauce_blob, offset=self.group_offset)[0]
 
             # turn bytes into nicer strings
-            self.title = self.title.decode().rstrip(' ')
-            self.author= self.author.decode().rstrip(' ')
-            self.group= self.group.decode().rstrip(' ')
+            try:
+                self.title = self.title.decode().rstrip(' ').strip('\x00')
+            except UnicodeDecodeError:
+                self.title = self.title.decode('cp437').rstrip(' ').strip('\x00')
+            try:
+                self.author= self.author.decode().rstrip(' ').strip('\x00')
+            except UnicodeDecodeError:
+                self.author= self.author.decode('cp437').rstrip(' ').strip('\x00')
+            try:
+                self.group= self.group.decode().rstrip(' ').strip('\x00')
+            except UnicodeDecodeError:
+                self.group= self.group.decode('cp437').rstrip(' ').strip('\x00')
      
             self.tinfo1 = struct.unpack_from('H', sauce_blob, offset=self.tinfo1_offset)[0]
             if self.tinfo1 > 1:
