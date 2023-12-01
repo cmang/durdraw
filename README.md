@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.22.0-beta
+              \_____________________________________________\|  v 0.22.0
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
@@ -15,8 +15,8 @@ Durdraw
 Durdraw is an ASCII, ANSI and Unicode art editor for UNIX-like systems (Linux, 
 macOS, etc). It runs in the terminal and supports frame-based animation,
 custom themes, 256 and 16 color modes, terminal mouse input, IRC color export,
-Unicode and Code Page 437 block characters, HTML output, and other interesting
-features.
+automatic conversion of Code Page 437 encoding to Unicode, HTML output, and
+other interesting features.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
