@@ -310,7 +310,7 @@ class StatusBar():
             charSetLabel = self.caller.appState.unicodeBlock
         charSetLabel = f"{charSetLabel[:3]}.."
         charSetButton.label = charSetLabel
-        charSetButton.show()
+        #charSetButton.show()
         self.charSetButton = charSetButton
 
         drawCharPicker = DrawCharPicker(self.window, caller=self)
