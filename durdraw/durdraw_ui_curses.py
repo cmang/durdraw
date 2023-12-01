@@ -956,6 +956,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.appState.topLine = 0
                     elif c in [338, curses.KEY_END]:   # 338 = end
                         self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+                    elif c == curses.KEY_LEFT:      # left - previous file
+                        pass
+                    elif c == curses.KEY_RIGHT:      # right - next file
+                        pass
 
                     if c in [ord('q'), ord('Q')]:
                         self.playing = False
@@ -1577,6 +1581,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     # Paste from the clipboard
                     if self.clipBoard:  # If there is something in the clipboard
                         self.pasteFromClipboard()
+                elif c == ord('V'):   # alt-V, View mode
+                    self.stdscr.clear()
+                    self.appState.playOnlyMode = True
+                    self.startPlaying()
+                    self.appState.playOnlyMode = False
+                    self.statusBar.show()
+                    self.cursorOn()
+                    self.stdscr.clear()
                 elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif c == 112:    # esc-p - start playing, any key exits
