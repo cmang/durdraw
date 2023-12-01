@@ -664,26 +664,27 @@ class UserInterface():  # Separate view (curses) from this controller
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
-        self.promptPrint("* Press the any key (or click) to continue *")
+        #self.promptPrint("* Press the any key (or click) to continue *")
         clickColor = self.appState.theme['clickColor']
         promptColor = self.appState.theme['promptColor']
-        self.addstr(self.statusBarLineNum - 1, 0, "You can use ALT or META instead of ESC. Everything this color is clickable", curses.color_pair(promptColor))
-        self.addstr(self.statusBarLineNum - 1, 51, "this color", curses.color_pair(clickColor) | curses.A_BOLD)
-        self.addstr(self.statusBarLineNum - 1, 65, "clickable", curses.color_pair(clickColor) | curses.A_BOLD)
+        #self.addstr(self.statusBarLineNum - 1, 0, "You can use ALT or META instead of ESC. Everything this color is clickable", curses.color_pair(promptColor))
+        #self.addstr(self.statusBarLineNum - 1, 51, "this color", curses.color_pair(clickColor) | curses.A_BOLD)
+        #self.addstr(self.statusBarLineNum - 1, 65, "clickable", curses.color_pair(clickColor) | curses.A_BOLD)
+
+        helpMov.search_and_replace(self, '{ver}', f"{self.appState.durVer}")
+        helpMov.search_and_replace(self, '{colormode}', f"{self.appState.colorMode}")
+        helpMov.search_and_replace(self, "{charmode}", f"{self.appState.charEncoding}")
+
         while self.playingHelpScreen:
             self.move(self.xy[0], self.xy[1])
             self.refresh()
+            self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(promptColor))
+            #self.addstr(self.statusBarLineNum - 1, 51, "this color", curses.color_pair(clickColor) | curses.A_BOLD)
             mouseState = False
-            # Instead, search and replace the darwing for durVer, colorMode etc
-            #if page == 2:
-            #    self.addstr(12, 51, f"{self.appState.durVer}", curses.color_pair(promptColor))
-            #    self.addstr(13, 54, f"{self.appState.colorMode}", curses.color_pair(promptColor))
-            #    self.addstr(14, 62, f"{self.appState.charEncoding}", curses.color_pair(promptColor))
             c = self.stdscr.getch()
             if c == curses.KEY_MOUSE: # get some mouse input if available
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
-                    #pdb.set_trace()
                 except:
                     pass
 

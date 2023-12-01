@@ -187,6 +187,39 @@ class Movie():
         self.opts.sizeY = self.opts.sizeY - shrinkage 
         #self.width = self.width - shrinkage
 
+    def search_and_replace(self, caller, search_str: str, replace_str: str):
+        #search_list = list(search)
+        found = False
+
+        # pad the right side of replace_str with spaces, so it lines up
+        # if search_str is longer.
+        #caller.notify(f"search string: '{search_str}'")
+        #replace_str = replace_str.ljust(len(search_str), ' ')
+        #caller.notify(f"replace string: '{replace_str}'")
+        frame_num = 0
+        line_num = 0
+        for frame in self.frames:
+            line_num = 0
+            for line in frame.content:
+                line_str = ''.join(line)
+                #caller.notify(f"line is a type: {type(line)}")
+                #caller.notify(f"line is: {line}")
+                if search_str in line_str:
+                    #caller.notify(f"len(search_str): {len(search_str)}, len(replace_str): {len(replace_str)}")
+                    if len(search_str) < len(replace_str):
+                        line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
+                    else:
+                        line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
+                    #caller.notify(f"found {search_str} in line:")
+                    #caller.notify(f"{line_str}")
+                    # inject modified line back into frame
+                    line = list(line_str)
+                    frame.content[line_num] = line
+                    found = True
+                line_num += 1
+            frame_num += 1
+        return found
+
     def contains_high_colors(self):
         """ Returns True if any color above 16 is used, False otherwise """
         for frame in self.frames:
