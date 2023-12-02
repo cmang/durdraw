@@ -1521,6 +1521,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.delLine()
                 elif c == 121:      # alt-y - Eyedrop
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
+                elif c == ord('l'): # alt-l - color under cursor
+                    self.insertColor(fg=self.colorfg, bg=self.colorbg, pushUndo=True)
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
@@ -1583,10 +1585,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.pasteFromClipboard()
                 elif c == ord('V'):   # alt-V, View mode
                     self.stdscr.clear()
+                    oldDrawBorders = self.appState.drawBorders  # to turn back on when done
                     self.appState.playOnlyMode = True
                     self.startPlaying()
                     self.appState.playOnlyMode = False
                     self.statusBar.show()
+                    self.appState.drawBorders = oldDrawBorders
                     self.cursorOn()
                     self.stdscr.clear()
                 elif c == 82:   # alt-R = set playback range
