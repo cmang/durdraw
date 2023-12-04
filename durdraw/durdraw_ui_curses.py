@@ -2864,6 +2864,27 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 return None
         self.clearStatusLine()
+        if saveFormat == 'ansi':  # ansi = escape codes for colors+ascii
+            prompting = True
+            while prompting:
+                # Ask if they want CP437 or Utf-8 encoding
+                self.clearStatusLine()
+                self.promptPrint(f"File encoding? [C]P437, [U]tf-8? (default: {self.appState.charEncoding}): ")
+                c = self.stdscr.getch()
+                time.sleep(0.01)
+                if c == ord('c'): 
+                    encoding = "cp437"
+                    prompting = False
+                elif c == ord('u'): 
+                    encoding = "utf-8"
+                    prompting = False
+                elif c in [13, curses.KEY_ENTER]:
+                    encoding = "default"
+                    prompting = False
+                elif c == 27: # 27 = esc = cancel
+                    self.notify("Canceled. File not saved.")
+                    prompting = False
+                    return False
         if saveFormat in ['png', 'gif']:
             self.promptPrint("Which font? IBM PC [A]NSI, AM[I]GA: ")
             prompting = True
@@ -2908,7 +2929,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         return None
         self.clearStatusLine()
-        self.promptPrint(f"Enter file name to save as ({saveFormat}) [{self.appState.curOpenFileName}]: ")
+        if saveFormat == "ansi":
+            self.promptPrint(f"Enter file name to save as ({saveFormat}/{encoding}) [{self.appState.curOpenFileName}]: ")
+        else:
+            self.promptPrint(f"Enter file name to save as ({saveFormat}) [{self.appState.curOpenFileName}]: ")
         curses.echo()
         filename = str(self.stdscr.getstr().decode('utf-8'))
         curses.noecho()
@@ -2944,7 +2968,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if saveFormat == 'html':   # dur2 = serialized json, plaintext
             saved = self.saveHtmlFile(filename, gzipped=False)
         if saveFormat == 'ansi':  # ansi = escape codes for colors+ascii
-            saved = self.saveAnsiFile(filename)
+            saved = self.saveAnsiFile(filename, encoding=encoding)
         if saveFormat == 'irc':  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename, ircColors = True)
         if saveFormat == 'png':  # png = requires ansi love
@@ -3010,10 +3034,15 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False):
+    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default"):
         """ Saves current frame of current movie to ansi file """
         try:
-            f = open(filename, 'w')
+            if encoding == "default":
+                f = open(filename, 'w')
+            elif encoding == "cp437":
+                f = open(filename, 'w', encoding="cp437")
+            elif encoding == "utf-8":
+                f = open(filename, 'w', encoding="utf-8")
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
@@ -3056,14 +3085,22 @@ class UserInterface():  # Separate view (curses) from this controller
                 string = string + '\n'
             else:
                 string = string + '\r\n'
-        f.write(string)
+        try:
+            f.write(string)
+            saved = True
+        except UnicodeEncodeError:
+            self.notify("Error: Some characters were not compatible with this encoding. File not saved.")
+            saved = False
+            #f.close()
+            #return False
         if ircColors:
             string2 = string + '\n'
         else:
             f.write('\033[0m') # color attributes off
             string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
         f.close()
-        return True
+        #return True
+        return saved
 
     def findLastMovieLine(self, movie):    
         """ Cycle through the whole movie, figure out the lowest numbered
