@@ -47,6 +47,7 @@ class AppState():
         #self.drawChar = b'\xE2\x96\x88'
         self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()
+        self.hasMouseScroll = True  # Disable for compatibility with older Python versions <3.10
         self.helpMov = None
         self.helpMov_2 = None
         self.hasHelpFile = False

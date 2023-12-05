@@ -66,6 +66,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.gui = durgui.Gui(guiType="curses", window=self.stdscr)
         curses.start_color()    # Yeayuhhh
         self.ansi = AnsiArtStuff(self.appState)   # obj for misc ansi-related stuff
+        # Disable mouse scrolling for Python versions below 3.10, as they don't have
+        # curses.BUTTON5_*
+        if sys.version_info.major == 3:
+            if sys.version_info.minor < 10:
+                self.appState.hasMouseScroll = False
         if self.appState.colorMode == "256":
             if self.ansi.initColorPairs_256color():
                 self.appState.theme = self.appState.theme_256
@@ -711,13 +716,13 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [10, 13, curses.KEY_ENTER, 27, ord('q')]:   # 27 == escape key
                 self.playingHelpScreen = False
             
-
-            if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                if self.appState.topLine > 0:
-                    self.appState.topLine = self.appState.topLine - 1
-            elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
-                    self.appState.topLine += 1
+            if self.appState.hasMouseScroll:
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    if self.appState.topLine > 0:
+                        self.appState.topLine = self.appState.topLine - 1
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
+                        self.appState.topLine += 1
 
             new_time = time.time()
             frame_delay = helpMov.currentFrame.delay
@@ -938,12 +943,14 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
-                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        if self.appState.topLine > 0:
-                            self.appState.topLine = self.appState.topLine - 1
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
-                            self.appState.topLine += 1
+                    if self.appState.hasMouseScroll:
+                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                            if self.appState.topLine > 0:
+                                self.appState.topLine = self.appState.topLine - 1
+                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                            if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
+                                self.appState.topLine += 1
+
                     elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
                         self.appState.topLine = self.appState.topLine - self.realmaxY + 3
                         if self.appState.topLine < 0:
@@ -1713,10 +1720,13 @@ class UserInterface():  # Separate view (curses) from this controller
                             if self.pushingToClip:
                                 self.pushingToClip = False
                             self.stdscr.redrawwin()
-                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        self.move_cursor_up()
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        self.move_cursor_down()
+
+                    if self.appState.hasMouseScroll:
+                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                            self.move_cursor_up()
+                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                            self.move_cursor_down()
+
                     elif self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1     # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
@@ -2223,19 +2233,21 @@ class UserInterface():  # Separate view (curses) from this controller
                     #            mask_all = True
                     #            masks = ['*.*']
                         # update file list
-                elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                    # scroll up
-                    # if the item isn't at the top of teh screen, move it up
-                    if selected_item_number > top_line:
-                        selected_item_number -= 1
-                    elif top_line > 0:
-                        top_line -= 1
-                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    # scroll down 
-                    if selected_item_number < len(block_list) - 1:
-                        selected_item_number += 1
-                        if selected_item_number == len(block_list) - top_line:
-                            top_line += 1
+                
+                elif self.appState.hasMouseScroll:
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        # scroll up
+                        # if the item isn't at the top of teh screen, move it up
+                        if selected_item_number > top_line:
+                            selected_item_number -= 1
+                        elif top_line > 0:
+                            top_line -= 1
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        # scroll down 
+                        if selected_item_number < len(block_list) - 1:
+                            selected_item_number += 1
+                            if selected_item_number == len(block_list) - top_line:
+                                top_line += 1
             else: # add to search string
                 search_string += chr(c)
                 search_string = search_string.lower()   # case insensitive search
@@ -2268,7 +2280,17 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             current_directory = os.getcwd()
         #folders += sorted(glob.glob(f"{current_directory}/*/"))
-        folders += sorted(glob.glob("*/", root_dir=current_directory))
+
+        #folders += sorted(glob.glob("*/", root_dir=current_directory)) # python 3.10+
+        # python 3.9 compatible block instead:
+        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+        # remove leading paths
+        new_folders = []
+        for path_string in folders:
+            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+        folders = new_folders
+            
+
         matched_files = []
         file_list = []
         for file in os.listdir(current_directory):
@@ -2357,9 +2379,9 @@ class UserInterface():  # Separate view (curses) from this controller
             # display file info - format data
             file_info = f"File: {filename}"
             if file_sauce.sauce_found:
-                file_info += f", Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}"
+                file_info = f"Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}"
             # show it on screen
-            self.addstr(realmaxY - 1, 0, f"filename: {file_info}")
+            self.addstr(realmaxY - 1, 0, f"{file_info}")
 
             self.stdscr.refresh()
             # Read keyboard input
@@ -2425,7 +2447,14 @@ class UserInterface():  # Separate view (curses) from this controller
                             current_directory = current_directory[:-1]
                     # get file list
                     folders =  ["../"]
-                    folders += sorted(glob.glob("*/", root_dir=current_directory))
+                    #folders += sorted(glob.glob("*/", root_dir=current_directory))
+                    folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                    # remove leading paths
+                    new_folders = []
+                    for path_string in folders:
+                        new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                    folders = new_folders
+
                     if mask_all:
                         masks = ['*.*']
                     else:
@@ -2487,7 +2516,14 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 current_directory = current_directory[:-1]
                                         # get file list
                                         folders =  ["../"]
-                                        folders += glob.glob("*/", root_dir=current_directory)
+                                        #folders += glob.glob("*/", root_dir=current_directory)
+                                        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                        # remove leading paths
+                                        new_folders = []
+                                        for path_string in folders:
+                                            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                                        folders = new_folders
+
                                         if mask_all:
                                             masks = ['*.*']
                                         else:
@@ -2530,19 +2566,20 @@ class UserInterface():  # Separate view (curses) from this controller
                         # reset ui
                         selected_item_number = 0
                         search_string = ""
-                elif mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                    # scroll up
-                    # if the item isn't at the top of teh screen, move it up
-                    if selected_item_number > top_line:
-                        selected_item_number -= 1
-                    elif top_line > 0:
-                        top_line -= 1
-                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    # scroll down 
-                    if selected_item_number < len(file_list) - 1:
-                        selected_item_number += 1
-                        if selected_item_number == len(file_list) - top_line:
-                            top_line += 1
+                elif self.appState.hasMouseScroll:
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        # scroll up
+                        # if the item isn't at the top of teh screen, move it up
+                        if selected_item_number > top_line:
+                            selected_item_number -= 1
+                        elif top_line > 0:
+                            top_line -= 1
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        # scroll down 
+                        if selected_item_number < len(file_list) - 1:
+                            selected_item_number += 1
+                            if selected_item_number == len(file_list) - top_line:
+                                top_line += 1
             else: # add to search string
                 search_string += chr(c)
                 for filename in file_list:  # search list for search_string
@@ -3600,12 +3637,13 @@ Can use ESC or META instead of ALT
                     pass
                 realmaxY,realmaxX = self.realstdscr.getmaxyx()
                 # enable mouse tracking only when the button is pressed
-                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
-                        self.move_cursor_up()
-                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
-                        self.move_cursor_down()
+                if self.appState.hasMouseScroll:
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                            self.move_cursor_up()
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                            self.move_cursor_down()
                 elif mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
                         self.xy[1] = mouseX + 1 # set cursor position
