@@ -2389,7 +2389,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # display file info - format data
             file_info = f"File: {filename}"
             if file_sauce.sauce_found:
-                file_info = f"Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}"
+                file_info = f"Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}, File: {filename}"
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
@@ -3401,6 +3401,8 @@ Can use ESC or META instead of ALT
             mov = self.mov
         # Figure out the last line to draw
         lastLineToDraw = topLine + self.realmaxY - 2 # right above the status line
+        if self.appState.playOnlyMode:
+            lastLineToDraw += 2
         if lastLineToDraw > mov.sizeY:
             lastLineToDraw = mov.sizeY
         screenLineNum = 0
@@ -3662,7 +3664,7 @@ Can use ESC or META instead of ALT
                 if mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
                         self.xy[1] = mouseX + 1 # set cursor position
-                        self.xy[0] = mouseY
+                        self.xy[0] = mouseY + self.appState.topLine
                             
 
             elif c == 27:   # esc
