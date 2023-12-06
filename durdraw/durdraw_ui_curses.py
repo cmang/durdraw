@@ -34,10 +34,9 @@ class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
     #def __init__(self, stdscr, app):
     def __init__(self, app):
-        # Set cursor shape to block
-        sys.stdout.write(f"\x1b[1 q")
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
+        self.initCursorMode()
         self.clipBoard = None   # frame object
         self.charMapNumber = 0
         self.chMap = {}
@@ -133,6 +132,25 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
         #print('\033[?1003h') # enable mouse tracking with the XTERM API
         # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
+
+    def initCursorMode(self):
+        # Set cursor shape to block - this is now a command line option.
+        #sys.stdout.write(f"\x1b[1 q")
+        # 1 block blink
+        # 2 block no blink
+        # 3 underscore blink
+        # 4 underscore no blink
+        # 5 pipe blink
+        # 6 pipe no blink
+        if self.appState.screenCursorMode == "default":
+            return
+        elif self.appState.screenCursorMode == "block":
+            sys.stdout.write("\x1b[1 q")
+        elif self.appState.screenCursorMode == "underscore":
+            sys.stdout.write(f"\x1b[3 q")
+        elif self.appState.screenCursorMode == "pipe":
+            sys.stdout.write(f"\x1b[5 q")
+        sys.stdout.write("\n")
 
     def enableTransBackground(self):
         curses.use_default_colors()

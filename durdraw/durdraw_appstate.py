@@ -17,6 +17,9 @@ class AppState():
         self.showStartupScreen = True
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.screenCursorMode = "default"   # can be block, underscore, pipe
+        self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
+        self.cursorBlinks = True     # lord help me, why would anyone not want this to be true?
         self.totalFgColors = "128"
         self.totalBgColors = "128"
         self.defaultFgColor = 7

@@ -59,6 +59,7 @@ def main():
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
+    parser.add_argument("--cursor", help="Cursor mode (block, underscore, or pipe)", nargs=1)
     parser.add_argument("--notheme", help="Disable theme support (use default theme)",
                     action="store_true")
     parser.add_argument("--theme", help="Load a custom theme file", nargs=1)
@@ -137,6 +138,13 @@ def main():
         else:
             app.loadThemeFile(args.theme[0], "Theme-16")
         app.customThemeFile = args.theme[0]
+
+    if args.cursor:
+        if args.cursor[0] in app.validScreenCursorModes:
+            app.screenCursorMode = args.cursor[0]
+        else:
+            print("--cursor option requires one of the following: block, underscore, pipe")
+            exit(1)
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
