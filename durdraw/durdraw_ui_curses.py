@@ -715,8 +715,10 @@ class UserInterface():  # Separate view (curses) from this controller
             #elif c == curses.KEY_ENTER:
             elif c in [10, 13, curses.KEY_ENTER, 27, ord('q')]:   # 27 == escape key
                 self.playingHelpScreen = False
-            
-            if self.appState.hasMouseScroll:
+            else:
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     if self.appState.topLine > 0:
                         self.appState.topLine = self.appState.topLine - 1
@@ -943,7 +945,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
-                    if self.appState.hasMouseScroll:
+                        if not self.appState.hasMouseScroll:
+                            curses.BUTTON5_PRESSED = 0
+                            curses.BUTTON4_PRESSED = 0
                         if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                             if self.appState.topLine > 0:
                                 self.appState.topLine = self.appState.topLine - 1
@@ -1702,6 +1706,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 except:
                     pass
                 if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas, not playing
+
+
                     if mouseState & curses.BUTTON1_PRESSED:
                         if not self.pressingButton:
                             self.pressingButton = True
@@ -1721,12 +1727,14 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.pushingToClip = False
                             self.stdscr.redrawwin()
 
-                    if self.appState.hasMouseScroll:
-                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                            self.move_cursor_up()
-                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                            self.move_cursor_down()
 
+                    if not self.appState.hasMouseScroll:
+                        curses.BUTTON5_PRESSED = 0
+                        curses.BUTTON4_PRESSED = 0
+                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                        self.move_cursor_up()
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        self.move_cursor_down()
                     elif self.appState.cursorMode == "Move":   # select mode/move the cursor
                         self.xy[1] = mouseX + 1     # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
@@ -2233,21 +2241,23 @@ class UserInterface():  # Separate view (curses) from this controller
                     #            mask_all = True
                     #            masks = ['*.*']
                         # update file list
-                
-                elif self.appState.hasMouseScroll:
-                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        # scroll up
-                        # if the item isn't at the top of teh screen, move it up
-                        if selected_item_number > top_line:
-                            selected_item_number -= 1
-                        elif top_line > 0:
-                            top_line -= 1
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        # scroll down 
-                        if selected_item_number < len(block_list) - 1:
-                            selected_item_number += 1
-                            if selected_item_number == len(block_list) - top_line:
-                                top_line += 1
+
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0 
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    # scroll up
+                    # if the item isn't at the top of teh screen, move it up
+                    if selected_item_number > top_line:
+                        selected_item_number -= 1
+                    elif top_line > 0:
+                        top_line -= 1
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    # scroll down 
+                    if selected_item_number < len(block_list) - 1:
+                        selected_item_number += 1
+                        if selected_item_number == len(block_list) - top_line:
+                            top_line += 1
             else: # add to search string
                 search_string += chr(c)
                 search_string = search_string.lower()   # case insensitive search
@@ -2566,20 +2576,23 @@ class UserInterface():  # Separate view (curses) from this controller
                         # reset ui
                         selected_item_number = 0
                         search_string = ""
-                elif self.appState.hasMouseScroll:
-                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        # scroll up
-                        # if the item isn't at the top of teh screen, move it up
-                        if selected_item_number > top_line:
-                            selected_item_number -= 1
-                        elif top_line > 0:
-                            top_line -= 1
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        # scroll down 
-                        if selected_item_number < len(file_list) - 1:
-                            selected_item_number += 1
-                            if selected_item_number == len(file_list) - top_line:
-                                top_line += 1
+
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    # scroll up
+                    # if the item isn't at the top of teh screen, move it up
+                    if selected_item_number > top_line:
+                        selected_item_number -= 1
+                    elif top_line > 0:
+                        top_line -= 1
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    # scroll down 
+                    if selected_item_number < len(file_list) - 1:
+                        selected_item_number += 1
+                        if selected_item_number == len(file_list) - top_line:
+                            top_line += 1
             else: # add to search string
                 search_string += chr(c)
                 for filename in file_list:  # search list for search_string
@@ -2906,7 +2919,7 @@ class UserInterface():  # Separate view (curses) from this controller
             while prompting:
                 # Ask if they want CP437 or Utf-8 encoding
                 self.clearStatusLine()
-                self.promptPrint(f"File encoding? [C]P437, [U]tf-8? (default: {self.appState.charEncoding}): ")
+                self.promptPrint(f"ANSI file encoding? [C]P437, [U]tf-8? (default: {self.appState.charEncoding}): ")
                 c = self.stdscr.getch()
                 time.sleep(0.01)
                 if c == ord('c'): 
@@ -3637,14 +3650,16 @@ Can use ESC or META instead of ALT
                     pass
                 realmaxY,realmaxX = self.realstdscr.getmaxyx()
                 # enable mouse tracking only when the button is pressed
-                if self.appState.hasMouseScroll:
-                    if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
-                            self.move_cursor_up()
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
-                            self.move_cursor_down()
-                elif mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                        self.move_cursor_up()
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                        self.move_cursor_down()
+                if mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY
