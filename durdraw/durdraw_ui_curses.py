@@ -921,6 +921,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.statusBar.menuButton.on_click() 
                     self.openMenu("File")
                 elif c == 99:     # alt-c - color picker
+                    self.commandMode = False
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPickerButton.on_click()
                 elif c == 122:  # alt-z = undo
@@ -1428,8 +1429,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(statusBarLineNum, 16 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
         if self.commandMode:
             self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
+            self.statusBar.showToolTips()
         else:
             self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
+            self.statusBar.hideToolTips()
         if self.appState.modified:
             self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
         else:
@@ -1557,12 +1560,15 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 105:      # alt-i - File/Canvas Information
                     self.showFileInformation()
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
+                    self.commandMode = False
                     self.openMenu("File")
                     #self.statusBar.menuButton.on_click() 
                 elif c == 116: # or c =- 84:    # alt-t or alt-T - mouse tools menu
+                    self.commandMode = False
                     self.openMenu("Mouse Tools")
                     #self.statusBar.toolButton.on_click() 
                 elif c == 99:     # alt-c - color picker
+                    self.commandMode = False
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPickerButton.on_click()
                 # Animation Keystrokes
