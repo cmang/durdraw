@@ -849,9 +849,13 @@ class UserInterface():  # Separate view (curses) from this controller
             by drawing if current time == greater than a delta plus the time
             the last frame was drawn.
         """
+        self.commandMode = False
+        if not self.statusBar.toolButton.hidden:
+            self.statusBar.toolButton.draw()
+            self.statusBar.toolButton.hide()
+            self.drawStatusBar()
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
-        self.statusBar.toolButton.hide()
         self.statusBar.drawCharPickerButton.hide()
         if self.appState.playOnlyMode:
             self.statusBar.hide()
@@ -1431,8 +1435,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
             self.statusBar.showToolTips()
         else:
-            self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
             self.statusBar.hideToolTips()
+            self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
         if self.appState.modified:
             self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
         else:
@@ -2022,6 +2026,8 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def openMenu(self, current_menu: str):
         menu_open = True
+        if not self.statusBar.toolButton.hidden:
+            self.drawStatusBar()
         response = "Right"
         menus = ["File", "Mouse Tools"]
         #fail_count = 0  # debug

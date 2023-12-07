@@ -27,6 +27,9 @@ class Button():
         self.realX = x
         self.realY = y
         self.label = label  # What you should click
+        self.tooltip_command = None
+        self.tooltip_hidden = True
+        self.persistant_tooltip = False
         self.width = len(self.label)
         self.color = "brightGreen"  # bright green = clickable by defaulta
         self.image = None   # If we want an icon in a GUI version
@@ -39,9 +42,17 @@ class Button():
         self.invisible = invisible # If true, responds to clicks but does not show. Useful for "overlays"
         self.handler = ButtonHandler(self, self.window, callback, appState=self.appState)
 
+    def set_tooltip_command(self, command: str):
+        """ Command should be the keyboard command, like the "o" in esc-o """
+        self.tooltip_command = command
+
+    def get_tooltip_command(self):
+        return self.tooltip_command
+
     def hide(self):
         self.hidden = True
-        self.handler.hidden = True
+        #self.handler.hidden = True
+        self.handler.hide()
 
     def show(self):
         self.hidden = False
@@ -270,6 +281,7 @@ class StatusBar():
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
         menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
+        menuButton.set_tooltip_command('m')
         self.menuButton = menuButton
         menuButton.realX = self.x + menuButton.x
         menuButton.realY = self.y + menuButton.y
@@ -295,6 +307,7 @@ class StatusBar():
         toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
         toolButton.label = self.caller.appState.cursorMode
+        toolButton.set_tooltip_command('t')
         toolButton.picker = True
         toolButton.realX = self.x + toolButton.x    # toolbar shit
         toolButton.realY = self.y + toolButton.y
@@ -306,6 +319,7 @@ class StatusBar():
         charSetButton = Button("CharSet", 1, 26, caller.showCharSetPicker, self.window, appState=self.appState)
         # make proper label for character set button
         charSetLabel = self.caller.appState.characterSet
+        charSetButton.set_tooltip_command('S')
         if charSetLabel == "Unicode Block":
             charSetLabel = self.caller.appState.unicodeBlock
         charSetLabel = f"{charSetLabel[:3]}.."
@@ -329,6 +343,8 @@ class StatusBar():
         if self.caller.appState.colorMode == "256":
             self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
             self.colorPickerButton.invisible = True
+            self.colorPickerButton.persistant_tooltip = True
+            self.colorPickerButton.set_tooltip_command('c')
             self.colorPickerButton.realX = self.x + self.colorPickerButton.x
             self.colorPickerButton.realY = self.y + self.colorPickerButton.y + 1
             self.colorPickerButton.show()
@@ -373,6 +389,14 @@ class StatusBar():
             item.show()
         for item in self.buttons:
             item.show()
+
+    def showToolTips(self):
+        for item in self.buttons:
+            item.handler.showToolTip()
+
+    def hideToolTips(self):
+        for item in self.buttons:
+            item.handler.hideToolTip()
 
     def enableColorPicker(self):
         pass

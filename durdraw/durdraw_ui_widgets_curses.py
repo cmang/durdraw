@@ -521,6 +521,38 @@ class ButtonHandler:
             #curses_addstr(self.window, self.button.realX, self.button.realY, self.button.label, textColor)
             curses_addstr(self.window, self.button.realX, self.button.realY, buttonString, textColor)
             # render the button on the window
+            if self.button.persistant_tooltip or not self.button.tooltip_hidden:
+                if self.button.get_tooltip_command():
+                    toolTip :str = self.button.get_tooltip_command()
+                    tipColor = self.appState.theme['clickHighlightColor'] | curses.A_BOLD | curses.A_UNDERLINE
+                    # Figure out if the hint is in the button label, if so, place it over it with
+                    # an index offset
+                    tipColOffset = 0
+                    if toolTip.lower() in self.button.label.lower():
+                        tipColOffset = self.button.label.lower().index(toolTip.lower()) + 1
+                        #curses_notify(self.window, "Gorditas")
+                    # keep the tip from going off screen for some buttons
+                    if self.button.realY == 0 and tipColOffset == 0:
+                        tipColOffset += 1
+                    # Print it next to the button for now
+                    curses_addstr(self.window, self.button.realX, self.button.realY + tipColOffset, toolTip, tipColor)
+
+
+    def showToolTip(self):
+        self.button.tooltip_hidden = False
+
+    def hideToolTip(self):
+        self.button.tooltip_hidden = True
+        # Cover up with spaces
+        #if not self.button.hidden:
+        #    self.button.draw()
+        #if self.button.get_tooltip_command() and not self.button.hidden:
+        #    toolTip :str = self.button.get_tooltip_command()
+        #    toolTip = " " * len(toolTip)
+        #    curses_addstr(self.window, self.button.realX, self.button.realY, toolTip)
+
+    def hide(self):
+        self.hidden = True
 
     def on_click(self):
         curses_addstr(self.window, 0, 0, f"{self.button.label} clicked")
