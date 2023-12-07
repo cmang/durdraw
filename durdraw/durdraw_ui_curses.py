@@ -1677,15 +1677,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.clipBoard:  # If there is something in the clipboard
                         self.pasteFromClipboard()
                 elif c == ord('V'):   # alt-V, View mode
-                    self.stdscr.clear()
-                    oldDrawBorders = self.appState.drawBorders  # to turn back on when done
-                    self.appState.playOnlyMode = True
-                    self.startPlaying()
-                    self.appState.playOnlyMode = False
-                    self.statusBar.show()
-                    self.appState.drawBorders = oldDrawBorders
-                    self.cursorOn()
-                    self.stdscr.clear()
+                    self.enterViewMode()
                 elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif c == 112:    # esc-p - start playing, any key exits
@@ -1939,6 +1931,18 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
             self.refresh()
+
+    def enterViewMode(self):
+        self.statusBar.hide()
+        self.stdscr.clear()
+        oldDrawBorders = self.appState.drawBorders  # to turn back on when done
+        self.appState.playOnlyMode = True
+        self.startPlaying()
+        self.appState.playOnlyMode = False
+        self.statusBar.show()
+        self.appState.drawBorders = oldDrawBorders
+        self.cursorOn()
+        self.stdscr.clear()
 
     def move_cursor_enter(self):
         bottomLine = self.realmaxY - 3 + self.appState.topLine
