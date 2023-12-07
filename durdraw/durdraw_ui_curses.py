@@ -577,6 +577,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         infoString = ''
         infoStringList = []
+        self.stdscr.nodelay(0) # back to wait for input when calling getch
 
         if fileName:
             infoStringList.append(f"File: {fileName}")
@@ -1733,8 +1734,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
                     pass
-                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas, not playing
-
+                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                    and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                    # we're in the canvas, not playing
 
                     if mouseState & curses.BUTTON1_PRESSED:
                         if not self.pressingButton:
@@ -1772,7 +1774,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[0] = mouseY + self.appState.topLine
                         # Insert the selected character.
                         drawChar = self.appState.drawChar
-                        self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, moveCursor=False, pushUndo=False)
+                        try:
+                            x_param = mouseX + 1
+                            y_param = mouseY + self.appState.topLine
+                            self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=False, pushUndo=False)
+                        except IndexError:
+                            self.notify(f"Error, debug info: x={x_param}, y={y_param}, topLine={self.appState.topLine}, mouseX={mouseX}, mouseY={mouseY}", pause=True)
                         self.refresh()
 
                     elif self.appState.cursorMode == "Color":   # Change the color under the cursor
@@ -3590,11 +3597,12 @@ Can use ESC or META instead of ALT
         selecting = True
         self.stdscr.nodelay(0)  # wait for getch input
         c = firstkey
+        self.clearStatusBar()
+        #self.addstr(self.statusBarLineNum, 0, f"Use arrow keys to make selection, enter when done.")
         while selecting:
-            self.clearStatusBar()
             endPoint =  [self.xy[0],  self.xy[1]]   # set to wherever the cursor is
-            self.addstr(self.statusBarLineNum, 0, f"Use arrow keys to make selection, enter when done.")
             self.refresh()
+            self.addstr(self.statusBarLineNum + 1, 0, f"Use arrow keys to make selection, enter when done.")
             # draw block area on top of drawing area
             mov = self.mov
             if endPoint[0] >= startPoint[0]:    # if we're moving right of start point
@@ -3623,7 +3631,7 @@ Can use ESC or META instead of ALT
             width = lastColNum - firstColNum + 1
             height = lastLineNum - firstLineNum + 1
             # end draw block area
-            self.stdscr.redrawwin()
+            #self.stdscr.redrawwin()
             c = self.stdscr.getch()
             if c in [98, curses.KEY_LEFT, curses.KEY_SLEFT]:
                 self.move_cursor_left()
@@ -3646,7 +3654,7 @@ Can use ESC or META instead of ALT
                 # Ask user what operation they want, and then do it on the selected area
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
-                self.addstr(self.statusBarLineNum, 0, " " * self.mov.sizeX) # clear status bar
+                self.clearStatusBar()
                 self.promptPrint("[C]opy to clipboard, [D]elete, or Copy to [A]ll Frames in playback range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
@@ -3675,7 +3683,7 @@ Can use ESC or META instead of ALT
                     elif prompt_ch == 27:  # esc, cancel
                         prompting = False
                 selecting = False
-            elif c == curses.KEY_MOUSE: # Remember, we are playing here
+            elif c == curses.KEY_MOUSE: 
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
@@ -3686,13 +3694,19 @@ Can use ESC or META instead of ALT
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                        and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                        # We're in in edit/canvas area
                         self.move_cursor_up()
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                        and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                        # We're in in edit/canvas area
                         self.move_cursor_down()
                 if mouseState == curses.BUTTON1_CLICKED or mouseState & curses.BUTTON_SHIFT:
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                        and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                        # We're in in edit/canvas area
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                             

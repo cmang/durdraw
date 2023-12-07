@@ -81,6 +81,7 @@ class Button():
         self.invisible = True
 
     def on_click(self):
+        result = self.do_nothing()
         if self.hidden == False:
             self.selected = True
             self.handler.draw()
@@ -88,6 +89,9 @@ class Button():
             self.selected = False
             #self.handler.draw()
         return result
+
+    def do_nothing(self):
+        pass
 
     def handle_event(self, event):
         return self.handler.handle_event(event)
@@ -276,7 +280,7 @@ class StatusBar():
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
-        #mainMenu.add_item("Canvas Info", caller.showFileInformation, "i")
+        mainMenu.add_item("Canvas Info", caller.showFileInformation, "i")
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
@@ -297,7 +301,7 @@ class StatusBar():
         toolMenu.set_title("Mouse Tools:")
         #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
         toolMenu.add_item("Move", self.setCursorModeMove, "m")
-        toolMenu.add_item("Select", self.setCursorModeSelect, "s")
+        #toolMenu.add_item("Select", self.setCursorModeSelect, "s")
         toolMenu.add_item("Draw", self.setCursorModePnt, "d")
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
