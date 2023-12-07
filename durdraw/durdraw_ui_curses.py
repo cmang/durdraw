@@ -550,7 +550,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov = Movie(self.opts) # initialize a new movie
             self.setPlaybackRange(1, self.mov.frameCount)
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
-            self.appState.sauce = dursauce.EmptySauce()
+            self.appState.sauce = dursauce.SauceParser()    # empty sauce
             self.appState.curOpenFileName = None
             self.hardRefresh()
 
@@ -574,10 +574,14 @@ class UserInterface():  # Separate view (curses) from this controller
         author = self.appState.sauce.author
         title = self.appState.sauce.title
         group = self.appState.sauce.group
+        date = self.appState.sauce.date
+        year = self.appState.sauce.year
+        month = self.appState.sauce.month
+        day = self.appState.sauce.day
 
         infoString = ''
         infoStringList = []
-        self.stdscr.nodelay(0) # back to wait for input when calling getch
+        self.stdscr.nodelay(0) # wait for input when calling getch
 
         if fileName:
             infoStringList.append(f"File: {fileName}")
@@ -590,6 +594,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
         if group:
             infoStringList.append(f"Group: {group}")
+
+        if date:
+            infoStringList.append(f"Date: {year}/{month}/{day}")
 
         infoStringList.append(f"Width: {self.mov.sizeX}")
         infoStringList.append(f"Height: {self.mov.sizeY}")
@@ -2410,14 +2417,20 @@ class UserInterface():  # Separate view (curses) from this controller
                 
             # read sauce, if available
             if filename not in folders:
-                file_sauce = dursauce.SauceParser(full_path)
+                #file_sauce = dursauce.SauceParser(full_path)
+                file_sauce = dursauce.SauceParser()
+                file_sauce.parse_file(full_path)
                 if file_sauce.sauce_found:
                     file_title = file_sauce.title
                     file_author = file_sauce.author
                     file_width = file_sauce.width
                     file_height = file_sauce.height
+                    file_date = file_sauce.date
+                    file_year = file_sauce.year
+                    file_month = file_sauce.month
+                    file_day = file_sauce.day
             else:
-                file_sauce = dursauce.EmptySauce()
+                file_sauce = dursauce.SauceParser() # empty placeholder sauce
                 file_title = None
                 file_author = None
                 file_width = 80
@@ -2426,7 +2439,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # display file info - format data
             file_info = f"File: {filename}"
             if file_sauce.sauce_found:
-                file_info = f"Title: {file_title}, Artist: {file_author}, Width: {file_width}, Height: {file_height}, File: {filename}"
+                file_info = f"{file_title}, Artist: {file_author}, Date: {file_year}/{file_month}/{file_day}, Width: {file_width}, Height: {file_height}" 
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 

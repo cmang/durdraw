@@ -2,34 +2,20 @@
 
 import struct
 
-class EmptySauce():
-    def __init__(self):
-        self.fileName = None
-        # sauce data
-        self.title = None
-        self.author = None
-        self.group = None
-        self.date = None
-        self.fileType = None
-        self.tinfo1 = None
-        self.tinfo2 = None
-        self.width = 80
-        self.height = 25
-        self.sauce_blob = None
-        self.sauce_found = False
-
-
 class SauceParser():
-    def __init__(self, filename):
+    def __init__(self):
         # Open the file, look for a sauce record,
         # extract sauce data into a structure
-        self.fileName = filename
+        #self.fileName = filename
 
         # sauce data
         self.title = None
         self.author = None
         self.group = None
         self.date = None
+        self.year = None
+        self.month = None
+        self.day = None
         self.fileType = None
         self.tinfo1 = None
         self.tinfo2 = None
@@ -40,6 +26,7 @@ class SauceParser():
         self.title_offset = 7
         self.author_offset = 42
         self.group_offset = 62
+        self.date_offset = 82
         self.fileType_offset = 95
         self.tinfo1_offset = 96
         self.tinfo2_offset = 98
@@ -48,9 +35,7 @@ class SauceParser():
         self.sauce_blob = None
         self.sauce_found = False
 
-        self.load_and_parse_file(filename)
-
-    def load_and_parse_file(self, filename):
+    def parse_file(self, filename):
         try:
             with open(filename, 'rb') as file:
                 file_blob = file.read()
@@ -65,6 +50,10 @@ class SauceParser():
             self.title = struct.unpack_from('35s', sauce_blob, offset=self.title_offset)[0]
             self.author = struct.unpack_from('20s', sauce_blob, offset=self.author_offset)[0]
             self.group = struct.unpack_from('20s', sauce_blob, offset=self.group_offset)[0]
+            self.date = struct.unpack_from('8s', sauce_blob, offset=self.date_offset)[0].decode()
+            self.year = self.date[:4]
+            self.month = self.date[4:][:2]
+            self.day = self.date[4:][2:]
 
             # turn bytes into nicer strings
             try:
