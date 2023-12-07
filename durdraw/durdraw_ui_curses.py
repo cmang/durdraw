@@ -1346,14 +1346,28 @@ class UserInterface():  # Separate view (curses) from this controller
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
         canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))
+
         frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
         rangeBar = "R: %i/%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
         fpsBar = "<FPS>: %i " % (self.opts.framerate)
         delayBar = "D: %.2f " % (self.mov.currentFrame.delay)
-        self.addstr(statusBarLineNum, 2 + line_1_offset, frameBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, 12 + line_1_offset, fpsBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, 23 + line_1_offset, delayBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, 31 + line_1_offset, rangeBar, curses.color_pair(mainColor))
+
+        # Ugly hardcoded locations. These should be handled in the GUI
+        # framework instead.
+        frameBar_offset = 2 + line_1_offset
+        fpsBar_offset = 12 + line_1_offset
+        fpsBar_minus_offset = fpsBar_offset + 4
+        delayBar_offset = 23 + line_1_offset
+        rangeBar_offset = 31 + line_1_offset
+        chMap_offset = 35    # how far in to show the character map
+        # > is hardcoded at 66. yeesh.
+        chMap_next_offset = chMap_offset + 31
+
+        # Draw elements that aren't in the GUI framework
+        self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
 
         if self.appState.debug:
             cp = self.ansi.colorPairMap[(self.colorfg, self.colorbg)]
@@ -1378,26 +1392,25 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum+1, 9, fillChar * 2, curses.color_pair(cp))
 
         # Draw character map for f1-f10 (block characters)
-        chMapOffset = 35    # how far in to show the character map
-        self.addstr(statusBarLineNum+1, chMapOffset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, chMap_offset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
         self.addstr(statusBarLineNum+1, 66, ">", curses.color_pair(clickColor) | curses.A_BOLD)
         if self.colorfg > 8 and self.appState.colorMode == "16":    # bright color
-            self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
-            self.addstr(statusBarLineNum+1, chMapOffset, self.chMapString, curses.color_pair(self.colorpair))
+            self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair))
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
-        #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+        #self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
         if self.appState.colorMode == "16":   # put it to the right instead of the left, to make room for BG colors
-            self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+            self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
         #if self.appState.colorMode == 256:
         else:
-            self.addstr(statusBarLineNum+1, chMapOffset-16, charSetNumberString, curses.color_pair(mainColor)) 
-        #self.addstr(statusBarLineNum+1, chMapOffset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
+            self.addstr(statusBarLineNum+1, chMap_offset-16, charSetNumberString, curses.color_pair(mainColor)) 
+        #self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0
         #for x in range(1,11): 
-        #    self.addstr(statusBarLineNum+1, chMapOffset+y, "F%i" % x, curses.color_pair(mainColor))
+        #    self.addstr(statusBarLineNum+1, chMap_offset+y, "F%i" % x, curses.color_pair(mainColor))
         #    y = y + 3
 
         # draw 16-color picker
@@ -1439,12 +1452,6 @@ class UserInterface():  # Separate view (curses) from this controller
         # Draw Range, FPS and Delay buttons
         self.addstr(statusBarLineNum, 12 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
         self.addstr(statusBarLineNum, 16 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
-        if self.commandMode:
-            self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
-            self.statusBar.showToolTips()
-        else:
-            self.statusBar.hideToolTips()
-            self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
         if self.appState.modified:
             self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
         else:
@@ -1465,6 +1472,45 @@ class UserInterface():  # Separate view (curses) from this controller
             transportString = "|< << |> >> >|" 
             self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(clickColor) | curses.A_BOLD)
         # Draw the new status bar
+        if self.commandMode:
+            self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
+            self.statusBar.showToolTips()
+        else:
+            self.statusBar.hideToolTips()
+            self.addstr(statusBarLineNum, realmaxX - 1, " ", curses.color_pair(2) | curses.A_BOLD)
+
+        # More offsets for the tooltips - for transport buttons
+        trans_play_offset = transportOffset + 6
+        trans_prev_offset = transportOffset + 3
+        trans_next_offset = transportOffset + 10
+
+        # Update tooltip locations for free floating tooltips
+        frameBar_tip = self.statusBar.other_tooltips.get_tip("F")
+        frameBar_tip.set_location(row = statusBarLineNum, column = frameBar_offset)
+        fpsBar_plus_tip = self.statusBar.other_tooltips.get_tip("-")
+        fpsBar_plus_tip.set_location(row = statusBarLineNum, column = fpsBar_offset)
+        fpsBar_minus_tip = self.statusBar.other_tooltips.get_tip("+")
+        fpsBar_minus_tip.set_location(row = statusBarLineNum, column = fpsBar_minus_offset)
+        delayBar_tip = self.statusBar.other_tooltips.get_tip("D")
+        delayBar_tip.set_location(row = statusBarLineNum, column = delayBar_offset)
+        rangeBar_tip = self.statusBar.other_tooltips.get_tip("R")
+        rangeBar_tip.set_location(row = statusBarLineNum, column = rangeBar_offset)
+        colorPicker_tip = self.statusBar.other_tooltips.get_tip("c")
+        colorPicker_tip.set_location(row = statusBarLineNum + 1, column = 2)
+        prevChMap_tip = self.statusBar.other_tooltips.get_tip("[")
+        prevChMap_tip.set_location(row = statusBarLineNum + 1, column = chMap_offset - 1)
+        nextChMap_tip = self.statusBar.other_tooltips.get_tip("]")
+        nextChMap_tip.set_location(row = statusBarLineNum + 1, column = chMap_next_offset)
+        play_tip = self.statusBar.other_tooltips.get_tip("p")
+        play_tip.set_location(row = statusBarLineNum, column = trans_play_offset)
+        prev_tip = self.statusBar.other_tooltips.get_tip("j")
+        prev_tip.set_location(row = statusBarLineNum, column = trans_prev_offset)
+        next_tip = self.statusBar.other_tooltips.get_tip("k")
+        next_tip.set_location(row = statusBarLineNum, column = trans_next_offset)
+
+        if self.appState.colorMode == "16":
+            colorPicker_tip.hide()
+
         self.statusBar.draw()
         # if cursor is outside of canvas, fix it
         bottomLine = self.realmaxY - 3 + self.appState.topLine

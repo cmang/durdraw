@@ -16,6 +16,7 @@ from durdraw.durdraw_ui_widgets_curses import DrawCharPickerHandler
 from durdraw.durdraw_ui_widgets_curses import MenuHandler
 from durdraw.durdraw_ui_widgets_curses import StatusBarHandler 
 from durdraw.durdraw_ui_widgets_curses import FgBgColorPickerHandler
+from durdraw.durdraw_ui_widgets_curses import ToolTipHandler
 from durdraw.durdraw_gui_manager import Gui
 
 class Button():
@@ -254,6 +255,68 @@ class ColorSwatch():
         self.handler.draw()
 
 
+class ToolTipsGroup():
+    """ These are tooltips that can show up without being
+        tied to any specific object, other than an x/y location """
+    def __init__(self, caller):
+        self.tips = []
+        self.hidden = True
+        self.caller = caller
+
+    def add_tip(self, hotkey :str, row=0, col=0):
+        newTip = ToolTip(self.caller)
+        newTip.hotkey = hotkey
+        newTip.row = row
+        newTip.column = col
+        self.tips.append(newTip)
+
+    def get_tip(self, hotkey :str):
+        for tip in self.tips:
+            if tip.hotkey == hotkey:
+                return tip
+        return False
+
+    def show(self):
+        self.hidden = False
+        for tip in self.tips:
+            tip.show()
+
+    def hide(self):
+        self.hidden = True
+        for tip in self.tips:
+            tip.hide()
+
+class ToolTip():
+    def __init__(self, context):
+        # context is the caller, basically the statusbar
+        # context provides window, appState, etc
+        self.hotkey = '' # the key the user presses
+        self.column = 0  # on the screen
+        self.row = 0
+        self.hidden = True
+        self.alwaysHidden = False
+        self.handler = ToolTipHandler(self, context)
+
+    def set_hotkey(self, hotkey :str):
+        self.hotkey = hotkey
+
+    def set_location(self, row=None, column=None):
+        if row == None:
+            row = self.row
+        if column == None:
+            column = self.column
+        self.row = row
+        self.column = column
+
+    def show(self):
+        if not self.alwaysHidden:
+            self.hidden = False
+            self.handler.show()
+
+    def hide(self):
+        self.hidden = True
+        self.handler.hide()
+
 class StatusBar():
     def __init__(self, caller, x=0, y=0, appState=None):
         window = caller.stdscr
@@ -268,6 +331,29 @@ class StatusBar():
         self.hidden = False
         self.x = x
         self.y = y
+
+        # Initialize tooltips that aren't tied to a button object
+        # These show up when the user hits esc, along with the
+        # visible buttons' tooltips.
+        # "Free floating tips"
+        self.other_tooltips = ToolTipsGroup(self)
+        self.other_tooltips.add_tip("F", row=0, col=7) # Frame
+        self.other_tooltips.add_tip("+", row=0, col=7) # FPS+
+        self.other_tooltips.add_tip("-", row=0, col=7) # FPS-
+        self.other_tooltips.add_tip("D", row=0, col=7) # Frame delay
+        self.other_tooltips.add_tip("R", row=0, col=7) # Frame range
+        self.other_tooltips.add_tip("c", row=0, col=7) # color picker
+        self.other_tooltips.add_tip("[", row=0, col=7) # prev charset
+        self.other_tooltips.add_tip("]", row=0, col=7) # next charset
+        self.other_tooltips.add_tip("p", row=0, col=7) # play/pause
+        self.other_tooltips.add_tip("j", row=0, col=7) # prev frame
+        self.other_tooltips.add_tip("k", row=0, col=7) # next frame
+
+        # If we're in 16 color mode, always hide the "c" button
+        if self.appState.colorMode == "16":
+            colorPicker_tooltip = self.other_tooltips.get_tip('c')
+            colorPicker_tooltip.alwaysHidden = True
+
         # menu items 
         self.menuButton = None
         # Create a menu list item, add menu items to it
@@ -397,6 +483,7 @@ class StatusBar():
     def showToolTips(self):
         for item in self.buttons:
             item.handler.showToolTip()
+        self.other_tooltips.show()
 
     def hideToolTips(self):
         for item in self.buttons:

@@ -494,6 +494,27 @@ class FgBgColorPickerHandler:
     def draw(self, plusX=0, plusY=0):
         curses_addstr(self.window, self.y, self.x, "F:  G:  ")
 
+class ToolTipHandler:
+    """ Draw and hide tooltips """
+    #def __init__(self, tooltip, window, appState=None):
+    def __init__(self, tooltip, context):
+        self.tooltip = tooltip
+        self.window = context.window
+        self.appState = context.appState
+
+    def draw(self):
+        tipString = self.tooltip.hotkey
+        tipColor = self.appState.theme['clickHighlightColor'] | curses.A_BOLD | curses.A_UNDERLINE
+        #curses_addstr(self.window, self.tooltip.column, self.tooltip.row, tipString, tipColor)
+        curses_addstr(self.window, self.tooltip.row, self.tooltip.column, tipString, tipColor)
+
+    def show(self):
+        self.draw()
+
+    def hide (self):
+        pass
+
+
 class ButtonHandler:
     """ hook into Curses to draw button
     """
