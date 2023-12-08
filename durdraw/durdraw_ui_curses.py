@@ -1330,8 +1330,14 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             #self.clearStatusBarNoRefresh()
             pass
-        self.line_1_offset = 5
+
+        # How far right to put the toolbar's little animation
+        # stuff. Frame, FPS, Delay and Range.
+        # Move it far right enough for the menus.
+        #self.line_1_offset = 5
+        self.line_1_offset = 15
         line_1_offset = self.line_1_offset
+
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
         statusBarLineNum = realmaxY - 2
         self.statusBar.colorPicker.handler.move(0,realmaxY - 6)
@@ -2494,7 +2500,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # display file info - format data
             file_info = f"File: {filename}, Size: {file_size}"
             if file_sauce.sauce_found:
-                file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {file_year}/{file_month}/{file_day}, Width: {sauce_width}, Height: {sauce_height}" 
+                file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {file_year}/{file_month}/{file_day}, Width: {sauce_width}, Height: {sauce_height}, Size: {file_size}" 
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 

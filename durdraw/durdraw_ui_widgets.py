@@ -387,7 +387,7 @@ class StatusBar():
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
         mainMenu.add_item("Canvas Info", caller.showFileInformation, "i")
-        mainMenu.add_item("View Mode", caller.enterViewMode, "v")
+        mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v")
         mainMenu.add_item("Help", caller.showHelp, "h")
         mainMenu.add_item("Quit", caller.safeQuit, "q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
@@ -414,8 +414,12 @@ class StatusBar():
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
         self.toolMenu = toolMenu
+
         # Make cursor tool selector button
-        toolButton = Button("Tool", 0, 45, toolMenu.showHide, self.window, appState=self.appState)
+        # offset is how far right to put the button in the statusbar:
+        #toolButton_offset = 45  
+        toolButton_offset = 7
+        toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
         toolButton.label = self.caller.appState.cursorMode
         toolButton.set_tooltip_command('t')
@@ -438,8 +442,10 @@ class StatusBar():
         #charSetButton.show()
         self.charSetButton = charSetButton
 
+        # Brush picker - make me a real brush someday.
+        drawCharPicker_offset = toolButton_offset + 6
         drawCharPicker = DrawCharPicker(self.window, caller=self)
-        drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window, appState=self.appState)
+        drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  drawCharPicker_offset, drawCharPicker.pickChar, self.window, appState=self.appState)
         drawCharPickerButton.picker = True
         drawCharPickerButton.identity = "drawChar"
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
