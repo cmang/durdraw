@@ -972,6 +972,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
+                        if mouseState == curses.BUTTON1_CLICKED:
+                            self.showFileInformation()
+
                         if not self.appState.hasMouseScroll:
                             curses.BUTTON5_PRESSED = 0
                             curses.BUTTON4_PRESSED = 0
