@@ -22,26 +22,39 @@ from durdraw.durdraw_gui_manager import Gui
 class Button():
     def __init__(self, label, x, y, callback, window, invisible = False, appState=None):
         #self.location = 0;  # 0 = beginning of /tring
-        self.x = x
-        self.y = y
+        self.x :int = x
+        self.y :int = y
         self.appState = appState
-        self.realX = x
-        self.realY = y
-        self.label = label  # What you should click
-        self.tooltip_command = None
-        self.tooltip_hidden = True
-        self.persistant_tooltip = False
-        self.width = len(self.label)
-        self.color = "brightGreen"  # bright green = clickable by defaulta
+        self.realX :int = x
+        self.realY :int = y
+        self.label :str = label  # What you should click
+        self.identity :str = label   # Unique from the label
+        self.tooltip_command :str = None
+        self.tooltip_hidden :bool = True
+        self.persistant_tooltip :bool = False
+        self.width :int = len(self.label)
+        self.color :str = "brightGreen"  # bright green = clickable by defaulta
         self.image = None   # If we want an icon in a GUI version
         self.window = window    # stdscr in the case of screen
         self.callback = callback
+        # sub_buttons automatically show and hide with this
+        # button. like satellites.
+        #
+        # {my-label: sub-button-pointer}
+        # The idea is that when the label is "Draw" and I run .show(),
+        # call sub-button.show().
+        self.sub_buttons = {}
         self.parameter = None
-        self.hidden = False
-        self.selected = False
-        self.picker= False
-        self.invisible = invisible # If true, responds to clicks but does not show. Useful for "overlays"
+        self.hidden :bool = False
+        self.selected :bool = False
+        self.picker :bool = False
+        self.invisible :bool = invisible # If true, responds to clicks but does not show. Useful for "overlays"
         self.handler = ButtonHandler(self, self.window, callback, appState=self.appState)
+
+    def add_sub_button(self, label, button):
+        """ Label is what self.label should be when I should
+            calll button.show() """
+        self.sub_buttons.update({label: button})
 
     def set_tooltip_command(self, command: str):
         """ Command should be the keyboard command, like the "o" in esc-o """
@@ -53,10 +66,15 @@ class Button():
     def hide(self):
         self.hidden = True
         #self.handler.hidden = True
+        for label in self.sub_buttons:
+            self.sub_buttons[label].hide()
         self.handler.hide()
 
     def show(self):
         self.hidden = False
+        for label in self.sub_buttons:
+            if self.label == label:
+                self.sub_buttons[label].show()
         self.draw()
 
     def update_real_xy(self, x=None, y=None):
@@ -423,11 +441,16 @@ class StatusBar():
         drawCharPicker = DrawCharPicker(self.window, caller=self)
         drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  51, drawCharPicker.pickChar, self.window, appState=self.appState)
         drawCharPickerButton.picker = True
+        drawCharPickerButton.identity = "drawChar"
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
         drawCharPickerButton.realY = self.y + drawCharPickerButton.y
         #drawCharPickerButton.show() 
         drawCharPickerButton.hide() 
         self.drawCharPickerButton = drawCharPickerButton
+
+        # This is to make the char picker button hide/show when
+        # toolButton's label is set to "Draw"
+        self.toolButton.add_sub_button("Draw", drawCharPickerButton)
 
 
         colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
@@ -478,10 +501,13 @@ class StatusBar():
 
     def show(self):
         self.hidden = False
+        exclude_list = ["drawChar"] # button identities to exclude
         for item in self.items:
-            item.show()
+            if item.identity not in exclude_list:
+                item.show()
         for item in self.buttons:
-            item.show()
+            if item.identity not in exclude_list:
+                item.show()
 
     def showToolTips(self):
         for item in self.buttons:

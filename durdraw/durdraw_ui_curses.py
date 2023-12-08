@@ -1840,6 +1840,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
                         self.eyeDrop(mouseX, mouseY)
+                        self.statusBar.setCursorModeMove()
+                        self.drawStatusBar()
                     elif self.appState.cursorMode == "Select":   # Change the color under the cursor
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
@@ -2481,15 +2483,17 @@ class UserInterface():  # Separate view (curses) from this controller
                     file_day = file_sauce.day
             else:
                 file_sauce = dursauce.SauceParser() # empty placeholder sauce
-                file_title = None
-                file_author = None
-                file_width = 80
-                file_height = 24
+                sauce_title = None
+                sauce_author = None
+                sauce_width = 80
+                sauce_height = 24
+
+            file_size = os.path.getsize(full_path)
 
             # display file info - format data
-            file_info = f"File: {filename}"
+            file_info = f"File: {filename}, Size: {file_size}"
             if file_sauce.sauce_found:
-                file_info = f"{file_title}, Artist: {file_author}, Date: {file_year}/{file_month}/{file_day}, Width: {file_width}, Height: {file_height}" 
+                file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {file_year}/{file_month}/{file_day}, Width: {sauce_width}, Height: {sauce_height}" 
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
