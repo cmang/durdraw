@@ -2494,9 +2494,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 sauce_height = 24
 
             file_size = os.path.getsize(full_path)
+            file_modtime_string = durfile.get_file_mod_date_time(full_path)
 
             # display file info - format data
-            file_info = f"File: {filename}, Size: {file_size}"
+            file_info = f"File: {filename}, Size: {file_size}, Modified: {file_modtime_string}"
             if file_sauce.sauce_found:
                 file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {file_year}/{file_month}/{file_day}, Width: {sauce_width}, Height: {sauce_height}, Size: {file_size}" 
             # show it on screen
