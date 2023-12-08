@@ -62,14 +62,30 @@ class Frame():
         self.sizeY = height
         self.height = height
         self.delay = 0  # delay == # of sec to wait at this frame.
+
+        # Generate character arrays for frame contents, fill it
+        # with ' ' (space) characters
         for x in range(0, height):
             self.content.append([])
             for y in range(0, width):
                 self.content[x].append(' ')
+
         self.initOldColorMap()
         #self.initColorMap()
         #self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
         self.setDelayValue(0)
+
+    def flip_horizontal(self):
+        for x in range(0, self.height):
+            self.content[x].reverse()
+            self.newColorMap[x].reverse()
+
+    def flip_horizontal_segment(self, startPoint, height, width, frange=None):
+        """ Finish writing this, use it for the alt-k select """
+        for x in range(0, self.height):
+            self.content[x].reverse()
+            self.newColorMap[x].reverse()
+
 
     def setWidth(self, width):
         self.sizeX = width

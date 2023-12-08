@@ -947,11 +947,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.stopPlaying()
                 elif c == 111:                # alt-o - open
                     self.stopPlaying()
-                    load_filename = self.openFilePicker()
-                    if load_filename:   # if not False
-                        self.clearCanvas(prompting=False)
-                        self.loadFromFile(load_filename, 'dur')
-                        self.move_cursor_topleft()
+                    self.openFromMenu()     # as if we clicked menu->open
                 elif c in [104, 63]:                # alt-h - help
                     self.showHelp()
                     c = None
@@ -2137,6 +2133,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if load_filename:   # if not False
             self.clearCanvas(prompting=False)
             self.loadFromFile(load_filename, 'dur')
+            #self.stdscr.clear()
+            self.hardRefresh()
             self.move_cursor_topleft()
 
     def showCharSetPicker(self):
@@ -2707,10 +2705,12 @@ class UserInterface():  # Separate view (curses) from this controller
                             top_line += 1
             else: # add to search string
                 search_string += chr(c)
+                selected_item_number = 0
+                current_line_number = 0
+                top_line = 0
                 for filename in file_list:  # search list for search_string
                     if filename not in folders and filename.startswith(search_string):
                         #selected_item_number = file_list.index(filename)
-                        selected_item_number = 0
                         break   # stop at the first match
 
     def open(self):
@@ -3730,7 +3730,7 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy to clipboard, [D]elete, or Copy to [A]ll Frames in playback range? " )
+                self.promptPrint("[C]opy, [D]elete, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
@@ -3738,21 +3738,27 @@ Can use ESC or META instead of ALT
                         prompting = False
                     #if chr(prompt_ch) in ['m', 'M']:    # move
                     #    prompting = False
-                    if chr(prompt_ch) in ['d', 'D']:    # delete/clear
+                    #elif chr(prompt_ch) in ['x', 'X']:    # flip horizontally
+                    #    self.undo.push()
+                    #    self.mov.currentFrame.flip_horizontal()
+                    #    prompting = False
+                    elif chr(prompt_ch) in ['d', 'D']:    # delete/clear
                         self.promptPrint("Delete across all frames in playback range (Y/N)? ")
                         askingAboutRange = True
                         while askingAboutRange:
                             prompt_ch = self.stdscr.getch()
                             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.undo.push()
                                 self.deleteSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
                                 askingAboutRange = False
                             if chr(prompt_ch) in ['n', 'N']:    # yes, all range
+                                self.undo.push()
                                 self.deleteSegment([firstLineNum, firstColNum], height, width)
                                 askingAboutRange = False
                             elif prompt_ch == 27:  # esc, cancel
                                 askingAboutRange = False
                         prompting = False
-                    if chr(prompt_ch) in ['a', 'A']:    # copy to all frames
+                    elif chr(prompt_ch) in ['a', 'A']:    # copy to all frames
                         self.copySegmentToAllFrames([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
                         prompting = False
                     elif prompt_ch == 27:  # esc, cancel
