@@ -2585,6 +2585,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         file_list.append(dirname)
                     file_list += sorted(matched_files)
                     # reset ui
+                    top_line = 0
                     selected_item_number = 0
                     search_string = ""
                     full_file_list = file_list
