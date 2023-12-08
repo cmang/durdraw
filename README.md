@@ -21,9 +21,6 @@ color output, and other interesting features.
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
-Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
-ANSI (.ans), JSON, GIF, mIRC color, HTML, and PNG formats.
-
 ## REQUIREMENTS
 
 * Python 3 (3.10+ recommended)
