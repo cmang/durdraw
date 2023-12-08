@@ -1990,7 +1990,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[0] = bottomLine
 
     def move_cursor_topleft(self):
-        self.xy[0] = 1
+        self.appState.topLine = 0
+        self.xy[0] = 0
         self.xy[1] = 1
         self.refresh()
 
