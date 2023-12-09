@@ -2483,26 +2483,27 @@ class UserInterface():  # Separate view (curses) from this controller
             filename = file_list[selected_item_number]
             full_path = f"{current_directory}/{file_list[selected_item_number]}"
                 
-            # read sauce, if available
             if filename not in folders:
+                # read sauce, if available
                 #file_sauce = dursauce.SauceParser(full_path)
                 file_sauce = dursauce.SauceParser()
                 file_sauce.parse_file(full_path)
-                if file_sauce.sauce_found:
-                    file_title = file_sauce.title
-                    file_author = file_sauce.author
-                    file_width = file_sauce.width
-                    file_height = file_sauce.height
-                    file_date = file_sauce.date
-                    file_year = file_sauce.year
-                    file_month = file_sauce.month
-                    file_day = file_sauce.day
+                sauce_title = file_sauce.title
+                sauce_author = file_sauce.author
+                sauce_width = file_sauce.width
+                sauce_height = file_sauce.height
+                sauce_date = file_sauce.date
+                sauce_year = file_sauce.year
+                sauce_month = file_sauce.month
+                sauce_day = file_sauce.day
+                sauce_width = file_sauce.width
+                sauce_height = file_sauce.height
             else:
                 file_sauce = dursauce.SauceParser() # empty placeholder sauce
                 sauce_title = None
                 sauce_author = None
-                sauce_width = 80
-                sauce_height = 24
+                #sauce_width = file_sauce.width
+                #sauce_height = file_sauce.height
 
             file_size = os.path.getsize(full_path)
             file_modtime_string = durfile.get_file_mod_date_time(full_path)
@@ -2510,7 +2511,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # display file info - format data
             file_info = f"File: {filename}, Size: {file_size}, Modified: {file_modtime_string}"
             if file_sauce.sauce_found:
-                file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {file_year}/{file_month}/{file_day}, Width: {sauce_width}, Height: {sauce_height}, Size: {file_size}" 
+                file_info = f"{sauce_title}, Artist: {sauce_author}, Date: {sauce_year}/{sauce_month}/{sauce_day}, Width: {sauce_width}, Height: {sauce_height}, Size: {file_size}" 
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 

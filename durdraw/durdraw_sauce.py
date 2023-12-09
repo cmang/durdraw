@@ -19,8 +19,8 @@ class SauceParser():
         self.fileType = None
         self.tinfo1 = None
         self.tinfo2 = None
-        self.width = None
-        self.height = None
+        self.width = 80
+        self.height = 25
 
         # sauce data offsets
         self.title_offset = 7
