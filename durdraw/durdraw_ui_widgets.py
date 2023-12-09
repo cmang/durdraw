@@ -431,6 +431,8 @@ class StatusBar():
         toolMenu.set_y(toolButton.realY)
         self.toolButton = toolButton
 
+        # This thing is already in the menu. Maybe we should reclaim
+        # the real estate from the status bar.
         charSetButton = Button("CharSet", 1, 26, caller.showCharSetPicker, self.window, appState=self.appState)
         # make proper label for character set button
         charSetLabel = self.caller.appState.characterSet
@@ -439,8 +441,10 @@ class StatusBar():
             charSetLabel = self.caller.appState.unicodeBlock
         charSetLabel = f"{charSetLabel[:3]}.."
         charSetButton.label = charSetLabel
-        #charSetButton.show()
+        if self.caller.appState.colorMode == "16":
+            charSetButton.hide()
         self.charSetButton = charSetButton
+        charSetButton.hide()
 
         # Brush picker - make me a real brush someday.
         drawCharPicker_offset = toolButton_offset + 6

@@ -59,7 +59,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.pushingToClip = False  # true while we are holding down mouse button to draw or erase
         self.metaKey = 0
         self.commandMode = False
-        self.line_1_offset = 5
+        self.line_1_offset = 15
         self.transportOffset = 0
         #self.stdscr.box()
         self.gui = durgui.Gui(guiType="curses", window=self.stdscr)
@@ -1330,14 +1330,15 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.clearStatusBarNoRefresh()
             pass
 
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+
         # How far right to put the toolbar's little animation
         # stuff. Frame, FPS, Delay and Range.
         # Move it far right enough for the menus.
-        #self.line_1_offset = 5
-        self.line_1_offset = 15
+       # self.line_1_offset = 15
+        self.line_1_offset = realmaxX - 63  # anchor to the right by transport
         line_1_offset = self.line_1_offset
 
-        realmaxY,realmaxX = self.realstdscr.getmaxyx()
         statusBarLineNum = realmaxY - 2
         self.statusBar.colorPicker.handler.move(0,realmaxY - 6)
         self.statusBarLineNum = statusBarLineNum
@@ -1360,7 +1361,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # Ugly hardcoded locations. These should be handled in the GUI
         # framework instead.
         frameBar_offset = 2 + line_1_offset
-        fpsBar_offset = 12 + line_1_offset
+        fpsBar_offset = 13 + line_1_offset
         fpsBar_minus_offset = fpsBar_offset + 4
         delayBar_offset = 23 + line_1_offset
         rangeBar_offset = 31 + line_1_offset
@@ -1403,14 +1404,16 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
             self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair))
+
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
-        #self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+
         if self.appState.colorMode == "16":   # put it to the right instead of the left, to make room for BG colors
             self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
         #if self.appState.colorMode == 256:
         else:
-            self.addstr(statusBarLineNum+1, chMap_offset-16, charSetNumberString, curses.color_pair(mainColor)) 
+            #self.addstr(statusBarLineNum+1, chMap_offset-16, charSetNumberString, curses.color_pair(mainColor)) 
+            self.addstr(statusBarLineNum+1, chMap_offset-8, charSetNumberString, curses.color_pair(mainColor)) 
         #self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0
@@ -1455,8 +1458,8 @@ class UserInterface():  # Separate view (curses) from this controller
         locationStringOffset = realmaxX - len(locationString) - 1
         self.addstr(statusBarLineNum+1, locationStringOffset, locationString, curses.color_pair(mainColor))
         # Draw Range, FPS and Delay buttons
-        self.addstr(statusBarLineNum, 12 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
-        self.addstr(statusBarLineNum, 16 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(statusBarLineNum, 13 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
+        self.addstr(statusBarLineNum, 17 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
         if self.appState.modified:
             self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
         else:
@@ -1467,7 +1470,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum, 23 + line_1_offset, "D", curses.color_pair(clickColor) | curses.A_BOLD)  # Delay button
         # draw transport
         transportString = "|< << |> >> >|" 
-        transportOffset = realmaxX - len(transportString) - 11
+        transportOffset = realmaxX - len(transportString) - 9 
         self.transportOffset = transportOffset
         if self.playing:
             transportString = "|< << || >> >|" 
@@ -1887,11 +1890,11 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.clickHighlight(tOffset + 12, ">|")
                                 self.mov.nextFrame()
                                 self.mov.gotoFrame(self.mov.frameCount)
-                            elif mouseX == 12 + offset:    # clicked FPS down
-                                self.clickHighlight(12 + offset, "<")
+                            elif mouseX == 13 + offset:    # clicked FPS down
+                                self.clickHighlight(13 + offset, "<")
                                 self.decreaseFPS()
-                            elif mouseX == 16 + offset:    # clicked FPS up
-                                self.clickHighlight(16 + offset, ">")
+                            elif mouseX == 17 + offset:    # clicked FPS up
+                                self.clickHighlight(17 + offset, ">")
                                 self.increaseFPS()
                             elif mouseX == 23 + offset:  # clicked Delay button
                                 self.clickHighlight(23 + offset, "D")
