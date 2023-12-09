@@ -1033,7 +1033,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.pressingButton = False
                             
                         if mouseState & curses.BUTTON1_PRESSED:
-                            if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                            #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+                            if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                                and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
                                 if not self.pressingButton:
                                     self.pressingButton = True
                                     print('\033[?1003h') # enable mouse tracking with the XTERM APIP
@@ -1047,7 +1049,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                 curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         if self.pressingButton or mouseState == curses.BUTTON1_CLICKED:    # self.playing == True
                             self.gui.got_click("Click", mouseX, mouseY)
-                            if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: 
+                            if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                                and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
                                 # we clicked in edit area, so move the cursor
                                 self.xy[1] = mouseX + 1 # set cursor position
                                 self.xy[0] = mouseY + self.appState.topLine

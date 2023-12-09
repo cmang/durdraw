@@ -22,7 +22,7 @@ class SauceParser():
         self.width = None
         self.height = None
 
-        # stupid offsets
+        # sauce data offsets
         self.title_offset = 7
         self.author_offset = 42
         self.group_offset = 62
