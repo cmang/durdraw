@@ -552,6 +552,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
             self.appState.sauce = dursauce.SauceParser()    # empty sauce
             self.appState.curOpenFileName = None
+            self.move_cursor_topleft()
             self.hardRefresh()
 
     def showCharInspector(self):
@@ -1368,7 +1369,8 @@ class UserInterface():  # Separate view (curses) from this controller
         fpsBar_minus_offset = fpsBar_offset + 4
         delayBar_offset = 23 + line_1_offset
         rangeBar_offset = 31 + line_1_offset
-        chMap_offset = 35    # how far in to show the character map
+        #chMap_offset = 35    # how far in to show the character map
+        chMap_offset = realmaxX - 50    # how far in to show the character map
         # > is hardcoded at 66. yeesh.
         chMap_next_offset = chMap_offset + 31
 
@@ -1402,7 +1404,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         # Draw character map for f1-f10 (block characters)
         self.addstr(statusBarLineNum+1, chMap_offset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
-        self.addstr(statusBarLineNum+1, 66, ">", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, chMap_offset+31, ">", curses.color_pair(clickColor) | curses.A_BOLD)
         if self.colorfg > 8 and self.appState.colorMode == "16":    # bright color
             self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
