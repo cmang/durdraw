@@ -1003,10 +1003,18 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c == curses.KEY_RIGHT:      # right - next file
                         pass
 
+                    if c in [61, 43]: # esc-= and esc-+ - fps up
+                        self.increaseFPS()
+                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    elif c in [45]: # esc-- (alt minus) - fps down
+                        self.decreaseFPS()
+                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+
                     if c in [ord('q'), ord('Q')]:
                         self.playing = False
                         self.appState.topLine = 0
-                        self.verySafeQuit()
+                        if not self.appState.editorRunning:
+                            self.verySafeQuit()
 
                     elif c in [10, 13, curses.KEY_ENTER, 27]:   # 27 = esc
                         self.playing = False
