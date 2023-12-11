@@ -1,6 +1,8 @@
 # Durdraw file operations - stuff related to open, save, etc
 
+import datetime
 import gzip
+import os
 import pdb
 import pickle
 import json
@@ -229,6 +231,12 @@ def clean_up_json_output(json_str):
     json_data = json_data.replace("\n            ]", "]")
     json_data = json_data.replace("\n          ],", "],")
     return json_data
+
+def get_file_mod_date_time(filename):
+    """ Returns a string like this: 2009-10-06 10:50:01 """
+    t = os.path.getmtime(filename)
+    return str(datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc))[:19]
+
 
 def get_dur_file_colorMode_and_charMode(f):
     """ Returns the color mode and encoding used by the file """

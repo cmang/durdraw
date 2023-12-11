@@ -26,7 +26,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.22.4'
+    DUR_VER = '0.23.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = '''
@@ -59,15 +59,16 @@ def main():
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
+    parser.add_argument("--cursor", help="Cursor mode (block, underscore, or pipe)", nargs=1)
     parser.add_argument("--notheme", help="Disable theme support (use default theme)",
                     action="store_true")
     parser.add_argument("--theme", help="Load a custom theme file", nargs=1)
     parser.add_argument("-A", "--ibmpc", "--cp437", help="Use Code Page 437 (IBM-PC/MS-DOS) block character encoding instead of Unicode. (Needs CP437 capable terminal and font)", action="store_true")
+    parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an .ansi file and exit")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an ANSI file and exit")
     args = parser.parse_args()
     if args.version:
         print(DUR_VER)
@@ -137,6 +138,13 @@ def main():
         else:
             app.loadThemeFile(args.theme[0], "Theme-16")
         app.customThemeFile = args.theme[0]
+
+    if args.cursor:
+        if args.cursor[0] in app.validScreenCursorModes:
+            app.screenCursorMode = args.cursor[0]
+        else:
+            print("--cursor option requires one of the following: block, underscore, pipe")
+            exit(1)
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''

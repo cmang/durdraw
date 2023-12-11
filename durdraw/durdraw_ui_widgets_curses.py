@@ -289,7 +289,8 @@ class DrawCharPickerHandler:
             else:
                 self.caller.appState.drawChar = chr(c)
                 prompting = False
-        self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
+        #self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
+        self.caller.caller.drawCharPickerButton.set_label(self.caller.appState.drawChar)
         self.window.addstr(maxLines - 3, 0, "                                          ")
         self.caller.caller.caller.refresh()
 
@@ -494,6 +495,27 @@ class FgBgColorPickerHandler:
     def draw(self, plusX=0, plusY=0):
         curses_addstr(self.window, self.y, self.x, "F:  G:  ")
 
+class ToolTipHandler:
+    """ Draw and hide tooltips """
+    #def __init__(self, tooltip, window, appState=None):
+    def __init__(self, tooltip, context):
+        self.tooltip = tooltip
+        self.window = context.window
+        self.appState = context.appState
+
+    def draw(self):
+        tipString = self.tooltip.hotkey
+        tipColor = self.appState.theme['clickHighlightColor'] | curses.A_BOLD | curses.A_UNDERLINE
+        #curses_addstr(self.window, self.tooltip.column, self.tooltip.row, tipString, tipColor)
+        curses_addstr(self.window, self.tooltip.row, self.tooltip.column, tipString, tipColor)
+
+    def show(self):
+        self.draw()
+
+    def hide (self):
+        pass
+
+
 class ButtonHandler:
     """ hook into Curses to draw button
     """
@@ -521,6 +543,38 @@ class ButtonHandler:
             #curses_addstr(self.window, self.button.realX, self.button.realY, self.button.label, textColor)
             curses_addstr(self.window, self.button.realX, self.button.realY, buttonString, textColor)
             # render the button on the window
+            if self.button.persistant_tooltip or not self.button.tooltip_hidden:
+                if self.button.get_tooltip_command():
+                    toolTip :str = self.button.get_tooltip_command()
+                    tipColor = self.appState.theme['clickHighlightColor'] | curses.A_BOLD | curses.A_UNDERLINE
+                    # Figure out if the hint is in the button label, if so, place it over it with
+                    # an index offset
+                    tipColOffset = 0
+                    if toolTip.lower() in self.button.label.lower():
+                        tipColOffset = self.button.label.lower().index(toolTip.lower()) + 1
+                        #curses_notify(self.window, "Gorditas")
+                    # keep the tip from going off screen for some buttons
+                    if self.button.realY == 0 and tipColOffset == 0:
+                        tipColOffset += 1
+                    # Print it next to the button for now
+                    curses_addstr(self.window, self.button.realX, self.button.realY + tipColOffset, toolTip, tipColor)
+
+
+    def showToolTip(self):
+        self.button.tooltip_hidden = False
+
+    def hideToolTip(self):
+        self.button.tooltip_hidden = True
+        # Cover up with spaces
+        #if not self.button.hidden:
+        #    self.button.draw()
+        #if self.button.get_tooltip_command() and not self.button.hidden:
+        #    toolTip :str = self.button.get_tooltip_command()
+        #    toolTip = " " * len(toolTip)
+        #    curses_addstr(self.window, self.button.realX, self.button.realY, toolTip)
+
+    def hide(self):
+        self.hidden = True
 
     def on_click(self):
         curses_addstr(self.window, 0, 0, f"{self.button.label} clicked")

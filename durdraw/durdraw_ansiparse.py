@@ -177,7 +177,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         frame """
     if filename:
         # If we can just pull it from the Sauce, cool
-        sauce = dursauce.SauceParser(filename)
+        sauce = dursauce.SauceParser()
+        sauce.parse_file(filename)
         if sauce.sauce_found:
             appState.sauce = sauce
             #if sauce.height > 0 and sauce.width > 0:

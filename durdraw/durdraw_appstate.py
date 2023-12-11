@@ -17,6 +17,10 @@ class AppState():
         self.showStartupScreen = True
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.editorRunning = True
+        self.screenCursorMode = "default"   # can be block, underscore, pipe
+        self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
+        self.cursorBlinks = True     # lord help me, why would anyone not want this to be true?
         self.totalFgColors = "128"
         self.totalBgColors = "128"
         self.defaultFgColor = 7
@@ -26,6 +30,7 @@ class AppState():
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
         self.characterSet = "Durdraw Default"
+        self.showCharSetButton = False
         self.workingLoadDirectory = None
         # if self.characterSet == "Unicode Block" then Durdraw knows to use a
         # unicode block:
@@ -43,7 +48,7 @@ class AppState():
         self.configFileLoaded = False
         self.configFileName = None
         self.customThemeFile = None
-        self.sauce = dursauce.EmptySauce()
+        self.sauce = dursauce.SauceParser() # empty sauce
         #self.drawChar = b'\xE2\x96\x88'
         self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
         self.hasMouse = True # replace with equivalent curses.has_mouse()

@@ -5,31 +5,30 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.22.4
+              \_____________________________________________\|  v 0.23.0
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
 
 ## OVERVIEW
 
-Durdraw is an ASCII, ANSI and Unicode art editor for UNIX-like systems (Linux, 
-macOS, etc). It runs in the terminal and supports frame-based animation,
-custom themes, 256 and 16 color modes, terminal mouse input, IRC color export,
-automatic conversion of Code Page 437 encoding to Unicode, HTML output, and
-other interesting features.
+Durdraw is an ASCII, Unicode and ANSI art editor for UNIX-like systems (Linux,
+macOS, etc). It runs in modern Utf-8 terminals and supports frame-based
+animation, custom themes, 256 and 16 color modes, terminal mouse input, DOS
+ANSI art viewing, CP437 and Unicode mixing and conversion, HTML output, mIRC
+color output, and other interesting features.
 
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
-Files can be saved in DUR animation format, or exported in ASCII (.asc, .txt),
-ANSI (.ans), JSON, GIF, mIRC color, HTML, and PNG formats.
-
 ## REQUIREMENTS
 
-* Python 3
+* Python 3 (3.10+ recommended)
 * Linux, macOS, or other Unix-like System
 
 ## INSTALLATION
+
+If you just want to run it without instalilng, scroll down to the next section.
 
 1: Download and extract, or use git to download:
 
@@ -79,7 +78,7 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
-## SCREENSHOTS AND EXAMPLES
+## GALLERY
 
 [![Watch the video](https://durdraw.org/durdraw-youtube-thumbnail-with-play-button.png)](https://youtu.be/7Icf08bkJxg)
 
@@ -127,10 +126,12 @@ optional arguments:
                         Set canvas height
   -m, --max             Maximum canvas size for terminal (overrides -W and -H)
   --nomouse             Disable mouse support
+  --cursor CURSOR       Cursor mode (block, underscore, or pipe)
   --notheme             Disable theme support
   --theme THEME         Load a custom theme file
   -A, --ibmpc           IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
                         PC) block characters
+  --export-ansi         Export loaded art to an ANSI file and exit
   -u UNDOSIZE, --undosize UNDOSIZE
                         Set the number of undo history states - default is 100. More requires more
                         RAM, less saves RAM.
