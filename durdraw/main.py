@@ -26,7 +26,7 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.23.0-beta'
+    DUR_VER = '0.23.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = '''
@@ -210,7 +210,6 @@ def main():
             time.sleep(3)
     if args.play:
         app.playOnlyMode = True
-        app.editorRunning = False
     #ui = curses.wrapper(UI_Curses, app)
     ui = UI_Curses(app)
     if app.hasMouse:

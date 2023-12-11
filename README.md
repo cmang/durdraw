@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.23.0-beta
+              \_____________________________________________\|  v 0.23.0
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
@@ -78,7 +78,7 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
-## SCREENSHOTS AND EXAMPLES
+## GALLERY
 
 [![Watch the video](https://durdraw.org/durdraw-youtube-thumbnail-with-play-button.png)](https://youtu.be/7Icf08bkJxg)
 
