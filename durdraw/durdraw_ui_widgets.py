@@ -63,6 +63,10 @@ class Button():
     def get_tooltip_command(self):
         return self.tooltip_command
 
+    def set_label(self, label):
+        self.label = label 
+        self.width = len(self.label)
+
     def hide(self):
         self.hidden = True
         #self.handler.hidden = True
@@ -421,7 +425,8 @@ class StatusBar():
         toolButton_offset = 7
         toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
-        toolButton.label = self.caller.appState.cursorMode
+        #toolButton.label = self.caller.appState.cursorMode
+        toolButton.set_label(self.caller.appState.cursorMode)
         toolButton.set_tooltip_command('t')
         toolButton.picker = True
         toolButton.realX = self.x + toolButton.x    # toolbar shit
@@ -441,7 +446,7 @@ class StatusBar():
             if charSetLabel == "Unicode Block":
                 charSetLabel = self.caller.appState.unicodeBlock
             charSetLabel = f"{charSetLabel[:3]}.."
-            charSetButton.label = charSetLabel
+            charSetButton.set_label(charSetLabel)
             if self.caller.appState.colorMode == "16":
                 charSetButton.hide()
             self.charSetButton = charSetButton
@@ -539,32 +544,32 @@ class StatusBar():
 
     def setCursorModeMove(self):
         self.caller.appState.setCursorModeMove()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeSelect(self):
         self.caller.appState.setCursorModeSelect()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModePnt(self):
         self.caller.appState.setCursorModePnt()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.show()
 
     def setCursorModeCol(self):
         self.caller.appState.setCursorModeCol()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeErase(self):
         self.caller.appState.setCursorModeErase()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeEyedrop(self):
         self.caller.appState.setCursorModeEyedrop()
-        self.toolButton.label = self.caller.appState.cursorMode
+        self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def updateLocation(self, x, y):

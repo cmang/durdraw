@@ -289,7 +289,8 @@ class DrawCharPickerHandler:
             else:
                 self.caller.appState.drawChar = chr(c)
                 prompting = False
-        self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
+        #self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
+        self.caller.caller.drawCharPickerButton.set_label(self.caller.appState.drawChar)
         self.window.addstr(maxLines - 3, 0, "                                          ")
         self.caller.caller.caller.refresh()
 

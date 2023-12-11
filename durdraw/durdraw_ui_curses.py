@@ -2165,9 +2165,9 @@ class UserInterface():  # Separate view (curses) from this controller
         if load_filename:   # if not False
             self.clearCanvas(prompting=False)
             self.loadFromFile(load_filename, 'dur')
-            #self.stdscr.clear()
-            self.hardRefresh()
             self.move_cursor_topleft()
+            self.stdscr.clear()
+            self.hardRefresh()
 
     def showCharSetPicker(self):
         set_list = ["Durdraw Default"]
