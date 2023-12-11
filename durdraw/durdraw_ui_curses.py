@@ -41,6 +41,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.charMapNumber = 0
         self.chMap = {}
         self.chMapString = ""
+        self.chMap_offset = 0
         self.statusBar = None
         self.appState.unicodeBlockList = durchar.get_unicode_blocks_list()
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
@@ -293,14 +294,14 @@ class UserInterface():  # Separate view (curses) from this controller
             self.ansi.initColorPairs_cga()
             self.appState.colorMode = "16"
             self.appState.loadThemeFromConfig("Theme-16")
-            self.statusBar.charSetButton.hide()
+            #self.statusBar.charSetButton.hide()
             #if self.statusBar.colorPickerEnabled:
             #    self.statusBar.enableColorPicker()
         if newMode == "256":
             self.ansi.initColorPairs_256color()
             self.appState.colorMode = "256"
             self.appState.loadThemeFromConfig("Theme-256")
-            self.statusBar.charSetButton.show()
+            #self.statusBar.charSetButton.show()
             #if not self.statusBar.colorPickerEnabled:
             #    self.statusBar.disableColorPicker()
 
@@ -853,6 +854,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.firstCol = oldFirstCol
         self.appState.drawBorders = True
 
+    def showViewerHelp(self):
+        """ Show the help screen for the player/viewer mode """
+        helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
+        self.notify(helpString, pause=True)
+
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
             by drawing if current time == greater than a delta plus the time
@@ -1020,6 +1026,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.playing = False
                         self.appState.topLine = 0
 
+
+                    elif c in [ord('?'), ord('h')]:
+                        self.showViewerHelp()
+
                     elif c in [ord('i'), ord('I')]:
                         self.showFileInformation()
 
@@ -1085,11 +1095,11 @@ class UserInterface():  # Separate view (curses) from this controller
                                     elif mouseX in range(25,33):    
                                         bg = mouseX - 24
                                         self.setBgColor(bg)
-                                    elif mouseX == 66:  # clicked next character set
-                                        self.clickHighlight(66, ">", bar='bottom')
+                                    elif mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
+                                        self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
                                         self.nextCharSet()
-                                    elif mouseX == 34:  # clicked previous character set
-                                        self.clickHighlight(34, "<", bar='bottom')
+                                    elif mouseX == self.chMap_offset - 1:  # clicked previous character set
+                                        self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
                                         self.prevCharSet()
                                     elif self.appState.debug:
                                         self.notify("bottom bar. " + str([mouseX, mouseY]))
@@ -1270,7 +1280,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Set a Durdraw character set (not a Unicode block name) """
         self.appState.characterSet = set_name
         miniSetName = f"{self.appState.characterSet[:3]}.."
-        self.statusBar.charSetButton.label = miniSetName  # [Name..]
+        if self.appState.showCharSetButton:
+            self.statusBar.charSetButton.label = miniSetName  # [Name..]
 
     def setUnicodeBlock(self, block="Symbols for Legacy Computing"):
         self.fullCharMap = durchar.load_unicode_block(block)
@@ -1280,7 +1291,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 miniSetName = f"{self.appState.unicodeBlock[:3]}.."
             else:
                 miniSetName = f"{self.appState.characterSet[:3]}.."
-            self.statusBar.charSetButton.label = miniSetName  # [Name..]
+            if self.appState.showCharSetButton:
+                self.statusBar.charSetButton.label = miniSetName  # [Name..]
         self.refreshCharMap()
         #self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
         #self.chMapString = "F1%c F2%c F3%c F4%c F5%c F6%c F7%c F8%c F9%c F10%c " % \
@@ -1357,7 +1369,8 @@ class UserInterface():  # Separate view (curses) from this controller
         # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
         self.statusBar.toolButton.update_real_xy(x = statusBarLineNum)
-        self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
+        if self.appState.showCharSetButton:
+            self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
         self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
         if self.appState.colorMode == "256":
             self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
@@ -1378,9 +1391,9 @@ class UserInterface():  # Separate view (curses) from this controller
         delayBar_offset = 23 + line_1_offset
         rangeBar_offset = 31 + line_1_offset
         #chMap_offset = 35    # how far in to show the character map
-        chMap_offset = realmaxX - 50    # how far in to show the character map
+        self.chMap_offset = realmaxX - 50    # how far in to show the character map
         # > is hardcoded at 66. yeesh.
-        chMap_next_offset = chMap_offset + 31
+        chMap_next_offset = self.chMap_offset + 31
 
         # Draw elements that aren't in the GUI framework
         self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
@@ -1411,22 +1424,22 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum+1, 9, fillChar * 2, curses.color_pair(cp))
 
         # Draw character map for f1-f10 (block characters)
-        self.addstr(statusBarLineNum+1, chMap_offset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
-        self.addstr(statusBarLineNum+1, chMap_offset+31, ">", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, self.chMap_offset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
+        self.addstr(statusBarLineNum+1, self.chMap_offset+31, ">", curses.color_pair(clickColor) | curses.A_BOLD)
         if self.colorfg > 8 and self.appState.colorMode == "16":    # bright color
-            self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
+            self.addstr(statusBarLineNum+1, self.chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
-            self.addstr(statusBarLineNum+1, chMap_offset, self.chMapString, curses.color_pair(self.colorpair))
+            self.addstr(statusBarLineNum+1, self.chMap_offset, self.chMapString, curses.color_pair(self.colorpair))
 
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
 
         if self.appState.colorMode == "16":   # put it to the right instead of the left, to make room for BG colors
-            self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
+            self.addstr(statusBarLineNum+1, self.chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
         #if self.appState.colorMode == 256:
         else:
             #self.addstr(statusBarLineNum+1, chMap_offset-16, charSetNumberString, curses.color_pair(mainColor)) 
-            self.addstr(statusBarLineNum+1, chMap_offset-8, charSetNumberString, curses.color_pair(mainColor)) 
+            self.addstr(statusBarLineNum+1, self.chMap_offset-8, charSetNumberString, curses.color_pair(mainColor)) 
         #self.addstr(statusBarLineNum+1, chMap_offset+len(self.chMapString)+2, str(self.charMapNumber+1), curses.color_pair(mainColor)) 
         # overlay draw function key names in normal color
         y = 0
@@ -1519,7 +1532,7 @@ class UserInterface():  # Separate view (curses) from this controller
         colorPicker_tip = self.statusBar.other_tooltips.get_tip("c")
         colorPicker_tip.set_location(row = statusBarLineNum + 1, column = 2)
         prevChMap_tip = self.statusBar.other_tooltips.get_tip("[")
-        prevChMap_tip.set_location(row = statusBarLineNum + 1, column = chMap_offset - 1)
+        prevChMap_tip.set_location(row = statusBarLineNum + 1, column = self.chMap_offset - 1)
         nextChMap_tip = self.statusBar.other_tooltips.get_tip("]")
         nextChMap_tip.set_location(row = statusBarLineNum + 1, column = chMap_next_offset)
         play_tip = self.statusBar.other_tooltips.get_tip("p")
@@ -1928,11 +1941,11 @@ class UserInterface():  # Separate view (curses) from this controller
                                 elif mouseX in range(25,33):   # clicked a bg color
                                     bg = mouseX - 24
                                     self.setBgColor(bg)
-                            if mouseX == 66:  # clicked next character set
-                                self.clickHighlight(66, ">", bar='bottom')
+                            if mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
+                                self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
                                 self.nextCharSet()
-                            elif mouseX == 34:  # clicked previous character set
-                                self.clickHighlight(34, "<", bar='bottom')
+                            elif mouseX == self.chMap_offset - 1:  # clicked previous character set
+                                self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
                                 self.prevCharSet()
                             elif self.appState.debug:
                                 self.notify("bottom bar. " + str([mouseX, mouseY]))

@@ -433,18 +433,19 @@ class StatusBar():
 
         # This thing is already in the menu. Maybe we should reclaim
         # the real estate from the status bar.
-        charSetButton = Button("CharSet", 1, 26, caller.showCharSetPicker, self.window, appState=self.appState)
-        # make proper label for character set button
-        charSetLabel = self.caller.appState.characterSet
-        charSetButton.set_tooltip_command('S')
-        if charSetLabel == "Unicode Block":
-            charSetLabel = self.caller.appState.unicodeBlock
-        charSetLabel = f"{charSetLabel[:3]}.."
-        charSetButton.label = charSetLabel
-        if self.caller.appState.colorMode == "16":
+        if self.caller.appState.showCharSetButton:
+            charSetButton = Button("CharSet", 1, 26, caller.showCharSetPicker, self.window, appState=self.appState)
+            # make proper label for character set button
+            charSetLabel = self.caller.appState.characterSet
+            charSetButton.set_tooltip_command('S')
+            if charSetLabel == "Unicode Block":
+                charSetLabel = self.caller.appState.unicodeBlock
+            charSetLabel = f"{charSetLabel[:3]}.."
+            charSetButton.label = charSetLabel
+            if self.caller.appState.colorMode == "16":
+                charSetButton.hide()
+            self.charSetButton = charSetButton
             charSetButton.hide()
-        self.charSetButton = charSetButton
-        charSetButton.hide()
 
         # Brush picker - make me a real brush someday.
         drawCharPicker_offset = toolButton_offset + 6
@@ -493,13 +494,15 @@ class StatusBar():
         self.items.append(toolButton)
         self.items.append(drawCharPickerButton)
         if self.appState.colorMode != '16': # in 16 color mode, don't cover up the bg color picker
-            self.items.append(charSetButton)
+            if self.caller.appState.showCharSetButton:
+                self.items.append(charSetButton)
         #self.items.append(fgBgColors)
         #self.items.append(self.swatch)
         self.buttons.append(menuButton)
         self.buttons.append(toolButton)
         self.buttons.append(drawCharPickerButton)
-        self.buttons.append(charSetButton)
+        if self.caller.appState.showCharSetButton:
+            self.buttons.append(charSetButton)
         # Add them to the items
 
     def hide(self):
