@@ -129,8 +129,8 @@ optional arguments:
   --cursor CURSOR       Cursor mode (block, underscore, or pipe)
   --notheme             Disable theme support
   --theme THEME         Load a custom theme file
-  -A, --ibmpc           IBM-PC ANSI Art Mode - Use F1-F10 keys for Code Page 437 extended ASCII (IBM-
-                        PC) block characters
+  --cp437               Encode extended characters using Code Page 437 (IBM-PC/MS-DOS) encoding
+                        instead of Utf-8. (Needs CP437 capable terminal and font)
   --export-ansi         Export loaded art to an ANSI file and exit
   -u UNDOSIZE, --undosize UNDOSIZE
                         Set the number of undo history states - default is 100. More requires more
