@@ -56,7 +56,7 @@ Or run the installer:
 ```
 
 
-You should now be able to run `durdraw`
+You should now be able to run `durdraw`. This tries to run in 256-color mode by default. To start in 16-color mode for viewing MS-DOS style ANSI art, use `durdraw --16color`.
 
 ## RUNNING WITHOUT INSTALLING
 
