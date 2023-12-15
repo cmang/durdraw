@@ -6,7 +6,7 @@ def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
     #return [[list([1,0]) * width] * height]
     colorMap = []
-    dummyColor = [1, 0]
+    dummyColor = [8, 0]
     for h in range(0, height):
         colorMap.append([])
         for w in range(0, width):
