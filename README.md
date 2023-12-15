@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.23.0
+              \_____________________________________________\|  v 0.23.1
 
 
 ![Durdraw-0 20-demo](https://github.com/cmang/durdraw/assets/261501/ce539865-2e84-4423-92af-cd9ddeeb02ce)
@@ -77,6 +77,13 @@ To look at some included example animations:
 ```
     ./start-durdraw -p examples/*.dur
 ```
+
+To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use the --16colors option:
+
+```
+    ./start-durdraw --16colors
+```
+
 
 ## GALLERY
 
