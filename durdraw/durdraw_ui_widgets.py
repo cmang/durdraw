@@ -384,12 +384,12 @@ class StatusBar():
         mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
         mainMenu.add_item("Open", caller.openFromMenu, "o")
         mainMenu.add_item("Save", caller.save, "s")
-        #mainMenu.add_item("Undo", caller.undo.undo, "u")
-        #mainMenu.add_item("Redo", caller.undo.redo, "r")
-        #mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
-        #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        mainMenu.add_item("Undo", caller.clickedUndo, "u")
+        mainMenu.add_item("Redo", caller.clickedRedo, "r")
+        mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
+        mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
-        #mainMenu.add_item("Transform", caller.showTransformer, "t")
+        mainMenu.add_item("Transform", caller.showTransformer, "t")
         mainMenu.add_item("Canvas Info", caller.showFileInformation, "i")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v")
         mainMenu.add_item("Help", caller.showHelp, "h")
@@ -472,16 +472,18 @@ class StatusBar():
         colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
         self.colorPicker = colorPicker
 
+        self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
+        self.colorPickerButton.invisible = True
+        self.colorPickerButton.persistant_tooltip = True
+        self.colorPickerButton.set_tooltip_command('c')
+        self.colorPickerButton.realX = self.x + self.colorPickerButton.x
+        self.colorPickerButton.realY = self.y + self.colorPickerButton.y + 1
+        self.items.append(self.colorPickerButton)
+        self.buttons.append(self.colorPickerButton)
         if self.caller.appState.colorMode == "256":
-            self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
-            self.colorPickerButton.invisible = True
-            self.colorPickerButton.persistant_tooltip = True
-            self.colorPickerButton.set_tooltip_command('c')
-            self.colorPickerButton.realX = self.x + self.colorPickerButton.x
-            self.colorPickerButton.realY = self.y + self.colorPickerButton.y + 1
             self.colorPickerButton.show()
-            self.items.append(self.colorPickerButton)
-            self.buttons.append(self.colorPickerButton)
+        else:
+            self.colorPickerButton.hide()
         #pdb.set_trace()
         #colorPicker.show()  # for testing
 
