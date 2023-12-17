@@ -73,35 +73,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.appState.hasMouseScroll = False
         if self.appState.colorMode == "256":
             if self.ansi.initColorPairs_256color():
-                self.appState.theme = self.appState.theme_256
-                self.appState.loadThemeFromConfig('Theme-256')
-                if self.appState.customThemeFile:
-                    self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
-                if self.appState.playOnlyMode == False:
-                    self.appState.loadHelpFile(self.appState.durhelp256_fullpath)
-                    self.appState.loadHelpFile(self.appState.durhelp256_page2_fullpath, page=2)
+                self.init_256_colors_misc()
             else:
-                self.appState.colorMode = "16"
-                self.appState.theme = self.appState.theme_16
-                self.appState.loadThemeFromConfig('Theme-16')
-                if self.appState.playOnlyMode == False:
-                    self.appState.loadHelpFile(self.appState.durhelp16_fullpath)
-                    self.appState.loadHelpFile(self.appState.durhelp16_page2_fullpath, page=2)
-                if self.appState.customThemeFile:
-                    self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
+                self.appState.colorMode == "16"
         if self.appState.colorMode == "16":
-            self.ansi.initColorPairs_cga()
+            self.init_16_colors_misc()
         if not app.quickStart and app.showStartupScreen:
             print(f"Color mode: {self.appState.colorMode}")
             time.sleep(2)
-        self.colorfg = 7    # default fg white
-        if self.appState.colorMode == '256':
-            self.colorbg = 0    # default bg black
-            self.colorfg = 7    # default fg white
-        else:
-            self.colorfg = 8    # default fg white
-            self.colorbg = 8    # default bg black
-            self.appState.defaultFgColor = 8
         self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self, appState = self.appState)   # initialize undo/redo system
@@ -114,7 +93,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.keypad(1)
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         self.testWindowSize()
-        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0, appState=self.appState)
+        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=1, appState=self.appState)
         if self.appState.playOnlyMode:
             self.statusBar.hide()
         else:
@@ -127,6 +106,33 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.drawCharPickerButton.label = self.appState.drawChar
 
         self.statusBarLineNum = self.realmaxY - 2
+
+    def init_256_colors_misc(self):
+        self.appState.theme = self.appState.theme_256
+        self.appState.loadThemeFromConfig('Theme-256')
+        if self.appState.customThemeFile:
+            self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
+        if self.appState.playOnlyMode == False:
+            self.appState.loadHelpFile(self.appState.durhelp256_fullpath)
+            self.appState.loadHelpFile(self.appState.durhelp256_page2_fullpath, page=2)
+        self.colorbg = 0    # default bg black
+        self.colorfg = 7    # default fg white
+
+    def init_16_colors_misc(self):
+        self.appState.colorMode = "16"
+        self.appState.theme = self.appState.theme_16
+        self.appState.loadThemeFromConfig('Theme-16')
+        if self.appState.playOnlyMode == False:
+            self.appState.loadHelpFile(self.appState.durhelp16_fullpath)
+            self.appState.loadHelpFile(self.appState.durhelp16_page2_fullpath, page=2)
+        if self.appState.customThemeFile:
+            self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
+        self.colorfg = 8    # default fg white
+        self.colorbg = 8    # default bg black
+        self.appState.defaultFgColor = 8
+        # phase 2 
+        self.ansi.initColorPairs_cga()
+
 
     def initMouse(self):
         curses.mousemask(1)     # click response without drag support
@@ -291,6 +297,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
+            self.init_16_colors_misc()
             self.ansi.initColorPairs_cga()
             self.appState.colorMode = "16"
             self.appState.loadThemeFromConfig("Theme-16")
@@ -299,6 +306,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #    self.statusBar.enableColorPicker()
         if newMode == "256":
             self.ansi.initColorPairs_256color()
+            self.init_256_colors_misc()
             self.appState.colorMode = "256"
             self.appState.loadThemeFromConfig("Theme-256")
             #self.statusBar.charSetButton.show()
@@ -932,7 +940,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol(frange=self.appState.playbackRange)
-                elif c == 47:      # alt-/ - insert line
+                elif c == 48:      # alt-/ - insert line
                     self.addLine(frange=self.appState.playbackRange)
                 elif c == 39:        # alt-' - erase line
                     self.delLine(frange=self.appState.playbackRange)
@@ -944,10 +952,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPickerButton.on_click()
                 elif c == 122:  # alt-z = undo
-                    self.undo.undo()
-                    self.hardRefresh()
+                    self.clickedUndo()
                 elif c == 114:  # alt-r = redo
-                    self.undo.redo()
+                    self.clickedRedo()
                 elif c == 82:   # alt-R = set playback range
                     self.getPlaybackRange()
                 elif c in [112]: # alt-p - stop playing
@@ -1373,7 +1380,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
         self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
         if self.appState.colorMode == "256":
-            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
+            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 2)
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
         canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))
@@ -1559,6 +1566,13 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[1] = 1
         self.move(self.xy[0], self.xy[1] - 1)
 
+    def clickedUndo(self):
+        self.undo.undo()
+        self.hardRefresh()
+
+    def clickedRedo(self):
+        self.undo.redo()
+
     def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
         # example: self.clickHighlight(52, "|>")
         # Highlight clicked item at "pos" by drawing it as "str" in bright white or yellow, sleep a moment,
@@ -1702,10 +1716,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.appState.playbackRange[1] - 1)
                     self.refresh()
                 elif c == 122:  # alt-z = undo
-                    self.undo.undo()
-                    self.hardRefresh()
+                    self.clickedUndo()
                 elif c == 114:  # alt-r = redo
-                    self.undo.redo()
+                    self.clickedRedo()
                 elif c == 118:  # alt-v      - paste
                     # Paste from the clipboard
                     if self.clipBoard:  # If there is something in the clipboard
@@ -2413,7 +2426,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         folders =  ["../"]
-        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice']
+        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
         masks = default_masks
         if self.appState.workingLoadDirectory: 
             if os.path.exists(self.appState.workingLoadDirectory):
@@ -2946,7 +2959,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 fileColorMode, fileCharEncoding = durfile.get_dur_file_colorMode_and_charMode(f)
 
                 if fileColorMode == "256" and fileColorMode != self.appState.colorMode:
-                    self.notify(f"Warning: Loading a 256 color file in 16 color mode. Some colors may not be displayed.")
+                    #self.notify(f"Warning: Loading a 256 color file in 16 color mode. Some colors may not be displayed.")
+                    self.notify(f"256 color file. Switching to 256 color mode.")
+                    self.switchTo256ColorMode()
 
                 if fileCharEncoding != self.appState.charEncoding:
                     self.notify(f"Warning: File uses {fileCharEncoding} character encoding, but Durdraw is in {self.appState.charEncoding} mode.")
@@ -2967,7 +2982,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     fileColorMode = "256"
                     pass
                 if fileColorMode == "16" and fileColorMode != self.appState.colorMode:
-                    self.notify(f"Warning: Loading 16 color ANSI in {self.appState.colorMode} color mode will lose background colors.", pause=True)
+                    #self.notify(f"Warning: Loading 16 color ANSI in {self.appState.colorMode} color mode will lose background colors.", pause=True)
+                    self.notify(f"16 color file. Switching to 16 color mode.")
+                    self.switchTo16ColorMode()
                 return True
 
             try:    # Maybe it's a really old Pickle file...

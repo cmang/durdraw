@@ -178,7 +178,7 @@ class AnsiArtStuff():
         color boilerplate, etc """
     def __init__(self, appState):
         self.appState = appState
-        self.ColorPairMap = None # fill this with dict of FG/BG -> curses pair #
+        self.colorPairMap = None # fill this with dict of FG/BG -> curses pair #
         self.escapeFgMap = {   # color numbers documented in initColorPairs() comments
             # ANSI escape code FG colors
             # regular colors, white (1) through to black (8 and 0)
