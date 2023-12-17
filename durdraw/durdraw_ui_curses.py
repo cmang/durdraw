@@ -297,18 +297,20 @@ class UserInterface():  # Separate view (curses) from this controller
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
+            self.appState.colorMode = "16"
             self.init_16_colors_misc()
             self.ansi.initColorPairs_cga()
-            self.appState.colorMode = "16"
             self.appState.loadThemeFromConfig("Theme-16")
+            self.statusBar.colorPickerButton.hide()
             #self.statusBar.charSetButton.hide()
             #if self.statusBar.colorPickerEnabled:
             #    self.statusBar.enableColorPicker()
         if newMode == "256":
+            self.appState.colorMode = "256"
             self.ansi.initColorPairs_256color()
             self.init_256_colors_misc()
-            self.appState.colorMode = "256"
             self.appState.loadThemeFromConfig("Theme-256")
+            self.statusBar.colorPickerButton.show()
             #self.statusBar.charSetButton.show()
             #if not self.statusBar.colorPickerEnabled:
             #    self.statusBar.disableColorPicker()
@@ -1884,9 +1886,11 @@ class UserInterface():  # Separate view (curses) from this controller
                         # also set cursor position
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
-                        self.insertChar(ord(' '), fg=self.colorfg, bg=self.colorbg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
+                        color_fg = self.appState.defaultFgColor 
+                        color_bg = self.appState.defaultBgColor 
+                        self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
-                        self.eyeDrop(mouseX, mouseY)
+                        self.eyeDrop(mouseX, mouseY + self.appState.topLine)
                         self.statusBar.setCursorModeMove()
                         self.drawStatusBar()
                     elif self.appState.cursorMode == "Select":   # Change the color under the cursor
