@@ -1368,12 +1368,12 @@ class UserInterface():  # Separate view (curses) from this controller
         # How far right to put the toolbar's little animation
         # stuff. Frame, FPS, Delay and Range.
         # Move it far right enough for the menus.
-       # self.line_1_offset = 15
+        # self.line_1_offset = 15
         self.line_1_offset = realmaxX - 63  # anchor to the right by transport
         line_1_offset = self.line_1_offset
 
         statusBarLineNum = realmaxY - 2
-        self.statusBar.colorPicker.handler.move(0,realmaxY - 6)
+        self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
         self.statusBarLineNum = statusBarLineNum
         # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)

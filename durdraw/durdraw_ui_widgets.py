@@ -469,7 +469,8 @@ class StatusBar():
         self.toolButton.add_sub_button("Draw", drawCharPickerButton)
 
 
-        colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
+        #colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
+        colorPicker = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller)
         self.colorPicker = colorPicker
 
         self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)

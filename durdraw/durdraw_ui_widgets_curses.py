@@ -309,10 +309,12 @@ class ColorPickerHandler:
         self.realmaxY = realmaxY
         self.realmaxX = realmaxX
         #self.height = int(total / realmaxX) + 2 # enough lines to fill content+
-        self.height = 4
+        #self.height = 4
+        self.height = 8
         #height = int(total / realmaxY) # enough lines to fill content+
         #self.width = realmaxX - 10 
-        self.width = 78
+        #self.width = 78
+        self.width = 38 
         #gridLine = [[]] * self.width
         #self.colorGrid = [gridLine] * self.height
         #self.colorGrid = [[0] * self.width] * self.height
@@ -343,22 +345,36 @@ class ColorPickerHandler:
         self.y = y
         try:
             self.panel.move(y, x)
-        except:
+        except Exception as E:
+            #self.colorPicker.caller.notify(f"Exception {E}")
+            #pdb.set_trace()
             pass
         self.origin = self.y
 
     def updateFgPicker(self):
         line = 0
-        col = 0
+        col = 1
         #maxWidth = self.realmaxX
         #maxHeight = self.realmaxY
         #for fg in range(0,curses.COLORS):  # 0-255
+        width_counter = 0   # for color block width
         for fg in range(1,self.appState.totalFgColors+1):  # 0-255
             color_pair = curses.color_pair(fg)
             if col >= self.width - 2:
                 col = 0
                 line += 1
-            self.colorGrid[line][col] = fg
+            if fg == 16:    # first color for fancy displayed block color palette thing
+                line += 1
+                col = 0
+            if fg > 16:
+                width_counter += 1
+            if width_counter == 36:
+                width_counter = 0
+                #line += 1
+            try:
+                self.colorGrid[line][col] = fg
+            except IndexError:
+                pass
             #if line > 0:
             #    pdb.set_trace()
             #curses_addstr(self.window, self.colorPicker.y + line, self.colorPicker.x + col, chr(self.fillChar), color_pair)
