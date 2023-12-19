@@ -93,7 +93,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.keypad(1)
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         self.testWindowSize()
-        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=1, appState=self.appState)
+        self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0, appState=self.appState)
         if self.appState.playOnlyMode:
             self.statusBar.hide()
         else:
@@ -1382,7 +1382,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
         self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
         if self.appState.colorMode == "256":
-            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 2)
+            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
         canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))

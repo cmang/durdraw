@@ -477,7 +477,7 @@ class StatusBar():
         self.colorPickerButton.persistant_tooltip = True
         self.colorPickerButton.set_tooltip_command('c')
         self.colorPickerButton.realX = self.x + self.colorPickerButton.x
-        self.colorPickerButton.realY = self.y + self.colorPickerButton.y + 1
+        self.colorPickerButton.realY = self.y + self.colorPickerButton.y
         self.items.append(self.colorPickerButton)
         self.buttons.append(self.colorPickerButton)
         if self.caller.appState.colorMode == "256":

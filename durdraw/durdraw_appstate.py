@@ -35,7 +35,7 @@ class AppState():
         # if self.characterSet == "Unicode Block" then Durdraw knows to use a
         # unicode block:
         #self.characterSet = "Unicode Block"
-        self.unicodeBlock = "Braille Patterns"
+        self.unicodeBlock = "Braille Patterns"  # placeholder during initialization
         self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.playOnlyMode = False
         self.playNumberOfTimes = 0  # 0 = loop forever, default
