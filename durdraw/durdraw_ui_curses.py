@@ -692,6 +692,9 @@ class UserInterface():  # Separate view (curses) from this controller
         oldTopLine = self.appState.topLine  # dito
         oldFirstCol = self.appState.firstCol    # dito
 
+        self.statusBar.colorPicker.hide()
+        self.appState.sideBarShowing = False
+
         self.appState.topLine = 0
         self.appState.firstCol = 0
         self.playing = False
@@ -886,6 +889,8 @@ class UserInterface():  # Separate view (curses) from this controller
         last_time = time.time()
         self.statusBar.drawCharPickerButton.hide()
         if self.appState.playOnlyMode:
+            self.statusBar.colorPicker.hide()
+            self.appState.sideBarShowing = False
             self.statusBar.hide()
             self.cursorOff()
         self.playing = True
@@ -1400,18 +1405,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
         if self.appState.sideBarShowing:
             # We are clear to draw the Sidebar
-            #self.appState.sideBarColumn = self.mov.sizeX + 2
-            # Draw the selector for _Colors_ or _Sauce_ 
-            # Move the color picker to the right of the canvas border
-            #self.statusBar.colorPicker.handler.move(sideBarColumn, 3)
-            #self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width
+            # Anchor the color picker to the bottom right
             self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
-            #self.notify(f"sideBarcolumn: {self.appState.sideBarColumn}, new_colorPicker_y: {new_colorPicker_y}")
-            #self.statusBar.colorPicker.handler.move(new_colorPicker_x, new_colorPicker_y) 
-            #self.statusBar.colorPicker.handler.move(new_colorPicker_x, 3) 
             self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
-            #self.statusBar.colorPicker.show()
         else:
             # Move the color picker to just above the status bar
             self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
