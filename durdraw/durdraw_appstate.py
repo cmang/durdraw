@@ -70,10 +70,17 @@ class AppState():
         #if sys.version_info >= (3, 10):
         #    if curses.has_extended_color_support(): # Requires Ncures 6
         #        self.showBgColorPicker = True   # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
+        self.realmaxX = 0
+        self.realmaxY = 0
         self.topLine = 0    # the top line visible on the screen, used in refresh() for scrolling
         self.firstCol = 0    # leftmost visbile column, to facilitate left/right scrolling
         self.drawBorders = True
         self.durFileVer = 0     # gets set in main() from DUR_FILE_VER
+        self.sideBarEnabled = True # to show color picker, sauce info, etc
+        self.sideBarColumn = 0  # location, usually just right of the border
+        self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.colorBar_height = 8
+        self.sideBarShowing = False
         self.themesEnabled = True
         self.themeName = "default"
         self.theme_16 = {

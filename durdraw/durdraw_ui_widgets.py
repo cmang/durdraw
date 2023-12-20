@@ -231,6 +231,12 @@ class ColorPicker:
             self.caller.appState.colorPickerSelected = False
             self.hide()
 
+    def switchTo(self):
+        """ Switch user interaction to the color picker,
+            already on the screen """
+        self.caller.appState.colorPickerSelected = True
+        self.showFgPicker()
+
     def show(self):
         self.hidden = False
         self.showFgPicker()
@@ -244,7 +250,8 @@ class ColorPicker:
         # selected color.
         self.hidden = False
         color = self.handler.showFgPicker()
-        self.hide()
+        if not self.caller.appState.sideBarShowing:
+            self.hide()
         return color
 
     def hide(self):

@@ -298,8 +298,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
             self.appState.colorMode = "16"
-            self.init_16_colors_misc()
             self.ansi.initColorPairs_cga()
+            self.init_16_colors_misc()
             self.appState.loadThemeFromConfig("Theme-16")
             self.statusBar.colorPickerButton.hide()
             #self.statusBar.charSetButton.hide()
@@ -311,6 +311,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.init_256_colors_misc()
             self.appState.loadThemeFromConfig("Theme-256")
             self.statusBar.colorPickerButton.show()
+            if self.appState.blackbg:
+                self.enableTransBackground()
             #self.statusBar.charSetButton.show()
             #if not self.statusBar.colorPickerEnabled:
             #    self.statusBar.disableColorPicker()
@@ -536,6 +538,7 @@ class UserInterface():  # Separate view (curses) from this controller
         except:
             self.setFgColor(old_fg)
             self.setBgColor(old_bg)
+        self.statusBar.colorPicker.handler.updateFgPicker()
 
     def clearCanvasPrompt(self):
         self.clearCanvas(prompting=True)
@@ -1365,6 +1368,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
+        self.appState.realmaxY = realmaxY
+        self.appState.realmaxX = realmaxX
+
         # How far right to put the toolbar's little animation
         # stuff. Frame, FPS, Delay and Range.
         # Move it far right enough for the menus.
@@ -1373,7 +1379,43 @@ class UserInterface():  # Separate view (curses) from this controller
         line_1_offset = self.line_1_offset
 
         statusBarLineNum = realmaxY - 2
-        self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
+
+        #self.appState.sideBarShowing = False
+        # If the window is wide enough for the "side bar" (where sticky color goes)
+        if self.playing and self.appState.sideBarShowing:
+            self.appState.sideBarShowing = False
+            self.statusBar.colorPicker.hide()
+        if not self.appState.sideBarShowing and self.appState.sideBarEnabled and not self.playing:
+            # Sidebar not showing, but enabled. Check and see if the window is wide enough
+            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+                self.appState.sideBarShowing = True
+                #self.notify("Wide. Showing color picker.")
+                self.statusBar.colorPicker.show()
+        elif self.appState.sideBarShowing:
+            # sidebar Is showing, let's make sure we don't need to hide it
+            if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
+                #self.notify("Hiding color picker.")
+                self.appState.sideBarShowing = False
+                self.statusBar.colorPicker.hide()
+
+        if self.appState.sideBarShowing:
+            # We are clear to draw the Sidebar
+            #self.appState.sideBarColumn = self.mov.sizeX + 2
+            # Draw the selector for _Colors_ or _Sauce_ 
+            # Move the color picker to the right of the canvas border
+            #self.statusBar.colorPicker.handler.move(sideBarColumn, 3)
+            #self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width
+            self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
+            new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
+            #self.notify(f"sideBarcolumn: {self.appState.sideBarColumn}, new_colorPicker_y: {new_colorPicker_y}")
+            #self.statusBar.colorPicker.handler.move(new_colorPicker_x, new_colorPicker_y) 
+            #self.statusBar.colorPicker.handler.move(new_colorPicker_x, 3) 
+            self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
+            #self.statusBar.colorPicker.show()
+        else:
+            # Move the color picker to just above the status bar
+            self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
+
         self.statusBarLineNum = statusBarLineNum
         # resize window, tell the statusbar buttons
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
@@ -1678,7 +1720,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
                     if self.appState.colorMode == "256":
-                        self.statusBar.colorPickerButton.on_click()
+                        if self.appState.sideBarShowing:
+                            self.statusBar.colorPicker.switchTo()
+                        else:
+                            self.statusBar.colorPickerButton.on_click()
                 # Animation Keystrokes
                 elif c == 68:     #alt-D - set delay for current frame
                     self.getDelayValue()
@@ -1904,12 +1949,20 @@ class UserInterface():  # Separate view (curses) from this controller
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
                 if mouseState == curses.BUTTON1_CLICKED:
+                    self.pressingButton = False
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     self.gui.got_click("Click", mouseX, mouseY)
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
                         cmode = self.appState.cursorMode
                         if cmode == "Draw" or cmode == "Color" or cmode == "Erase":
                             self.undo.push()
+                    # If we clicked in the sidebar area, aka to the right of the canvas
+                    # and above the status bar:
+                    if self.appState.sideBarEnabled:
+                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
+                            # Tell the color picker to respond if the click is in its area:
+                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                    # If we clicked in the status bar:
                     if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
                         # Add stuff here to take mouse 'commands' like clicking
                         # play/next/etc on transport, or clicking "start button"
@@ -2364,6 +2417,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 except:
                     pass
                 if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                    self.pressingButton = False
                     if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
                         if mouseLine < len(block_list) - top_line:   # clicked item line
                             if mouseCol < len(block_list[top_line+mouseLine]): # clicked within item width
