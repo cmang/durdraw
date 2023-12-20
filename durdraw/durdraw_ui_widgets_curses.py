@@ -417,7 +417,7 @@ class ColorPickerHandler:
             prompting = False
         while(prompting):
             time.sleep(0.01)
-            self.colorPicker.caller.drawStatusBar()
+            #self.colorPicker.caller.drawStatusBar()
             self.update()
             c = self.window.getch()
             if c in [98, curses.KEY_LEFT]:
@@ -428,6 +428,7 @@ class ColorPickerHandler:
                 #self.colorPicker.caller.colorfg = color
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
             elif c in [102, curses.KEY_RIGHT]:
                 color += 1
                 if color >= curses.COLORS:
@@ -435,20 +436,24 @@ class ColorPickerHandler:
                 #self.colorPicker.caller.colorfg = color
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_UP:
                 color -= self.width - 2
                 if color <= 0:
                     color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_DOWN:
                 color += self.width - 2
                 if color >= curses.COLORS:
                     color = curses.COLORS - 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
             elif c in [13, curses.KEY_ENTER]:   # Return, Accept color
-                if not self.appState.stickyColorPicker:
+                #if not self.appState.stickyColorPicker:
+                if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
                 pass
@@ -457,14 +462,16 @@ class ColorPickerHandler:
                     _, mouseX, mouseY, _, _ = curses.getmouse()
                 except:
                     pass
-                if mouseY >= self.origin and mouseX < len(self.colorGrid[0])-2:   # cpicked in the color picker
-                    clickedCol = mouseX
+                if mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+                    clickedCol = mouseX - self.x
                     clickedLine = mouseY - self.origin
                     if mouseY < self.origin + self.height:
                         if self.colorGrid[clickedLine][clickedCol] != 0:
                             color = self.colorGrid[clickedLine][clickedCol]
                             self.colorPicker.caller.setFgColor(color)
-                if not self.appState.stickyColorPicker:
+                            self.updateFgPicker()
+
+                if not self.appState.sideBarShowing:
                     self.hide()
                 #self.hide()
                 prompting = False
@@ -472,20 +479,33 @@ class ColorPickerHandler:
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
                     self.colorPicker.caller.setFgColor(oldColor)
-                    if not self.appState.stickyColorPicker:
+                    if not self.appState.sideBarShowing:
                         self.hide()
                     #self.hide()
                     prompting = False
                     color = oldColor
         self.appState.colorPickerSelected = False   # done prompting
-        if not self.appState.stickyColorPicker:
+
+        if not self.appState.sideBarShowing:
             self.hide()
+
         #self.hide()
         curses_cursorOn()
         self.window.nodelay(0)
         #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
         #print('\033[?1003h') # enable mouse tracking
         return color
+
+    def gotClick(self, mouseX, mouseY):
+        if mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+            clickedCol = mouseX - self.x
+            clickedLine = mouseY - self.origin
+            if mouseY < self.origin + self.height:
+                if self.colorGrid[clickedLine][clickedCol] != 0:
+                    color = self.colorGrid[clickedLine][clickedCol]
+                    self.colorPicker.caller.setFgColor(color)
+                    self.updateFgPicker()
+
 
     def update(self):
         curses.panel.update_panels()
