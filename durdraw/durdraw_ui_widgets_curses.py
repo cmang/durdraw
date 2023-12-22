@@ -401,9 +401,15 @@ class ColorPickerHandler:
             if fg == self.colorPicker.caller.colorfg:
                 if fg == 1: # black
                     plain_color_pair = curses.color_pair(9)
-                    curses_addstr(self.window, line, col, 'X', plain_color_pair)
+                    if self.appState.colorPickerSelected:
+                        curses_addstr(self.window, line, col, 'X', plain_color_pair | curses.A_UNDERLINE)
+                    else:
+                        curses_addstr(self.window, line, col, 'X', plain_color_pair)
                 else:
-                    curses_addstr(self.window, line, col, 'X', color_pair)
+                    if self.appState.colorPickerSelected:
+                        curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE)
+                    else:
+                        curses_addstr(self.window, line, col, 'X', color_pair)
             else:
                 curses_addstr(self.window, line, col, self.fillChar, color_pair)
             col += 1
@@ -525,6 +531,7 @@ class ColorPickerHandler:
                 self.hideBorder()
 
         self.appState.colorPickerSelected = False   # done prompting
+        self.updateFgPicker()
 
         if not self.appState.sideBarShowing:
             self.hide()
