@@ -330,6 +330,25 @@ class ColorPickerHandler:
         #self.move(0,self.x - 2)
         self.move(0,self.origin)
 
+    def drawBorder(self):
+        """ Draw a highlighted border around color picker to show it is selected. """
+        x = self.x - 1
+        y = self.y - 1
+        width = self.width
+        borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
+        curses_addstr(self.parentWindow, y, x, ("." * (width)), borderColor)
+        for line in range(1, self.height + 1):
+            curses_addstr(self.parentWindow, y + line, x, (":"), borderColor)
+
+    def hideBorder(self):
+        x = self.x - 1
+        y = self.y - 1
+        width = self.width
+        borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
+        curses_addstr(self.parentWindow, y, x, (" " * (width)))
+        for line in range(1, self.height + 1):
+            curses_addstr(self.parentWindow, y + line, x, (" "))
+
     def show(self):
         self.showFgPicker()
 
@@ -415,6 +434,9 @@ class ColorPickerHandler:
             prompting = True
         else:
             prompting = False
+        if self.appState.colorPickerSelected:
+            if self.appState.sideBarShowing:
+                self.drawBorder()
         while(prompting):
             time.sleep(0.01)
             #self.colorPicker.caller.drawStatusBar()
@@ -478,7 +500,6 @@ class ColorPickerHandler:
                         curses.BUTTON5_PRESSED = 0
                         curses.BUTTON4_PRESSED = 0
                     if mouseState & curses.BUTTON4_PRESSED: # wheel up
-                        #self.notify("Farfenugen")
                         self.colorPicker.caller.nextFgColor()
                         self.updateFgPicker()
                     elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
@@ -498,6 +519,11 @@ class ColorPickerHandler:
                         self.hide()
                     #self.hide()
                     prompting = False
+
+        if self.appState.colorPickerSelected:
+            if self.appState.sideBarShowing:
+                self.hideBorder()
+
         self.appState.colorPickerSelected = False   # done prompting
 
         if not self.appState.sideBarShowing:
