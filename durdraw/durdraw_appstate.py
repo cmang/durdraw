@@ -21,8 +21,8 @@ class AppState():
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
         self.cursorBlinks = True     # lord help me, why would anyone not want this to be true?
-        self.totalFgColors = "128"
-        self.totalBgColors = "128"
+        self.totalFgColors = 16
+        self.totalBgColors = 8
         self.defaultFgColor = 7
         self.defaultBgColor = 0
         self.stickyColorPicker = True # true to keep color picker on screen

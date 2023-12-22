@@ -68,6 +68,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.ansi = AnsiArtStuff(self.appState)   # obj for misc ansi-related stuff
         # Disable mouse scrolling for Python versions below 3.10, as they don't have
         # curses.BUTTON5_*
+        self.colorbg = 0    # default bg black
+        self.colorfg = 7    # default fg white. These are overriden by the following self.init_x_colors_misc():
         if sys.version_info.major == 3:
             if sys.version_info.minor < 10:
                 self.appState.hasMouseScroll = False
@@ -297,6 +299,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
+            self.statusBar.colorPicker.hide()
             self.appState.colorMode = "16"
             self.ansi.initColorPairs_cga()
             self.init_16_colors_misc()
@@ -330,6 +333,8 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 newColor = 1
         self.setFgColor(newColor)
+        if self.appState.colorMode == "256":
+            self.statusBar.colorPicker.handler.updateFgPicker()
 
     def prevFgColor(self):
         """ switch to prev fg color, cycle around to end if at beginning """
@@ -343,6 +348,8 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 newColor = 16   # default to 16 color
         self.setFgColor(newColor)
+        if self.appState.colorMode == "256":
+            self.statusBar.colorPicker.handler.updateFgPicker()
 
     def nextBgColor(self):
         """ switch to the next bg color, cycle around if at beginning """
@@ -1144,6 +1151,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         # don't do curses.nonl())
                     elif c in [263, 127]:              # backspace
                         self.backspace()
+                    elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
+                        if self.appState.colorMode == "256":
+                            self.statusBar.colorPickerButton.on_click()
                     elif c in [330]:              # delete
                         self.deleteKeyPop(frange=self.appState.playbackRange)
                     elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
@@ -1395,7 +1405,8 @@ class UserInterface():  # Separate view (curses) from this controller
             if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
                 self.appState.sideBarShowing = True
                 #self.notify("Wide. Showing color picker.")
-                self.statusBar.colorPicker.show()
+                if self.appState.colorMode == "256":
+                    self.statusBar.colorPicker.show()
         elif self.appState.sideBarShowing:
             # sidebar Is showing, let's make sure we don't need to hide it
             if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
@@ -1813,6 +1824,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.backspace()
             elif c in [330]:              # delete
                 self.deleteKeyPop()
+            elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
+                self.selectColorPicker()
             elif c in [339, curses.KEY_PPAGE]:  # page up
                 self.move_cursor_pgup()
             elif c in [338, curses.KEY_NPAGE]:  # page down
@@ -1939,12 +1952,30 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                         self.startSelecting(mouse=True)
+
+
                 elif self.pressingButton:
                     self.pressingButton = False
                     print('\033[?1003l') # disable mouse reporting
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
+
+                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED:
+                    #print('\033[?1003h')
+                    #self.notify("Farfenugen")
+                    # If we clicked in the sidebar area, aka to the right of the canvas
+                    # and above the status bar:
+                    if self.appState.sideBarEnabled:
+                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
+                            # Tell the color picker to respond if the click is in its area:
+                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                #elif mouseState & curses.BUTTON1_RELEASED:
+                #    pass
+                    #print('\033[?1003l')
+                    #curses.mousemask(1)
+                    #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+
                 if mouseState == curses.BUTTON1_CLICKED:
                     self.pressingButton = False
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
@@ -2034,6 +2065,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
             self.refresh()
+
+    def selectColorPicker(self):
+        if self.appState.colorMode == "256":
+            self.appState.colorPickerSelected = True
+            self.statusBar.colorPicker.handler.showColorPicker()
 
     def enterViewMode(self):
         self.statusBar.hide()
