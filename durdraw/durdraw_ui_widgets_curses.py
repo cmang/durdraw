@@ -451,15 +451,16 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c in [13, curses.KEY_ENTER]:   # Return, Accept color
+            elif c in [13, curses.KEY_ENTER, 9, 353]:   # Return, Accept color. 9=tab, 353=shift-tab
                 #if not self.appState.stickyColorPicker:
                 if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
+                self.updateFgPicker()
                 pass
             elif c == curses.KEY_MOUSE:
                 try:
-                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                    _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
                     pass
                 if mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
@@ -467,9 +468,22 @@ class ColorPickerHandler:
                     clickedLine = mouseY - self.origin
                     if mouseY < self.origin + self.height:
                         if self.colorGrid[clickedLine][clickedCol] != 0:
+                            # We're in the grid. Set color
                             color = self.colorGrid[clickedLine][clickedCol]
                             self.colorPicker.caller.setFgColor(color)
                             self.updateFgPicker()
+
+
+                    if not self.appState.hasMouseScroll:
+                        curses.BUTTON5_PRESSED = 0
+                        curses.BUTTON4_PRESSED = 0
+                    if mouseState & curses.BUTTON4_PRESSED: # wheel up
+                        #self.notify("Farfenugen")
+                        self.colorPicker.caller.nextFgColor()
+                        self.updateFgPicker()
+                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                        self.colorPicker.caller.prevFgColor()
+                        self.updateFgPicker()
 
                 if not self.appState.sideBarShowing:
                     self.hide()
@@ -479,11 +493,11 @@ class ColorPickerHandler:
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
                     self.colorPicker.caller.setFgColor(oldColor)
+                    self.updateFgPicker()
                     if not self.appState.sideBarShowing:
                         self.hide()
                     #self.hide()
                     prompting = False
-                    color = oldColor
         self.appState.colorPickerSelected = False   # done prompting
 
         if not self.appState.sideBarShowing:
