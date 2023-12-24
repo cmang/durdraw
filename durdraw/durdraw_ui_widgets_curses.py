@@ -89,7 +89,7 @@ class MenuHandler:
             line += 1
         textColor = curses.color_pair(self.appState.theme['mainColor']) | curses.A_BOLD
         buttonColor = curses.color_pair(self.appState.theme['clickColor'])
-        shortcutColor = curses.color_pair(self.appState.theme['promptColor'])
+        shortcutColor = curses.color_pair(self.appState.theme['menuBorderColor'])
         borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
         menuTitleColor = curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD | curses.A_UNDERLINE
         maxX, maxY = self.parentWindow.getmaxyx()
@@ -477,16 +477,34 @@ class ColorPickerHandler:
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_UP:
-                color -= self.width - 2
+                if color < 32:
+                    color -= 16
+                elif color > 31 and color < 52:
+                    color = 15
+                else:
+                    color -= self.width - 2
                 if color <= 0:
                     color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_DOWN:
-                color += self.width - 2
+                if color < 16:
+                    color += 16
+                else:
+                    color += self.width - 2
                 if color >= curses.COLORS:
                     color = curses.COLORS - 1
+                self.colorPicker.caller.setFgColor(color)
+                self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
+            elif c == curses.KEY_HOME:
+                color = 1
+                self.colorPicker.caller.setFgColor(color)
+                self.updateFgPicker()
+                self.colorPicker.caller.drawStatusBar()
+            elif c == curses.KEY_END:
+                color = 255
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
@@ -526,6 +544,7 @@ class ColorPickerHandler:
                 elif mouseY >= self.origin and mouseX > self.x and mouseX < self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
                     #self.colorPicker.caller.notify(f"DEBUG: self.origin={self.origin}, self.x = {self.x}. mouseX={mouseX}, mouseY={mouseY}", pause=True)
                     self.gotClick(mouseX, mouseY)
+                    prompting = False
 
                     #clickedCol = mouseX - self.x
                     #clickedLine = mouseY - self.origin
@@ -538,10 +557,11 @@ class ColorPickerHandler:
 
 
 
-                if not self.appState.sideBarShowing:
-                    self.hide()
+                if not prompting:
+                    if not self.appState.sideBarShowing:
+                        self.hide()
                 #self.hide()
-                prompting = False
+                #prompting = False
             elif c == 27:  # normal esc, Cancel
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
