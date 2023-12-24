@@ -147,13 +147,17 @@ class Menu():
         self.title = title
         self.handler.title = self.title
 
-    def add_item(self, label, on_click, hotkey):
-        props = {"on_click": on_click, "hotkey": hotkey}
+    def add_item(self, label, on_click, hotkey, shortcut=None):
+        props = {"on_click": on_click, "hotkey": hotkey, "shortcut": shortcut}
         item = {label: props}
         self.items.update(item)
         # add button
         #itemButton = Button(label, 0, 0, on_click, self.window)
-        itemButton = Button(label, 0, self.x, on_click, self.window, appState=self.appState)
+        if shortcut:
+            long_label = f"{label} {shortcut}"
+        else:
+            long_label = f"{label} poop"
+        itemButton = Button(long_label, 0, self.x, on_click, self.window, appState=self.appState)
         itemButton.make_invisible()
         self.buttons.append(itemButton)
         #self.handler.rebuild()
@@ -388,19 +392,19 @@ class StatusBar():
         # Create a menu list item, add menu items to it
         mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
         #mainMenu.gui = self.gui
-        mainMenu.add_item("New", caller.clearCanvasPrompt, "n")
-        mainMenu.add_item("Open", caller.openFromMenu, "o")
-        mainMenu.add_item("Save", caller.save, "s")
-        mainMenu.add_item("Undo", caller.clickedUndo, "u")
-        mainMenu.add_item("Redo", caller.clickedRedo, "r")
+        mainMenu.add_item("New/Clear", caller.clearCanvasPrompt, "n", shortcut="esc-C")
+        mainMenu.add_item("Open", caller.openFromMenu, "o", shortcut="esc-o")
+        mainMenu.add_item("Save", caller.save, "s", shortcut="esc-s")
+        mainMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
+        mainMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
         mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
-        mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c")
-        mainMenu.add_item("Transform", caller.showTransformer, "t")
-        mainMenu.add_item("Info/Sauce", caller.showFileInformation, "i")
-        mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v")
-        mainMenu.add_item("Help", caller.showHelp, "h")
-        mainMenu.add_item("Quit", caller.safeQuit, "q")
+        mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
+        #mainMenu.add_item("Transform", caller.showTransformer, "t")
+        mainMenu.add_item("Info/Sauce", caller.showFileInformation, "i", shortcut="esc-i")
+        mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
+        mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
+        mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
         menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
         menuButton.set_tooltip_command('m')
