@@ -2230,6 +2230,12 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
 
+    def openMainMenu(self):
+        self.openMenu("File")
+
+    def openMouseToolsMenu(self):
+        self.openMenu("Mouse Tools")
+
     def openMenu(self, current_menu: str):
         menu_open = True
         if not self.statusBar.toolButton.hidden:
@@ -2239,10 +2245,14 @@ class UserInterface():  # Separate view (curses) from this controller
         #fail_count = 0  # debug
         while menu_open:
             if current_menu == "File":
-                response = self.statusBar.menuButton.on_click()
+                #response = self.statusBar.menuButton.on_click()
+                self.statusBar.menuButton.become_selected()
+                response = self.statusBar.mainMenu.showHide()
                 self.statusBar.menuButton.draw()    # redraw as unselected/not-inverse
             elif current_menu == "Mouse Tools":
-                response = self.statusBar.toolButton.on_click()
+                #response = self.statusBar.toolButton.on_click()
+                self.statusBar.toolButton.become_selected()
+                response = self.statusBar.toolMenu.showHide()
                 self.statusBar.toolButton.draw()    # redraw as unselected/not-inverse
             if response == "Close":
                 menu_open = False

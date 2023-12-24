@@ -103,6 +103,11 @@ class Button():
     def make_invisible(self):
         self.invisible = True
 
+    def become_selected(self):
+        self.selected = True
+        self.handler.draw()
+        self.selected = False
+
     def on_click(self):
         result = self.do_nothing()
         if self.hidden == False:
@@ -406,7 +411,8 @@ class StatusBar():
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
-        menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
+        #menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
+        menuButton = Button("Menu", 0, 0, caller.openMainMenu, self.window, appState=self.appState)
         menuButton.set_tooltip_command('m')
         self.menuButton = menuButton
         menuButton.realX = self.x + menuButton.x
@@ -434,7 +440,8 @@ class StatusBar():
         # offset is how far right to put the button in the statusbar:
         #toolButton_offset = 45  
         toolButton_offset = 7
-        toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
+        #toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
+        toolButton = Button("Tool", 0, toolButton_offset, caller.openMouseToolsMenu, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
         #toolButton.label = self.caller.appState.cursorMode
         toolButton.set_label(self.caller.appState.cursorMode)
