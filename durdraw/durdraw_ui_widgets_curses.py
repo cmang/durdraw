@@ -206,16 +206,21 @@ class MenuHandler:
                 prompting = False
             elif c == curses.KEY_MOUSE:
                 try:
-                    _, mouseX, mouseY, _, _ = curses.getmouse()
+                    _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
                     pass
-                #pdb.set_trace()
-                self.hide()
-                prompting = False
-                self.menu.gui.got_click("Click", mouseX, mouseY)
-                #curses_notify(self.window, f"Click: x={mouseX}, y={mouseY}")
-                #a_button = self.menu.buttons[1]
-                #curses_notify(self.window, f"second button: {a_button.label}, realX: {a_button.realX}, realY: {a_button.realY}")
+
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0 
+                if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                    current_option = max(0, current_option - 1)
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    current_option = min(len(options) - 1, current_option + 1)
+                else:   # assume a click
+                    self.hide()
+                    prompting = False
+                    self.menu.gui.got_click("Click", mouseX, mouseY)
             #jif c in [104, 63]:  # h H Help
             #    self.hide()
             #    self.items["Help"]["on_click"]()
@@ -314,6 +319,7 @@ class ColorPickerHandler:
         #height = int(total / realmaxY) # enough lines to fill content+
         #self.width = realmaxX - 10 
         #self.width = 78
+        #self.width = 38 
         self.width = 38 
         #gridLine = [[]] * self.width
         #self.colorGrid = [gridLine] * self.height
@@ -332,18 +338,18 @@ class ColorPickerHandler:
 
     def drawBorder(self):
         """ Draw a highlighted border around color picker to show it is selected. """
-        x = self.x - 1
+        x = self.x - 2
         y = self.y - 1
-        width = self.width
+        width = self.width + 1
         borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
-        curses_addstr(self.parentWindow, y, x, ("." * (width)), borderColor)
+        curses_addstr(self.parentWindow, y, x, ("." * (width)), borderColor | curses.A_BOLD)
         for line in range(1, self.height + 1):
-            curses_addstr(self.parentWindow, y + line, x, (":"), borderColor)
+            curses_addstr(self.parentWindow, y + line, x, (":"), borderColor | curses.A_BOLD)
 
     def hideBorder(self):
-        x = self.x - 1
+        x = self.x - 2
         y = self.y - 1
-        width = self.width
+        width = self.width + 1
         borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
         curses_addstr(self.parentWindow, y, x, (" " * (width)))
         for line in range(1, self.height + 1):
@@ -402,12 +408,12 @@ class ColorPickerHandler:
                 if fg == 1: # black
                     plain_color_pair = curses.color_pair(9)
                     if self.appState.colorPickerSelected:
-                        curses_addstr(self.window, line, col, 'X', plain_color_pair | curses.A_UNDERLINE)
+                        curses_addstr(self.window, line, col, 'X', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
                     else:
                         curses_addstr(self.window, line, col, 'X', plain_color_pair)
                 else:
                     if self.appState.colorPickerSelected:
-                        curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE)
+                        curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
                     else:
                         curses_addstr(self.window, line, col, 'X', color_pair)
             else:
@@ -491,26 +497,41 @@ class ColorPickerHandler:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
                 except:
                     pass
-                if mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
-                    clickedCol = mouseX - self.x
-                    clickedLine = mouseY - self.origin
-                    if mouseY < self.origin + self.height:
-                        if self.colorGrid[clickedLine][clickedCol] != 0:
-                            # We're in the grid. Set color
-                            color = self.colorGrid[clickedLine][clickedCol]
-                            self.colorPicker.caller.setFgColor(color)
-                            self.updateFgPicker()
+
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                if mouseState & curses.BUTTON4_PRESSED: # wheel up
+                    color += 1
+                    if color >= curses.COLORS:
+                        color = 0
+                    #self.colorPicker.caller.colorfg = color
+                    self.colorPicker.caller.setFgColor(color)
+                    self.updateFgPicker()
+                    self.colorPicker.caller.drawStatusBar()
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                    if color == 0:
+                        color = curses.COLORS - 1
+                    else:
+                        color -= 1
+                    #self.colorPicker.caller.colorfg = color
+                    self.colorPicker.caller.setFgColor(color)
+                    self.updateFgPicker()
+                    self.colorPicker.caller.drawStatusBar()
+                elif mouseY >= self.origin and mouseX > self.x and mouseX < self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+                    #self.colorPicker.caller.notify(f"DEBUG: self.origin={self.origin}, self.x = {self.x}. mouseX={mouseX}, mouseY={mouseY}", pause=True)
+                    self.gotClick(mouseX, mouseY)
+
+                    #clickedCol = mouseX - self.x
+                    #clickedLine = mouseY - self.origin
+                    #if mouseY < self.origin + self.height:
+                    #    if self.colorGrid[clickedLine][clickedCol] != 0:
+                    #        # We're in the grid. Set color
+                    #        color = self.colorGrid[clickedLine][clickedCol]
+                    #        self.colorPicker.caller.setFgColor(color)
+                    #        self.updateFgPicker()
 
 
-                    if not self.appState.hasMouseScroll:
-                        curses.BUTTON5_PRESSED = 0
-                        curses.BUTTON4_PRESSED = 0
-                    if mouseState & curses.BUTTON4_PRESSED: # wheel up
-                        self.colorPicker.caller.nextFgColor()
-                        self.updateFgPicker()
-                    elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        self.colorPicker.caller.prevFgColor()
-                        self.updateFgPicker()
 
                 if not self.appState.sideBarShowing:
                     self.hide()

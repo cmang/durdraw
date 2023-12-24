@@ -1825,7 +1825,9 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [330]:              # delete
                 self.deleteKeyPop()
             elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
-                self.selectColorPicker()
+                if self.appState.colorMode == "256":
+                    #self.statusBar.colorPickerButton.on_click()
+                    self.selectColorPicker()
             elif c in [339, curses.KEY_PPAGE]:  # page up
                 self.move_cursor_pgup()
             elif c in [338, curses.KEY_NPAGE]:  # page down
