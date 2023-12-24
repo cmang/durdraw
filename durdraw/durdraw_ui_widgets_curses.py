@@ -75,7 +75,7 @@ class MenuHandler:
         if self.title:
             height += 1
         # find widest item in list, go a few characters larger 
-        width = len(max(self.menu.items, key = len)) + 4  # 4 for padding and side borders
+        width = len(max(self.menu.items, key = len)) + 4  + 7 # 4 for padding and side borders, more for shortcuts
         if self.menu.title:
             titleWidth = len(self.menu.title) + 4 
             if titleWidth> width:
@@ -89,6 +89,7 @@ class MenuHandler:
             line += 1
         textColor = curses.color_pair(self.appState.theme['mainColor']) | curses.A_BOLD
         buttonColor = curses.color_pair(self.appState.theme['clickColor'])
+        shortcutColor = curses.color_pair(self.appState.theme['promptColor'])
         borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
         menuTitleColor = curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD | curses.A_UNDERLINE
         maxX, maxY = self.parentWindow.getmaxyx()
@@ -102,9 +103,13 @@ class MenuHandler:
             curses_addstr(self.curses_win, 1, 2, self.menu.title, menuTitleColor) # Menu title
             curses_addstr(self.curses_win, 1, width - 1, ':', borderColor)
         for (item, button) in zip(self.menu.items, self.menu.buttons):
+            shortcut = self.menu.items[item]["shortcut"]
+
             curses_addstr(self.curses_win, line, 0, ':', borderColor)
             curses_addstr(self.curses_win, line, width - 1, ':', borderColor)
             curses_addstr(self.curses_win, line, 2, item, textColor)    # Menu item
+            if shortcut:
+                curses_addstr(self.curses_win, line, width - 7, shortcut, shortcutColor)
             top_of_menu = self.menu.caller.y - len(self.menu.buttons)
             button.update_real_xy(x=self.menuOriginLine + line, y=self.menu.y) # working for putting menu on first line
             button.window = self.window
