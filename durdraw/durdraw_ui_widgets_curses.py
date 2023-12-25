@@ -296,6 +296,8 @@ class DrawCharPickerHandler:
             elif c in [curses.KEY_F10]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f10'])
                 prompting = False
+            elif c == 27:   # esc, cancel
+                prompting = False
             else:
                 self.caller.appState.drawChar = chr(c)
                 prompting = False
