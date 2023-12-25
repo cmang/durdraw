@@ -303,15 +303,19 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.colorMode = "16"
             self.ansi.initColorPairs_cga()
             self.init_16_colors_misc()
+            self.mov.change_palette_256_to_16()
             self.appState.loadThemeFromConfig("Theme-16")
             self.statusBar.colorPickerButton.hide()
             #self.statusBar.charSetButton.hide()
             #if self.statusBar.colorPickerEnabled:
             #    self.statusBar.enableColorPicker()
+            if self.appState.blackbg:
+                self.enableTransBackground()
         if newMode == "256":
             self.appState.colorMode = "256"
             self.ansi.initColorPairs_256color()
             self.init_256_colors_misc()
+            self.mov.change_palette_16_to_256()
             self.appState.loadThemeFromConfig("Theme-256")
             self.statusBar.colorPickerButton.show()
             if self.appState.blackbg:
@@ -319,6 +323,16 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.statusBar.charSetButton.show()
             #if not self.statusBar.colorPickerEnabled:
             #    self.statusBar.disableColorPicker()
+
+            # Show color picker if needed
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            if self.appState.sideBarEnabled and not self.playing:
+                # Sidebar not showing, but enabled. Check and see if the window is wide enough
+                if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+                    self.appState.sideBarShowing = True
+                    #self.notify("Wide. Showing color picker.")
+                    if self.appState.colorMode == "256":
+                        self.statusBar.colorPicker.show()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -3063,8 +3077,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 if fileColorMode == "256" and fileColorMode != self.appState.colorMode:
                     #self.notify(f"Warning: Loading a 256 color file in 16 color mode. Some colors may not be displayed.")
-                    self.notify(f"256 color file. Switching to 256 color mode.")
+                    if not self.appState.playOnlyMode:
+                        self.notify(f"256 color file. Switching to 256 color mode.")
                     self.switchTo256ColorMode()
+                    self.loadFromFile(shortfile, 'dur')
 
                 if fileCharEncoding != self.appState.charEncoding:
                     self.notify(f"Warning: File uses {fileCharEncoding} character encoding, but Durdraw is in {self.appState.charEncoding} mode.")
@@ -3086,8 +3102,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 if fileColorMode == "16" and fileColorMode != self.appState.colorMode:
                     #self.notify(f"Warning: Loading 16 color ANSI in {self.appState.colorMode} color mode will lose background colors.", pause=True)
-                    self.notify(f"16 color file. Switching to 16 color mode.")
+                    if not self.appState.playOnlyMode:
+                        self.notify(f"16 color file. Switching to 16 color mode.")
                     self.switchTo16ColorMode()
+                    self.loadFromFile(shortfile, 'dur')
                 return True
 
             try:    # Maybe it's a really old Pickle file...
