@@ -1023,6 +1023,11 @@ class UserInterface():  # Separate view (curses) from this controller
                         if mouseState == curses.BUTTON1_CLICKED:
                             self.showFileInformation()
 
+                        elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                        # It's as if we'd pressed enter to exit the viewer mode.
+                            self.playing = False
+                            self.appState.topLine = 0
+
                         if not self.appState.hasMouseScroll:
                             curses.BUTTON5_PRESSED = 0
                             curses.BUTTON4_PRESSED = 0
