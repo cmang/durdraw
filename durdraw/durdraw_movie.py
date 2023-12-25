@@ -236,6 +236,103 @@ class Movie():
             frame_num += 1
         return found
 
+    def change_palette_16_to_256(self):
+        # Convert from blue to bright white by reducing their value by 1
+        for frame in self.frames:
+            line_num = 0
+            col_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[0] == 1:    # black
+                        pair[0] = 16
+                    elif pair[0] == 16:    # bright white
+                        pair[0] = 15
+                    elif pair[0] == 15:    # bright yellow
+                        pair[0] = 14
+                    elif pair[0] == 14:    # bright purple
+                        pair[0] = 13
+                    elif pair[0] == 13:    # bright red
+                        pair[0] = 12
+                    elif pair[0] == 12:    # bright cyan
+                        pair[0] = 11
+                    elif pair[0] == 11:    # bright green
+                        pair[0] = 10
+                    elif pair[0] == 10:    # bright blue
+                        pair[0] = 9
+                    elif pair[0] == 9:    # bright black
+                        pair[0] = 8
+                    elif pair[0] == 8:    # grey
+                        pair[0] = 7
+                    elif pair[0] == 7:    # brown
+                        pair[0] = 6
+                    elif pair[0] == 6:    # purple
+                        pair[0] = 5
+                    elif pair[0] == 5:    # red
+                        pair[0] = 4
+                    elif pair[0] == 4:    # cyan
+                        pair[0] = 3
+                    elif pair[0] == 3:    # green
+                        pair[0] = 2
+                    elif pair[0] == 2:    # blue
+                        pair[0] = 1
+                    col_num += 1
+
+    def change_palette_256_to_16(self):
+        # Convert from blue to bright white by reducing their value by 1
+        for frame in self.frames:
+            line_num = 0
+            col_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[0] == 16:    # black
+                        pair[0] = 1
+                    elif pair[0] == 15:    # bright white
+                        pair[0] = 16
+                    elif pair[0] == 14:    # bright yellow
+                        pair[0] = 15
+                    elif pair[0] == 13:    # bright purple
+                        pair[0] = 14
+                    elif pair[0] == 12:    # bright red
+                        pair[0] = 13
+                    elif pair[0] == 11:    # bright cyan
+                        pair[0] = 12
+                    elif pair[0] == 10:    # bright green
+                        pair[0] = 11
+                    elif pair[0] == 9:    # bright blue
+                        pair[0] = 10
+                    elif pair[0] == 8:    # bright black
+                        pair[0] = 9
+                    elif pair[0] == 7:    # grey
+                        pair[0] = 8
+                    elif pair[0] == 6:    # brown
+                        pair[0] = 7
+                    elif pair[0] == 5:    # purple
+                        pair[0] = 6
+                    elif pair[0] == 4:    # red
+                        pair[0] = 5
+                    elif pair[0] == 3:    # cyan
+                        pair[0] = 4
+                    elif pair[0] == 2:    # green
+                        pair[0] = 3
+                    elif pair[0] == 1:    # blue
+                        pair[0] = 2
+                    col_num += 1
+
+
+    def search_and_replace_color(self, old_color :int, new_color :int):
+        found = False
+        for frame in self.frames:
+            line_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[0] == old_color:
+                        frame.newColorMap[line_num][0] = new_color
+                        found = True
+                    if pair[1] == old_color:
+                        frame.newColorMap[line_num][1] = new_color
+                        found = True
+                line_num += 1
+
     def contains_high_colors(self):
         """ Returns True if any color above 16 is used, False otherwise """
         for frame in self.frames:
