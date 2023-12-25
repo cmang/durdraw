@@ -2098,10 +2098,13 @@ class UserInterface():  # Separate view (curses) from this controller
     def enterViewMode(self):
         self.statusBar.hide()
         self.stdscr.clear()
+        old_top_line = self.appState.topLine
+        self.appState.topLine = 0
         oldDrawBorders = self.appState.drawBorders  # to turn back on when done
         self.appState.playOnlyMode = True
         self.startPlaying()
         self.appState.playOnlyMode = False
+        self.appState.topLine = old_top_line
         self.statusBar.show()
         self.appState.drawBorders = oldDrawBorders
         self.cursorOn()
@@ -2343,8 +2346,29 @@ class UserInterface():  # Separate view (curses) from this controller
                         block_label = block_list[current_line_number]
                     if  selected_item_number == current_line_number:    # if block is selected
                         self.addstr(current_line_number - top_line, 0, block_label, curses.A_REVERSE)
-                    else:
+
+                        if block_list[current_line_number] not in set_list: # if it's a unicode block...
+                            # Draw inline preview characters for the set
+                            #previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
+                            previewCharMap = durchar.load_unicode_block(block_list[current_line_number])
+                            previewChars = ''
+                            maxChars = 60   # number of preview characters to load
+                            totalChars = 0
+                            previewOffset = len(block_label) + 2    # column to display preview characters at
+                            for miniMap in previewCharMap:  # for all characters in this block...
+                                for key in miniMap:
+                                    if totalChars <= maxChars:  # If we're within range,
+                                        previewChars += chr(miniMap[key])   # add to the preview string
+                                    totalChars += 1
+                            try:
+                                pass
+                                self.addstr(current_line_number - top_line, previewOffset, previewChars)
+                            except Exception as E:
+                                pass
+
+                    else:   # print a block that isn't currently selected
                         if block_list[current_line_number] in set_list:
+                            # Durdraw custom character set (like durdraw default), not a Unicode block
                             if currentActiveSet:     # currently used character set
                                 self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD)
                             else:
@@ -2354,7 +2378,27 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']) | curses.A_BOLD)
                             else:
                                 self.addstr(current_line_number - top_line, 0, block_label, curses.color_pair(self.appState.theme['promptColor']))
+
+                            # Draw inline preview characters for the set
+                            #previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
+                            previewCharMap = durchar.load_unicode_block(block_list[current_line_number])
+                            previewChars = ''
+                            maxChars = 60   # number of preview characters to load
+                            totalChars = 0
+                            previewOffset = len(block_label) + 2    # column to display preview characters at
+                            for miniMap in previewCharMap:  # for all characters in this block...
+                                for key in miniMap:
+                                    if totalChars <= maxChars:  # If we're within range,
+                                        previewChars += chr(miniMap[key])   # add to the preview string
+                                    totalChars += 1
+                            try:
+                                pass
+                                self.addstr(current_line_number - top_line, previewOffset, previewChars)
+                            except Exception as E:
+                                pass
+
                 current_line_number += 1
+
 
             #if mask_all:
             #    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
