@@ -211,6 +211,7 @@ def main():
             time.sleep(3)
     if args.play:
         app.playOnlyMode = True
+        app.editorRunning = False
     #ui = curses.wrapper(UI_Curses, app)
     ui = UI_Curses(app)
     if app.hasMouse:
