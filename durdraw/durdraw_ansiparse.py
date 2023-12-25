@@ -285,7 +285,10 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                     elif code > 39 and code < 48: # BG colors 0-8, or 40-47
                         if appState.colorMode == "256":
                             #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
-                            bg_color = 0
+                            #bg_color = 0
+                            bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                            if bg_color == -1:
+                                bg_color = 0
                         else:
                             #if bold:
                             #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold

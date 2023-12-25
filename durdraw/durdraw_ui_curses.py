@@ -614,6 +614,7 @@ class UserInterface():  # Separate view (curses) from this controller
         year = self.appState.sauce.year
         month = self.appState.sauce.month
         day = self.appState.sauce.day
+        colorMode = self.appState.colorMode
 
         infoString = ''
         infoStringList = []
@@ -636,6 +637,8 @@ class UserInterface():  # Separate view (curses) from this controller
 
         infoStringList.append(f"Width: {self.mov.sizeX}")
         infoStringList.append(f"Height: {self.mov.sizeY}")
+
+        infoStringList.append(f"Color mode: {colorMode}")
 
         if len(infoStringList) > 0:
             infoString = ', '.join(infoStringList)
@@ -3042,6 +3045,20 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.notify(f"From color map at 1, 1: {self.mov.currentFrame.newColorMap[1][1]}")
             #for x in range(lineNum, self.mov.sizeY):   # clear out rest of contents.
             #    self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
+
+            # If we're in the wrong color mode, switch modes and reload file.
+            if self.appState.colorMode == "256":
+                if not self.mov.contains_high_colors(): # if not using 256 colors
+                    #self.notify("Does not contain extended colors.")
+                    if self.mov.contains_background_colors():   # but using background colors...
+                        #self.notify("Contains background colors.")
+                        # Must be a 16 color ANSI. Switch since 256 can't do background colors.
+                        if not self.appState.playOnlyMode:
+                            self.notify(f"16 color file. Switching to 16 color mode and reloading file.")
+                        self.switchTo16ColorMode()
+                        self.loadFromFile(shortfile, 'ascii')
+            self.hardRefresh()
+
         elif loadFormat == 'dur':
             try:
                 f = open(filename, 'rb')
@@ -3106,6 +3123,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.notify(f"16 color file. Switching to 16 color mode.")
                     self.switchTo16ColorMode()
                     self.loadFromFile(shortfile, 'dur')
+                self.hardRefresh()
                 return True
 
             try:    # Maybe it's a really old Pickle file...
@@ -3152,6 +3170,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.modified = False
         self.setWindowTitle(shortfile)
         self.mov.gotoFrame(1)
+        self.hardRefresh()
 
 
     

@@ -342,6 +342,16 @@ class Movie():
                         return True
         return False
 
+    def contains_background_colors(self):
+        """ Return true if any background color is set other than black or default """
+        for frame in self.frames:
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[1] > 0:
+                        return True
+        return False
+        
+
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
             sort_keys=True, indent=4)
