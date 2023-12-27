@@ -1043,9 +1043,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.appState.topLine < 0:
                             self.appState.topLine = 0
                     elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
-                        self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
-                        if self.appState.topLine > self.mov.sizeY - self.realmaxY:
-                            self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+                        if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
+                            self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+                            if self.appState.topLine > self.mov.sizeY - self.realmaxY:
+                                self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
                     elif c in [339, curses.KEY_HOME]:  # 339 = home
                         self.appState.topLine = 0
                     elif c in [338, curses.KEY_END]:   # 338 = end
