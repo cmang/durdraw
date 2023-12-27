@@ -119,8 +119,11 @@ def main():
     if args.locolor:
         app.colorMode = "16"
     if args.cp437:
-        app.charEncoding = 'ibm-pc'
+        app.charEncoding = 'cp437'
         #app.drawChar = '$'
+        app.colorPickChar = app.CP438_BLOCK  # ibm-pc/cp437 ansi block character
+        app.blockChar = app.CP438_BLOCK
+        app.drawChar = app.CP438_BLOCK
     else:
         app.charEncoding = 'utf-8'
     durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
