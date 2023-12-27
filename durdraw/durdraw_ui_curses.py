@@ -767,11 +767,11 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [curses.KEY_DOWN, ord('j')]:  # scroll down
                 if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
                     self.appState.topLine += 1
-            elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+            elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b'), ord('<')]:  # page up, and vim keys
                 self.appState.topLine = self.appState.topLine - self.realmaxY + 3
                 if self.appState.topLine < 0:
                     self.appState.topLine = 0
-            elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+            elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f'), ord('>')]:  # page down, and vi keys
                 self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
                 if self.appState.topLine > helpMov.sizeY - self.realmaxY:
                     self.appState.topLine = helpMov.sizeY - self.realmaxY + 2
