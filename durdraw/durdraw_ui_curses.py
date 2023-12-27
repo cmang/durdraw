@@ -908,7 +908,10 @@ class UserInterface():  # Separate view (curses) from this controller
         if not self.statusBar.toolButton.hidden:
             self.statusBar.toolButton.draw()
             self.statusBar.toolButton.hide()
-            self.drawStatusBar()
+        if not self.statusBar.animButton.hidden:
+            self.statusBar.animButton.draw()
+            self.statusBar.animButton.hide()
+        self.drawStatusBar()
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
         self.statusBar.drawCharPickerButton.hide()
@@ -980,6 +983,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.delLine(frange=self.appState.playbackRange)
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     #self.statusBar.menuButton.on_click() 
+                    self.commandMode = False
                     self.openMenu("File")
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
@@ -1258,6 +1262,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def stopPlaying(self):
         self.playing = False
         self.statusBar.toolButton.show()
+        self.statusBar.animButton.show()
         if self.appState.cursorMode == "Draw":
             self.statusBar.drawCharPickerButton.show()
 
@@ -1743,7 +1748,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.commandMode = False
                     self.openMenu("File")
-                    #self.statusBar.menuButton.on_click() 
+                elif c == ord('a'):    # alt-a - Animation menu
+                    self.commandMode = False
+                    self.openMenu("Anim")
                 elif c == 116: # or c =- 84:    # alt-t or alt-T - mouse tools menu
                     self.commandMode = False
                     self.openMenu("Mouse Tools")
@@ -1769,30 +1776,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 67:             # alt-C - clear canvas/new
                     self.clearCanvas(prompting=True)
                 elif c == 110 or c == 14:          # alt-n - clone to new frame
-                    self.undo.push()
-                    if self.mov.insertCloneFrame():
-                        if self.appState.playbackRange[0] == 1 and \
-                                self.appState.playbackRange[1] == self.mov.frameCount - 1:
-                            self.appState.playbackRange = (self.appState.playbackRange[0], \
-                                self.appState.playbackRange[1] + 1)
-                    self.refresh()
+                    self.cloneToNewFrame()
                 elif c == 78:          # alt-N (shift-alt-n) - new  empty frame
-                    self.undo.push()
-                    if self.mov.addEmptyFrame():
-                        if self.appState.playbackRange[0] == 1 and \
-                                self.appState.playbackRange[1] == self.mov.frameCount - 1:
-                            self.appState.playbackRange = (self.appState.playbackRange[0], \
-                                    self.appState.playbackRange[1] + 1)
-                    self.refresh()
+                    self.appendEmptyFrame()
                 elif c == 77:         # alt-M - move current frame
                     self.moveCurrentFrame()
                 elif c == 100:      # alt-d - delete current frame
-                    if self.deleteCurrentFramePrompt():
-                        if self.appState.playbackRange[0] == 1 and \
-                                self.appState.playbackRange[1] == self.mov.frameCount + 1:
-                            self.appState.playbackRange = (self.appState.playbackRange[0], \
-                                self.appState.playbackRange[1] - 1)
-                    self.refresh()
+                    self.deleteCurrentFrame()
                 elif c == 122:  # alt-z = undo
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
@@ -2099,6 +2089,33 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.colorPickerSelected = True
             self.statusBar.colorPicker.handler.showColorPicker()
 
+    def cloneToNewFrame(self):
+        """ Take current frame, clone it to a new one, insert it immediately after current frame """
+        self.undo.push()
+        if self.mov.insertCloneFrame():
+            if self.appState.playbackRange[0] == 1 and \
+                    self.appState.playbackRange[1] == self.mov.frameCount - 1:
+                self.appState.playbackRange = (self.appState.playbackRange[0], \
+                    self.appState.playbackRange[1] + 1)
+        self.refresh()
+
+    def appendEmptyFrame(self):
+        self.undo.push()
+        if self.mov.addEmptyFrame():
+            if self.appState.playbackRange[0] == 1 and \
+                    self.appState.playbackRange[1] == self.mov.frameCount - 1:
+                self.appState.playbackRange = (self.appState.playbackRange[0], \
+                        self.appState.playbackRange[1] + 1)
+        self.refresh()
+
+    def deleteCurrentFrame(self):
+        if self.deleteCurrentFramePrompt():
+            if self.appState.playbackRange[0] == 1 and \
+                    self.appState.playbackRange[1] == self.mov.frameCount + 1:
+                self.appState.playbackRange = (self.appState.playbackRange[0], \
+                    self.appState.playbackRange[1] - 1)
+        self.refresh()
+
     def enterViewMode(self):
         self.statusBar.hide()
         self.stdscr.clear()
@@ -2193,6 +2210,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Ask the user for the delay value to set for current frame, then
             set it """
         self.clearStatusLine()
+        self.stdscr.nodelay(0) # wait for input when calling getch
         self.promptPrint(f"Current frame delay == {self.mov.currentFrame.delay}, new value in seconds: ")
         curses.echo()
         try:
@@ -2268,6 +2286,9 @@ class UserInterface():  # Separate view (curses) from this controller
     def openMainMenu(self):
         self.openMenu("File")
 
+    def openAnimMenu(self):
+        self.openMenu("Anim")
+
     def openMouseToolsMenu(self):
         self.openMenu("Mouse Tools")
 
@@ -2276,7 +2297,10 @@ class UserInterface():  # Separate view (curses) from this controller
         if not self.statusBar.toolButton.hidden:
             self.drawStatusBar()
         response = "Right"
-        menus = ["File", "Mouse Tools"]
+        if self.playing:
+            menus = ["File"]
+        else:
+            menus = ["File", "Anim", "Mouse Tools"]
         #fail_count = 0  # debug
         while menu_open:
             if current_menu == "File":
@@ -2289,6 +2313,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.statusBar.toolButton.become_selected()
                 response = self.statusBar.toolMenu.showHide()
                 self.statusBar.toolButton.draw()    # redraw as unselected/not-inverse
+            elif current_menu == "Anim":
+                #response = self.statusBar.toolButton.on_click()
+                self.statusBar.animButton.become_selected()
+                response = self.statusBar.animMenu.showHide()
+                self.statusBar.animButton.draw()    # redraw as unselected/not-inverse
             if response == "Close":
                 menu_open = False
             elif response == "Right":
