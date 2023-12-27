@@ -1322,13 +1322,19 @@ class UserInterface():  # Separate view (curses) from this controller
             self.chMap = self.fullCharMap[self.charMapNumber]
 
             # Map a dict of F1-f10 to character values 
-            if self.appState.charEncoding == 'ibm-pc':
+            if self.appState.charEncoding == 'cp437':
+                # ibm-pc/cp437 ansi block character
                 self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
                 self.fullCharMap = [ self.chMap ]
-                self.appState.colorPickChar = chr(219)  # ibm-pc/cp437 ansi block character
+                self.appState.colorPickChar = self.appState.CP438_BLOCK  # ibm-pc/cp437 ansi block character
+                self.appState.blockChar = self.appState.CP438_BLOCK
+                self.appState.drawChar = self.appState.CP438_BLOCK
         elif self.appState.characterSet == "Unicode Block":
             self.setUnicodeBlock(block=self.appState.unicodeBlock)
             self.chMap = self.fullCharMap[self.charMapNumber]
+            self.appState.colorPickChar = self.appState.UTF8_BLOCK  # ibm-pc/cp437 ansi block character
+            self.appState.blockChar = self.appState.UTF8_BLOCK
+            self.appState.drawChar = self.appState.UTF8_BLOCK
         self.refreshCharMap()
 
     def setCharacterSet(self, set_name):

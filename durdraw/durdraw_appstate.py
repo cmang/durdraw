@@ -50,7 +50,10 @@ class AppState():
         self.customThemeFile = None
         self.sauce = dursauce.SauceParser() # empty sauce
         #self.drawChar = b'\xE2\x96\x88'
-        self.colorPickChar = chr(9608)  # unicode block character, for displaying colors in color pickers
+        self.CP438_BLOCK = chr(219)
+        self.UTF8_BLOCK = chr(9608)
+        self.blockChar = self.UTF8_BLOCK      # Unicode block by default, --cp437 should change this
+        self.colorPickChar = self.blockChar
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.hasMouseScroll = True  # Disable for compatibility with older Python versions <3.10
         self.helpMov = None
