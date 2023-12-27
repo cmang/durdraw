@@ -393,7 +393,7 @@ class StatusBar():
 
         # Settings menu
         #settingsMenuColumn = mainMenu.handler.width # Try to place to the right of the main menu
-        settingsMenuColumn = 25 # Try to place to the right of the main menu
+        settingsMenuColumn = 24 # Try to place to the right of the main menu
         settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
@@ -438,6 +438,32 @@ class StatusBar():
         self.mainMenu = mainMenu
 
 
+        # Animation menu
+        self.animButton = None
+        #animButton_offset = 18
+        animButton_offset = 7
+        # Create a menu list item, add menu items to it
+        animMenu = Menu(self.window, x = animButton_offset, y = self.y, caller=self, appState=self.appState, statusBar=self)
+        animMenu.set_title("Animation:")
+        animMenu.add_item("Clone Frame", caller.cloneToNewFrame, "n", shortcut="esc-n")
+        animMenu.add_item("Append Empty Frame", caller.appendEmptyFrame, "a", shortcut="esc-N")
+        animMenu.add_item("Delete Frame", caller.deleteCurrentFrame, "d", shortcut="esc-d")
+        animMenu.add_item("Set Frame Delay", caller.getDelayValue, "l", shortcut="esc-D")
+        animMenu.add_item("Set Playback Range", caller.getPlaybackRange, "r", shortcut="esc-R")
+        animMenu.add_item("Go to Frame", caller.gotoFrameGetInput, "g", shortcut="esc-g")
+        animMenu.add_item("Move Frame", caller.moveCurrentFrame, "m", shortcut="esc-M")
+        animButton = Button("Anim", 0, animButton_offset, caller.openAnimMenu, self.window, appState=self.appState)
+        animButton.set_tooltip_command('a')
+        self.animButton = animButton
+        animButton.realX = self.x + animButton.x
+        animButton.realY = self.y + animButton.y
+        animButton.show()
+        self.animButton = animButton
+        animMenu.set_x(animButton.realX - 1)
+        animMenu.set_y(animButton.realY)
+        self.animMenu = animMenu
+
+
         # Mouse tools menu
         toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
         toolMenu.set_title("Mouse Tools:")
@@ -453,7 +479,8 @@ class StatusBar():
         # Make cursor tool selector button
         # offset is how far right to put the button in the statusbar:
         #toolButton_offset = 45  
-        toolButton_offset = 7
+        #toolButton_offset = 7
+        toolButton_offset = 14
         #toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
         toolButton = Button("Tool", 0, toolButton_offset, caller.openMouseToolsMenu, self.window, appState=self.appState)
         #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
@@ -534,6 +561,7 @@ class StatusBar():
         self.items.append(menuButton)
         self.items.append(toolButton)
         self.items.append(drawCharPickerButton)
+        self.items.append(animButton)
         if self.appState.colorMode != '16': # in 16 color mode, don't cover up the bg color picker
             if self.caller.appState.showCharSetButton:
                 self.items.append(charSetButton)
@@ -542,6 +570,7 @@ class StatusBar():
         self.buttons.append(menuButton)
         self.buttons.append(toolButton)
         self.buttons.append(drawCharPickerButton)
+        self.buttons.append(animButton)
         if self.caller.appState.showCharSetButton:
             self.buttons.append(charSetButton)
         # Add them to the items
