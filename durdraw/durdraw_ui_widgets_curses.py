@@ -104,12 +104,15 @@ class MenuHandler:
             curses_addstr(self.curses_win, 1, width - 1, ':', borderColor)
         for (item, button) in zip(self.menu.items, self.menu.buttons):
             shortcut = self.menu.items[item]["shortcut"]
+            has_submenu = self.menu.items[item]["has_submenu"]
 
             curses_addstr(self.curses_win, line, 0, ':', borderColor)
             curses_addstr(self.curses_win, line, width - 1, ':', borderColor)
             curses_addstr(self.curses_win, line, 2, item, textColor)    # Menu item
             if shortcut:
                 curses_addstr(self.curses_win, line, width - 7, shortcut, shortcutColor)
+            if has_submenu:
+                curses_addstr(self.curses_win, line, width - 2, ">", shortcutColor)
             top_of_menu = self.menu.caller.y - len(self.menu.buttons)
             button.update_real_xy(x=self.menuOriginLine + line, y=self.menu.y) # working for putting menu on first line
             button.window = self.window
@@ -177,7 +180,18 @@ class MenuHandler:
                 curses.panel.update_panels()
                 self.window.refresh()
                 if c == ord(self.menu.items[item]["hotkey"]):    # hotkey pressed
-                    self.hide()
+                    if self.menu.items[item]["has_submenu"]:    # If it opens a sub-menu..
+                        # Keep it on the screen.
+                        # Redraw previously selected as normal:
+                        curses_addstr(self.curses_win, current_option + 1, 2, options[current_option], menuItemColor)
+                        # Then highlight the new one.
+                        current_option = options.index(item)
+                        #self.rebuild()
+                        textColor = menuItemColor | curses.A_REVERSE
+                        curses_addstr(self.curses_win, line - 1, 2, item, textColor)
+                    else:
+                        # Otherwise, hide it
+                        self.hide()
                     self.menu.items[item]["on_click"]()
                     prompting = False
             if c == curses.KEY_UP:
@@ -200,12 +214,20 @@ class MenuHandler:
                 # Here: Launch a different menu
                 #self.menu.statusBar.menuButton.on_click
             elif c in [102, curses.KEY_RIGHT]:
-                self.hide()
-                prompting = False
-                response = "Right"
-                #self.hide()
-                #prompting = False
-                # Here: Launch a different menu
+                if self.menu.items[options[current_option]]["has_submenu"]:    # If it opens a sub-menu..
+                    #curses_notify(window, f"Debug: Fnord")
+                    #self.hide()
+                    #prompting = False
+                    self.menu.items[options[current_option]]["on_click"]() 
+                    prompting = False
+                else:
+                    # Jump out of the menu, and tell the parent handler to move to the next menu
+                    self.hide()
+                    prompting = False
+                    response = "Right"
+                    #self.hide()
+                    #prompting = False
+                    # Here: Launch a different menu
             elif c == 27:  # normal esc
                 self.hide()
                 prompting = False
@@ -223,9 +245,40 @@ class MenuHandler:
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
                     current_option = min(len(options) - 1, current_option + 1)
                 else:   # assume a click
-                    self.hide()
-                    prompting = False
-                    self.menu.gui.got_click("Click", mouseX, mouseY)
+                    # Did the user click in the menu area?
+                    if mouseY > self.menuOriginLine and mouseY < self.menuOriginLine + len(self.menu.items):  # on a menu line?
+                        if mouseX < self.x and mouseX > self.x - self.width:    # in a menu column
+                            # Un-highlight selected item
+                            curses_addstr(self.curses_win, current_option + 1, 2, options[current_option], menuItemColor)
+                            # Highlight the one we're clicking on
+                            current_option = mouseY - self.menuOriginLine - 1
+                            #item = self.menu.items[options[current_option]]
+                            #curses_notify(self.window, f"current_option: {current_option}")
+                            #self.rebuild()
+                            textColor = menuItemColor | curses.A_REVERSE
+                            curses_addstr(self.curses_win, current_option + 1, 2, options[current_option], textColor)
+
+                            has_submenu = self.menu.items[options[current_option]]["has_submenu"]
+                            if has_submenu:
+                                prompting = False
+                                self.menu.items[options[current_option]]["on_click"]() 
+                            else:
+                                self.hide()
+                                prompting = False
+                                #self.menu.items[options[current_option]]["on_click"]() 
+                                self.menu.gui.got_click("Click", mouseX, mouseY)
+                        else:
+                            #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
+                            prompting = False
+                            self.menu.gui.got_click("Click", mouseX, mouseY)
+                            self.hide()
+                            #curses_notify(self.window, f"This should never happen. mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
+                                
+                    else:
+                        #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
+                        prompting = False
+                        self.menu.gui.got_click("Click", mouseX, mouseY)
+                        self.hide()
             #jif c in [104, 63]:  # h H Help
             #    self.hide()
             #    self.items["Help"]["on_click"]()
@@ -664,6 +717,7 @@ class ButtonHandler:
         if not self.button.invisible:
             textColor = self.color
             if self.button.selected:
+                #curses_notify(self.window, "Tacos")
                 textColor = textColor | curses.A_REVERSE
             if self.button:   # a selector type button, to be iframed in []s
                 buttonString = f"[{self.button.label}]"

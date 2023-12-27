@@ -115,7 +115,6 @@ class Button():
             self.handler.draw()
             result = self.handler.on_click()
             self.selected = False
-            #self.handler.draw()
         return result
 
     def do_nothing(self):
@@ -152,8 +151,8 @@ class Menu():
         self.title = title
         self.handler.title = self.title
 
-    def add_item(self, label, on_click, hotkey, shortcut=None):
-        props = {"on_click": on_click, "hotkey": hotkey, "shortcut": shortcut}
+    def add_item(self, label, on_click, hotkey, shortcut=None, has_submenu=False):
+        props = {"on_click": on_click, "hotkey": hotkey, "shortcut": shortcut, "has_submenu": has_submenu}
         item = {label: props}
         self.items.update(item)
         # add button
@@ -392,7 +391,18 @@ class StatusBar():
             colorPicker_tooltip = self.other_tooltips.get_tip('c')
             colorPicker_tooltip.alwaysHidden = True
 
-        # menu items 
+        # Settings menu
+        #settingsMenuColumn = mainMenu.handler.width # Try to place to the right of the main menu
+        settingsMenuColumn = 25 # Try to place to the right of the main menu
+        settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
+        settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
+        settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        settingsMenu.set_x(self.x - 1)
+        settingsMenu.set_y(settingsMenuColumn)
+        self.settingsMenu = settingsMenu
+
+        # main menu items 
         self.menuButton = None
         # Create a menu list item, add menu items to it
         mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
@@ -402,12 +412,14 @@ class StatusBar():
         mainMenu.add_item("Save", caller.save, "s", shortcut="esc-s")
         mainMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
         mainMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
-        mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
-        mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        #mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
+        #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
         mainMenu.add_item("Info/Sauce", caller.showFileInformation, "i", shortcut="esc-i")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
+        mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
         #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
@@ -425,6 +437,8 @@ class StatusBar():
         mainMenu.set_y(menuButton.realY)
         self.mainMenu = mainMenu
 
+
+        # Mouse tools menu
         toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
         toolMenu.set_title("Mouse Tools:")
         #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)

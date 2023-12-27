@@ -45,7 +45,8 @@ def main():
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
                     nargs='+')
-    parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
+    #parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
+    parserStartScreenMutex.add_argument("--startup", help="Show startup screen",
                     action="store_true")
     parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
                     action="store_true")
@@ -106,7 +107,7 @@ def main():
             app.height = term_size[1] - 2
     if args.play:
         app.showStartupScreen=False
-    elif args.quick:
+    elif not args.startup:  # quick startup is now the default behavior
         app.showStartupScreen=False
         app.quickStart = True
     if args.nomouse:
