@@ -1816,8 +1816,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
                     self.startSelecting(firstkey=c)  # start selecting text
                 else:
-                    if self.appState.debug: 
-                        self.notify("keystroke: %d" % c) # alt-unknown
+                    if self.appState.debug:
+                        if c == ord('X'):   # esc-X - drop into pdb debugger
+                            pdb.set_trace()
+                        else:
+                            self.notify("keystroke: %d" % c) # alt-unknown
                 self.commandMode = False
                 self.metaKey = 0
                 c = None
@@ -2255,6 +2258,12 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
 
+    def openSettingsMenu(self):
+        """ Show the status bar's menu for settings """
+        self.statusBar.mainMenu.handler.panel.show()
+        response = self.statusBar.settingsMenu.showHide()
+        self.statusBar.mainMenu.handler.panel.hide()
+
     def openMainMenu(self):
         self.openMenu("File")
 
@@ -2308,6 +2317,15 @@ class UserInterface():  # Separate view (curses) from this controller
             self.move_cursor_topleft()
             self.stdscr.clear()
             self.hardRefresh()
+
+    def toggleSideBar(self):
+        if self.appState.sideBarEnabled:
+            self.appState.sideBarEnabled = False
+            self.statusBar.colorPicker.hide()
+        else:
+            self.appState.sideBarEnabled = True
+            self.statusBar.colorPicker.show()
+        
 
     def showCharSetPicker(self):
         set_list = ["Durdraw Default"]
