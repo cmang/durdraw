@@ -505,7 +505,8 @@ class StatusBar():
         colorPicker = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller)
         self.colorPicker = colorPicker
 
-        self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
+        #self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
+        self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.switchTo, self.window, appState=self.appState)
         self.colorPickerButton.invisible = True
         self.colorPickerButton.persistant_tooltip = True
         self.colorPickerButton.set_tooltip_command('c')
