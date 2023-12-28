@@ -8,8 +8,7 @@ Durdraw
               \_____________________________________________\|  v 0.24.0
 
 
-![durdraw-0 24 0-example](https://github.com/cmang/durdraw/assets/261501/4a1f28d7-bb2c-4e39-b156-6d63a8bdf7d6)
-
+![durdraw-0 24 0-example](./assets/durdraw-0.24.0-example.gif)
 
 ## OVERVIEW
 
