@@ -101,7 +101,7 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             for button in self.statusBar.buttons:
                 self.gui.add_button(button)
-        self.setWindowTitle("Durdraw")
+        #self.setWindowTitle("Durdraw")
 
         # set a default drawing character
         self.appState.drawChar = chr(self.chMap['f4'])
@@ -187,6 +187,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def setWindowTitle(self, title):
         title = f"Durdraw - {title}"
         sys.stdout.write(f"\x1b]2;{title}\x07")
+        sys.stdout.flush()
 
     def getPlaybackRange(self):
         """ ask for playback range presses cmd-r """
@@ -920,6 +921,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.sideBarShowing = False
             self.statusBar.hide()
             self.cursorOff()
+            self.setWindowTitle(self.appState.curOpenFileName)
         self.playing = True
         self.metaKey = 0
         if self.appState.playOnlyMode: 
@@ -1405,6 +1407,10 @@ class UserInterface():  # Separate view (curses) from this controller
     def drawStatusBar(self):
         if self.statusBar.hidden:
             return False
+
+        
+        self.setWindowTitle(self.appState.curOpenFileName)
+
         mainColor = self.appState.theme['mainColor']
         clickColor = self.appState.theme['clickColor']
         
@@ -2131,6 +2137,8 @@ class UserInterface():  # Separate view (curses) from this controller
         oldDrawBorders = self.appState.drawBorders  # to turn back on when done
         self.appState.playOnlyMode = True
         self.startPlaying()
+
+        # Return to normal when done
         self.appState.playOnlyMode = False
         self.appState.topLine = old_top_line
         self.statusBar.show()
@@ -3213,7 +3221,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.debug: self.notify(f"Finished loading JSON dur file")
                 self.appState.curOpenFileName = os.path.basename(filename)
                 self.appState.modified = False
-                self.setWindowTitle(shortfile)
+                #self.setWindowTitle(shortfile)
                 self.convertToCurrentFormat(fileColorMode = fileColorMode)
 
                 # Convert palettes as necessary
@@ -3272,7 +3280,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if loadFormat == 'ascii':  # loading as dur failed, so load as ascii instead.
                 self.loadFromFile(shortfile, loadFormat)
             self.appState.modified = False
-        self.setWindowTitle(shortfile)
+        #self.setWindowTitle(shortfile)
         self.mov.gotoFrame(1)
         self.hardRefresh()
 
@@ -3437,7 +3445,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.curOpenFileName = os.path.basename(filename)
             self.appState.modified = False
             self.undo.modifications = 0
-            self.setWindowTitle(self.appState.curOpenFileName)
+            #self.setWindowTitle(self.appState.curOpenFileName)
         elif not saved:
             self.notify("Save failed.")
 
