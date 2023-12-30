@@ -203,25 +203,31 @@ class Movie():
         self.opts.sizeY = self.opts.sizeY - shrinkage 
         #self.width = self.width - shrinkage
 
+    def search_and_replace_color(self, old_color :int, new_color :int):
+        found = False
+        for frame in self.frames:
+            line_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[0] == old_color:
+                        frame.newColorMap[line_num][0] = new_color
+                        found = True
+                    if pair[1] == old_color:
+                        frame.newColorMap[line_num][1] = new_color
+                        found = True
+                line_num += 1
+
     def search_and_replace(self, caller, search_str: str, replace_str: str):
         #search_list = list(search)
         found = False
 
-        # pad the right side of replace_str with spaces, so it lines up
-        # if search_str is longer.
-        #caller.notify(f"search string: '{search_str}'")
-        #replace_str = replace_str.ljust(len(search_str), ' ')
-        #caller.notify(f"replace string: '{replace_str}'")
         frame_num = 0
         line_num = 0
         for frame in self.frames:
             line_num = 0
             for line in frame.content:
                 line_str = ''.join(line)
-                #caller.notify(f"line is a type: {type(line)}")
-                #caller.notify(f"line is: {line}")
                 if search_str in line_str:
-                    #caller.notify(f"len(search_str): {len(search_str)}, len(replace_str): {len(replace_str)}")
                     if len(search_str) < len(replace_str):
                         line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
                     else:
@@ -235,6 +241,26 @@ class Movie():
                 line_num += 1
             frame_num += 1
         return found
+
+
+    def search_for_string(self, search_str: str, caller=None):
+        #search_list = list(search)
+        found = False
+        frame_num = 0
+        line_num = 0
+        for frame in self.frames:
+            line_num = 0
+            for line in frame.content:
+                line_str = ''.join(line)
+                if search_str in line_str:
+                    column_num = line_str.index(search_str) + 1
+                    frame_num += 1
+                    found = True
+                    return {"line": line_num, "col": column_num, "frame": frame_num}
+                line_num += 1
+            frame_num += 1
+        return found    # should be false if execution reaches this point
+
 
     def change_palette_16_to_256(self):
         # Convert from blue to bright white by reducing their value by 1
@@ -318,20 +344,6 @@ class Movie():
                         pair[0] = 2
                     col_num += 1
 
-
-    def search_and_replace_color(self, old_color :int, new_color :int):
-        found = False
-        for frame in self.frames:
-            line_num = 0
-            for line in frame.newColorMap:
-                for pair in line:
-                    if pair[0] == old_color:
-                        frame.newColorMap[line_num][0] = new_color
-                        found = True
-                    if pair[1] == old_color:
-                        frame.newColorMap[line_num][1] = new_color
-                        found = True
-                line_num += 1
 
     def contains_high_colors(self):
         """ Returns True if any color above 16 is used, False otherwise """

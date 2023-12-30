@@ -419,6 +419,7 @@ class StatusBar():
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
         mainMenu.add_item("Info/Sauce", caller.showFileInformation, "i", shortcut="esc-i")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
+        mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")

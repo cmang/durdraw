@@ -591,6 +591,27 @@ class UserInterface():  # Separate view (curses) from this controller
             self.move_cursor_topleft()
             self.hardRefresh()
 
+    def searchForStringPrompt(self):
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.promptPrint("Enter string to search: ")
+        curses.echo()
+        search_string = self.stdscr.getstr().decode('utf-8')
+        curses.noecho()
+
+        search_result = self.mov.search_for_string(search_string)
+        if search_result == False:
+            self.notify("No results found.")
+        else:
+            line = search_result["line"]
+            column = search_result["col"]
+            frame_num = search_result["frame"]
+            self.mov.gotoFrame(frame_num)
+            self.move_cursor_to_line_and_column(line, column)
+
+        if self.playing:
+            elf.stdscr.nodelay(1)
+
+
     def showCharInspector(self):
         line = self.xy[0]
         col = self.xy[1] - 1
@@ -1800,6 +1821,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
                     self.clickedRedo()
+                elif c == ord('F'):   # alt-F, find/search
+                    self.searchForStringPrompt()
                 elif c == 118:  # alt-v      - paste
                     # Paste from the clipboard
                     if self.clipBoard:  # If there is something in the clipboard
@@ -2220,6 +2243,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def move_cursor_end(self):
         self.xy[1] = self.mov.sizeX
+
+    def move_cursor_to_line_and_column(self, line, col):
+        self.xy[0] = line
+        self.xy[1] = col
 
     def getDelayValue(self):
         """ Ask the user for the delay value to set for current frame, then
