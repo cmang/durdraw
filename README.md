@@ -343,6 +343,8 @@ Home page: http://durdraw.org
 
 Development: https://github.com/cmang/durdraw
 
+ANSI and ASCII artists: cmang, H7, LDA
+
 ### LEGAL
 
 Durdraw is Copyright (c) 2009-2023 Sam Foster <samfoster@gmail.com>. All rights reserved.
