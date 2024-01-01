@@ -154,31 +154,39 @@ Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 You can use the "Esc" (or "Meta") key to access commands:
 
 ```
-   .. Art Editing ....................  .. Animation .......................
-   : F1-F10 - insert character       :  : esc-k - next frame               :
-   : esc-up - next fg color          :  : esc-j - previous frame           :
-   : esc-dow1 - prev fg color        :  : esc-p - start/stop payback       :
-   : esc-right - next bg color       :  : esc-n - clone frame              :
-   : esc-left - prev bg color        :  : esc-N - append empty frame       :
-   : esc-/ - insert line             :  : esc-d - delete frame             :
-   : esc-' - delete line             :  : esc-D - set frame delay          :
-   : esc-. - insert column           :  : esc-+/esc-- - faster/slower      :
-   : esc-, - delete column           :  : esc-R - set playback/edit range  :
-   : esc-] - next character set      :  : esc-g - go to frame #            :
-   : esc-[ - previous character set  :  : esc-M - move frame               :
-   : esc-y - eyedrop (pick up color) :  :..................................:
-   : esc-c - color picker (256 mode) :  .. File Operations .................
-   : shift-arrows - select for copy  :  : esc-C - new/clear canvas         :
-   : esc-v - paste                   :  : esc-o - open                     :
-   :.................................:  : esc-s - save                     :
-   .. UI/Misc ......................... :..................................:
-   : esc-m - main menu                : .. Canvas Size .....................
-   : esc-t - mouse tools              : : esc-" - insert line              :
-   : esc-z - undo                     : : esc-: - delete line              :
-   : esc-r - redo                     : : esc-> - insert column            :
-   : esc-h - help                     : : esc-< - delete column            :
-   : esc-q - quit                     : :..................................:
-   :..................................:
+  .. Art Editing .....................   .. About ...........................
+  : F1-F10 - insert character        :   : version: {ver}                   :
+  : esc-up - next fg color           :   : color mode: {colormode}          :
+  : esc-down - prev fg color         :   : character encoding: {charmode}   :
+  : esc-right - next bg color (16c)  :   :..................................:
+  : esc-left - prev bg color         :
+  : esc-/ - insert line              :   .. Animation .......................
+  : esc-' - delete line              :   : esc-k - next frame               :
+  : esc-. - insert column            :   : esc-j - previous frame           :
+  : esc-, - delete column            :   : esc-p - start/stop payback       :
+  : esc-] - next character group     :   : esc-n - clone frame              :
+  : esc-[ - previous character group :   : esc-N - append empty frame       :
+  : esc-S - change character set     :   : esc-d - delete frame             :
+  : esc-y - eyedrop (pick up color)  :   : esc-D - set frame delay          :
+  : esc-l - color character          :   : esc-+/esc-- - faster/slower      :
+  : esc-c - color picker             :   : esc-R - set playback/edit range  :
+  : shift-arrows - select for copy   :   : esc-g - go to frame #            :
+  : esc-K - mark selection           :   : esc-M - move frame               :
+  : esc-v - paste                    :   :..................................:
+  :..................................:
+                                         .. UI/Misc .........................
+  .. File Operations .................   : esc-m - main menu                :
+  : esc-C - new/clear canvas         :   : esc-t - mouse tools              :
+  : esc-o - open                     :   : esc-z - undo                     :
+  : esc-s - save                     :   : esc-r - redo                     :
+  :..................................:   : esc-V - view mode                :
+                                         : esc-i - file/canvas info         :
+  .. Canvas Size .....................   : esc-I - character inspector      :
+  : esc-" - insert line              :   : tab - focus canvas or colors     :
+  : esc-: - delete line              :   : ctrl-l - redraw screen           :
+  : esc-> - insert column            :   : esc-h - help                     :
+  : esc-< - delete column            :   : esc-q - quit                     :
+  :..................................:   :..................................:
                                                             Prev   Next
                                                             Frame  Frame
                                                             |      |
