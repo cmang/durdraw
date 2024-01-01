@@ -343,7 +343,7 @@ A: Short answer: It's not supported, but it seems to work fine in the Windows Su
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
-A: Yes - Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
+A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which is not usually compatible with modern terminals. When Durdraw encounters these files, it will convert them toe Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
 ### CREDITS
 
