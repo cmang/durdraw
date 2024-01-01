@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.24.0
+              \_____________________________________________\|  v 0.24.1
 
 
 ![durdraw-0 24 0-example](./assets/durdraw-0.24.0-example.gif)
@@ -352,6 +352,8 @@ Developer: Sam Foster
 Home page: http://durdraw.org
 
 Development: https://github.com/cmang/durdraw
+
+ANSI and ASCII artists: cmang, H7, LDA
 
 ### LEGAL
 
