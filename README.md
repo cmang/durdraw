@@ -287,12 +287,6 @@ menuBorderColor: the color of the border around menus
       clicking buttons, if your terminal supports Xterm mouse reporting.
       In iTerm2 this is under Profiles, Terminal and Terminal Emulation.
 
-    * If IBM-PC characters (-A) are not working in gnu screen, try running the
-      following screen command (by pressing ctrl-a and typing):
-        :utf8 off off
-      then type "ctrl-a l" to redraw the window.
-      Also see "OPTIONAL INSTALLATION" notes below
-
 ## OPTIONAL INSTALLATION
 
 For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now.
