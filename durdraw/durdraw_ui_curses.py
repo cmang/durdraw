@@ -3681,7 +3681,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def savePngFile(self, filename, lastLineNum=None, firstLineNum=None, firstColNum=None, lastColNum=None, font='ansi'):
         """ Save to ANSI then convert to PNG """
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
-            self.notify("Ansilove not found in path. Please find it at http://ansilove.sourceforge.net/", pause=True)
+            self.notify("Ansilove not found in path. Please find it at https://www.ansilove.org/", pause=True)
             return False
         tmpAnsiFileName = filename + '.tmp.ans' # remove this file when done
         tmpPngFileName = filename + '.tmp.ans.png' # remove this file when done
