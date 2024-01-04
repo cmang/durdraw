@@ -287,49 +287,9 @@ menuBorderColor: the color of the border around menus
       clicking buttons, if your terminal supports Xterm mouse reporting.
       In iTerm2 this is under Profiles, Terminal and Terminal Emulation.
 
-    * If IBM-PC characters (-A) are not working in gnu screen, try running the
-      following screen command (by pressing ctrl-a and typing):
-        :utf8 off off
-      then type "ctrl-a l" to redraw the window.
-      Also see "OPTIONAL INSTALLATION" notes below
-
 ## OPTIONAL INSTALLATION
 
 For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now.
-
-If you want to try making animated IBM-PC/MS-DOS ANSI art with durdraw, you
-need a terminal and font that supports ASCII encoding and IBM's Code Page 437.
-You can find fonts in the "extras" directory for this purpose. Once this is done,
-start Durdraw with the -A or --ibmpc command-line argument.
-
-Note that ANSI art character support is experimental (see FAQ).
-
-In Linux/X11, here is one possible way to set up a terminal for IBM-PC ANSI art:
-
-* Install mrxvt
-* Install vga.pcf by copying it to /usr/share/fonts/X11/misc and then running
-  these commands. This may be different on your OS:
-    $ mkfontdir /usr/share/fonts/X11/misc/
-    $ xset fp rehash
-* Give mrxvt IBM-PC colors by copying the contents of Xdefaults into your own
-  ~/.Xdefaults file. You can create ~/.Xdefaults if it does not exist.
-* Launch mrxvt with: mrxvt -fn vga -bg black -fg grey
-
-If you are using macOS or MacOS X and want IBM-PC ANSI art support in
-Terminal.app:
-
-1. Install dos437.ttf font (included) by double-clicking it.
-2. Create a profile in Terminal Preferences/Settings with the following
-   settings (similar settings can be applied in iTerm):
-    * In Text tab, Font set to dos437 (I like 9pt) and "Display ANSI colors"    
-      and "Use bright colors for bold text" are checked
-    * In Keyboard tab, "Use option as meta key" selected
-    * In "Advanced" tab, Character encoding set to "Western (ISO Latin 1)"
-    * Set background color to black (low or no transprency) and foreground
-      color to white
-
-Once this is setup, pass "-A" to durdraw's command-line to allow you to use
-F1-F12 to input ANSI block characters. 
 
 ## FAQ
 
@@ -343,7 +303,7 @@ A: Short answer: It's not supported, but it seems to work fine in the Windows Su
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
-A: Yes - Kind of. Durdraw can support IBM-PC (Code Page 437) extended ASCII characters using the -A command-line option, and can export ANSI files. However, ANSI importing is not currently supported. Please see the "OPTIONAL INSTALLATION" section above for more details. If you do not pass the -A command-line option, then Unicode block characters similar to IBM-PC block characters are enabled by default.
+A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which is not usually compatible with modern terminals. When Durdraw encounters these files, it will convert them toe Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
 ### CREDITS
 
