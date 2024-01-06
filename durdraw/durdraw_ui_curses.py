@@ -77,13 +77,24 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.ansi.initColorPairs_256color():
                 self.init_256_colors_misc()
             else:
-                self.appState.colorMode == "16"
+                self.appState.colorMode = "16"
+                self.appState.maxColors = 16
         if self.appState.colorMode == "16":
             self.init_16_colors_misc()
         if not app.quickStart and app.showStartupScreen:
             print(f"Color mode: {self.appState.colorMode}")
             time.sleep(2)
-        self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        try:
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+        except:
+            self.appState.colorMode = "16"
+            self.appState.maxColors = 16
+            self.ansi.initColorPairs_cga()
+            self.init_16_colors_misc()
+            self.appState.loadThemeFromConfig("Theme-16")
+            if self.appState.blackbg:
+                self.enableTransBackground()
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self, appState = self.appState)   # initialize undo/redo system
         self.undo.setHistorySize(self.appState.undoHistorySize)
@@ -295,7 +306,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.switchToColorMode("16")
 
     def switchTo256ColorMode(self):
-        self.switchToColorMode("256")
+        if self.appState.maxColors < 256:
+            self.notify("Unable to set 256 colors. Check your terminal configuration?")
+        else:
+            self.switchToColorMode("256")
 
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
