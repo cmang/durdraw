@@ -33,6 +33,8 @@ class AppState():
         self.characterSet = "Durdraw Default"
         self.showCharSetButton = False
         self.workingLoadDirectory = None
+        self.fileShortPath = None
+        self.fileLongPath = None
         # if self.characterSet == "Unicode Block" then Durdraw knows to use a
         # unicode block:
         #self.characterSet = "Unicode Block"

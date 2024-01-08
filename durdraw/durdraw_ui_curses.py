@@ -665,6 +665,11 @@ class UserInterface():  # Separate view (curses) from this controller
         if fileName:
             infoStringList.append(f"File: {fileName}")
 
+        if self.appState.fileShortPath:
+            # extract folder name from full path
+            folderName = self.appState.fileShortPath
+            infoStringList.append(f"Folder: {folderName}")
+
         if title:
             infoStringList.append(f"Title: {title}")
 
@@ -3256,6 +3261,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.debug: self.notify("Trying to open() file as ascii.")
                 f = open(filename, 'r')
                 self.appState.curOpenFileName = os.path.basename(filename)
+
+                shortpath = os.path.split(filename)[0]
+                if len(os.path.split(shortpath)) > 1:
+                    shortpath = os.path.split(shortpath)[1]
+                self.appState.fileShortPath = shortpath
+                #self.appState.fileLongPath = fullpath
             except Exception as e:
                 #if self.appState.debug: self.notify(f"self.opts = pickle.load(f)")
                 self.notify(f"Could not open file for reading: {e}")
@@ -3375,6 +3386,13 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.switchTo16ColorMode()
                     self.loadFromFile(shortfile, 'dur')
                 self.hardRefresh()
+
+                shortpath = os.path.split(filename)[0]
+                if len(os.path.split(shortpath)) > 1:
+                    shortpath = os.path.split(shortpath)[1]
+                self.appState.fileShortPath = shortpath
+                #self.appState.fileLongPath = fullpath
+                
                 return True
 
             try:    # Maybe it's a really old Pickle file...
@@ -3420,6 +3438,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.loadFromFile(shortfile, loadFormat)
             self.appState.modified = False
         #self.setWindowTitle(shortfile)
+
+        shortpath = os.path.split(filename)[0]
+        if len(os.path.split(shortpath)) > 1:
+            shortpath = os.path.split(shortpath)[1]
+        self.appState.fileShortPath = shortpath
+        #self.appState.fileLongPath = fullpath
+
         self.mov.gotoFrame(1)
         self.hardRefresh()
 
