@@ -50,6 +50,8 @@ class UserInterface():  # Separate view (curses) from this controller
         locale.setlocale(locale.LC_ALL, '')    # set your locale
         self.realstdscr = curses.initscr()
         realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
+        self.appState.realmaxY = realmaxY
+        self.appState.realmaxX = realmaxX
         self.statusBarLineNum = realmaxY - 2
         self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
@@ -640,6 +642,10 @@ class UserInterface():  # Separate view (curses) from this controller
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         self.notify(inspectorString, pause=True)
 
+    def toggleShowFileInformation(self):
+        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
+        self.stdscr.clear()
+
     def showFileInformation(self):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
@@ -654,7 +660,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         infoString = ''
         infoStringList = []
-        self.stdscr.nodelay(0) # wait for input when calling getch
+        #self.stdscr.nodelay(0) # wait for input when calling getch
 
         if fileName:
             infoStringList.append(f"File: {fileName}")
@@ -681,7 +687,27 @@ class UserInterface():  # Separate view (curses) from this controller
 
         #infoString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
 
-        self.notify(infoString, pause=True)
+            wideViwer = False
+        if self.appState.viewModeShowInfo:
+            # check and see if the window is wide enough for a nice side sauce
+            wideViewer = False
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+                wideViewer = True
+            #fileInfoColumn = self.mov.sizeX + 2
+            fileInfoColumn = self.mov.sizeX + 4
+            #fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width
+            # show me the sauce
+            fileInfoColor = self.appState.theme['promptColor']
+            if wideViewer:
+                # in a nice list on the right
+                lineNum = 3
+                for infoItem in infoStringList:
+                    self.addstr(lineNum, fileInfoColumn, infoItem, fileInfoColor)
+                    lineNum += 1
+            else:
+                self.addstr(self.realmaxY - 1, 0, infoString, curses.color_pair(fileInfoColor))
+        #self.notify(infoString, pause=True)
 
     def showTransformer(self):
         """ Let the user pick transformations: Bounce, Repeat, Reverse """
@@ -934,6 +960,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Show the help screen for the player/viewer mode """
         helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
         self.notify(helpString, pause=True)
+        self.cursorOff()
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
@@ -979,6 +1006,8 @@ class UserInterface():  # Separate view (curses) from this controller
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             c = self.stdscr.getch()
             if c == 27:
                 self.metaKey = 1
@@ -1092,7 +1121,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
                         if mouseState == curses.BUTTON1_CLICKED:
-                            self.showFileInformation()
+                            pass
+                            #self.showFileInformation()
 
                         elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                         # It's as if we'd pressed enter to exit the viewer mode.
@@ -1149,7 +1179,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.showViewerHelp()
 
                     elif c in [ord('i'), ord('I')]:
-                        self.showFileInformation()
+                        # toggle showing info. True/false swap:
+                        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
+                        self.stdscr.clear()
+                        self.refresh()
+
+                        #self.showFileInformation()
 
                     elif c == curses.KEY_DOWN:
                         if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
@@ -1157,6 +1192,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c == curses.KEY_UP:
                         if self.appState.topLine > 0:
                             self.appState.topLine = self.appState.topLine - 1
+                    elif c == 12:               # ctrl-l - harder refresh
+                        self.hardRefresh()
+                        c = None
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
@@ -1488,6 +1526,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
+        resized = False
+        if self.appState.realmaxY != realmaxY:
+            resized = True 
+        if self.appState.realmaxX != realmaxX:
+            resized = True 
+        if resized:
+            self.stdscr.clear()
+
         self.appState.realmaxY = realmaxY
         self.appState.realmaxX = realmaxX
 
@@ -1519,10 +1565,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.appState.sideBarShowing = False
                 self.statusBar.colorPicker.hide()
 
+        self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
         if self.appState.sideBarShowing:
             # We are clear to draw the Sidebar
             # Anchor the color picker to the bottom right
-            self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
             self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
         else:
@@ -1822,7 +1868,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
-                    self.showFileInformation()
+                    self.toggleShowFileInformation()
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.commandMode = False
                     self.openMenu("File")
@@ -1904,7 +1950,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('9')]:    # F9 - insert extended character
                     self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg)
-                elif c in [ord('10')]:    # F10 - insert extended character
+                elif c in [ord('0')]:    # F10 - insert extended character
                     self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
                 else:
                     if self.appState.debug:
@@ -2182,6 +2228,8 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             self.refresh()
 
     def selectColorPicker(self):

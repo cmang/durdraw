@@ -38,7 +38,8 @@ class AppState():
         #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"  # placeholder during initialization
         self.cursorMode = "Move"  # Move/Select, Draw and Color
-        self.playOnlyMode = False
+        self.playOnlyMode = False   # This means viewer mode now, actually..
+        self.viewModeShowInfo = True    # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
