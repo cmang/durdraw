@@ -1887,35 +1887,25 @@ class UserInterface():  # Separate view (curses) from this controller
                     startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
                     self.startSelecting(firstkey=c)  # start selecting text
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
-                    self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
-                    self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('3')]:    # F3 - insert extended character
-                    self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('4')]:    # F4 - insert extended character
-                    self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('5')]:    # F5 - insert extended character
-                    self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('6')]:    # F6 - insert extended character
-                    self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('7')]:    # F7 - insert extended character
-                    self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('8')]:    # F8 - insert extended character
-                    self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('9')]:    # F9 - insert extended character
-                    self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg)
                 elif c in [ord('10')]:    # F10 - insert extended character
-                    self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
-                            frange=self.appState.playbackRange)
+                    self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
                 else:
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
