@@ -700,15 +700,20 @@ class UserInterface():  # Separate view (curses) from this controller
             if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
                 wideViewer = True
             #fileInfoColumn = self.mov.sizeX + 2
-            fileInfoColumn = self.mov.sizeX + 4
-            #fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width
+            #fileInfoColumn = self.mov.sizeX + 4
+            fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             # show me the sauce
             fileInfoColor = self.appState.theme['promptColor']
             if wideViewer:
                 # in a nice list on the right
                 lineNum = 3
                 for infoItem in infoStringList:
-                    self.addstr(lineNum, fileInfoColumn, infoItem, fileInfoColor)
+                    # truncate to prevent writing last end of line (and wrapping)
+                    #maxLength = realmaxX - fileInfoColumn
+                    #itemString = infoItem[maxLength:]
+                    itemString = infoItem
+
+                    self.addstr(lineNum, fileInfoColumn, itemString, fileInfoColor)
                     lineNum += 1
             else:
                 self.addstr(self.realmaxY - 1, 0, infoString, curses.color_pair(fileInfoColor))
@@ -2139,9 +2144,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     # If we clicked in the sidebar area, aka to the right of the canvas
                     # and above the status bar:
                     if self.appState.sideBarEnabled:
+                        # If we're in the right toolbar sort of area
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            # Tell the color picker to respond if the click is in its area:
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                 #elif mouseState & curses.BUTTON1_RELEASED:
                 #    pass
                     #print('\033[?1003l')
@@ -2160,8 +2167,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     # and above the status bar:
                     if self.appState.sideBarEnabled:
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            # Tell the color picker to respond if the click is in its area:
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                     # If we clicked in the status bar:
                     if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
                         # Add stuff here to take mouse 'commands' like clicking
@@ -2516,7 +2524,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.colorPicker.hide()
         else:
             self.appState.sideBarEnabled = True
-            self.statusBar.colorPicker.show()
+            if self.appState.colorMode == "256":
+                self.statusBar.colorPicker.show()
         
 
     def showCharSetPicker(self):
