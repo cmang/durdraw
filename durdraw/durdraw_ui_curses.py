@@ -4209,7 +4209,7 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, [D]elete, copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, [D]elete, [F]ill, Co[l]or, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
@@ -4222,6 +4222,7 @@ Can use ESC or META instead of ALT
                     #    self.mov.currentFrame.flip_horizontal()
                     #    prompting = False
                     elif chr(prompt_ch) in ['d', 'D']:    # delete/clear
+                        self.clearStatusBar()
                         self.promptPrint("Delete across all frames in playback range (Y/N)? ")
                         askingAboutRange = True
                         while askingAboutRange:
@@ -4233,6 +4234,76 @@ Can use ESC or META instead of ALT
                             if chr(prompt_ch) in ['n', 'N']:    # yes, all range
                                 self.undo.push()
                                 self.deleteSegment([firstLineNum, firstColNum], height, width)
+                                askingAboutRange = False
+                            elif prompt_ch == 27:  # esc, cancel
+                                askingAboutRange = False
+                        prompting = False
+                    elif chr(prompt_ch) in ['l', 'L']:    # color
+                        self.clearStatusBar()
+                        self.promptPrint("Color across all frames in playback range (Y/N)? ")
+                        askingAboutRange = True
+                        while askingAboutRange:
+                            prompt_ch = self.stdscr.getch()
+                            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.undo.push()
+                                self.colorSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
+                                askingAboutRange = False
+                            if chr(prompt_ch) in ['n', 'N']:    # yes, all range
+                                self.undo.push()
+                                self.colorSegment([firstLineNum, firstColNum], height, width)
+                                askingAboutRange = False
+                            elif prompt_ch == 27:  # esc, cancel
+                                askingAboutRange = False
+                        prompting = False
+                    elif chr(prompt_ch) in ['f', 'F']:    # fill
+                        self.clearStatusBar()
+                        self.promptPrint(f"Enter fill character, or press enter for {self.appState.drawChar}: ")
+                        askingAboutChar = True
+                        canceled = False
+                        drawChar = 'X'
+                        prompt_ch = self.stdscr.getch()
+                        if prompt_ch == 27:     # esc, cancel
+                            canceled = True
+                        elif prompt_ch in [13, curses.KEY_ENTER]:
+                            drawChar = self.appState.drawChar
+                        elif prompt_ch in [curses.KEY_F1]:
+                            drawChar = chr(self.chMap['f1'])
+                        elif prompt_ch in [curses.KEY_F2]:
+                            drawChar = chr(self.chMap['f2'])
+                        elif prompt_ch in [curses.KEY_F3]:
+                            drawChar = chr(self.chMap['f3'])
+                        elif prompt_ch in [curses.KEY_F4]:
+                            drawChar = chr(self.chMap['f4'])
+                        elif prompt_ch in [curses.KEY_F5]:
+                            drawChar = chr(self.chMap['f5'])
+                        elif prompt_ch in [curses.KEY_F6]:
+                            drawChar = chr(self.chMap['f6'])
+                        elif prompt_ch in [curses.KEY_F7]:
+                            drawChar = chr(self.chMap['f7'])
+                        elif prompt_ch in [curses.KEY_F8]:
+                            drawChar = chr(self.chMap['f8'])
+                        elif prompt_ch in [curses.KEY_F9]:
+                            drawChar = chr(self.chMap['f9'])
+                        elif prompt_ch in [curses.KEY_F10]:
+                            drawChar = chr(self.chMap['f10'])
+                        else:
+                            drawChar = chr(prompt_ch)
+                        if canceled:
+                            askingAboutRange = False
+                            prompting = False
+                        else:
+                            self.clearStatusBar()
+                            self.promptPrint("Fill across all frames in playback range (Y/N)? ")
+                            askingAboutRange = True
+                        while askingAboutRange:
+                            prompt_ch = self.stdscr.getch()
+                            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.undo.push()
+                                self.fillSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange, fillChar=drawChar)
+                                askingAboutRange = False
+                            if chr(prompt_ch) in ['n', 'N']:    # yes, all range
+                                self.undo.push()
+                                self.fillSegment([firstLineNum, firstColNum], height, width, fillChar=drawChar)
                                 askingAboutRange = False
                             elif prompt_ch == 27:  # esc, cancel
                                 askingAboutRange = False
@@ -4310,6 +4381,7 @@ Can use ESC or META instead of ALT
         self.clipBoard = clipBoard
 
     def copySegmentToAllFrames(self, startPoint, height, width, frange=None):
+        self.undo.push()
         tempFrame = self.copySegmentToBuffer(startPoint, height, width)
         # paste into each frame in range, at startPoint
         self.pasteFromClipboard(clipBuffer=tempFrame, startPoint=startPoint, frange=frange)
@@ -4355,6 +4427,7 @@ Can use ESC or META instead of ALT
 
     def deleteSegment(self, startPoint, height, width, frange=None):
         """ Delete everyting in the current frame, or framge range """
+        self.undo.push()
         for lineNum in range(0, height):
             for colNum in range(0, width):
                 charColumn = startPoint[1] + colNum
@@ -4367,6 +4440,38 @@ Can use ESC or META instead of ALT
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
                     else:
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
+    def fillSegment(self, startPoint, height, width, frange=None, fillChar="X"):
+        """ Fill everyting in the current frame, or framge range, with selected character+color """
+        self.undo.push()
+        for lineNum in range(0, height):
+            for colNum in range(0, width):
+                charColumn = startPoint[1] + colNum
+                charLine = startPoint[0] + lineNum
+                character = ord(fillChar)
+                charFg = self.colorfg
+                charBg = self.colorbg
+                if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
+                    if not frange:
+                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                    else:
+                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
+    def colorSegment(self, startPoint, height, width, frange=None):
+        """ Color everyting in the current frame, or framge range, with selected color """
+        self.undo.push()
+        for lineNum in range(0, height):
+            for colNum in range(0, width):
+                charColumn = startPoint[1] + colNum
+                charLine = startPoint[0] + lineNum
+                if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
+                    if not frange:
+                        #self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=charColumn, y=charLine, pushUndo=False)
+                    else:
+                        #self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
 
     def clearStatusBarNoRefresh(self):
         self.addstr(self.statusBarLineNum, 0, " " * self.mov.sizeX) # clear lower status bar
