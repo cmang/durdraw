@@ -1105,7 +1105,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [ord('9')]:    # F9 - insert extended character
                     self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
-                elif c in [ord('10')]:    # F10 - insert extended character
+                elif c in [ord('0')]:    # F10 - insert extended character
                     self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
                 else:
