@@ -2130,6 +2130,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
 
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
                 elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED:
                     #print('\033[?1003h')
                     #self.notify("Farfenugen")
