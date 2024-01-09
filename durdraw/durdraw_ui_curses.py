@@ -1013,11 +1013,11 @@ class UserInterface():  # Separate view (curses) from this controller
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
             self.refresh()
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
-            if self.appState.viewModeShowInfo: 
-                self.showFileInformation()
             c = self.stdscr.getch()
             if c == 27:
                 self.metaKey = 1
