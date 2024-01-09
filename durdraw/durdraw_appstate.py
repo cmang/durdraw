@@ -33,12 +33,15 @@ class AppState():
         self.characterSet = "Durdraw Default"
         self.showCharSetButton = False
         self.workingLoadDirectory = None
+        self.fileShortPath = None
+        self.fileLongPath = None
         # if self.characterSet == "Unicode Block" then Durdraw knows to use a
         # unicode block:
         #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"  # placeholder during initialization
         self.cursorMode = "Move"  # Move/Select, Draw and Color
-        self.playOnlyMode = False
+        self.playOnlyMode = False   # This means viewer mode now, actually..
+        self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
         self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()

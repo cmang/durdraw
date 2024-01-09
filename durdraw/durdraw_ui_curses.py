@@ -50,6 +50,8 @@ class UserInterface():  # Separate view (curses) from this controller
         locale.setlocale(locale.LC_ALL, '')    # set your locale
         self.realstdscr = curses.initscr()
         realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
+        self.appState.realmaxY = realmaxY
+        self.appState.realmaxX = realmaxX
         self.statusBarLineNum = realmaxY - 2
         self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
@@ -640,6 +642,10 @@ class UserInterface():  # Separate view (curses) from this controller
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         self.notify(inspectorString, pause=True)
 
+    def toggleShowFileInformation(self):
+        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
+        self.stdscr.clear()
+
     def showFileInformation(self):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
@@ -654,10 +660,15 @@ class UserInterface():  # Separate view (curses) from this controller
 
         infoString = ''
         infoStringList = []
-        self.stdscr.nodelay(0) # wait for input when calling getch
+        #self.stdscr.nodelay(0) # wait for input when calling getch
 
         if fileName:
             infoStringList.append(f"File: {fileName}")
+
+        if self.appState.fileShortPath:
+            # extract folder name from full path
+            folderName = self.appState.fileShortPath
+            infoStringList.append(f"Folder: {folderName}")
 
         if title:
             infoStringList.append(f"Title: {title}")
@@ -681,7 +692,32 @@ class UserInterface():  # Separate view (curses) from this controller
 
         #infoString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
 
-        self.notify(infoString, pause=True)
+            wideViwer = False
+        if self.appState.viewModeShowInfo:
+            # check and see if the window is wide enough for a nice side sauce
+            wideViewer = False
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+                wideViewer = True
+            #fileInfoColumn = self.mov.sizeX + 2
+            #fileInfoColumn = self.mov.sizeX + 4
+            fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
+            # show me the sauce
+            fileInfoColor = self.appState.theme['promptColor']
+            if wideViewer:
+                # in a nice list on the right
+                lineNum = 3
+                for infoItem in infoStringList:
+                    # truncate to prevent writing last end of line (and wrapping)
+                    #maxLength = realmaxX - fileInfoColumn
+                    #itemString = infoItem[maxLength:]
+                    itemString = infoItem
+
+                    self.addstr(lineNum, fileInfoColumn, itemString, fileInfoColor)
+                    lineNum += 1
+            else:
+                self.addstr(self.realmaxY - 1, 0, infoString, curses.color_pair(fileInfoColor))
+        #self.notify(infoString, pause=True)
 
     def showTransformer(self):
         """ Let the user pick transformations: Bounce, Repeat, Reverse """
@@ -934,6 +970,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Show the help screen for the player/viewer mode """
         helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
         self.notify(helpString, pause=True)
+        self.cursorOff()
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS
@@ -979,6 +1016,8 @@ class UserInterface():  # Separate view (curses) from this controller
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             c = self.stdscr.getch()
             if c == 27:
                 self.metaKey = 1
@@ -1044,6 +1083,36 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.safeQuit()
                     self.stdscr.nodelay(1)
                     c = None
+                elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
+                    self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
+                    self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('3')]:    # F3 - insert extended character
+                    self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('4')]:    # F4 - insert extended character
+                    self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('5')]:    # F5 - insert extended character
+                    self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('6')]:    # F6 - insert extended character
+                    self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('7')]:    # F7 - insert extended character
+                    self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('8')]:    # F8 - insert extended character
+                    self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('9')]:    # F9 - insert extended character
+                    self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
+                elif c in [ord('0')]:    # F10 - insert extended character
+                    self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
+                            frange=self.appState.playbackRange)
                 else:
                     if self.appState.debug:
                         self.notify("keystroke: %d" % c) # alt-unknown
@@ -1062,7 +1131,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
                         if mouseState == curses.BUTTON1_CLICKED:
-                            self.showFileInformation()
+                            pass
+                            #self.showFileInformation()
 
                         elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                         # It's as if we'd pressed enter to exit the viewer mode.
@@ -1119,7 +1189,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.showViewerHelp()
 
                     elif c in [ord('i'), ord('I')]:
-                        self.showFileInformation()
+                        # toggle showing info. True/false swap:
+                        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
+                        self.stdscr.clear()
+                        self.refresh()
+
+                        #self.showFileInformation()
 
                     elif c == curses.KEY_DOWN:
                         if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
@@ -1127,6 +1202,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c == curses.KEY_UP:
                         if self.appState.topLine > 0:
                             self.appState.topLine = self.appState.topLine - 1
+                    elif c == 12:               # ctrl-l - harder refresh
+                        self.hardRefresh()
+                        c = None
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
@@ -1458,6 +1536,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
 
+        resized = False
+        if self.appState.realmaxY != realmaxY:
+            resized = True 
+        if self.appState.realmaxX != realmaxX:
+            resized = True 
+        if resized:
+            self.stdscr.clear()
+
         self.appState.realmaxY = realmaxY
         self.appState.realmaxX = realmaxX
 
@@ -1489,10 +1575,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.appState.sideBarShowing = False
                 self.statusBar.colorPicker.hide()
 
+        self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
         if self.appState.sideBarShowing:
             # We are clear to draw the Sidebar
             # Anchor the color picker to the bottom right
-            self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
             self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
         else:
@@ -1792,7 +1878,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
-                    self.showFileInformation()
+                    self.toggleShowFileInformation()
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.commandMode = False
                     self.openMenu("File")
@@ -1856,6 +1942,26 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [75]: # alt-K = start marking selection
                     startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
                     self.startSelecting(firstkey=c)  # start selecting text
+                elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
+                    self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
+                    self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('3')]:    # F3 - insert extended character
+                    self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('4')]:    # F4 - insert extended character
+                    self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('5')]:    # F5 - insert extended character
+                    self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('6')]:    # F6 - insert extended character
+                    self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('7')]:    # F7 - insert extended character
+                    self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('8')]:    # F8 - insert extended character
+                    self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('9')]:    # F9 - insert extended character
+                    self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg)
+                elif c in [ord('0')]:    # F10 - insert extended character
+                    self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
                 else:
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
@@ -2029,15 +2135,20 @@ class UserInterface():  # Separate view (curses) from this controller
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
 
+                if not self.appState.hasMouseScroll:
+                    curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
                 elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED:
                     #print('\033[?1003h')
                     #self.notify("Farfenugen")
                     # If we clicked in the sidebar area, aka to the right of the canvas
                     # and above the status bar:
                     if self.appState.sideBarEnabled:
+                        # If we're in the right toolbar sort of area
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            # Tell the color picker to respond if the click is in its area:
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                 #elif mouseState & curses.BUTTON1_RELEASED:
                 #    pass
                     #print('\033[?1003l')
@@ -2056,8 +2167,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     # and above the status bar:
                     if self.appState.sideBarEnabled:
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            # Tell the color picker to respond if the click is in its area:
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                     # If we clicked in the status bar:
                     if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
                         # Add stuff here to take mouse 'commands' like clicking
@@ -2132,6 +2244,8 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
             self.drawStatusBar()
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             self.refresh()
 
     def selectColorPicker(self):
@@ -2410,7 +2524,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.colorPicker.hide()
         else:
             self.appState.sideBarEnabled = True
-            self.statusBar.colorPicker.show()
+            if self.appState.colorMode == "256":
+                self.statusBar.colorPicker.show()
         
 
     def showCharSetPicker(self):
@@ -3158,6 +3273,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.debug: self.notify("Trying to open() file as ascii.")
                 f = open(filename, 'r')
                 self.appState.curOpenFileName = os.path.basename(filename)
+
+                shortpath = os.path.split(filename)[0]
+                if len(os.path.split(shortpath)) > 1:
+                    shortpath = os.path.split(shortpath)[1]
+                self.appState.fileShortPath = shortpath
+                #self.appState.fileLongPath = fullpath
             except Exception as e:
                 #if self.appState.debug: self.notify(f"self.opts = pickle.load(f)")
                 self.notify(f"Could not open file for reading: {e}")
@@ -3277,6 +3398,13 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.switchTo16ColorMode()
                     self.loadFromFile(shortfile, 'dur')
                 self.hardRefresh()
+
+                shortpath = os.path.split(filename)[0]
+                if len(os.path.split(shortpath)) > 1:
+                    shortpath = os.path.split(shortpath)[1]
+                self.appState.fileShortPath = shortpath
+                #self.appState.fileLongPath = fullpath
+                
                 return True
 
             try:    # Maybe it's a really old Pickle file...
@@ -3322,6 +3450,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.loadFromFile(shortfile, loadFormat)
             self.appState.modified = False
         #self.setWindowTitle(shortfile)
+
+        shortpath = os.path.split(filename)[0]
+        if len(os.path.split(shortpath)) > 1:
+            shortpath = os.path.split(shortpath)[1]
+        self.appState.fileShortPath = shortpath
+        #self.appState.fileLongPath = fullpath
+
         self.mov.gotoFrame(1)
         self.hardRefresh()
 
@@ -4074,7 +4209,7 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, [D]elete, copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, [D]elete, [F]ill, Co[l]or, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
@@ -4087,6 +4222,7 @@ Can use ESC or META instead of ALT
                     #    self.mov.currentFrame.flip_horizontal()
                     #    prompting = False
                     elif chr(prompt_ch) in ['d', 'D']:    # delete/clear
+                        self.clearStatusBar()
                         self.promptPrint("Delete across all frames in playback range (Y/N)? ")
                         askingAboutRange = True
                         while askingAboutRange:
@@ -4098,6 +4234,76 @@ Can use ESC or META instead of ALT
                             if chr(prompt_ch) in ['n', 'N']:    # yes, all range
                                 self.undo.push()
                                 self.deleteSegment([firstLineNum, firstColNum], height, width)
+                                askingAboutRange = False
+                            elif prompt_ch == 27:  # esc, cancel
+                                askingAboutRange = False
+                        prompting = False
+                    elif chr(prompt_ch) in ['l', 'L']:    # color
+                        self.clearStatusBar()
+                        self.promptPrint("Color across all frames in playback range (Y/N)? ")
+                        askingAboutRange = True
+                        while askingAboutRange:
+                            prompt_ch = self.stdscr.getch()
+                            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.undo.push()
+                                self.colorSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
+                                askingAboutRange = False
+                            if chr(prompt_ch) in ['n', 'N']:    # yes, all range
+                                self.undo.push()
+                                self.colorSegment([firstLineNum, firstColNum], height, width)
+                                askingAboutRange = False
+                            elif prompt_ch == 27:  # esc, cancel
+                                askingAboutRange = False
+                        prompting = False
+                    elif chr(prompt_ch) in ['f', 'F']:    # fill
+                        self.clearStatusBar()
+                        self.promptPrint(f"Enter fill character, or press enter for {self.appState.drawChar}: ")
+                        askingAboutChar = True
+                        canceled = False
+                        drawChar = 'X'
+                        prompt_ch = self.stdscr.getch()
+                        if prompt_ch == 27:     # esc, cancel
+                            canceled = True
+                        elif prompt_ch in [13, curses.KEY_ENTER]:
+                            drawChar = self.appState.drawChar
+                        elif prompt_ch in [curses.KEY_F1]:
+                            drawChar = chr(self.chMap['f1'])
+                        elif prompt_ch in [curses.KEY_F2]:
+                            drawChar = chr(self.chMap['f2'])
+                        elif prompt_ch in [curses.KEY_F3]:
+                            drawChar = chr(self.chMap['f3'])
+                        elif prompt_ch in [curses.KEY_F4]:
+                            drawChar = chr(self.chMap['f4'])
+                        elif prompt_ch in [curses.KEY_F5]:
+                            drawChar = chr(self.chMap['f5'])
+                        elif prompt_ch in [curses.KEY_F6]:
+                            drawChar = chr(self.chMap['f6'])
+                        elif prompt_ch in [curses.KEY_F7]:
+                            drawChar = chr(self.chMap['f7'])
+                        elif prompt_ch in [curses.KEY_F8]:
+                            drawChar = chr(self.chMap['f8'])
+                        elif prompt_ch in [curses.KEY_F9]:
+                            drawChar = chr(self.chMap['f9'])
+                        elif prompt_ch in [curses.KEY_F10]:
+                            drawChar = chr(self.chMap['f10'])
+                        else:
+                            drawChar = chr(prompt_ch)
+                        if canceled:
+                            askingAboutRange = False
+                            prompting = False
+                        else:
+                            self.clearStatusBar()
+                            self.promptPrint("Fill across all frames in playback range (Y/N)? ")
+                            askingAboutRange = True
+                        while askingAboutRange:
+                            prompt_ch = self.stdscr.getch()
+                            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.undo.push()
+                                self.fillSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange, fillChar=drawChar)
+                                askingAboutRange = False
+                            if chr(prompt_ch) in ['n', 'N']:    # yes, all range
+                                self.undo.push()
+                                self.fillSegment([firstLineNum, firstColNum], height, width, fillChar=drawChar)
                                 askingAboutRange = False
                             elif prompt_ch == 27:  # esc, cancel
                                 askingAboutRange = False
@@ -4175,6 +4381,7 @@ Can use ESC or META instead of ALT
         self.clipBoard = clipBoard
 
     def copySegmentToAllFrames(self, startPoint, height, width, frange=None):
+        self.undo.push()
         tempFrame = self.copySegmentToBuffer(startPoint, height, width)
         # paste into each frame in range, at startPoint
         self.pasteFromClipboard(clipBuffer=tempFrame, startPoint=startPoint, frange=frange)
@@ -4220,6 +4427,7 @@ Can use ESC or META instead of ALT
 
     def deleteSegment(self, startPoint, height, width, frange=None):
         """ Delete everyting in the current frame, or framge range """
+        self.undo.push()
         for lineNum in range(0, height):
             for colNum in range(0, width):
                 charColumn = startPoint[1] + colNum
@@ -4232,6 +4440,38 @@ Can use ESC or META instead of ALT
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
                     else:
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
+    def fillSegment(self, startPoint, height, width, frange=None, fillChar="X"):
+        """ Fill everyting in the current frame, or framge range, with selected character+color """
+        self.undo.push()
+        for lineNum in range(0, height):
+            for colNum in range(0, width):
+                charColumn = startPoint[1] + colNum
+                charLine = startPoint[0] + lineNum
+                character = ord(fillChar)
+                charFg = self.colorfg
+                charBg = self.colorbg
+                if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
+                    if not frange:
+                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                    else:
+                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
+    def colorSegment(self, startPoint, height, width, frange=None):
+        """ Color everyting in the current frame, or framge range, with selected color """
+        self.undo.push()
+        for lineNum in range(0, height):
+            for colNum in range(0, width):
+                charColumn = startPoint[1] + colNum
+                charLine = startPoint[0] + lineNum
+                if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
+                    if not frange:
+                        #self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=charColumn, y=charLine, pushUndo=False)
+                    else:
+                        #self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+
 
     def clearStatusBarNoRefresh(self):
         self.addstr(self.statusBarLineNum, 0, " " * self.mov.sizeX) # clear lower status bar
