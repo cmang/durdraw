@@ -350,6 +350,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.notify("Wide. Showing color picker.")
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPicker.show()
+                # Window is too narrow, but tall enough to show more stuff on the bottom.
+            if realmaxY - 10 > self.mov.sizeY:
+                if self.appState.colorMode == "256":
+                    self.statusBar.colorPicker.show()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -1564,7 +1568,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         statusBarLineNum = realmaxY - 2
 
-        #self.appState.sideBarShowing = False
+        self.appState.sideBarShowing = False
         # If the window is wide enough for the "side bar" (where sticky color goes)
         if self.playing and self.appState.sideBarShowing:
             self.appState.sideBarShowing = False
@@ -1576,22 +1580,24 @@ class UserInterface():  # Separate view (curses) from this controller
                 #self.notify("Wide. Showing color picker.")
                 if self.appState.colorMode == "256":
                     self.statusBar.colorPicker.show()
-        elif self.appState.sideBarShowing:
-            # sidebar Is showing, let's make sure we don't need to hide it
-            if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
-                #self.notify("Hiding color picker.")
-                self.appState.sideBarShowing = False
+
+        if not self.playing and self.appState.colorMode == "256":
+            if self.window_big_enough_for_colors():
+                self.appState.sideBarShowing = True
+                self.statusBar.colorPicker.show()
+            else:
                 self.statusBar.colorPicker.hide()
 
         self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
-        if self.appState.sideBarShowing:
-            # We are clear to draw the Sidebar
-            # Anchor the color picker to the bottom right
-            new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
-            self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
-        else:
-            # Move the color picker to just above the status bar
-            self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
+
+        #if self.appState.sideBarShowing:
+        # We are clear to draw the Sidebar
+        # Anchor the color picker to the bottom right
+        new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
+        self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
+        #else:
+        #    # Move the color picker to just above the status bar
+        #    self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
 
         self.statusBarLineNum = statusBarLineNum
         # resize window, tell the statusbar buttons
@@ -1787,6 +1793,22 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.xy[1] < 0:
             self.xy[1] = 1
         self.move(self.xy[0], self.xy[1] - 1)
+
+    def window_big_enough_for_colors(self):
+        # Returns true if window is either tall enough or wide enough
+        # to fit a palette to the right of or below the canvas
+        returnValue = True
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
+            if realmaxY - 10 < self.mov.sizeY:
+                returnValue = False
+        if realmaxY - 10 < self.mov.sizeY:
+            if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
+                returnValue = False
+        #debugString = f"big enough: {returnValue}"
+        #self.addstr(realmaxY - 3, 0, debugString, curses.color_pair(self.appState.theme['clickHighlightColor']) | curses.A_BOLD)
+        return returnValue
+
 
     def clickedUndo(self):
         self.undo.undo()
