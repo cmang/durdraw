@@ -1587,6 +1587,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.statusBar.colorPicker.show()
             else:
                 self.statusBar.colorPicker.hide()
+        if self.playing:
+            self.statusBar.colorPicker.hide()
 
         self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
 
