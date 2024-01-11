@@ -2373,6 +2373,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.xy[1] = self.mov.sizeX
 
     def move_cursor_to_line_and_column(self, line, col):
+        self.appState.topLine = line
         self.xy[0] = line
         self.xy[1] = col
 
