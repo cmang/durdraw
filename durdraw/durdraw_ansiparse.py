@@ -236,14 +236,15 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                         if caller:
                             pass
                             #caller.notify(f"Error in byte {i}, char: {code}, line: {line_num}, col: {col_num}")
-                # 256 foreground color
-                if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3 and appState.colorMode == "256":
-                    fg_color = codeList.pop()
-                    codeList = [fg_color]
-                # 256 background color
-                elif codeList[0] == 48 and codeList[1] == 5 and len(codeList) == 3 and appState.colorMode == "256":
-                    bg_color = codeList.pop()
-                    codeList = [fg_color]
+                if len(codeList) > 1 and appState.colorMode == "256":
+                    # 256 foreground color
+                    if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3:
+                        fg_color = codeList.pop()
+                        codeList = [fg_color]
+                    # 256 background color
+                    elif codeList[0] == 48 and codeList[1] == 5 and len(codeList) == 3:
+                        bg_color = codeList.pop()
+                        codeList = [fg_color]
                 # Not a 256 color code - treat as 16 color
                 for code in codeList:
                     if code == 0:   # reset
@@ -459,6 +460,7 @@ if __name__ == "__main__":
         except UnicodeDecodeError:
             file.close()
             file = open(file_path, "r", encoding="cp437")
+            #file = open(file_path, "r", encoding="big5")
             text_with_escape_codes = file.read()
         #parsed_text, fg, bg = parse_ansi_escape_codes(text_with_escape_codes)
         newFrame = parse_ansi_escape_codes(text_with_escape_codes,  console=True)

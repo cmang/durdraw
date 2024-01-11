@@ -350,6 +350,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.notify("Wide. Showing color picker.")
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPicker.show()
+                # Window is too narrow, but tall enough to show more stuff on the bottom.
+            if realmaxY - 10 > self.mov.sizeY:
+                if self.appState.colorMode == "256":
+                    self.statusBar.colorPicker.show()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -642,11 +646,18 @@ class UserInterface():  # Separate view (curses) from this controller
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         self.notify(inspectorString, pause=True)
 
+    def clickedInfoButton(self):
+        realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
+        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
+            self.showFileInformation(notify=True)
+        else:
+            self.toggleShowFileInformation()
+
     def toggleShowFileInformation(self):
         self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
         self.stdscr.clear()
 
-    def showFileInformation(self):
+    def showFileInformation(self, notify = False):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
         author = self.appState.sauce.author
@@ -690,10 +701,12 @@ class UserInterface():  # Separate view (curses) from this controller
         if len(infoStringList) > 0:
             infoString = ', '.join(infoStringList)
 
-        #infoString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
 
             wideViwer = False
-        if self.appState.viewModeShowInfo:
+        if notify:
+            notifyString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
+            self.notify(notifyString, pause=True)
+        elif self.appState.viewModeShowInfo:
             # check and see if the window is wide enough for a nice side sauce
             wideViewer = False
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
@@ -717,7 +730,6 @@ class UserInterface():  # Separate view (curses) from this controller
                     lineNum += 1
             else:
                 self.addstr(self.realmaxY - 1, 0, infoString, curses.color_pair(fileInfoColor))
-        #self.notify(infoString, pause=True)
 
     def showTransformer(self):
         """ Let the user pick transformations: Bounce, Repeat, Reverse """
@@ -1556,7 +1568,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         statusBarLineNum = realmaxY - 2
 
-        #self.appState.sideBarShowing = False
+        self.appState.sideBarShowing = False
         # If the window is wide enough for the "side bar" (where sticky color goes)
         if self.playing and self.appState.sideBarShowing:
             self.appState.sideBarShowing = False
@@ -1568,22 +1580,26 @@ class UserInterface():  # Separate view (curses) from this controller
                 #self.notify("Wide. Showing color picker.")
                 if self.appState.colorMode == "256":
                     self.statusBar.colorPicker.show()
-        elif self.appState.sideBarShowing:
-            # sidebar Is showing, let's make sure we don't need to hide it
-            if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
-                #self.notify("Hiding color picker.")
-                self.appState.sideBarShowing = False
+
+        if not self.playing and self.appState.colorMode == "256":
+            if self.window_big_enough_for_colors():
+                self.appState.sideBarShowing = True
+                self.statusBar.colorPicker.show()
+            else:
                 self.statusBar.colorPicker.hide()
+        if self.playing:
+            self.statusBar.colorPicker.hide()
 
         self.appState.sideBarColumn = realmaxX - self.appState.sideBar_minimum_width - 1
-        if self.appState.sideBarShowing:
-            # We are clear to draw the Sidebar
-            # Anchor the color picker to the bottom right
-            new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
-            self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
-        else:
-            # Move the color picker to just above the status bar
-            self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
+
+        #if self.appState.sideBarShowing:
+        # We are clear to draw the Sidebar
+        # Anchor the color picker to the bottom right
+        new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
+        self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
+        #else:
+        #    # Move the color picker to just above the status bar
+        #    self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
 
         self.statusBarLineNum = statusBarLineNum
         # resize window, tell the statusbar buttons
@@ -1780,6 +1796,22 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[1] = 1
         self.move(self.xy[0], self.xy[1] - 1)
 
+    def window_big_enough_for_colors(self):
+        # Returns true if window is either tall enough or wide enough
+        # to fit a palette to the right of or below the canvas
+        returnValue = True
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
+            if realmaxY - 10 < self.mov.sizeY:  # I'm not tall enough
+                returnValue = False     # and gosh darnit, pepple like me.
+        if realmaxY - 10 < self.mov.sizeY:
+            if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
+                returnValue = False
+        #debugString = f"big enough: {returnValue}"
+        #self.addstr(realmaxY - 3, 0, debugString, curses.color_pair(self.appState.theme['clickHighlightColor']) | curses.A_BOLD)
+        return returnValue
+
+
     def clickedUndo(self):
         self.undo.undo()
         self.hardRefresh()
@@ -1878,7 +1910,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
-                    self.toggleShowFileInformation()
+                    self.clickedInfoButton()
+                    #if self.appState.sideBarShowing:
+                    #    self.toggleShowFileInformation()
+                    #else:
+                    #    self.showFileInformation(notify=True)
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.commandMode = False
                     self.openMenu("File")
@@ -2373,6 +2409,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.xy[1] = self.mov.sizeX
 
     def move_cursor_to_line_and_column(self, line, col):
+        self.appState.topLine = line
         self.xy[0] = line
         self.xy[1] = col
 
