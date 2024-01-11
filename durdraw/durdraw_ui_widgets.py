@@ -417,7 +417,7 @@ class StatusBar():
         #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         #mainMenu.add_item("Transform", caller.showTransformer, "t")
-        mainMenu.add_item("Info/Sauce", caller.toggleShowFileInformation, "i", shortcut="esc-i")
+        mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
         mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")

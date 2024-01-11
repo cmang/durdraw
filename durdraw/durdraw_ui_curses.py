@@ -642,11 +642,18 @@ class UserInterface():  # Separate view (curses) from this controller
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         self.notify(inspectorString, pause=True)
 
+    def clickedInfoButton(self):
+        if self.appState.sideBarShowing:
+            self.toggleShowFileInformation()
+        else:
+            self.showFileInformation(notify=True)
+
+
     def toggleShowFileInformation(self):
         self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
         self.stdscr.clear()
 
-    def showFileInformation(self):
+    def showFileInformation(self, notify = False):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
         author = self.appState.sauce.author
@@ -690,10 +697,12 @@ class UserInterface():  # Separate view (curses) from this controller
         if len(infoStringList) > 0:
             infoString = ', '.join(infoStringList)
 
-        #infoString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
 
             wideViwer = False
-        if self.appState.viewModeShowInfo:
+        if notify:
+            notifyString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
+            self.notify(notifyString, pause=True)
+        elif self.appState.viewModeShowInfo:
             # check and see if the window is wide enough for a nice side sauce
             wideViewer = False
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
@@ -717,7 +726,6 @@ class UserInterface():  # Separate view (curses) from this controller
                     lineNum += 1
             else:
                 self.addstr(self.realmaxY - 1, 0, infoString, curses.color_pair(fileInfoColor))
-        #self.notify(infoString, pause=True)
 
     def showTransformer(self):
         """ Let the user pick transformations: Bounce, Repeat, Reverse """
@@ -1878,7 +1886,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
-                    self.toggleShowFileInformation()
+                    self.clickedInfoButton()
+                    #if self.appState.sideBarShowing:
+                    #    self.toggleShowFileInformation()
+                    #else:
+                    #    self.showFileInformation(notify=True)
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     self.commandMode = False
                     self.openMenu("File")

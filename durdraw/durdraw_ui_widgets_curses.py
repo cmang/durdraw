@@ -192,6 +192,8 @@ class MenuHandler:
                     else:
                         # Otherwise, hide it
                         self.hide()
+                    if not self.menu.caller.caller.playing:    # caller.caller is the main UI thing
+                        self.window.nodelay(0)
                     self.menu.items[item]["on_click"]()
                     prompting = False
             if c == curses.KEY_UP:
@@ -204,6 +206,8 @@ class MenuHandler:
                 self.hide()
                 prompting = False
                 # yikes lol
+                if not self.menu.caller.caller.playing:    # caller.caller is the main UI thing
+                    self.window.nodelay(0)
                 self.menu.items[options[current_option]]["on_click"]() 
             elif c in [98, curses.KEY_LEFT]:
                 self.hide()
@@ -266,6 +270,8 @@ class MenuHandler:
                                 self.hide()
                                 prompting = False
                                 #self.menu.items[options[current_option]]["on_click"]() 
+                                if not self.menu.caller.caller.playing:    # caller.caller is the main UI thing
+                                    self.window.nodelay(0)
                                 self.menu.gui.got_click("Click", mouseX, mouseY)
                         else:
                             #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
