@@ -647,11 +647,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.notify(inspectorString, pause=True)
 
     def clickedInfoButton(self):
-        if self.appState.sideBarShowing:
-            self.toggleShowFileInformation()
-        else:
+        realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
+        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
             self.showFileInformation(notify=True)
-
+        else:
+            self.toggleShowFileInformation()
 
     def toggleShowFileInformation(self):
         self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
@@ -1799,9 +1799,9 @@ class UserInterface():  # Separate view (curses) from this controller
         # to fit a palette to the right of or below the canvas
         returnValue = True
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
-        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
-            if realmaxY - 10 < self.mov.sizeY:
-                returnValue = False
+        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
+            if realmaxY - 10 < self.mov.sizeY:  # I'm not tall enough
+                returnValue = False     # and gosh darnit, pepple like me.
         if realmaxY - 10 < self.mov.sizeY:
             if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
                 returnValue = False
