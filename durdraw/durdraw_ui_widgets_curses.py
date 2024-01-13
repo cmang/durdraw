@@ -206,9 +206,10 @@ class MenuHandler:
                 self.hide()
                 prompting = False
                 # yikes lol
-                if not self.menu.caller.caller.playing:    # caller.caller is the main UI thing
-                    self.window.nodelay(0)
                 self.menu.items[options[current_option]]["on_click"]() 
+                self.appState.colorPickerSelected = False
+                #if not self.menu.caller.caller.playing:    # caller.caller is the main UI thing
+                #    self.window.nodelay(0)
             elif c in [98, curses.KEY_LEFT]:
                 self.hide()
                 prompting = False
@@ -422,7 +423,26 @@ class ColorPickerHandler:
             curses_addstr(self.parentWindow, y + line, x, (" "))
 
     def show(self):
-        self.showFgPicker()
+        #self.showFgPicker()
+        self.updateFgPicker()
+        #self.updateBgPicker()
+        #prompting = False
+        #print('\033[?1003l') # disable mouse movement tracking (xterm api)
+        #curses.mousemask(1)
+        #curses_cursorOff()
+        # populate window with colors
+        self.panel.top()
+        #self.move(0,self.x - 6)
+        self.panel.show()
+        #oldColor = self.colorPicker.caller.colorfg
+        #color = self.colorPicker.caller.colorfg
+        #if self.appState.colorPickerSelected:
+        #    prompting = True
+        #else:
+        #    prompting = False
+        #if self.appState.colorPickerSelected:
+        #    if self.appState.sideBarShowing:
+        #        self.drawBorder()
 
     def hide(self):
         self.panel.bottom()
@@ -489,16 +509,17 @@ class ColorPickerHandler:
         curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
 
     def showFgPicker(self):
+        #self.colorPicker.caller.notify(f"showFgPicker")
         self.showColorPicker(type="fg")
 
     def showColorPicker(self, type="fg"):
+        #self.colorPicker.caller.notify(f"showColorPicker")
         """ Shows picker, has UI loop for letting user pick color with keyboard or mouse """
         if type == "fg":
             self.updateFgPicker()
         elif type == "bg":
             self.updateBgPicker()
-        prompting = True
-        self.window.nodelay(1)
+        prompting = False
         #print('\033[?1003l') # disable mouse movement tracking (xterm api)
         #curses.mousemask(1)
         curses_cursorOff()
@@ -515,6 +536,10 @@ class ColorPickerHandler:
         if self.appState.colorPickerSelected:
             if self.appState.sideBarShowing:
                 self.drawBorder()
+        #self.window.nodelay(1)
+
+        #self.colorPicker.caller.notify(f"showColorPicker() hit. {prompting=}")
+        
         while(prompting):
             time.sleep(0.01)
             #self.colorPicker.caller.drawStatusBar()
@@ -574,8 +599,13 @@ class ColorPickerHandler:
                 if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
+                self.appState.colorPickerSelected = False
+                c = None
                 self.updateFgPicker()
-                pass
+                #self.colorPicker.caller.notify(f"{c=}, {prompting=}")
+                if not self.colorPicker.caller.playing:    # caller.caller is the main UI thing
+                    self.window.nodelay(0)  # wait
+                #return color
             elif c == curses.KEY_MOUSE:
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
@@ -633,7 +663,7 @@ class ColorPickerHandler:
                     #self.hide()
                     prompting = False
 
-        if self.appState.colorPickerSelected:
+        if not self.appState.colorPickerSelected:
             if self.appState.sideBarShowing:
                 self.hideBorder()
 

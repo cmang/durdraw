@@ -351,7 +351,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.colorMode == "256":
                         self.statusBar.colorPicker.show()
                 # Window is too narrow, but tall enough to show more stuff on the bottom.
-            if realmaxY - 10 > self.mov.sizeY:
+            elif realmaxY - 10 > self.mov.sizeY:
                 if self.appState.colorMode == "256":
                     self.statusBar.colorPicker.show()
 
@@ -2287,7 +2287,9 @@ class UserInterface():  # Separate view (curses) from this controller
     def selectColorPicker(self):
         if self.appState.colorMode == "256":
             self.appState.colorPickerSelected = True
-            self.statusBar.colorPicker.handler.showColorPicker()
+            #self.statusBar.colorPicker.handler.showColorPicker()
+            self.statusBar.colorPicker.showFgPicker()
+            self.appState.colorPickerSelected = False
 
     def cloneToNewFrame(self):
         """ Take current frame, clone it to a new one, insert it immediately after current frame """
