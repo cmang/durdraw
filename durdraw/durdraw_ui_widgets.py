@@ -247,7 +247,8 @@ class ColorPicker:
 
     def show(self):
         self.hidden = False
-        self.showFgPicker()
+        #self.showFgPicker()
+        self.handler.show()
 
     def showFgPicker(self):
         """ Returns the color picked by the user
