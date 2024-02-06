@@ -1962,7 +1962,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 118:  # alt-v      - paste
                     # Paste from the clipboard
                     if self.clipBoard:  # If there is something in the clipboard
-                        self.pasteFromClipboard()
+                        self.askHowToPaste()
+                        #self.pasteFromClipboard()
                 elif c == ord('V'):   # alt-V, View mode
                     self.enterViewMode()
                 elif c == 82:   # alt-R = set playback range
@@ -4262,6 +4263,7 @@ Can use ESC or META instead of ALT
                     #    self.mov.currentFrame.flip_horizontal()
                     #    prompting = False
                     if chr(prompt_ch) in ['t', 'T']:    # Cut to clipboard
+                        self.clearStatusBar()
                         self.promptPrint("Cut across all frames in playback range (Y/N)? ")
                         askingAboutRange = True
                         while askingAboutRange:
@@ -4406,6 +4408,24 @@ Can use ESC or META instead of ALT
             self.stdscr.nodelay(1)
         else:
             self.stdscr.nodelay(0)
+
+    def askHowToPaste(self):
+        self.clearStatusBar()
+        self.promptPrint("Paste across all frames in playback range (Y/N)? ")
+        askingAboutRange = True
+        while askingAboutRange:
+            prompt_ch = self.stdscr.getch()
+            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                self.undo.push()
+                self.pasteFromClipboard(frange=self.appState.playbackRange)
+                askingAboutRange = False
+            if chr(prompt_ch) in ['n', 'N']:    # no, single frame only
+                self.undo.push()
+                self.pasteFromClipboard()
+                askingAboutRange = False
+            elif prompt_ch == 27:  # esc, cancel
+                askingAboutRange = False
+        prompting = False
 
     def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None):
         if not clipBuffer:
