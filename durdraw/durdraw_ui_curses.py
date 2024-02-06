@@ -3841,7 +3841,8 @@ class UserInterface():  # Separate view (curses) from this controller
             that # + 1 (aka, last used line of the frame) """
         # start at the last line, work up until we find a character.
         for lineNum in reversed(list(range(0, self.mov.sizeY))):
-            for colNum in range(0, frame.sizeX):
+            #for colNum in range(0, frame.sizeX):
+            for colNum in range(0, len(frame.content[lineNum])):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return lineNum + 1  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -4248,7 +4249,7 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, [D]elete, [F]ill, Co[l]or, copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
@@ -4260,6 +4261,24 @@ Can use ESC or META instead of ALT
                     #    self.undo.push()
                     #    self.mov.currentFrame.flip_horizontal()
                     #    prompting = False
+                    if chr(prompt_ch) in ['t', 'T']:    # Cut to clipboard
+                        self.promptPrint("Cut across all frames in playback range (Y/N)? ")
+                        askingAboutRange = True
+                        while askingAboutRange:
+                            prompt_ch = self.stdscr.getch()
+                            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                                self.copySegmentToClipboard([firstLineNum, firstColNum], height, width)
+                                self.undo.push()
+                                self.deleteSegment([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
+                                askingAboutRange = False
+                            if chr(prompt_ch) in ['n', 'N']:    # No, only one frame
+                                self.copySegmentToClipboard([firstLineNum, firstColNum], height, width)
+                                self.undo.push()
+                                self.deleteSegment([firstLineNum, firstColNum], height, width)
+                                askingAboutRange = False
+                            elif prompt_ch == 27:  # esc, cancel
+                                askingAboutRange = False
+                        prompting = False
                     elif chr(prompt_ch) in ['d', 'D']:    # delete/clear
                         self.clearStatusBar()
                         self.promptPrint("Delete across all frames in playback range (Y/N)? ")
