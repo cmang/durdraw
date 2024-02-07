@@ -27,6 +27,10 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 ## INSTALLATION
 
+You can install from your OS repositories, or follow the instructions below to install from source:
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/durdraw.svg)](https://repology.org/project/durdraw/versions)
+
 If you just want to run it without instalilng, scroll down to the next section.
 
 1: Download and extract, or use git to download:
