@@ -67,6 +67,7 @@ class AppState():
         self.playingHelpScreen_2 = False    # on page 2 of help screen
         self.durVer = None
         self.debug = False
+        self.debug2 = False     # extra verbose debug, eg: file loading intricates
         self.modified = False
         self.durhelp256_fullpath = None
         self.durhelp256_page2_fullpath = None

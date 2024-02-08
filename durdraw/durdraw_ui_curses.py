@@ -3310,7 +3310,7 @@ class UserInterface():  # Separate view (curses) from this controller
         filename = os.path.expanduser(shortfile)
         if loadFormat == 'ascii': # or ANSI...
             try:
-                if self.appState.debug: self.notify("Trying to open() file as ascii.")
+                if self.appState.debug2: self.notify("Trying to open() file as ascii.")
                 f = open(filename, 'r')
                 self.appState.curOpenFileName = os.path.basename(filename)
 
@@ -3382,27 +3382,27 @@ class UserInterface():  # Separate view (curses) from this controller
             # check for gzipped file
             f.seek(0)
             fileHeader = f.read(2)
-            if self.appState.debug: self.notify(f"File header: {fileHeader.hex()}")
-            if self.appState.debug: self.notify(f"Checking for gzip file...")
+            if self.appState.debug2: self.notify(f"File header: {fileHeader.hex()}")
+            if self.appState.debug2: self.notify(f"Checking for gzip file...")
             if fileHeader == b'\x1f\x8b': # gzip magic numbers
-                if self.appState.debug: self.notify(f"gzip found")
+                if self.appState.debug2: self.notify(f"gzip found")
                 # file == gzip compressed
                 f.close()
                 try:
                     f = gzip.open(filename, 'rb')
                     f.seek(0)
-                    if self.appState.debug: self.notify(f"Un-gzipped successfully")
+                    if self.appState.debug2: self.notify(f"Un-gzipped successfully")
                 except Exception as e:
                     self.notify(f"Could not open file for reading as gzip: {type(e)}: {e}", pause=True)
             else:
-                if self.appState.debug: self.notify(f"gzip NOT found")
+                if self.appState.debug2: self.notify(f"gzip NOT found")
                 #f.seek(0)
             # check for JSON Durdraw file
             #if (f.read(16) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x64\x72\x61\x77\x20\x4d\x6f\x76'): # {.  "Durdraw Mov
-            if self.appState.debug: self.notify(f"Checking for JSON file.")
+            if self.appState.debug2: self.notify(f"Checking for JSON file.")
             f.seek(0)
             if f.read(12) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x4d\x6f\x76\x69': # {.  "DurMov
-                if self.appState.debug: self.notify(f"JSON found. Loading JSON dur file.")
+                if self.appState.debug2: self.notify(f"JSON found. Loading JSON dur file.")
                 f.seek(0)
                 fileColorMode, fileCharEncoding = durfile.get_dur_file_colorMode_and_charMode(f)
 
@@ -3419,8 +3419,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.opts = newMovie['opts']
                 self.mov = newMovie['mov']
                 self.setPlaybackRange(1, self.mov.frameCount)
-                if self.appState.debug: self.notify(f"{self.opts}")
-                if self.appState.debug: self.notify(f"Finished loading JSON dur file")
+                if self.appState.debug2: self.notify(f"{self.opts}")
+                if self.appState.debug2: self.notify(f"Finished loading JSON dur file")
                 self.appState.curOpenFileName = os.path.basename(filename)
                 self.appState.modified = False
                 #self.setWindowTitle(shortfile)
@@ -3448,34 +3448,34 @@ class UserInterface():  # Separate view (curses) from this controller
                 return True
 
             try:    # Maybe it's a really old Pickle file...
-                if self.appState.debug: self.notify(f"Unpickling..")
+                if self.appState.debug2: self.notify(f"Unpickling..")
                 pickle_fail = False
                 f.seek(0)
                 unpickler = durfile.DurUnpickler(f)
-                if self.appState.debug: self.notify(f"self.opts = unpickler.load()")
+                if self.appState.debug2: self.notify(f"self.opts = unpickler.load()")
                 self.opts = unpickler.load()
-                if self.appState.debug: self.notify(f"self.mov = unpickler.load()")
+                if self.appState.debug2: self.notify(f"self.mov = unpickler.load()")
                 self.mov = unpickler.load()
-                if self.appState.debug: self.notify(f"self.appState.curOpenFileName = os.path.basename(filename)")
+                if self.appState.debug2: self.notify(f"self.appState.curOpenFileName = os.path.basename(filename)")
                 self.appState.curOpenFileName = os.path.basename(filename)
-                if self.appState.debug: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
+                if self.appState.debug2: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
                 self.appState.playbackRange = (1,self.mov.frameCount)
             except Exception as e:
                 pickle_fail = True
-                if self.appState.debug:
+                if self.appState.debug2:
                     self.notify(f"Exception in unpickling: {type(e)}: {e}")
             # If the first unpickling fails, try looking for another pickle format
             if pickle_fail:
                 try:
                     f.seek(0)
-                    if self.appState.debug: self.notify(f"self.opts = pickle.load(f ")
+                    if self.appState.debug2: self.notify(f"self.opts = pickle.load(f ")
                     self.opts = pickle.load(f)
-                    if self.appState.debug: self.notify(f"self.mov = pickle.load(f ")
+                    if self.appState.debug2: self.notify(f"self.mov = pickle.load(f ")
                     self.mov = pickle.load(f)
                     self.appState.playbackRange = (1,self.mov.frameCount)
                     pickle_fail = False
                 except Exception as e:
-                    if self.appState.debug:
+                    if self.appState.debug2:
                         self.notify(f"Exception in unpickling other format: {type(e)}: {e}")
                     pickle_fail = True
 
@@ -4250,7 +4250,7 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, Flip [X/Y], copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
@@ -4258,10 +4258,16 @@ Can use ESC or META instead of ALT
                         prompting = False
                     #if chr(prompt_ch) in ['m', 'M']:    # move
                     #    prompting = False
-                    #elif chr(prompt_ch) in ['x', 'X']:    # flip horizontally
+                    elif chr(prompt_ch) in ['x', 'X']:    # flip horizontally
+                        self.flipSegmentHorizontal([firstLineNum, firstColNum], height, width)
+                        #prompting = False
+                        self.refresh()
+                    elif chr(prompt_ch) in ['y', 'Y']:    # flip vertically 
+                        self.flipSegmentVertical([firstLineNum, firstColNum], height, width)
+                        #prompting = False
+                        self.refresh()
                     #    self.undo.push()
                     #    self.mov.currentFrame.flip_horizontal()
-                    #    prompting = False
                     if chr(prompt_ch) in ['t', 'T']:    # Cut to clipboard
                         self.clearStatusBar()
                         self.promptPrint("Cut across all frames in playback range (Y/N)? ")
@@ -4437,8 +4443,10 @@ Can use ESC or META instead of ALT
             startPoint = self.xy
         lineNum = 0
         colNum = 0
-        width = len(clipBuffer.content) - 1
-        height = len(clipBuffer.content[0]) - 1
+        #width = len(clipBuffer.content) - 1
+        width = len(clipBuffer.content)
+        #height = len(clipBuffer.content[0]) - 1
+        height = len(clipBuffer.content[0])
         for lineNum in range(0, height):
             for colNum in range(0, width):
                 charColumn = startPoint[1] + colNum
@@ -4477,7 +4485,7 @@ Can use ESC or META instead of ALT
         # Make a buffer for characters and color pairs big enough to store the
         # copied image segment.
         # This can be done by making a frame.
-        bufferFrame = durmovie.Frame(height + 1, width + 1)
+        bufferFrame = durmovie.Frame(height, width)
 
         newLineNum = 0
         newColNum = 0
@@ -4502,6 +4510,29 @@ Can use ESC or META instead of ALT
             newLineNum += 1
             newColNum = 0
         return bufferFrame
+
+    def flipSegmentVertical(self, startPoint, height, width, frange=None):
+        """ Flip the contents horizontally in the current frame, or framge range """
+        self.undo.push()
+        # make a reverse copy
+        segment = self.copySegmentToBuffer(startPoint, height, width)
+        segment.flip_vertical()
+
+        # replace with our copy
+        self.pasteFromClipboard(clipBuffer = segment, frange=frange, startPoint=startPoint)
+        #self.pasteFromClipboard(frange=self.appState.playbackRange)
+
+
+    def flipSegmentHorizontal(self, startPoint, height, width, frange=None):
+        """ Flip the contents horizontally in the current frame, or framge range """
+        self.undo.push()
+        # make a reverse copy
+        segment = self.copySegmentToBuffer(startPoint, height, width)
+        segment.flip_horizontal()
+
+        # replace with our copy
+        self.pasteFromClipboard(clipBuffer = segment, frange=frange, startPoint=startPoint)
+        #self.pasteFromClipboard(frange=self.appState.playbackRange)
 
     def deleteSegment(self, startPoint, height, width, frange=None):
         """ Delete everyting in the current frame, or framge range """
