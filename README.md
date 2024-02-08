@@ -27,6 +27,10 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 ## INSTALLATION
 
+You can install from your OS repositories, or follow the instructions below to install from source:
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/durdraw.svg)](https://repology.org/project/durdraw/versions)
+
 If you just want to run it without instalilng, scroll down to the next section.
 
 1: Download and extract, or use git to download:
@@ -55,7 +59,7 @@ Or run the installer:
 ```
 
 
-You should now be able to run `durdraw`. This tries to run in 256-color mode by default. To start in 16-color mode for viewing MS-DOS style ANSI art, use `durdraw --16color`.
+You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
 
 ## RUNNING WITHOUT INSTALLING
 
