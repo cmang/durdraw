@@ -90,8 +90,10 @@ To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use
 
 ## GALLERY
 
+[![Watch the Tutorial Part 1](https://github.com/cmang/durdraw/assets/261501/ca33c81b-0559-4fc7-a49b-a11768938d3d)](https://youtu.be/vWczO0Vd_54)
 
-[![Watch the video](https://durdraw.org/durdraw-youtube-thumbnail-with-play-button.png)](https://youtu.be/7Icf08bkJxg)
+[![Watch another video](https://durdraw.org/durdraw-youtube-thumbnail-with-play-button.png)](https://youtu.be/7Icf08bkJxg)
+
 ![durdraw-xmas-example](https://github.com/cmang/durdraw/assets/261501/4137eb2d-0de0-47ca-8789-cca0c8519e91)
 
 ![dopetrans3](https://user-images.githubusercontent.com/261501/210064369-4c416e85-12d0-47aa-b182-db5435ae0c78.gif)
