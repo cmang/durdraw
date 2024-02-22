@@ -375,7 +375,7 @@ class StatusBar():
         # visible buttons' tooltips.
         # "Free floating tips"
         self.other_tooltips = ToolTipsGroup(self)
-        self.other_tooltips.add_tip("F", row=0, col=7) # Frame
+        self.other_tooltips.add_tip("g", row=0, col=7) # Frame
         self.other_tooltips.add_tip("+", row=0, col=7) # FPS+
         self.other_tooltips.add_tip("-", row=0, col=7) # FPS-
         self.other_tooltips.add_tip("D", row=0, col=7) # Frame delay

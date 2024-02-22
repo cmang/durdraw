@@ -555,10 +555,16 @@ class UserInterface():  # Separate view (curses) from this controller
             y = self.xy[0]
         if frange: # frame range
             for fn in range(frange[0] - 1, frange[1]):
-                self.mov.frames[fn].content[y][x - 1] = chr(c)
-                #self.mov.frames[fn].colorMap.update(
-                #        {(y,x - 1):(fg,bg)} )
-                self.mov.frames[fn].newColorMap[y][x - 1] = [fg, bg]
+                try:
+                    self.mov.frames[fn].content[y][x - 1] = chr(c)
+                    #self.mov.frames[fn].colorMap.update(
+                    #        {(y,x - 1):(fg,bg)} )
+                    self.mov.frames[fn].newColorMap[y][x - 1] = [fg, bg]
+                except Exception as E:
+                    self.notify(f"There was an internal error: {E}", pause=True)
+                    self.notify(f"Frame: {fn}, x: {x}, y: {y}, fg: {fg}, bg: {bg}")
+                    self.notify(f"Please save your work and restart Durdraw. Sorry for the inconvenience.")
+                    break
             if x < self.mov.sizeX and moveCursor:
                 self.xy[1] = self.xy[1] + 1 
         else:
@@ -1756,7 +1762,7 @@ class UserInterface():  # Separate view (curses) from this controller
         trans_next_offset = transportOffset + 10
 
         # Update tooltip locations for free floating tooltips
-        frameBar_tip = self.statusBar.other_tooltips.get_tip("F")
+        frameBar_tip = self.statusBar.other_tooltips.get_tip("g")
         frameBar_tip.set_location(row = statusBarLineNum, column = frameBar_offset)
         fpsBar_plus_tip = self.statusBar.other_tooltips.get_tip("-")
         fpsBar_plus_tip.set_location(row = statusBarLineNum, column = fpsBar_offset)
