@@ -29,6 +29,9 @@ import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_ansiparse as dur_ansiparse
 import durdraw.durdraw_sauce as dursauce
 import durdraw.durdraw_charsets as durchar
+import durdraw.plugins.reverse_movie as reverse_plugin # transform_movie
+import durdraw.plugins.repeat_movie as repeat_plugin # transform_movie
+import durdraw.plugins.bounce_movie as bounce_plugin # transform_movie
 
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
@@ -746,6 +749,7 @@ class UserInterface():  # Separate view (curses) from this controller
             c = self.stdscr.getch()
             if c in [98]:  # b - bounce |> -> |><|
                 prompting = False
+                self.transform_bounce()
             if c in [114]:  # r - repeat |> -> |>|>
                 prompting = False
                 self.transform_repeat()
@@ -755,12 +759,33 @@ class UserInterface():  # Separate view (curses) from this controller
             if c in [27]: # escape - cancel
                 prompting = False
 
+    def transform_bounce(self):
+        """ |><| Clone all the frames in the range so they repeat once, reversing the 2nd half """
+        self.undo.push()
+        self.mov = bounce_plugin.transform_movie(self.mov)
+        self.clearStatusLine()
+        self.mov.nextFrame()
+        self.mov.prevFrame()
+        self.setPlaybackRange(1, self.mov.frameCount)
+        #self.hardRefresh()
+
     def transform_repeat(self):
         """ |>|> Clone all the frames in the range so they repeat once """
-        pass
+        self.undo.push()
+        self.mov = repeat_plugin.transform_movie(self.mov)
+        self.clearStatusLine()
+        self.mov.nextFrame()
+        self.mov.prevFrame()
+        self.setPlaybackRange(1, self.mov.frameCount)
+        #self.hardRefresh()
 
     def transform_reverse(self):
-        pass
+        self.undo.push()
+        self.mov = reverse_plugin.transform_movie(self.mov)
+        self.clearStatusLine()
+        self.mov.nextFrame()
+        self.mov.prevFrame()
+        self.hardRefresh()
 
     def moveCurrentFrame(self):
         self.undo.push()
