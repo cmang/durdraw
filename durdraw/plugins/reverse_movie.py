@@ -1,11 +1,13 @@
-# Durdraw Plugin - Transform - Reverse
+# Durdraw Plugin
+# Type: Transform Movie
+# Name: Reverse |> -> <|
 
 # Durdraw plugin format version
 durdraw_plugin_version = 1
 
 # Plugin information
 durdraw_plugin = {
-    "name": "Reverse Movie",
+    "name": "Reverse",
     "author": "Sam Foster, samfoster@gmail.com",
     "version":  1,   # Plugin verison, if applicable
     "type": "transform_movie",

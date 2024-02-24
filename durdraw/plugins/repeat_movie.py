@@ -1,4 +1,7 @@
-# Durdraw Plugin - Transform - Repeat |> -> |>|>
+# Durdraw Plugin
+# Type: Transform Movie
+# Name: Repeat |> -> |>|>
+
 
 import copy
 
@@ -7,7 +10,7 @@ durdraw_plugin_version = 1
 
 # Plugin information
 durdraw_plugin = {
-    "name": "Repeat Movie",
+    "name": "Repeat",
     "author": "Sam Foster, samfoster@gmail.com",
     "version":  1,   # Plugin verison, if applicable
     "type": "transform_movie",
