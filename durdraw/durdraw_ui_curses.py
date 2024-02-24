@@ -760,7 +760,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
 
     def transform_bounce(self):
-        """ |><| Clone all the frames in the range so they repeat once, reversing the 2nd half """
+        """ |> -> |><| Clone all the frames in the range so they repeat once, reversing the 2nd half """
         self.undo.push()
         self.mov = bounce_plugin.transform_movie(self.mov)
         self.clearStatusLine()
@@ -770,7 +770,7 @@ class UserInterface():  # Separate view (curses) from this controller
         #self.hardRefresh()
 
     def transform_repeat(self):
-        """ |>|> Clone all the frames in the range so they repeat once """
+        """ |> -> |>|> Clone all the frames in the range so they repeat once """
         self.undo.push()
         self.mov = repeat_plugin.transform_movie(self.mov)
         self.clearStatusLine()
@@ -780,6 +780,7 @@ class UserInterface():  # Separate view (curses) from this controller
         #self.hardRefresh()
 
     def transform_reverse(self):
+        """ |> -> <| """
         self.undo.push()
         self.mov = reverse_plugin.transform_movie(self.mov)
         self.clearStatusLine()
@@ -1845,10 +1846,17 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def clickedUndo(self):
         self.undo.undo()
+    
+        if self.appState.playbackRange[1] > self.mov.frameCount:
+            #self.appState.playbackRange = (start, stop)
+            self.setPlaybackRange(1, self.mov.frameCount)
         self.hardRefresh()
 
     def clickedRedo(self):
         self.undo.redo()
+        if self.appState.playbackRange[1] > self.mov.frameCount:
+            self.setPlaybackRange(1, self.mov.frameCount)
+        self.hardRefresh()
 
     def clickHighlight(self, pos, buttonString, bar='top'):    # Visual feedback
         # example: self.clickHighlight(52, "|>")
@@ -2517,6 +2525,13 @@ class UserInterface():  # Separate view (curses) from this controller
     def promptPrint(self, promptText):
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
+
+
+    def openTransformMenu(self):
+        """ Show the status bar's menu for settings """
+        self.statusBar.mainMenu.handler.panel.show()
+        response = self.statusBar.transformMenu.showHide()
+        self.statusBar.mainMenu.handler.panel.hide()
 
     def openSettingsMenu(self):
         """ Show the status bar's menu for settings """

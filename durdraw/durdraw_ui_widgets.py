@@ -403,6 +403,17 @@ class StatusBar():
         settingsMenu.set_y(settingsMenuColumn)
         self.settingsMenu = settingsMenu
 
+        # Transforms menu
+        transformMenuColumn = 24 # Try to place to the right of the main menu
+        transformMenu = Menu(self.window, x = self.x - 2, y = transformMenuColumn, caller=self, appState=self.appState, statusBar=self)
+        transformMenu.add_item("Bounce", caller.transform_bounce, "b")
+        transformMenu.add_item("Repeat", caller.transform_repeat, "r")
+        transformMenu.add_item("Reverse", caller.transform_reverse, "v")
+        #transformMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        transformMenu.set_x(self.x - 1)
+        transformMenu.set_y(transformMenuColumn)
+        self.transformMenu = transformMenu
+
         # main menu items 
         self.menuButton = None
         # Create a menu list item, add menu items to it
@@ -417,7 +428,8 @@ class StatusBar():
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
-        mainMenu.add_item("Transform", caller.showTransformer, "a")
+        #mainMenu.add_item("Transform", caller.showTransformer, "a", has_submenu=True)
+        mainMenu.add_item("Transform", caller.openTransformMenu, "a", has_submenu=True)
         mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
