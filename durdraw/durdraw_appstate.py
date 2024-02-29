@@ -60,6 +60,8 @@ class AppState():
         self.colorPickChar = self.blockChar
         self.hasMouse = True # replace with equivalent curses.has_mouse()
         self.hasMouseScroll = True  # Disable for compatibility with older Python versions <3.10
+        self.mouse_col = 0
+        self.mouse_line = 0
         self.helpMov = None
         self.helpMov_2 = None
         self.hasHelpFile = False
