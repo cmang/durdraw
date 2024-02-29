@@ -2593,6 +2593,11 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def openMenu(self, current_menu: str):
         menu_open = True
+
+        cmode = self.appState.cursorMode
+        if cmode == "Draw":
+            self.disableMouseReporting()
+
         if not self.statusBar.toolButton.hidden:
             self.drawStatusBar()
         response = "Right"
@@ -2619,6 +2624,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.statusBar.animButton.draw()    # redraw as unselected/not-inverse
             if response == "Close":
                 menu_open = False
+                if cmode == "Draw":
+                    self.enableMouseReporting()
             elif response == "Right":
                 # if we're at the rightmost menu
                 if menus.index(current_menu) == len(menus) - 1:
@@ -4134,7 +4141,7 @@ Can use ESC or META instead of ALT
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])
                 if linenum == self.appState.mouse_line and colnum == self.appState.mouse_col:
-                    if self.appState.cursorMode == "Draw":  # Draw paintbrush instead
+                    if self.appState.cursorMode == "Draw" and not self.playing:  # Draw paintbrush instead
                         charContent = self.appState.drawChar
                         charColor = [self.colorfg, self.colorbg]
                 try:
