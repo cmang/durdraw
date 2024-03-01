@@ -1078,6 +1078,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.metaKey = 1
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
+                # Clear out any canvas state as needed for command mode. For example...
+                # If we think the mouse button is pressed.. stop thinking that.
+                # In other words, un-stick the mouse button in case it's stuck:
+                self.pressingButton = False
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
@@ -1790,6 +1794,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(clickColor) | curses.A_BOLD)
         # Draw the new status bar
         if self.commandMode:
+            # When we hit esc in the canvas, show tooltips etc.
             self.addstr(statusBarLineNum, realmaxX - 1, "*", curses.color_pair(2) | curses.A_BOLD)
             self.statusBar.showToolTips()
         else:
