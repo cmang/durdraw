@@ -1664,7 +1664,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))
 
         frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
-        rangeBar = "R: %i/%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
+        rangeBar = "R: %i-%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
         fpsBar = "<FPS>: %i " % (self.opts.framerate)
         delayBar = "D: %.2f " % (self.mov.currentFrame.delay)
 
@@ -3816,7 +3816,7 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default"):
+    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default", ansimation=False):
         """ Saves current frame of current movie to ansi file """
         try:
             if encoding == "default":
