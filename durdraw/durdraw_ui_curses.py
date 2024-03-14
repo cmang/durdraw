@@ -3670,6 +3670,38 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.notify("Canceled. File not saved.")
                     prompting = False
                     return False
+        if saveFormat == 'ansimation':
+            prompting = True
+            repeat = False
+            while prompting:
+                # Ask if they want CP437 or Utf-8 encoding
+                self.clearStatusLine()
+                self.promptPrint("Repeat or loop animation? [no]: ")
+                c = self.stdscr.getch()
+                if c == ord('y'): 
+                    repeat = True
+                    prompting = False
+                elif c == ord('n'): 
+                    repeat = False
+                    prompting = False
+                elif c in [13, curses.KEY_ENTER]:
+                    repeat = False
+                    prompting = False
+                elif c == 27: # 27 = esc = cancel
+                    self.notify("Canceled. File not saved.")
+                    prompting = False
+                    return False
+            if repeat:
+                self.clearStatusLine()
+                self.promptPrint("Repeat how many times? ")
+                curses.echo()
+                repeat_string = str(self.stdscr.getstr().decode('utf-8'))
+                curses.noecho()
+                try:
+                    repeat = int(repeat_string)
+                except ValueError:
+                    self.notify("Error: Repeat value must be an integer. File not saved.")
+                    return False
         if saveFormat in ['png', 'gif']:
             self.promptPrint("Which font? IBM PC [A]NSI, AM[I]GA: ")
             prompting = True
@@ -3755,7 +3787,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if saveFormat == 'ansi':  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename, encoding=encoding)
         if saveFormat == 'ansimation':  # ansi = escape codes for colors+ascii
-            saved = self.saveAnsimationFile(filename, encoding=encoding)
+            saved = self.saveAnsimationFile(filename, encoding=encoding, play_times=repeat)
         if saveFormat == 'irc':  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename, ircColors = True)
         if saveFormat == 'png':  # png = requires ansi love
@@ -3825,7 +3857,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Takes a Durdraw frame, returns a string of escape codes which can be written to a file """
         pass
 
-    def saveAnsimationFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default"):
+    def saveAnsimationFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default", play_times=False):
         """ Saves current frame of current movie to ansi file """
         # some escape codes from https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
         #print("\\033[<L>;<C>H or \\033[<L>;<C>f  - Put the cursor at line L and column C.")
@@ -3836,6 +3868,10 @@ class UserInterface():  # Separate view (curses) from this controller
         #print("\\033[2J                          - Clear the screen, move to (0,0)")
         ESC_CLS = "\033[2J"
         ESC_TOPLEFT = "\033[0;0H"
+
+        if play_times == False:
+            play_times = 1
+
         try:
             if encoding == "default":
                 f = open(filename, 'w')
@@ -3867,39 +3903,43 @@ class UserInterface():  # Separate view (curses) from this controller
         if not firstLineNum:
             #firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
             firstLineNum = 0
-        frameNum = 0
-        for frame in self.mov.frames:
-            string = string + ESC_TOPLEFT
-            for lineNum in range(firstLineNum, lastLineNum):  # y == lines
-                for colNum in range(firstColNum, lastColNum):
-                    char = self.mov.frames[frameNum].content[lineNum][colNum]
-                    color = self.mov.frames[frameNum].newColorMap[lineNum][colNum]
-                    colorFg = color[0]
-                    colorBg = color[1]
-                    if self.appState.colorMode == "256":
-                        if self.appState.showBgColorPicker == False:
-                            colorBg = 0 # black, I hope
-                    try:
-                        if ircColors:
-                            colorCode = self.ansi.getColorCodeIrc(colorFg,colorBg)
-                        else:
-                            if self.appState.colorMode == "256":
-                                colorCode = self.ansi.getColorCode256(colorFg,colorBg)
+
+        for repeat_count in range(0, play_times):
+            frameNum = 0
+            for frame in self.mov.frames:
+                string = string + ESC_TOPLEFT
+                for lineNum in range(firstLineNum, lastLineNum):  # y == lines
+                    for colNum in range(firstColNum, lastColNum):
+                        char = self.mov.frames[frameNum].content[lineNum][colNum]
+                        color = self.mov.frames[frameNum].newColorMap[lineNum][colNum]
+                        colorFg = color[0]
+                        colorBg = color[1]
+                        if self.appState.colorMode == "256":
+                            if self.appState.showBgColorPicker == False:
+                                colorBg = 0 # black, I hope
+                        try:
+                            if ircColors:
+                                colorCode = self.ansi.getColorCodeIrc(colorFg,colorBg)
                             else:
-                                colorCode = self.ansi.getColorCode(colorFg,colorBg)
-                    except KeyError:
-                        if ircColors:   # problem? set a default color
-                            colorCode = self.ansi.getColorCodeIrc(1,0)
-                        else:
-                            colorCode = self.ansi.getColorCode(1,0)
-                    # If we don't have extended ncurses 6 color pairs,
-                    # we don't have background colors.. so write the background as black/0
-                    string = string + colorCode + char
-                if ircColors:
-                    string = string + '\n'
-                else:
-                    string = string + '\r\n'
-            frameNum += 1
+                                if self.appState.colorMode == "256":
+                                    colorCode = self.ansi.getColorCode256(colorFg,colorBg)
+                                else:
+                                    colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                        except KeyError:
+                            if ircColors:   # problem? set a default color
+                                colorCode = self.ansi.getColorCodeIrc(1,0)
+                            else:
+                                colorCode = self.ansi.getColorCode(1,0)
+                        # If we don't have extended ncurses 6 color pairs,
+                        # we don't have background colors.. so write the background as black/0
+                        string = string + colorCode + char
+                    if ircColors:
+                        string = string + '\n'
+                    else:
+                        string = string + '\r\n'
+                frameNum += 1
+
+
         try:
             f.write(string)
             saved = True
