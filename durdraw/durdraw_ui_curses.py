@@ -3606,7 +3606,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def save(self):
         self.clearStatusLine()
         self.move(self.mov.sizeY, 0)
-        self.promptPrint("File format? [D]UR, [A]NSI, ASCI[I], [M]IRC, [J]SON, [H]TML, [P]NG, [G]IF: ")
+        self.promptPrint("File format? [D]UR, [A]NSI, A[N]SIMATION, ASCI[I], [M]IRC, [J]SON, [H]TML, [P]NG, [G]IF: ")
         self.stdscr.nodelay(0) # do not wait for input when calling getch
         prompting = True
         saved = False
@@ -3628,6 +3628,9 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [97, 65]: # a = ansi
                 saveFormat = 'ansi'
                 prompting = False
+            elif c in [110, 78]:  # 110 = n, 78 = N, ansimation
+                saveFormat = 'ansimation'
+                prompting = False
             elif c in [109]: # m = mIRC
                 prompting = False
                 if self.mov.contains_high_colors():
@@ -3646,7 +3649,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 return None
         self.clearStatusLine()
-        if saveFormat == 'ansi':  # ansi = escape codes for colors+ascii
+        if saveFormat == 'ansi' or saveFormat == 'ansimation':  # ansi = escape codes for colors+ascii
             prompting = True
             while prompting:
                 # Ask if they want CP437 or Utf-8 encoding
@@ -3711,7 +3714,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         return None
         self.clearStatusLine()
-        if saveFormat == "ansi":
+        if saveFormat == "ansi" or saveFormat == "ansimation":
             self.promptPrint(f"Enter file name to save as ({saveFormat}/{encoding}) [{self.appState.curOpenFileName}]: ")
         else:
             self.promptPrint(f"Enter file name to save as ({saveFormat}) [{self.appState.curOpenFileName}]: ")
@@ -3751,6 +3754,8 @@ class UserInterface():  # Separate view (curses) from this controller
             saved = self.saveHtmlFile(filename, gzipped=False)
         if saveFormat == 'ansi':  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename, encoding=encoding)
+        if saveFormat == 'ansimation':  # ansi = escape codes for colors+ascii
+            saved = self.saveAnsimationFile(filename, encoding=encoding)
         if saveFormat == 'irc':  # ansi = escape codes for colors+ascii
             saved = self.saveAnsiFile(filename, ircColors = True)
         if saveFormat == 'png':  # png = requires ansi love
@@ -3816,7 +3821,94 @@ class UserInterface():  # Separate view (curses) from this controller
         f.close()
         return True
 
-    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default", ansimation=False):
+    def frameToAnsiCodes(self, frame):
+        """ Takes a Durdraw frame, returns a string of escape codes which can be written to a file """
+        pass
+
+    def saveAnsimationFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default"):
+        """ Saves current frame of current movie to ansi file """
+        # some escape codes from https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+        #print("\\033[<L>;<C>H or \\033[<L>;<C>f  - Put the cursor at line L and column C.")
+        #print("\\033[<N>A                        - Move the cursor up N lines")
+        #print("\\033[<N>B                        - Move the cursor down N lines")
+        #print("\\033[<N>C                        - Move the cursor forward N columns")
+        #print("\\033[<N>D                        - Move the cursor backward N columns\n")
+        #print("\\033[2J                          - Clear the screen, move to (0,0)")
+        ESC_CLS = "\033[2J"
+        ESC_TOPLEFT = "\033[0;0H"
+        try:
+            if encoding == "default":
+                f = open(filename, 'w')
+            elif encoding == "cp437":
+                f = open(filename, 'w', encoding="cp437")
+            elif encoding == "utf-8":
+                f = open(filename, 'w', encoding="utf-8")
+        except:
+            self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
+            return False
+        string = ''
+        string = string + ESC_CLS
+        string = string + ESC_TOPLEFT
+        if not lastLineNum: # if we weren't told what lastLineNum is...
+            # find it (last line we should save)
+            lastLineNum = self.findFrameLastLine(self.mov.currentFrame)
+        if not lastColNum:
+            lastColNum = self.findFrameLastCol(self.mov.currentFrame)
+        if not firstColNum:
+            firstColNum = 0 # Don't crop leftmost blank columns
+        if not firstLineNum:
+            firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+        frameNum = 0
+        for frame in self.mov.frames:
+            string = string + ESC_TOPLEFT
+            for lineNum in range(firstLineNum, lastLineNum):  # y == lines
+                for colNum in range(firstColNum, lastColNum):
+                    char = self.mov.frames[frameNum].content[lineNum][colNum]
+                    color = self.mov.frames[frameNum].newColorMap[lineNum][colNum]
+                    colorFg = color[0]
+                    colorBg = color[1]
+                    if self.appState.colorMode == "256":
+                        if self.appState.showBgColorPicker == False:
+                            colorBg = 0 # black, I hope
+                    try:
+                        if ircColors:
+                            colorCode = self.ansi.getColorCodeIrc(colorFg,colorBg)
+                        else:
+                            if self.appState.colorMode == "256":
+                                colorCode = self.ansi.getColorCode256(colorFg,colorBg)
+                            else:
+                                colorCode = self.ansi.getColorCode(colorFg,colorBg)
+                    except KeyError:
+                        if ircColors:   # problem? set a default color
+                            colorCode = self.ansi.getColorCodeIrc(1,0)
+                        else:
+                            colorCode = self.ansi.getColorCode(1,0)
+                    # If we don't have extended ncurses 6 color pairs,
+                    # we don't have background colors.. so write the background as black/0
+                    string = string + colorCode + char
+                if ircColors:
+                    string = string + '\n'
+                else:
+                    string = string + '\r\n'
+            frameNum += 1
+        try:
+            f.write(string)
+            saved = True
+        except UnicodeEncodeError:
+            self.notify("Error: Some characters were not compatible with this encoding. File not saved.")
+            saved = False
+            #f.close()
+            #return False
+        if ircColors:
+            string2 = string + '\n'
+        else:
+            f.write('\033[0m') # color attributes off
+            string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        f.close()
+        #return True
+        return saved
+
+    def saveAnsiFile(self, filename, lastLineNum=False, lastColNum=False, firstColNum=False, firstLineNum=None, ircColors=False, encoding="default"):
         """ Saves current frame of current movie to ansi file """
         try:
             if encoding == "default":
