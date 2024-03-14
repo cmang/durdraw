@@ -3852,12 +3852,21 @@ class UserInterface():  # Separate view (curses) from this controller
         if not lastLineNum: # if we weren't told what lastLineNum is...
             # find it (last line we should save)
             lastLineNum = self.findFrameLastLine(self.mov.currentFrame)
+            for frame in self.mov.frames:
+                newLastLineNum = self.findFrameLastLine(frame)
+                lastLineNum = max(newLastLineNum, lastLineNum)
+                #if newLastLineNum > lastLineNum:
+                #    lastLineNum = newLastLineNum
         if not lastColNum:
             lastColNum = self.findFrameLastCol(self.mov.currentFrame)
+            for frame in self.mov.frames:
+                newLastColNum = self.findFrameLastCol(frame)
+                lastColNum = max(newLastColNum, lastColNum)
         if not firstColNum:
             firstColNum = 0 # Don't crop leftmost blank columns
         if not firstLineNum:
-            firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+            #firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+            firstLineNum = 0
         frameNum = 0
         for frame in self.mov.frames:
             string = string + ESC_TOPLEFT
