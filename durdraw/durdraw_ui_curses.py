@@ -2631,6 +2631,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 menu_open = False
                 if cmode == "Draw":
                     self.enableMouseReporting()
+                self.hardRefresh()
             elif response == "Right":
                 # if we're at the rightmost menu
                 if menus.index(current_menu) == len(menus) - 1:
@@ -2649,6 +2650,9 @@ class UserInterface():  # Separate view (curses) from this controller
             #fail_count += 1 # debug
             #if fail_count > 3:
             #    pdb.set_trace()
+        if cmode == "Draw":
+            self.enableMouseReporting()
+        #self.hardRefresh()
 
     def openFromMenu(self):
         load_filename = self.openFilePicker()
