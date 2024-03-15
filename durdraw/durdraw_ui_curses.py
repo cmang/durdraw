@@ -4434,6 +4434,7 @@ Can use ESC or META instead of ALT
         """Mark selection for copy/cut/move - trigger with shift-arrow-keys"""
         # any other key returns (cancels)
         # print message: "Select mode - Enter to select, Esc to cancel"
+        self.undo.push()
         startPoint =  [self.xy[0],  self.xy[1]]   # set to wherever the cursor is
         endPoint = startPoint
         selecting = True
@@ -4625,6 +4626,10 @@ Can use ESC or META instead of ALT
                         self.copySegmentToAllFrames([firstLineNum, firstColNum], height, width, frange=self.appState.playbackRange)
                         prompting = False
                     elif prompt_ch == 27:  # esc, cancel
+                        self.undo.undo()
+                        prompting = False
+                    elif prompt_ch in [13, curses.KEY_ENTER]: # enter
+                        # Confirm. Don't pop the clipboard like esc does.
                         prompting = False
                 selecting = False
             elif c == curses.KEY_MOUSE: 
@@ -4760,7 +4765,7 @@ Can use ESC or META instead of ALT
 
     def flipSegmentVertical(self, startPoint, height, width, frange=None):
         """ Flip the contents horizontally in the current frame, or framge range """
-        self.undo.push()
+        #self.undo.push()
         # make a reverse copy
         segment = self.copySegmentToBuffer(startPoint, height, width)
         segment.flip_vertical()
@@ -4772,7 +4777,7 @@ Can use ESC or META instead of ALT
 
     def flipSegmentHorizontal(self, startPoint, height, width, frange=None):
         """ Flip the contents horizontally in the current frame, or framge range """
-        self.undo.push()
+        #self.undo.push()
         # make a reverse copy
         segment = self.copySegmentToBuffer(startPoint, height, width)
         segment.flip_horizontal()
