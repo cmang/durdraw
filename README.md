@@ -159,11 +159,11 @@ Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 You can use the "Esc" (or "Meta") key to access commands:
 
 ```
-  .. Art Editing .....................   .. About ...........................
-  : F1-F10 - insert character        :   : version: {ver}                   :
-  : esc-up - next fg color           :   : color mode: {colormode}          :
-  : esc-down - prev fg color         :   : character encoding: {charmode}   :
-  : esc-right - next bg color (16c)  :   :..................................:
+  .. Art Editing .....................   
+  : F1-F10 - insert character        :   
+  : esc-up - next fg color           :   
+  : esc-down - prev fg color         :   
+  : esc-right - next bg color (16c)  :   
   : esc-left - prev bg color         :
   : esc-/ - insert line              :   .. Animation .......................
   : esc-' - delete line              :   : esc-k - next frame               :
@@ -192,6 +192,7 @@ You can use the "Esc" (or "Meta") key to access commands:
   : esc-> - insert column            :   : esc-h - help                     :
   : esc-< - delete column            :   : esc-q - quit                     :
   :..................................:   :..................................:
+
                                                             Prev   Next
                                                             Frame  Frame
                                                             |      |
