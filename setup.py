@@ -6,7 +6,7 @@ with open("README.md") as f_readme:
 
 setup(
     name='durdraw',
-    version='0.25.3',
+    version='0.26.0',
     author='Sam Foster',
     author_email='samfoster@gmail.com',
     description='Animated Color ASCII and Unicode Art Editor',
@@ -18,7 +18,7 @@ setup(
     packages=['durdraw'],
     install_requires=['pillow', 'windows-curses;platform_system=="Windows"'],
     include_package_data = True, 
-    package_data = {'durdraw': ["help/*", "charsets/*", "themes/*"]},
+    package_data = {'durdraw': ['help/*', 'charsets/*', 'themes/*', 'plugins/*']},
     #package_data = {'durdraw': ["charsets/*"]},
     data_files = [
     #    ('share/icons', ['data/durdraw.png']),

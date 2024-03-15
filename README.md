@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.25.3
+              \_____________________________________________\|  v 0.26.0
 
 ![durdraw-0 24 0-example](https://github.com/cmang/durdraw/assets/261501/27efcf7c-96ae-4930-8360-21276dc72fca)
 
@@ -159,11 +159,11 @@ Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 You can use the "Esc" (or "Meta") key to access commands:
 
 ```
-  .. Art Editing .....................   .. About ...........................
-  : F1-F10 - insert character        :   : version: {ver}                   :
-  : esc-up - next fg color           :   : color mode: {colormode}          :
-  : esc-down - prev fg color         :   : character encoding: {charmode}   :
-  : esc-right - next bg color (16c)  :   :..................................:
+  .. Art Editing .....................   
+  : F1-F10 - insert character        :   
+  : esc-up - next fg color           :   
+  : esc-down - prev fg color         :   
+  : esc-right - next bg color (16c)  :   
   : esc-left - prev bg color         :
   : esc-/ - insert line              :   .. Animation .......................
   : esc-' - delete line              :   : esc-k - next frame               :
@@ -192,6 +192,7 @@ You can use the "Esc" (or "Meta") key to access commands:
   : esc-> - insert column            :   : esc-h - help                     :
   : esc-< - delete column            :   : esc-q - quit                     :
   :..................................:   :..................................:
+
                                                             Prev   Next
                                                             Frame  Frame
                                                             |      |
@@ -299,7 +300,7 @@ For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and ma
 ## FAQ
 
 #### Q: Don't TheDraw and some other programs already do ANSI animation?
-A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to control the speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
+A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to govern the playback speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
 A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
@@ -308,7 +309,7 @@ A: Short answer: It's not supported, but it seems to work fine in the Windows Su
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
-A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which is not usually compatible with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
+A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
 ### CREDITS
 
@@ -322,17 +323,7 @@ ANSI and ASCII artists: cmang, H7, LDA
 
 ### LEGAL
 
-Durdraw is Copyright (c) 2009-2023 Sam Foster <samfoster@gmail.com>. All rights reserved.
+Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
-Permission to use, copy, modify, and distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+This software is distributed under the BSD 3-Clause License. See LICENSE file for details.
 

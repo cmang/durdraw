@@ -1,6 +1,7 @@
 from copy import deepcopy
 from durdraw.durdraw_options import Options
 import json
+import pdb
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -76,15 +77,29 @@ class Frame():
         self.setDelayValue(0)
 
     def flip_horizontal(self):
+        #pdb.set_trace()
+        self.content = self.content[::-1]
+        self.newColorMap.reverse()
+        #for x in range(0, self.height):
+        #    #for y in range(0, self.width):
+        #    # reverse slicing trick
+        #    self.content[x] = self.content[x][::-1]
+        #    #self.content[x][0] = self.content[x][0][::-1]
+        #    self.newColorMap[x].reverse()
+
+    def flip_vertical(self):
         for x in range(0, self.height):
-            self.content[x].reverse()
+            #for y in range(0, self.width):
+            # reverse slicing trick
+            self.content[x] = self.content[x][::-1]
+            #self.content[x][0] = self.content[x][0][::-1]
             self.newColorMap[x].reverse()
 
-    def flip_horizontal_segment(self, startPoint, height, width, frange=None):
-        """ Finish writing this, use it for the alt-k select """
-        for x in range(0, self.height):
-            self.content[x].reverse()
-            self.newColorMap[x].reverse()
+    #def flip_horizontal_segment(self, startPoint, height, width, frange=None):
+    #    """ Finish writing this, use it for the alt-k select """
+    #    for x in range(0, self.height):
+    #        self.content[x].reverse()
+    #        self.newColorMap[x].reverse()
 
 
     def setWidth(self, width):

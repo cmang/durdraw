@@ -375,7 +375,7 @@ class StatusBar():
         # visible buttons' tooltips.
         # "Free floating tips"
         self.other_tooltips = ToolTipsGroup(self)
-        self.other_tooltips.add_tip("F", row=0, col=7) # Frame
+        self.other_tooltips.add_tip("g", row=0, col=7) # Frame
         self.other_tooltips.add_tip("+", row=0, col=7) # FPS+
         self.other_tooltips.add_tip("-", row=0, col=7) # FPS-
         self.other_tooltips.add_tip("D", row=0, col=7) # Frame delay
@@ -398,10 +398,21 @@ class StatusBar():
         settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
-        settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)
         settingsMenu.set_y(settingsMenuColumn)
         self.settingsMenu = settingsMenu
+
+        # Transforms menu
+        transformMenuColumn = 24 # Try to place to the right of the main menu
+        transformMenu = Menu(self.window, x = self.x - 2, y = transformMenuColumn, caller=self, appState=self.appState, statusBar=self)
+        transformMenu.add_item("Bounce", caller.transform_bounce, "b")
+        transformMenu.add_item("Repeat", caller.transform_repeat, "r")
+        transformMenu.add_item("Reverse", caller.transform_reverse, "v")
+        #transformMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        transformMenu.set_x(self.x - 1)
+        transformMenu.set_y(transformMenuColumn)
+        self.transformMenu = transformMenu
 
         # main menu items 
         self.menuButton = None
@@ -417,11 +428,12 @@ class StatusBar():
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
         mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
-        #mainMenu.add_item("Transform", caller.showTransformer, "t")
+        #mainMenu.add_item("Transform", caller.showTransformer, "a", has_submenu=True)
         mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
         mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
+        mainMenu.add_item("Transform", caller.openTransformMenu, "a", has_submenu=True)
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
@@ -612,31 +624,37 @@ class StatusBar():
 
     def setCursorModeMove(self):
         self.caller.appState.setCursorModeMove()
+        self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeSelect(self):
         self.caller.appState.setCursorModeSelect()
+        self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModePnt(self):
         self.caller.appState.setCursorModePnt()
+        self.caller.enableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.show()
 
     def setCursorModeCol(self):
         self.caller.appState.setCursorModeCol()
+        self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeErase(self):
         self.caller.appState.setCursorModeErase()
+        self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
     def setCursorModeEyedrop(self):
         self.caller.appState.setCursorModeEyedrop()
+        self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         self.drawCharPickerButton.hide()
 
