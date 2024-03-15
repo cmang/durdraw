@@ -594,11 +594,13 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c in [13, curses.KEY_ENTER, 9, 353]:   # Return, Accept color. 9=tab, 353=shift-tab
+            elif c in [13, curses.KEY_ENTER, 9, 353, 27]:   # Return, Accept color. 9=tab, 353=shift-tab, 27 = esc
                 #if not self.appState.stickyColorPicker:
                 if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
+                if c == 27: # esc, cancel
+                    self.colorPicker.caller.colorfg = oldColor
                 self.appState.colorPickerSelected = False
                 c = None
                 self.updateFgPicker()
