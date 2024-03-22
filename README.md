@@ -49,7 +49,7 @@ If you just want to run it without instalilng, scroll down to the next section.
 Or run the installer:
 
 ```
-   python3 setup.py install
+    python3 setup.py install
 ```
 
 3: Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
@@ -81,10 +81,10 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
-To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use the --16colors option:
+To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use the --16color option:
 
 ```
-    ./start-durdraw --16colors
+    ./start-durdraw --16color
 ```
 
 
