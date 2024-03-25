@@ -87,10 +87,16 @@ To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use
     ./start-durdraw --16color
 ```
 
-The Linux Terminal users may need to disable the menu accelerator key to avoid key conflict:
+The Linux Terminal users may need to configure the terminal to avoid key conflict:
 
-- **Click**: Menu -> Edit -> Preferences -> General
-- **Uncheck** the box: Enable the menu accelerator key (F10 by default)
+- **GNOME Terminal**: **Click**: Menu -> Edit -> Preferences -> General, and **uncheck** the box: 
+
+  - Enable the menu accelerator key (F10 by default)
+
+- **Xfce4-Terminal**: **Click**: Menu -> Edit -> Preferences -> Advanced, and **check** the 2 boxes:
+
+  - Disable menu shortcut key (F10 by default)
+  - Disable help window shortcut key (F1 by default)
 
 
 ## GALLERY
