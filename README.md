@@ -329,7 +329,7 @@ Developer: Sam Foster
 
 Home page: http://durdraw.org
 
-Development: https://github.com/cmang/durdraw
+Development and additional contributors: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA
 
