@@ -87,18 +87,6 @@ To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use
     ./start-durdraw --16color
 ```
 
-The Linux Terminal users may need to configure the terminal to avoid key conflict:
-
-- **GNOME Terminal**: **Click**: Menu -> Edit -> Preferences -> General, and **uncheck** the box: 
-
-  - [ ] Enable the menu accelerator key (F10 by default)
-
-- **Xfce4-Terminal**: **Click**: Menu -> Edit -> Preferences -> Advanced, and **check** the 2 boxes:
-
-  - [x] Disable menu shortcut key (F10 by default)
-  - [x] Disable help window shortcut key (F1 by default)
-
-
 ## GALLERY
 
 [![Watch the Tutorial Part 1](https://github.com/cmang/durdraw/assets/261501/ca33c81b-0559-4fc7-a49b-a11768938d3d)](https://youtu.be/vWczO0Vd_54)
@@ -321,6 +309,19 @@ A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform 
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
+
+#### Q: Some or all of the F1-F10 keys do not work for me! What can I do?
+A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals will map this to Alt-1 through Alt-0. You can also use the following settings in some terminals to enable the F1-F10 keys:
+
+- **GNOME Terminal**: **Click**: Menu -> Edit -> Preferences -> General, and **uncheck** the box: 
+
+  - [ ] Enable the menu accelerator key (F10 by default)
+
+- **Xfce4-Terminal**: **Click**: Menu -> Edit -> Preferences -> Advanced, and **check** the 2 boxes:
+
+  - [x] Disable menu shortcut key (F10 by default)
+  - [x] Disable help window shortcut key (F1 by default)
+
 
 ### CREDITS
 
