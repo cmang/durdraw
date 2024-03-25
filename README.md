@@ -91,12 +91,12 @@ The Linux Terminal users may need to configure the terminal to avoid key conflic
 
 - **GNOME Terminal**: **Click**: Menu -> Edit -> Preferences -> General, and **uncheck** the box: 
 
-  - Enable the menu accelerator key (F10 by default)
+  - [ ] Enable the menu accelerator key (F10 by default)
 
 - **Xfce4-Terminal**: **Click**: Menu -> Edit -> Preferences -> Advanced, and **check** the 2 boxes:
 
-  - Disable menu shortcut key (F10 by default)
-  - Disable help window shortcut key (F1 by default)
+  - [*] Disable menu shortcut key (F10 by default)
+  - [*] Disable help window shortcut key (F1 by default)
 
 
 ## GALLERY
