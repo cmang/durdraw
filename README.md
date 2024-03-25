@@ -89,8 +89,8 @@ To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use
 
 The Linux Terminal users may need to disable the menu accelerator key to avoid key conflict:
 
-- Click: Menu -> Edit -> Preferences -> General
-- Then uncheck the box: [] Enable the menu accelerator key (F10 by default)
+- **Click**: Menu -> Edit -> Preferences -> General
+- **Uncheck** the box: Enable the menu accelerator key (F10 by default)
 
 
 ## GALLERY
