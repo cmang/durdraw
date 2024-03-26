@@ -1,6 +1,6 @@
 ## Contributing to Durdraw
 
-* That's awesome that you want to help! I thank you. The guidelines are pretty loose right now.
+That's awesome that you want to help! I thank you. The guidelines are pretty loose right now.
 
 * The main thing is, work in the "dev" branch instead of the "master" branch. The changes made to the Dev branch are eventually merged into Master for release.
 
