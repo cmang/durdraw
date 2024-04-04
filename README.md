@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.26.0
+              \_____________________________________________\|  v 0.27.0-BETA
 
 ![durdraw-0 24 0-example](https://github.com/cmang/durdraw/assets/261501/27efcf7c-96ae-4930-8360-21276dc72fca)
 
@@ -305,7 +305,7 @@ A: Yes, but traditional ANSI animation does not provide any control over timing,
 A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
-A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
+A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See durformat.md for more details on the .dur file format.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
@@ -325,11 +325,11 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
 
 ### CREDITS
 
-Developer: Sam Foster
+Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
 Home page: http://durdraw.org
 
-Development and additional contributors: https://github.com/cmang/durdraw
+Development: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA
 
