@@ -589,6 +589,12 @@ class UserInterface():  # Separate view (curses) from this controller
             if x < self.mov.sizeX and moveCursor:
                 self.xy[1] = self.xy[1] + 1 
 
+    def pickUpDrawingChar(self, col, line):
+        # Sets the drawing chaaracter to the character under teh cusror.
+        # esc-P
+        self.appState.drawChar = self.mov.currentFrame.content[line][col]
+        self.statusBar.drawCharPickerButton.label = self.appState.drawChar
+
     def eyeDrop(self, col, line):
         old_fg = self.colorfg
         old_bg = self.colorbg
@@ -1963,6 +1969,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.delLine()
                 elif c == 121:      # alt-y - Eyedrop
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
+                elif c == ord('P'):      # alt-P - pick up charcter
+                    self.pickUpDrawingChar(self.xy[1] - 1, self.xy[0])
+                    #self.notify(f"Picked up character: {self.appState.drawChar}")
                 elif c == ord('l'): # alt-l - color under cursor
                     self.insertColor(fg=self.colorfg, bg=self.colorbg, pushUndo=True)
                 elif c == 73:       # alt-I - Character Inspector
