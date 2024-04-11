@@ -2586,9 +2586,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def openTransformMenu(self):
         """ Show the status bar's menu for settings """
-        self.statusBar.mainMenu.handler.panel.show()
+        #self.statusBar.mainMenu.handler.panel.show()
+        self.statusBar.animMenu.handler.panel.show()
         response = self.statusBar.transformMenu.showHide()
-        self.statusBar.mainMenu.handler.panel.hide()
+        self.statusBar.animMenu.handler.panel.hide()
 
     def openSettingsMenu(self):
         """ Show the status bar's menu for settings """
@@ -3772,7 +3773,11 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 self.notify("File name cannot be empty.")
                 return False
-        filename = os.path.expanduser(filename)
+        try:
+            filename = os.path.expanduser(filename)
+        except: # possibly due to funk in filename, prevent possible crash
+            self.promptPrint("There was an error saving to that file.")
+            return False
         # If file exists.. ask if it should overwrite.
         if os.path.exists(filename):
             self.clearStatusLine()

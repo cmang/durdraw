@@ -404,7 +404,8 @@ class StatusBar():
         self.settingsMenu = settingsMenu
 
         # Transforms menu
-        transformMenuColumn = 24 # Try to place to the right of the main menu
+        #transformMenuColumn = 24 # Try to place to the right of the main menu
+        transformMenuColumn = 35 # Try to place to the right of the Animation menu
         transformMenu = Menu(self.window, x = self.x - 2, y = transformMenuColumn, caller=self, appState=self.appState, statusBar=self)
         transformMenu.add_item("Bounce", caller.transform_bounce, "b")
         transformMenu.add_item("Repeat", caller.transform_repeat, "r")
@@ -433,7 +434,6 @@ class StatusBar():
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
         mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
-        mainMenu.add_item("Transform", caller.openTransformMenu, "a", has_submenu=True)
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
@@ -467,6 +467,7 @@ class StatusBar():
         animMenu.add_item("Set Playback Range", caller.getPlaybackRange, "r", shortcut="esc-R")
         animMenu.add_item("Go to Frame", caller.gotoFrameGetInput, "g", shortcut="esc-g")
         animMenu.add_item("Move Frame", caller.moveCurrentFrame, "m", shortcut="esc-M")
+        animMenu.add_item("Transform", caller.openTransformMenu, "t", has_submenu=True)
         animButton = Button("Anim", 0, animButton_offset, caller.openAnimMenu, self.window, appState=self.appState)
         animButton.set_tooltip_command('a')
         self.animButton = animButton

@@ -183,7 +183,10 @@ class MenuHandler:
                     if self.menu.items[item]["has_submenu"]:    # If it opens a sub-menu..
                         # Keep it on the screen.
                         # Redraw previously selected as normal:
-                        curses_addstr(self.curses_win, current_option + 1, 2, options[current_option], menuItemColor)
+                        if not self.menu.title:
+                            curses_addstr(self.curses_win, current_option + 1, 2, options[current_option], menuItemColor)
+                        else:
+                            curses_addstr(self.curses_win, current_option + 2, 2, options[current_option], menuItemColor)
                         # Then highlight the new one.
                         current_option = options.index(item)
                         #self.rebuild()
