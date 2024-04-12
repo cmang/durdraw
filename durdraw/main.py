@@ -29,14 +29,7 @@ def main():
     DUR_VER = '0.27.0-BETA'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
-    durlogo = '''
-       __                __
-     _|  |__ __ _____ __|  |_____ _____ __ __ __
-    / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
-   /_____|_____|__|__|_____|__|___\____|________| |
-   \_____________________________________________\|  v %s
-    Press esc-h for help.
-    ''' % DUR_VER
+    durlogo = 'Durdraw'
     argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
