@@ -217,6 +217,8 @@ class MenuHandler:
                 self.hide()
                 prompting = False
                 response = "Left"
+                if self.menu.is_submenu:
+                    response = "Pop"
                 #self.hide()
                 #prompting = False
                 # Here: Launch a different menu
@@ -686,7 +688,7 @@ class ColorPickerHandler:
         return color
 
     def gotClick(self, mouseX, mouseY):
-        if mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+        if not self.colorPicker.hidden and mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
             clickedCol = mouseX - self.x
             clickedLine = mouseY - self.origin
             if mouseY < self.origin + self.height:

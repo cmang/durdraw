@@ -134,6 +134,7 @@ class Menu():
         self.hidden = True
         self.title = None
         self.statusBar = None
+        self.is_submenu = False
         self.x = x
         self.y = y
         self.handler = MenuHandler(self, window, appState=appState)
@@ -398,6 +399,7 @@ class StatusBar():
         settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        settingsMenu.is_submenu = True
         #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)
         settingsMenu.set_y(settingsMenuColumn)
@@ -413,6 +415,7 @@ class StatusBar():
         #transformMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         transformMenu.set_x(self.x - 1)
         transformMenu.set_y(transformMenuColumn)
+        transformMenu.is_submenu = True
         self.transformMenu = transformMenu
 
         # main menu items 
