@@ -63,13 +63,7 @@ You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw
 
 ## RUNNING WITHOUT INSTALLING
 
-You may need to install the "PIL" or "pillow" python module first:
-
-```
-    pip3 install pillow
-```
-
-Then you can run Durdraw with:
+You can run Durdraw with:
 
 ```
     ./start-durdraw
