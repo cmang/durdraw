@@ -14,7 +14,6 @@ import shutil
 import sys
 import subprocess
 import time
-from PIL import Image
 
 #from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_options import Options
@@ -1692,6 +1691,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
         self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
 
+        # Move char button to the left of frameBar_offset
+
         if self.appState.debug:
             cp = self.ansi.colorPairMap[(self.colorfg, self.colorbg)]
             cp2 = self.colorpair
@@ -2588,8 +2589,12 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Show the status bar's menu for settings """
         #self.statusBar.mainMenu.handler.panel.show()
         self.statusBar.animMenu.handler.panel.show()
-        response = self.statusBar.transformMenu.showHide()
-        self.statusBar.animMenu.handler.panel.hide()
+        #response = self.statusBar.transformMenu.showHide()
+        response = self.statusBar.transformMenu.show()
+        if response == "Pop":
+            pass
+        else:
+            self.statusBar.animMenu.handler.panel.hide()
 
     def openSettingsMenu(self):
         """ Show the status bar's menu for settings """
@@ -3717,6 +3722,15 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.notify("Error: Repeat value must be an integer. File not saved.")
                     return False
         if saveFormat in ['png', 'gif']:
+            PIL_found = False
+            try:
+                import PIL
+                PIL_found = True
+            except ImportError:
+                PIL_found = False
+            if not PIL_found:
+                self.notify("Error: PNG and GIF export requires the Pillow module for Python.")
+                return False
             self.promptPrint("Which font? IBM PC [A]NSI, AM[I]GA: ")
             prompting = True
             while prompting:
@@ -4133,6 +4147,15 @@ class UserInterface():  # Separate view (curses) from this controller
         if not self.appState.isAppAvail("ansilove"):   # ansilove not found
             self.notify("Ansilove not found in path. Please find it at https://www.ansilove.org/", pause=True)
             return False
+        PIL_found = False
+        try:
+            import PIL
+            PIL_found = True
+        except ImportError:
+            PIL_found = False
+        if not PIL_found:
+            self.notify("Error: PNG and GIF export requires the Pillow module for Python.")
+            return False
         tmpAnsiFileName = filename + '.tmp.ans' # remove this file when done
         tmpPngFileName = filename + '.tmp.ans.png' # remove this file when done
         if not self.saveAnsiFile(tmpAnsiFileName, lastLineNum=lastLineNum, firstLineNum=firstLineNum, firstColNum=firstColNum, lastColNum=lastColNum):
@@ -4156,6 +4179,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if not firstColNum:
             firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
         characterWidth = 8  # 9 pixels wide
+        from PIL import Image
         cropImage = Image.open(tmpPngFileName)
         cropWidthPixels = (lastColNum - firstColNum) * characterWidth # right
         w,h = cropImage.size
