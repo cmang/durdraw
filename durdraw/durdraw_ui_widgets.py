@@ -531,15 +531,17 @@ class StatusBar():
             charSetButton.hide()
 
         # Brush picker - make me a real brush someday.
-        drawCharPicker_offset = toolButton_offset + 6
+        drawCharPicker_offset = toolButton_offset + 6   # to the right of Draw menu
+        drawCharPicker_offset += 4  # accomodate for eyedrop for now. yes, this is dumb
+        
         drawCharPicker = DrawCharPicker(self.window, caller=self)
         drawCharPickerButton = Button(self.caller.appState.drawChar, 0,  drawCharPicker_offset, drawCharPicker.pickChar, self.window, appState=self.appState)
         drawCharPickerButton.picker = True
         drawCharPickerButton.identity = "drawChar"
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
         drawCharPickerButton.realY = self.y + drawCharPickerButton.y
-        #drawCharPickerButton.show() 
-        drawCharPickerButton.hide() 
+        drawCharPickerButton.show() 
+        #drawCharPickerButton.hide() 
         self.drawCharPickerButton = drawCharPickerButton
 
         # This is to make the char picker button hide/show when
@@ -630,37 +632,38 @@ class StatusBar():
         self.caller.appState.setCursorModeMove()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.hide()
+        #self.drawCharPickerButton.hide()
 
     def setCursorModeSelect(self):
         self.caller.appState.setCursorModeSelect()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.hide()
+        #self.drawCharPickerButton.hide()
 
     def setCursorModePnt(self):
         self.caller.appState.setCursorModePnt()
         self.caller.enableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.show()
+        #self.drawCharPickerButton.show()
 
     def setCursorModeCol(self):
         self.caller.appState.setCursorModeCol()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.hide()
+        #self.drawCharPickerButton.hide()
 
     def setCursorModeErase(self):
         self.caller.appState.setCursorModeErase()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.hide()
+        #self.drawCharPickerButton.hide()
 
     def setCursorModeEyedrop(self):
         self.caller.appState.setCursorModeEyedrop()
         self.caller.disableMouseReporting()
-        self.toolButton.set_label(self.caller.appState.cursorMode)
-        self.drawCharPickerButton.hide()
+        #self.toolButton.set_label(self.caller.appState.cursorMode)
+        self.toolButton.set_label("Eye")
+        #self.drawCharPickerButton.hide()
 
     def updateLocation(self, x, y):
         self.x = x

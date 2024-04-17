@@ -324,6 +324,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.maxColors < 256:
             self.notify("Unable to set 256 colors. Check your terminal configuration?")
         else:
+            self.statusBar.drawCharPickerButton.show()
             self.switchToColorMode("256")
 
     def switchToColorMode(self, newMode: str):
@@ -1661,9 +1662,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.animButton.update_real_xy(x = statusBarLineNum)
         if self.appState.showCharSetButton:
             self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
-        self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
-        if self.appState.colorMode == "256":
-            self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
+        # Put character picker button left of character picker
+        self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum + 1)
+        self.statusBar.drawCharPickerButton.update_real_xy(y = self.chMap_offset-11)
+        #if self.appState.colorMode == "256":
+        #    self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
         canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))
@@ -1684,6 +1687,15 @@ class UserInterface():  # Separate view (curses) from this controller
         self.chMap_offset = realmaxX - 50    # how far in to show the character map
         # > is hardcoded at 66. yeesh.
         chMap_next_offset = self.chMap_offset + 31
+
+        # Move the draw button to under the frameBar for 16 color mode
+        if self.appState.colorMode == "16":
+            self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
+            self.statusBar.drawCharPickerButton.update_real_xy(y = frameBar_offset-5)
+            if realmaxX < 87:   # too small to show the draw character.
+                self.statusBar.drawCharPickerButton.hide()
+            else:
+                self.statusBar.drawCharPickerButton.show()
 
         # Draw elements that aren't in the GUI framework
         self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
@@ -1905,6 +1917,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.commandMode = False
         mouseX, mouseY = 0, 0
         self.pressingButton = False
+        self.drawStatusBar()    # to make sure the inital state looks correct
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
