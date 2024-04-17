@@ -543,6 +543,7 @@ class ColorPickerHandler:
         color = self.colorPicker.caller.colorfg
         if self.appState.colorPickerSelected:
             prompting = True
+            #self.window.nodelay(0) # wait for input when calling getch
         else:
             prompting = False
         if self.appState.colorPickerSelected:
@@ -616,6 +617,7 @@ class ColorPickerHandler:
                 self.appState.colorPickerSelected = False
                 c = None
                 self.updateFgPicker()
+                self.hideBorder()
                 #self.colorPicker.caller.notify(f"{c=}, {prompting=}")
                 if not self.colorPicker.caller.playing:    # caller.caller is the main UI thing
                     self.window.nodelay(0)  # wait
@@ -647,6 +649,7 @@ class ColorPickerHandler:
                     self.updateFgPicker()
                     self.colorPicker.caller.drawStatusBar()
                 elif mouseY >= self.origin and mouseX > self.x and mouseX < self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+                    self.hideBorder()
                     #self.colorPicker.caller.notify(f"DEBUG: self.origin={self.origin}, self.x = {self.x}. mouseX={mouseX}, mouseY={mouseY}", pause=True)
                     self.gotClick(mouseX, mouseY)
                     prompting = False
@@ -670,6 +673,7 @@ class ColorPickerHandler:
             elif c == 27:  # normal esc, Cancel
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
+                    self.hideBorder()
                     self.colorPicker.caller.setFgColor(oldColor)
                     self.updateFgPicker()
                     if not self.appState.sideBarShowing:
@@ -690,6 +694,8 @@ class ColorPickerHandler:
         #self.hide()
         curses_cursorOn()
         self.window.nodelay(0)
+        if self.colorPicker.caller.playing:
+            self.window.nodelay(1)
         #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
         #print('\033[?1003h') # enable mouse tracking
         return color

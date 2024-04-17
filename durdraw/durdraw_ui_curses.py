@@ -2638,6 +2638,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def openMenu(self, current_menu: str):
         menu_open = True
+        self.stdscr.nodelay(0) # wait for input when calling getch
 
         cmode = self.appState.cursorMode
         if cmode == "Draw":
@@ -2693,6 +2694,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if cmode == "Draw":
             self.enableMouseReporting()
         #self.hardRefresh()
+        if self.playing:
+            elf.stdscr.nodelay(1)
 
     def openFromMenu(self):
         load_filename = self.openFilePicker()
