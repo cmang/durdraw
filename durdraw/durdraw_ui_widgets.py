@@ -493,6 +493,7 @@ class StatusBar():
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
+        toolMenu.add_item("Draw/Fill Char", caller.openDrawCharPicker, "h")
         self.toolMenu = toolMenu
 
         # Make cursor tool selector button
@@ -543,6 +544,7 @@ class StatusBar():
         drawCharPickerButton.show() 
         #drawCharPickerButton.hide() 
         self.drawCharPickerButton = drawCharPickerButton
+        self.drawCharPicker = drawCharPicker
 
         # This is to make the char picker button hide/show when
         # toolButton's label is set to "Draw"

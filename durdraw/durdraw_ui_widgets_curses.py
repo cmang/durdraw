@@ -328,6 +328,7 @@ class DrawCharPickerHandler:
         #pdb.set_trace()
         self.window.addstr(maxLines - 3, 0, "Enter a character to use for drawing: ")
         prompting = True
+        curses.flushinp()
         while prompting:
             c = self.window.getch()
             time.sleep(0.01)
@@ -361,11 +362,17 @@ class DrawCharPickerHandler:
             elif c in [curses.KEY_F10]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f10'])
                 prompting = False
-            elif c == 27:   # esc, cancel
+            elif c in [27, 13, curses.KEY_ENTER]:   # 27 = esc, 13 = enter, cancel
                 prompting = False
             else:
-                self.caller.appState.drawChar = chr(c)
-                prompting = False
+                try:
+                    if chr(c).isprintable():
+                        newChar = chr(c)
+                        self.caller.appState.drawChar = newChar
+                        prompting = False
+                except:
+                    pass
+                pass
         #self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
         self.caller.caller.drawCharPickerButton.set_label(self.caller.appState.drawChar)
         self.window.addstr(maxLines - 3, 0, "                                          ")

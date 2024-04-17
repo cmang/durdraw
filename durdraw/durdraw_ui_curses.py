@@ -1048,7 +1048,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.drawStatusBar()
         self.stdscr.nodelay(1) # do not wait for input when calling getch
         last_time = time.time()
-        self.statusBar.drawCharPickerButton.hide()
+        #self.statusBar.drawCharPickerButton.hide()
         if self.appState.playOnlyMode:
             self.statusBar.colorPicker.hide()
             self.appState.sideBarShowing = False
@@ -1696,6 +1696,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.statusBar.drawCharPickerButton.hide()
             else:
                 self.statusBar.drawCharPickerButton.show()
+        if self.appState.colorMode == "256":
+            self.statusBar.drawCharPickerButton.show()
 
         # Draw elements that aren't in the GUI framework
         self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
@@ -2615,6 +2617,16 @@ class UserInterface():  # Separate view (curses) from this controller
         response = self.statusBar.settingsMenu.showHide()
         self.statusBar.mainMenu.handler.panel.hide()
 
+    def openDrawCharPicker(self):
+        self.stdscr.nodelay(0)
+        #if self.appState.debug: self.notify(f"Loading character picker.")
+        self.statusBar.drawCharPicker.pickChar()
+        #if self.appState.debug: self.notify(f"Closing character picker.")
+        #self.statusBar.toolMenu.handler.panel.hide()
+        #self.statusBar.mainMenu.showHide()
+        if self.playing:
+            self.stdscr.nodelay(1)
+
     def openMainMenu(self):
         self.openMenu("File")
 
@@ -3216,7 +3228,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.stdscr.clear()
                     prompting = False
                     if self.playing:
-                        elf.stdscr.nodelay(1)
+                        self.stdscr.nodelay(1)
                     return False
             elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
                 if search_string != "":
