@@ -553,6 +553,10 @@ class ColorPickerHandler:
 
         #self.colorPicker.caller.notify(f"showColorPicker() hit. {prompting=}")
         
+        mov = self.colorPicker.caller.mov
+        appState = self.colorPicker.caller.appState
+        # ^ Used to determine if we clicked in the canvas:
+
         while(prompting):
             time.sleep(0.01)
             #self.colorPicker.caller.drawStatusBar()
@@ -662,7 +666,11 @@ class ColorPickerHandler:
                     #        color = self.colorGrid[clickedLine][clickedCol]
                     #        self.colorPicker.caller.setFgColor(color)
                     #        self.updateFgPicker()
-
+                elif mouseY < mov.sizeY and mouseX < mov.sizeX \
+                        and mouseY + appState.topLine < appState.topLine + self.colorPicker.caller.statusBarLineNum:
+                    # we did click in the canvas.
+                    self.hideBorder()
+                    prompting = False
 
 
                 if not prompting:
