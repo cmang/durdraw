@@ -1868,6 +1868,12 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[1] = 1
         self.move(self.xy[0], self.xy[1] - 1)
 
+        # Draw fill character button with proper (preview) colors
+        if not self.statusBar.drawCharPickerButton.hidden:
+            drawChar_line = self.statusBar.drawCharPickerButton.realX
+            drawChar_col = self.statusBar.drawCharPickerButton.realY + 1
+            self.addstr(drawChar_line, drawChar_col, self.appState.drawChar, curses.color_pair(self.colorpair))
+
     def window_big_enough_for_colors(self):
         # Returns true if window is either tall enough or wide enough
         # to fit a palette to the right of or below the canvas
