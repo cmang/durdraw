@@ -2101,6 +2101,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if c == 27:
                 self.metaKey = 1
                 self.commandMode = True
+                self.pressingButton = False
                 c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open
