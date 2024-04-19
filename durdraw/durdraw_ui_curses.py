@@ -199,7 +199,7 @@ class UserInterface():  # Separate view (curses) from this controller
             curses.init_pair(4, 1, -1)  # red
             curses.init_pair(5, 5, -1)  # magenta
             curses.init_pair(6, 3, -1)  # yellow
-            curses.init_pair(7, 15, -1) # white
+            curses.init_pair(7, 7, -1) # white
             curses.init_pair(8, 8, -1)  # dark grey/bright black
             curses.init_pair(9, 12, -1) # bright blue
             curses.init_pair(10, 10, -1) # bright green
@@ -4373,6 +4373,8 @@ Can use ESC or META instead of ALT
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
+                    self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 else:
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
