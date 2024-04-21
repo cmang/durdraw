@@ -2673,7 +2673,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0) # wait for input when calling getch
 
         cmode = self.appState.cursorMode
-        if cmode == "Draw":
+        if cmode == "Draw" or cmode == "Paint":
             self.disableMouseReporting()
 
         if not self.statusBar.toolButton.hidden:
@@ -2702,7 +2702,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.statusBar.animButton.draw()    # redraw as unselected/not-inverse
             if response == "Close":
                 menu_open = False
-                if cmode == "Draw":
+                if cmode == "Draw" or cmode == "Paint":
                     self.enableMouseReporting()
                 self.hardRefresh()
             elif response == "Right":
@@ -2723,7 +2723,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #fail_count += 1 # debug
             #if fail_count > 3:
             #    pdb.set_trace()
-        if cmode == "Draw":
+        if cmode == "Draw" or cmode == "Paint":
             self.enableMouseReporting()
         #self.hardRefresh()
         if self.playing:
@@ -4818,7 +4818,7 @@ Can use ESC or META instead of ALT
                 if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
                     if not frange:
                         if transparent:
-                            if character == ' ' and charBg == 0:
+                            if chr(character) == ' ' and charBg == 0:
                                 pass
                             else:
                                 self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
@@ -4826,7 +4826,7 @@ Can use ESC or META instead of ALT
                             self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
                     else:
                         if transparent:
-                            if character == ' ' and charBg == 0:
+                            if chr(character) == ' ' and charBg == 0:
                                 pass
                             else:
                                 self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
