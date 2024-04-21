@@ -2209,7 +2209,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             print('\033[?1003h') # enable mouse tracking with the XTERM API
                         if not self.pushingToClip:
                             cmode = self.appState.cursorMode
-                            if cmode == "Draw" or cmode == "Color" or cmode == "Erase":
+                            if cmode == "Draw" or cmode == "Paint" or cmode == "Color" or cmode == "Erase":
                                 self.undo.push()
                                 self.pushingToClip = True
                     elif mouseState & curses.BUTTON1_RELEASED:
@@ -2254,6 +2254,31 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:
                             if self.appState.debug:
                                 self.addstr(self.statusBarLineNum-2, 20, "Draw untriggered.", curses.color_pair(5) | curses.A_BOLD)
+
+                    elif self.appState.cursorMode == "Paint":   # Draw Brush under cursor
+                        if self.pressingButton:
+                            if self.appState.debug:
+                                self.addstr(self.statusBarLineNum-2, 20, "Paint triggered.", curses.color_pair(6) | curses.A_BOLD)
+                            # Paint brush onto canvas
+                            #drawChar = self.appState.drawChar
+                            painting = True
+                            if not self.appState.brush: # if no brush is set...
+                                painting = False    # don't paint.
+                            if painting:
+                                if self.appState.debug:
+                                    self.addstr(self.statusBarLineNum-2, 20, "Paint painting.", curses.color_pair(6) | curses.A_BOLD)
+                                try:
+                                    x_param = mouseX + 1
+                                    y_param = mouseY + self.appState.topLine
+                                    #self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=False, pushUndo=False)
+                                    self.pasteFromClipboard(startPoint = [y_param, x_param], clipBuffer=self.appState.brush, transparent=True, pushUndo=False)
+                                except IndexError:
+                                    self.notify(f"Error, debug info: x={x_param}, y={y_param}, topLine={self.appState.topLine}, mouseX={mouseX}, mouseY={mouseY}", pause=True)
+                                self.refresh()
+                        else:
+                            if self.appState.debug:
+                                self.addstr(self.statusBarLineNum-2, 20, "Paint untriggered.", curses.color_pair(5) | curses.A_BOLD)
+
 
                     elif self.appState.cursorMode == "Color":   # Change the color under the cursor
                         # also set cursor position
@@ -4577,11 +4602,14 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, Flip [X/Y], copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, Flip [X/Y], New [B]rush, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
                         self.copySegmentToClipboard([firstLineNum, firstColNum], height, width)
+                        prompting = False
+                    if chr(prompt_ch) in ['b', 'B']:    # Make Brush
+                        self.copySegmentToBrush([firstLineNum, firstColNum], height, width)
                         prompting = False
                     #if chr(prompt_ch) in ['m', 'M']:    # move
                     #    prompting = False
@@ -4764,12 +4792,13 @@ Can use ESC or META instead of ALT
                 askingAboutRange = False
         prompting = False
 
-    def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None):
+    def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):
         if not clipBuffer:
             clipBuffer = self.clipBoard
         if not clipBuffer:  # clipboard is empty, and no buffer provided
             return False
-        self.undo.push()
+        if pushUndo:
+            self.undo.push()
         if not startPoint:
             startPoint = self.xy
         lineNum = 0
@@ -4788,14 +4817,31 @@ Can use ESC or META instead of ALT
                 charBg = cursesColorPair[1]
                 if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
                     if not frange:
-                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                        if transparent:
+                            if character == ' ' and charBg == 0:
+                                pass
+                            else:
+                                self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+                        else:
+                            self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
                     else:
-                        self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+                        if transparent:
+                            if character == ' ' and charBg == 0:
+                                pass
+                            else:
+                                self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+                        else:
+                            self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
 
     def copySegmentToClipboard(self, startPoint, height, width):
         """ startPoint is [line, column] """
         clipBoard = self.copySegmentToBuffer(startPoint, height, width)
         self.clipBoard = clipBoard
+
+    def copySegmentToBrush(self, startPoint, height, width):
+        """ startPoint is [line, column] """
+        newBrush = self.copySegmentToBuffer(startPoint, height, width)
+        self.appState.brush = newBrush
 
     def copySegmentToAllFrames(self, startPoint, height, width, frange=None):
         self.undo.push()

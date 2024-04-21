@@ -489,7 +489,8 @@ class StatusBar():
         #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
         toolMenu.add_item("Move", self.setCursorModeMove, "m")
         #toolMenu.add_item("Select", self.setCursorModeSelect, "s")
-        toolMenu.add_item("Draw", self.setCursorModePnt, "d")
+        toolMenu.add_item("Draw", self.setCursorModeDraw, "d")
+        toolMenu.add_item("Paint", self.setCursorModePaint, "p")
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
@@ -642,11 +643,16 @@ class StatusBar():
         self.toolButton.set_label(self.caller.appState.cursorMode)
         #self.drawCharPickerButton.hide()
 
-    def setCursorModePnt(self):
-        self.caller.appState.setCursorModePnt()
+    def setCursorModeDraw(self):
+        self.caller.appState.setCursorModeDraw()
         self.caller.enableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
         #self.drawCharPickerButton.show()
+
+    def setCursorModePaint(self):
+        self.caller.appState.setCursorModePaint()
+        self.caller.enableMouseReporting()
+        self.toolButton.set_label(self.caller.appState.cursorMode)
 
     def setCursorModeCol(self):
         self.caller.appState.setCursorModeCol()

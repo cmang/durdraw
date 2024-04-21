@@ -48,6 +48,7 @@ class AppState():
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.drawChar = '$'
+        self.brush = None
         self.configFile = None
         self.configFileLoaded = False
         self.configFileName = None
@@ -125,8 +126,11 @@ class AppState():
     def setCursorModeSelect(self):
         self.cursorMode="Select"
 
-    def setCursorModePnt(self):
+    def setCursorModeDraw(self):
         self.cursorMode="Draw"
+
+    def setCursorModePaint(self):
+        self.cursorMode="Paint"
 
     def setCursorModeCol(self):
         self.cursorMode="Color"
@@ -173,6 +177,14 @@ class AppState():
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
             
+
+    def loadThemeList(self):
+        """ Look for theme files in internal durdraw directory """
+        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
+        # Get a list of files from the themes paths
+        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
+        pass
 
     def loadThemeFile(self, themeFilePath, themeMode):
         # If there is a theme set, use it
