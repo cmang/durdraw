@@ -2215,10 +2215,13 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif mouseState & curses.BUTTON1_RELEASED:
                         if self.pressingButton:
                             self.pressingButton = False
-                            if self.appState.cursorMode != "Draw":
+                            cursorMode = self.appState.cursorMode
+                            if cursorMode != "Draw" or cursorMode != "Paint":
                                 print('\033[?1003l') # disable mouse reporting
                                 curses.mousemask(1)
                                 curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                            if cursorMode == "Draw" or cursorMode == "Paint":
+                                self.enableMouseReporting()
                             if self.pushingToClip:
                                 self.pushingToClip = False
                             self.stdscr.redrawwin()
@@ -2336,13 +2339,13 @@ class UserInterface():  # Separate view (curses) from this controller
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     cmode = self.appState.cursorMode
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
-                        if cmode == "Draw" or cmode == "Color" or cmode == "Erase":
+                        if cmode == "Draw" or cmode == "Color" or cmode == "Erase" or cmode == "Paint":
                             self.undo.push()
                     else:   # Not in the canvas, so give the GUI a click
-                        if cmode == "Draw":
+                        if cmode == "Draw" or cmode == "Paint":
                             self.disableMouseReporting()
                         self.gui.got_click("Click", mouseX, mouseY)
-                        if cmode == "Draw":
+                        if cmode == "Draw" or cmode == "Paint":
                             self.enableMouseReporting()
                     # If we clicked in the sidebar area, aka to the right of the canvas
                     # and above the status bar:
@@ -4388,8 +4391,29 @@ Can use ESC or META instead of ALT
             for colnum in range(mov.sizeX):
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])
+                if self.appState.cursorMode == "Paint" and not self.playing:
+                    if self.appState.brush != None:
+                        # draw brush preview
+                        # If we're drawing within the brush area:
+                        if linenum in range(self.appState.mouse_line, self.appState.mouse_line + self.appState.brush.sizeX):
+                            if colnum in range(self.appState.mouse_col, self.appState.mouse_col + self.appState.brush.sizeY):
+                                brush_line = linenum - self.appState.mouse_line
+                                brush_col = colnum - self.appState.mouse_col
+                                try:
+                                    brushChar = self.appState.brush.content[brush_col][brush_line]
+                                except IndexError:
+                                    # This should really never happen now.
+                                    self.notify(f"Index error: bcol: {brush_col}, bline: {brush_line}, col: {colnum}, line: {linenum}, mcol: {self.appState.mouse_col}, {self.appState.mouse_line}", pause=False)
+                                    brushChar = ' '
+                                # invisible background for brushes
+                                if brushChar == ' ':
+                                    pass
+                                else:
+                                    # It's a character that we should draw as a brush preview
+                                    charContent = brushChar
+                                    charColor = self.appState.brush.newColorMap[brush_col][brush_line]
                 if linenum == self.appState.mouse_line and colnum == self.appState.mouse_col:
-                    if self.appState.cursorMode == "Draw" and not self.playing:  # Draw paintbrush instead
+                    if self.appState.cursorMode == "Draw" and not self.playing:  # Drawing preview instead
                         charContent = self.appState.drawChar
                         charColor = [self.colorfg, self.colorbg]
                 try:
