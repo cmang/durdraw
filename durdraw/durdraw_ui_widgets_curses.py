@@ -379,30 +379,24 @@ class DrawCharPickerHandler:
         self.caller.caller.caller.refresh()
 
 class ColorPickerHandler:
-    def __init__(self, colorPicker, window):
+    def __init__(self, colorPicker, window, width=38, height=8):
         self.colorPicker = colorPicker
+        self.colorMode = colorPicker.colorMode  # "256" or "16"
+        self.totalColors = colorPicker.totalColors
         self.parentWindow = window
         self.x = colorPicker.x
         self.y = colorPicker.y
         self.parentWindow = colorPicker.caller.stdscr
         self.appState = colorPicker.caller.appState
+        self.ansi = colorPicker.caller.ansi
         # figure out picker size
         #total = curses.COLORS
         #total = curses.COLORS
         realmaxY,realmaxX = self.parentWindow.getmaxyx()
         self.realmaxY = realmaxY
         self.realmaxX = realmaxX
-        #self.height = int(total / realmaxX) + 2 # enough lines to fill content+
-        #self.height = 4
-        self.height = 8
-        #height = int(total / realmaxY) # enough lines to fill content+
-        #self.width = realmaxX - 10 
-        #self.width = 78
-        #self.width = 38 
-        self.width = 38 
-        #gridLine = [[]] * self.width
-        #self.colorGrid = [gridLine] * self.height
-        #self.colorGrid = [[0] * self.width] * self.height
+        self.height = height
+        self.width = width
         self.colorGrid = [[0 for i in range(self.width)] for j in range(self.height)]
         self.window = curses.newwin(self.height, self.width, self.x, self.y)
         self.window.keypad(True)
@@ -477,18 +471,28 @@ class ColorPickerHandler:
     def updateFgPicker(self):
         line = 0
         col = 1
+        if self.colorMode == "16":
+            col = 0
         #maxWidth = self.realmaxX
         #maxHeight = self.realmaxY
         #for fg in range(0,curses.COLORS):  # 0-255
         width_counter = 0   # for color block width
-        for fg in range(1,self.appState.totalFgColors+1):  # 0-255
-            color_pair = curses.color_pair(fg)
+        #for fg in range(1,self.appState.totalFgColors+1):  # 0-255
+        firstColor = 1
+        for fg in range(firstColor,self.totalColors+1):  # 0-255
+            #color_pair = curses.color_pair(fg)
+            if self.colorMode == "256":
+                color_pair = curses.color_pair(fg)
+            elif self.colorMode == "16":
+                color_pair_number = self.ansi.colorPairMap[(fg, 0)]
+                color_pair = curses.color_pair(color_pair_number)
             if col >= self.width - 2:
                 col = 0
                 line += 1
-            if fg == 16:    # first color for fancy displayed block color palette thing
-                line += 1
-                col = 0
+            if self.colorMode == "256":
+                if fg == 16:    # first color for fancy displayed block color palette thing
+                    line += 1
+                    col = 0
             if fg > 16:
                 width_counter += 1
             if width_counter == 36:
@@ -504,18 +508,42 @@ class ColorPickerHandler:
             # if fg == app's current fg, draw it as a * instead of self.fillChar
             if fg == self.colorPicker.caller.colorfg:
                 if fg == 1: # black
-                    plain_color_pair = curses.color_pair(9)
+                    if self.colorMode == "256":
+                        plain_color_pair = curses.color_pair(9)
+                    elif self.colorMode == "16":
+                        plain_color_pair = curses.color_pair(8)
                     if self.appState.colorPickerSelected:
                         curses_addstr(self.window, line, col, 'X', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
                     else:
                         curses_addstr(self.window, line, col, 'X', plain_color_pair)
                 else:
                     if self.appState.colorPickerSelected:
-                        curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                        if self.colorMode == "256":
+                            curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                        if self.colorMode == "16":
+                            if fg > 8:
+                                curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE | curses.A_BLINK | curses.A_BOLD)
+                            else:
+                                curses_addstr(self.window, line, col, 'X', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
                     else:
-                        curses_addstr(self.window, line, col, 'X', color_pair)
+                        if self.colorMode == "256":
+                            curses_addstr(self.window, line, col, 'X', color_pair | curses.A_BOLD)
+                        if self.colorMode == "16":
+                            if fg > 8:
+                                curses_addstr(self.window, line, col, 'X', color_pair | curses.A_BOLD)
+                            else:
+                                curses_addstr(self.window, line, col, 'X', color_pair)
             else:
-                curses_addstr(self.window, line, col, self.fillChar, color_pair)
+                if self.colorMode == "256":
+                    curses_addstr(self.window, line, col, self.fillChar, color_pair)
+                elif self.colorMode == "16":
+                    # draw bright colors in 16 color mode
+                    if fg > 8:
+                        curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
+                        #debug_string = str(color_pair)
+                        #self.colorPicker.caller.notify(debug_string)
+                    else:
+                        curses_addstr(self.window, line, col, self.fillChar, color_pair)
             col += 1
         curses_addstr(self.window, line, col + 5, "     ", color_pair)
         curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
@@ -564,7 +592,7 @@ class ColorPickerHandler:
             c = self.window.getch()
             if c in [98, curses.KEY_LEFT]:
                 if color == 0:
-                    color = curses.COLORS - 1
+                    color = self.totalColors
                 else:
                     color -= 1
                 #self.colorPicker.caller.colorfg = color
@@ -573,17 +601,21 @@ class ColorPickerHandler:
                 self.colorPicker.caller.drawStatusBar()
             elif c in [102, curses.KEY_RIGHT]:
                 color += 1
-                if color >= curses.COLORS:
+                #if color >= curses.COLORS:
+                if color > self.totalColors:
                     color = 0
                 #self.colorPicker.caller.colorfg = color
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_UP:
-                if color < 32:
-                    color -= 16
-                elif color > 31 and color < 52:
-                    color = 15
+                if self.colorMode == "256":
+                    if color < 32:
+                        color -= 16
+                    elif color > 31 and color < 52:
+                        color = 15
+                    else:
+                        color -= self.width - 2
                 else:
                     color -= self.width - 2
                 if color <= 0:
@@ -592,12 +624,15 @@ class ColorPickerHandler:
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_DOWN:
-                if color < 16:
-                    color += 16
+                if self.colorMode == "256":
+                    if color < 16:
+                        color += 16
+                    else:
+                        color += self.width - 2
                 else:
                     color += self.width - 2
-                if color >= curses.COLORS:
-                    color = curses.COLORS - 1
+                if color >= self.totalColors:
+                    color = self.totalColors
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
@@ -607,7 +642,8 @@ class ColorPickerHandler:
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
-                color = 255
+                #color = 255
+                color = self.totalColors
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()

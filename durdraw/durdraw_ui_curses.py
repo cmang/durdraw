@@ -111,6 +111,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         self.testWindowSize()
         self.statusBar = StatusBar(self, x=self.statusBarLineNum, y=0, appState=self.appState)
+        if self.appState.colorMode == "16":
+            self.statusBar.colorPickerButton.hide()
+            self.statusBar.colorPicker = self.statusBar.colorPicker_16
         if self.appState.playOnlyMode:
             self.statusBar.hide()
         else:
@@ -432,7 +435,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
         if newMode == "16":
-            self.statusBar.colorPicker.hide()
+            #self.statusBar.colorPicker.hide()
             self.appState.colorMode = "16"
             self.ansi.initColorPairs_cga()
             self.init_16_colors_misc()
@@ -444,6 +447,10 @@ class UserInterface():  # Separate view (curses) from this controller
             #    self.statusBar.enableColorPicker()
             if self.appState.blackbg:
                 self.enableTransBackground()
+            # switch to 16 color sidebar picker
+            self.statusBar.colorPicker.hide()
+            self.statusBar.colorPicker = self.statusBar.colorPicker_16
+            #self.statusBar.colorPicker.show()
         if newMode == "256":
             self.appState.colorMode = "256"
             self.ansi.initColorPairs_256color()
@@ -457,19 +464,23 @@ class UserInterface():  # Separate view (curses) from this controller
             #if not self.statusBar.colorPickerEnabled:
             #    self.statusBar.disableColorPicker()
 
+            # switch to 256 color sidebar picker
+            self.statusBar.colorPicker.hide()
+            self.statusBar.colorPicker = self.statusBar.colorPicker_256
+            #self.statusBar.colorPicker.show()
             # Show color picker if needed
-            realmaxY,realmaxX = self.realstdscr.getmaxyx()
-            if self.appState.sideBarEnabled and not self.playing:
-                # Sidebar not showing, but enabled. Check and see if the window is wide enough
-                if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
-                    self.appState.sideBarShowing = True
-                    #self.notify("Wide. Showing color picker.")
-                    if self.appState.colorMode == "256":
-                        self.statusBar.colorPicker.show()
-                # Window is too narrow, but tall enough to show more stuff on the bottom.
-            elif realmaxY - 10 > self.mov.sizeY:
-                if self.appState.colorMode == "256":
-                    self.statusBar.colorPicker.show()
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        if self.appState.sideBarEnabled and not self.playing:
+            # Sidebar not showing, but enabled. Check and see if the window is wide enough
+            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+                self.appState.sideBarShowing = True
+                #self.notify("Wide. Showing color picker.")
+                #if self.appState.colorMode == "256":
+                self.statusBar.colorPicker.show()
+            # Window is too narrow, but tall enough to show more stuff on the bottom.
+        elif realmaxY - 10 > self.mov.sizeY:
+            #if self.appState.colorMode == "256":
+            self.statusBar.colorPicker.show()
 
     def nextFgColor(self):
         """ switch to next fg color, cycle back to beginning at max """
@@ -484,8 +495,8 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 newColor = 1
         self.setFgColor(newColor)
-        if self.appState.colorMode == "256":
-            self.statusBar.colorPicker.handler.updateFgPicker()
+        #if self.appState.colorMode == "256":
+        self.statusBar.colorPicker.handler.updateFgPicker()
 
     def prevFgColor(self):
         """ switch to prev fg color, cycle around to end if at beginning """
@@ -499,8 +510,9 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 newColor = 16   # default to 16 color
         self.setFgColor(newColor)
-        if self.appState.colorMode == "256":
-            self.statusBar.colorPicker.handler.updateFgPicker()
+        #if self.appState.colorMode == "256":
+        #    self.statusBar.colorPicker.handler.updateFgPicker()
+        self.statusBar.colorPicker.handler.updateFgPicker()
 
     def nextBgColor(self):
         """ switch to the next bg color, cycle around if at beginning """
@@ -1230,8 +1242,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.openMenu("File")
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
-                    if self.appState.colorMode == "256":
-                        self.statusBar.colorPickerButton.on_click()
+                    #if self.appState.colorMode == "256":
+                    #    self.statusBar.colorPickerButton.on_click()
+                    self.statusBar.colorPickerButton.on_click()
                 elif c == 122:  # alt-z = undo
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
@@ -1462,8 +1475,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c in [263, 127]:              # backspace
                         self.backspace()
                     elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
-                        if self.appState.colorMode == "256":
-                            self.statusBar.colorPickerButton.on_click()
+                        #if self.appState.colorMode == "256":
+                        #    self.statusBar.colorPickerButton.on_click()
+                        self.statusBar.colorPickerButton.on_click()
                     elif c in [330]:              # delete
                         self.deleteKeyPop(frange=self.appState.playbackRange)
                     elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
@@ -1734,10 +1748,12 @@ class UserInterface():  # Separate view (curses) from this controller
             if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
                 self.appState.sideBarShowing = True
                 #self.notify("Wide. Showing color picker.")
-                if self.appState.colorMode == "256":
-                    self.statusBar.colorPicker.show()
+                #if self.appState.colorMode == "256":
+                #    self.statusBar.colorPicker.show()
+                self.statusBar.colorPicker.show()
 
-        if not self.playing and self.appState.colorMode == "256":
+        #if not self.playing and self.appState.colorMode == "256":
+        if not self.playing:
             if self.window_big_enough_for_colors():
                 self.appState.sideBarShowing = True
                 self.statusBar.colorPicker.show()
@@ -1751,8 +1767,10 @@ class UserInterface():  # Separate view (curses) from this controller
         #if self.appState.sideBarShowing:
         # We are clear to draw the Sidebar
         # Anchor the color picker to the bottom right
-        new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
-        self.statusBar.colorPicker.handler.move(self.appState.sideBarColumn, new_colorPicker_y)
+        #new_colorPicker_y = realmaxY - self.appState.colorBar_height - 2
+        new_colorPicker_y = realmaxY - self.statusBar.colorPicker.handler.height - 2
+        new_colorPicker_x = realmaxX - self.statusBar.colorPicker.handler.width
+        self.statusBar.colorPicker.handler.move(new_colorPicker_x, new_colorPicker_y)
         #else:
         #    # Move the color picker to just above the status bar
         #    self.statusBar.colorPicker.handler.move(0, realmaxY - 10)
@@ -1953,8 +1971,8 @@ class UserInterface():  # Separate view (curses) from this controller
         next_tip = self.statusBar.other_tooltips.get_tip("k")
         next_tip.set_location(row = statusBarLineNum, column = trans_next_offset)
 
-        if self.appState.colorMode == "16":
-            colorPicker_tip.hide()
+        #if self.appState.colorMode == "16":
+        #    colorPicker_tip.hide()
 
         self.statusBar.draw()
         # if cursor is outside of canvas, fix it
@@ -2118,11 +2136,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.statusBar.toolButton.on_click() 
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
-                    if self.appState.colorMode == "256":
-                        if self.appState.sideBarShowing:
-                            self.statusBar.colorPicker.switchTo()
-                        else:
-                            self.statusBar.colorPickerButton.on_click()
+                    #if self.appState.colorMode == "256":
+                    if self.appState.sideBarShowing:
+                        self.statusBar.colorPicker.switchTo()
+                    else:
+                        self.statusBar.colorPickerButton.on_click()
                 # Animation Keystrokes
                 elif c == 68:     #alt-D - set delay for current frame
                     self.getDelayValue()
@@ -2226,9 +2244,10 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [330]:              # delete
                 self.deleteKeyPop()
             elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
-                if self.appState.colorMode == "256":
+                #if self.appState.colorMode == "256":
                     #self.statusBar.colorPickerButton.on_click()
-                    self.selectColorPicker()
+                    #self.selectColorPicker()
+                self.selectColorPicker()
             elif c in [339, curses.KEY_PPAGE]:  # page up
                 self.move_cursor_pgup()
             elif c in [338, curses.KEY_NPAGE]:  # page down
@@ -2428,9 +2447,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.sideBarEnabled:
                         # If we're in the right toolbar sort of area
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            if self.appState.colorMode == "256":
+                            #if self.appState.colorMode == "256":
                                 # Tell the color picker to respond if the click is in its area:
-                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            #    self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                 #elif mouseState & curses.BUTTON1_RELEASED:
                 #    pass
                     #print('\033[?1003l')
@@ -2454,9 +2474,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     # and above the status bar:
                     if self.appState.sideBarEnabled:
                         if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            if self.appState.colorMode == "256":
+                            #if self.appState.colorMode == "256":
                                 # Tell the color picker to respond if the click is in its area:
-                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                     # If we clicked in the status bar:
                     if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
                         # Add stuff here to take mouse 'commands' like clicking
@@ -2536,11 +2556,11 @@ class UserInterface():  # Separate view (curses) from this controller
             self.refresh()
 
     def selectColorPicker(self):
-        if self.appState.colorMode == "256":
-            self.appState.colorPickerSelected = True
-            #self.statusBar.colorPicker.handler.showColorPicker()
-            self.statusBar.colorPicker.showFgPicker()
-            self.appState.colorPickerSelected = False
+        #if self.appState.colorMode == "256":
+        self.appState.colorPickerSelected = True
+        #self.statusBar.colorPicker.handler.showColorPicker()
+        self.statusBar.colorPicker.showFgPicker()
+        self.appState.colorPickerSelected = False
 
     def cloneToNewFrame(self):
         """ Take current frame, clone it to a new one, insert it immediately after current frame """
@@ -2850,8 +2870,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.colorPicker.hide()
         else:
             self.appState.sideBarEnabled = True
-            if self.appState.colorMode == "256":
-                self.statusBar.colorPicker.show()
+            #if self.appState.colorMode == "256":
+            self.statusBar.colorPicker.show()
         
 
     def showCharSetPicker(self):

@@ -109,8 +109,10 @@ class Button():
         self.selected = False
 
     def on_click(self):
-        result = self.do_nothing()
-        if self.hidden == False:
+        #result = self.do_nothing()
+        result = None
+        #if self.hidden == False:
+        if not self.hidden:
             self.selected = True
             self.handler.draw()
             result = self.handler.on_click()
@@ -220,14 +222,34 @@ class DrawCharPicker:
 class ColorPicker:
     """ Draw a color palette, let the user click a color.
     Makes the user's selected color available somewhere. """
-    def __init__(self, window, x=0, y=0, caller=None):
+    def __init__(self, window, x=0, y=0, caller=None, colorMode="256"):
         self.hidden = True
         self.window = window
         self.colorMap = {}
+        self.colorMode = colorMode
         self.x = x
         self.y = y
+        self.totalColors = 256
+        if colorMode == "256":
+            self.height = 8
+            self.width = 38
+            self.totalColors = 255
+        elif colorMode == "16":
+            #self.height = 1
+            #self.width = 16
+
+            # short and wide - good
+            self.height = 2
+            self.width = 10
+
+            # tall and thin - good, but color order
+            # is wrong
+            #self.height = 10
+            #self.width = 4
+
+            self.totalColors = 16
         self.caller = caller
-        self.handler = ColorPickerHandler(self, window)
+        self.handler = ColorPickerHandler(self, window, width=self.width, height=self.height)
 
     def showHide(self):
         #pdb.set_trace()
@@ -558,7 +580,8 @@ class StatusBar():
 
         #colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
         colorPicker = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller)
-        self.colorPicker = colorPicker
+        self.colorPicker_256 = colorPicker
+        self.colorPicker = self.colorPicker_256
 
         #self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
         self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.switchTo, self.window, appState=self.appState)
@@ -569,10 +592,15 @@ class StatusBar():
         self.colorPickerButton.realY = self.y + self.colorPickerButton.y
         self.items.append(self.colorPickerButton)
         self.buttons.append(self.colorPickerButton)
-        if self.caller.appState.colorMode == "256":
-            self.colorPickerButton.show()
-        else:
-            self.colorPickerButton.hide()
+        self.colorPickerButton.show()
+        #if self.caller.appState.colorMode == "256":
+        #    self.colorPickerButton.show()
+        #else:
+        #    self.colorPickerButton.hide()
+
+        colorPicker_16 = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller, colorMode="16")
+        self.colorPicker_16 = colorPicker_16
+
         #pdb.set_trace()
         #colorPicker.show()  # for testing
 
