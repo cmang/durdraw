@@ -189,6 +189,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def enableTransBackground(self):
         curses.use_default_colors()
+        self.reloadLowColorPairs()
+
+    def reloadLowColorPairs(self):
         if self.appState.colorMode == '16':
             self.ansi.initColorPairs_cga(trans=True)
         else:
@@ -208,7 +211,106 @@ class UserInterface():  # Separate view (curses) from this controller
             curses.init_pair(13, 13, -1) # bright magenta
             curses.init_pair(14, 11, -1) # bright yellow
             curses.init_pair(15, 15, -1) # bright white
-            
+
+    def resetColorsToDefault(self):
+        #curses.use_default_colors()
+        self.enableTransBackground()
+
+    def enableTrueCGAColors(self):
+        curses.use_default_colors()
+        # red
+        intense = 1000  # hex FF
+        low = 0
+        med = self.rgb_color_to_ncurses_color(85)   # hex 55
+        high = self.rgb_color_to_ncurses_color(170) # hex AA
+        # ncurses init_color takes:
+        # Color #, R, G, B, as 0-1000 instead of 0-255 values.
+        curses.init_color(1, high, low, low)    # red
+        curses.init_color(2, low, high, low)    # green
+        curses.init_color(3, high, med, low)    # yellow/brown #AA5500
+        curses.init_color(4, low, low, high)    # blue
+        curses.init_color(5, high, low, high)    # magenta
+        curses.init_color(6, low, high, high)    # cyan
+        curses.init_color(7, high, high, high)    # white
+        # bright VGA colors
+        curses.init_color(8, med, med, med)    # bright black
+        curses.init_color(9, intense, med, med)    # red
+        curses.init_color(10, med, intense, med)    # green
+        curses.init_color(11, intense, intense, low)    # yelmed/brown #AA5500
+        curses.init_color(12, med, med, intense)    # blue
+        curses.init_color(13, intense, med, intense)    # magenta
+        curses.init_color(14, med, intense, intense)    # cyan
+        curses.init_color(15, intense, intense, intense)    # white
+        self.reloadLowColorPairs()
+
+    def enableTrueSpeccyColors(self):
+        curses.use_default_colors()
+        # red
+        intense = 1000  # hex FF
+        low = 0
+        med = self.rgb_color_to_ncurses_color(85)   # hex 55
+        high = self.rgb_color_to_ncurses_color(216) # hex d8
+        # ncurses init_color takes:
+        # Color #, R, G, B, as 0-1000 instead of 0-255 values.
+        curses.init_color(1, high, low, low)    # red
+        curses.init_color(2, low, high, low)    # green
+        curses.init_color(3, high, high, low)    # yellow/brown #AA5500
+        curses.init_color(4, low, low, high)    # blue
+        curses.init_color(5, high, low, high)    # magenta
+        curses.init_color(6, low, high, high)    # cyan
+        curses.init_color(7, high, high, high)    # white
+        # bright VGA colors
+        curses.init_color(8, low, low, low)    # bright black
+        curses.init_color(9, intense, low, low)    # red
+        curses.init_color(10, low, intense, low)    # green
+        curses.init_color(11, intense, intense, low)    # yellow/brown #AA5500
+        curses.init_color(12, low, low, intense)    # blue
+        curses.init_color(13, intense, low, intense)    # magenta
+        curses.init_color(14, low, intense, intense)    # cyan
+        curses.init_color(15, intense, intense, intense)    # white
+        self.reloadLowColorPairs()
+
+    def enableTrueC64Colors(self):
+        # Colors from https://www.c64-wiki.com/wiki/Color
+        curses.use_default_colors()
+        # red
+        intense = 1000  # hex FF
+        low = 0
+        med = self.rgb_color_to_ncurses_color(85)   # hex 55
+        high = self.rgb_color_to_ncurses_color(216) # hex d8
+        fc = self.rgb_color_to_ncurses_color    # fix color
+        # ncurses init_color takes:
+        # Color #, R, G, B, as 0-1000 instead of 0-255 values.
+        curses.init_color(1, fc(136), low, low)    # red #880000
+        curses.init_color(2, low, fc(204), fc(85))    # green #00CC55
+        curses.init_color(3, fc(102), fc(68), 0)    # brown #664400
+        curses.init_color(4, low, low, fc(170))    # blue #0000AA
+        curses.init_color(5, fc(204), fc(68), fc(204))    # violet/purple #CC44CC
+        curses.init_color(6, fc(170), intense, fc(238))    # cyan #AAFFEE
+        curses.init_color(7, fc(119), fc(119), fc(119))    # grey 2
+        # bright VGA colors
+        curses.init_color(8, fc(51), fc(51), fc(51))    # dark grey/grey 1
+        curses.init_color(9, intense, fc(119), fc(119))    # light red #FF7777
+        curses.init_color(10, fc(170), intense, fc(102))    # light green # AAFF66
+        curses.init_color(11, fc(238), fc(238), fc(119))    # yellow #EEEE77
+        curses.init_color(12, low, fc(136), intense)    # light blue #0088FF
+        curses.init_color(13, fc(187), fc(187), fc(187))    # LIGHT GREY/grey 3! #BBBBBB
+        curses.init_color(14, fc(221), fc(136), fc(85))    # Orange #DD8855
+        curses.init_color(15, intense, intense, intense)    # white #FFFFFF
+        self.reloadLowColorPairs()
+
+    def map_rescale_value(self, value, from_min, from_max, to_min, to_max):
+        """ Converts number from one scale/range to another """
+        # Calculate the percentage of value between from_min and from_max
+        percentage = (value - from_min) / (from_max - from_min)
+        # Map the percentage to the range between to_min and to_max
+        mapped_value = percentage * (to_max - to_min) + to_min
+        return mapped_value
+
+    def rgb_color_to_ncurses_color(self, value):
+        """ Takes range 0-255, converts to 0-1000 range """
+        ncurses_color_value = int(self.map_rescale_value(value, 0, 255, 0, 1000))
+        return ncurses_color_value
 
     def setWindowTitle(self, title):
         title = f"Durdraw - {title}"
@@ -2224,7 +2326,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.enableMouseReporting()
                             if self.pushingToClip:
                                 self.pushingToClip = False
-                            self.stdscr.redrawwin()
+                            self.refresh()
+                            #self.stdscr.redrawwin()
 
 
                     if not self.appState.hasMouseScroll:

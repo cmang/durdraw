@@ -399,6 +399,10 @@ class StatusBar():
         settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
+        settingsMenu.add_item("VGA Colors", caller.enableTrueCGAColors, "v")
+        settingsMenu.add_item("ZX Spectrum Colors", caller.enableTrueSpeccyColors, "z")
+        settingsMenu.add_item("C64 Colors", caller.enableTrueC64Colors, "c")
+        settingsMenu.add_item("Deafult Colors", caller.resetColorsToDefault, "d")
         settingsMenu.is_submenu = True
         #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)
