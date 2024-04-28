@@ -93,6 +93,27 @@ color_256_to_ansi_16 = {   # used when saving a 256 color file, to convert first
 }
 
 
+mirc_16_to_color_16 = {
+    0: 0, # white
+    1: 1, # black
+    2: 2, # blue
+    3: 3,  # green
+    10: 4,  # cyan
+    5: 5,  # red (brown)
+    6: 6,   # magenta
+    7: 7,   # yellow (orange)
+    15: 8,   # white/grey
+    14: 9,   # br black/dark grey
+    12: 10, # br blue
+    9: 11, # br green
+    11: 12, # br cyan
+    4: 13,  # br red
+    13: 14,  # br magenta
+    8: 15,  # br yellow
+    #0: 16, # br white
+}
+    
+
 color_16_to_mirc_16 = {
     0: 0, # white
     1: 1, # black
@@ -330,9 +351,44 @@ class AnsiArtStuff():
                     #    pair[1] = 0
                     #if pair[1] in conv_table.keys():
                     #    pair[1] = conv_table[pair[1]]
+
         
+    def initColorPairs_general(self, fg_count=256, bg_count=16, use_order=False):   # High color pairs, 256 color
+        """ Initialize 256 color mode color pairs """
+        self.colorPairMap = {}
+        # color order to match thedraw, etc.
+        color_order = [0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15, 16]
+        pair = 0
+        try:
+            curses.use_default_colors()
+            bg = 0
+            if use_order:
+                fg_range = [0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15]
+            else:
+                fg_range = list(range(0, fg_count))
+            for bg in range(-1, bg_count):
+                for fg in fg_range:
+                    curses.init_pair(pair, fg, bg)
+                    self.colorPairMap.update({(fg,bg):pair})
+                    pair += 1
+            self.appState.totalFgColors = fg + 1
+            self.appState.totalBgColors = bg + 1
+            self.appState.totalFgColors = fg
+            self.appState.totalBgColors = bg
+            # set pair 0 fg 0 bg to default color:
+            self.colorPairMap.update({(0,0):0})
+            return True
+        except Exception as E:
+            #debug_filename = 'debugy.txt'
+            #debug_file = open(debug_filename, "w")
+            #debug_file.write(str(self.colorPairMap))
+            #debug_file.close()
+            return False
 
     def initColorPairs_256color(self):   # High color pairs, 256 color
+        return self.initColorPairs_general(fg_count=256, bg_count=1)
+
+    def initColorPairs_256color_dead_again(self):   # High color pairs, 256 color
         """ Initialize 256 color mode color pairs """
         self.colorPairMap = {}
         pair = 0
@@ -344,6 +400,95 @@ class AnsiArtStuff():
                     curses.init_pair(pair, fg, bg)
                     self.colorPairMap.update({(fg,bg):pair})
                     pair += 1
+            self.appState.totalFgColors = fg + 1
+            self.appState.totalBgColors = bg + 1
+            self.appState.totalFgColors = fg
+            self.appState.totalBgColors = bg
+            # set pair 0 fg 0 bg to default color:
+            self.colorPairMap.update({(0,0):0})
+            return True
+        except Exception as E:
+            #debug_filename = 'debugy.txt'
+            #debug_file = open(debug_filename, "w")
+            #debug_file.write(str(self.colorPairMap))
+            #debug_file.close()
+            return False
+
+    def initColorPairs_cga(self, trans=False):
+        if self.appState.iceColors:
+            self.initColorPairs_ice_colors(trans=trans)
+        else:
+            self.initColorPairs_cga_old2(trans=trans)
+        #return self.initColorPairs_general(fg_count=16, bg_count=16, use_order=True)
+
+
+    #def initColorPairs_ice_colors(self):   # 16 fg colors, 16 bg colors ice colors
+    def initColorPairs_ice_colors(self, trans=False):   # 16 fg colors, 16 bg colors
+        """ Initialize 16 fg * 16 bg, or 256 color mode color pairs """
+        self.colorPairMap = {}
+        # default user-friendly color order:
+        # black, blue, green, cyan, red, magenta, yellow, white, 16 = nothing?
+        if trans:
+            defaultBg = -1
+        else:
+            defaultBg = curses.COLOR_BLACK
+        defaultBg = 0
+        #defaultBg = curses.COLOR_BLACK
+        color_order = [-1, 0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15, 16]
+        bg_order = [0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15, 16]
+        try:
+            curses.use_default_colors()
+            bg = 0
+            map_fg = 0
+            map_bg = 0
+            #for bg in range(-1, 17):
+            #    for fg in range(-1, 17):
+            #curses.init_pair(1, curses.COLOR_BLACK, bg) # black - 0
+            #self.colorPairMap.update({(curses.COLOR_BLACK,-1):1})
+            #curses.init_pair(1, curses.COLOR_BLUE, bg) # blue- 1
+            #self.colorPairMap.update({(curses.COLOR_BLUE,bg):2})
+            #curses.init_pair(2, curses.COLOR_GREEN, bg) # green - 2
+            #self.colorPairMap.update({(curses.COLOR_GREEN,bg):3})
+            #curses.init_pair(3, curses.COLOR_CYAN, bg)  # cyan - 3
+            #self.colorPairMap.update({(curses.COLOR_CYAN,bg):4})
+            #curses.init_pair(4, curses.COLOR_RED, bg) # red - 4
+            #self.colorPairMap.update({(curses.COLOR_RED,bg):5})
+            #curses.init_pair(5, curses.COLOR_MAGENTA, bg) # magenta/purple - 5
+            #self.colorPairMap.update({(curses.COLOR_MAGENTA,bg):6})
+            #curses.init_pair(6, curses.COLOR_YELLOW, bg) # brown/yellow - 6
+            #self.colorPairMap.update({(curses.COLOR_YELLOW,bg):7})
+            #curses.init_pair(7, curses.COLOR_WHITE, bg) # white - 7 (and 0)
+            #self.colorPairMap.update({(curses.COLOR_WHITE,bg):8})
+            
+
+            # basic ncurses colors - comments for these are durdraw internal color numbers:
+            curses.init_pair(0, curses.COLOR_BLACK, defaultBg) # black - 0
+            curses.init_pair(1, curses.COLOR_BLUE, defaultBg) # blue- 1
+            curses.init_pair(2, curses.COLOR_GREEN, defaultBg) # green - 2
+            curses.init_pair(3, curses.COLOR_CYAN, defaultBg)  # cyan - 3
+            curses.init_pair(4, curses.COLOR_RED, defaultBg) # red - 4
+            curses.init_pair(5, curses.COLOR_MAGENTA, defaultBg) # magenta/purple - 5
+            curses.init_pair(6, curses.COLOR_YELLOW, defaultBg) # brown/yellow - 6
+            curses.init_pair(7, curses.COLOR_WHITE, defaultBg) # white - 7 (and 0)
+            curses.init_pair(8, 7, defaultBg) # white - 7 (and 0)
+            self.colorPairMap = {
+                # foreground colors, black background
+                (0,0):1, (1,0):1, (2,0):2, (3,0):3, (4,0):4, (5,0):5, (6,0):6, (7,0):7, (8,0):8,
+                }
+
+
+            # redo it fro scrarch:
+            pair = 0
+            #bg += 1
+            bg = 0
+            for fg in color_order:
+                for bg in bg_order:
+                    curses.init_pair(pair, fg, bg)
+                    self.colorPairMap.update({(map_fg,map_bg):pair})
+                    pair += 1
+                    map_fg += 1
+                map_bg += 1
+                map_fg = 0
             self.appState.totalFgColors = fg + 1
             self.appState.totalBgColors = bg + 1
             self.appState.totalFgColors = fg
@@ -388,7 +533,7 @@ class AnsiArtStuff():
             return False
 
 
-    def initColorPairs_cga(self, trans=False):
+    def initColorPairs_cga_old2(self, trans=False):
         """ Setup ncurses color pairs for ANSI colors """
         # this kind of hurts to write. wtf, ncurses.
         if trans:

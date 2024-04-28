@@ -1,4 +1,5 @@
-# This file needs to have all of its non-curses code moved into separate files/libraries
+# This file is where the main loop/controller lives.
+# It ought to have all curses code separated out into another file.
 
 import curses
 import curses.panel
@@ -98,7 +99,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.loadThemeFromConfig("Theme-16")
             if self.appState.blackbg:
                 self.enableTransBackground()
-            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+            try:
+                self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] # set ncurss color pair
+            except KeyError:
+                pdb.set_trace()
         self.mov = Movie(self.opts) # initialize a new movie to work with
         self.undo = UndoManager(self, appState = self.appState)   # initialize undo/redo system
         self.undo.setHistorySize(self.appState.undoHistorySize)
@@ -137,6 +141,10 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.loadHelpFile(self.appState.durhelp256_page2_fullpath, page=2)
         self.colorbg = 0    # default bg black
         self.colorfg = 7    # default fg white
+        self.appState.sideBar_minimum_width = 37
+        self.appState.bottomBar_minimum_height = 10
+        if self.statusBar != None:
+            self.statusBar.colorPickerButton.enabled = True
 
     def init_16_colors_misc(self):
         self.appState.colorMode = "16"
@@ -150,8 +158,17 @@ class UserInterface():  # Separate view (curses) from this controller
         self.colorfg = 8    # default fg white
         self.colorbg = 8    # default bg black
         self.appState.defaultFgColor = 8
+        if self.appState.iceColors:
+            self.colorfg = 7    # default fg white
+            self.colorbg = 0    # default bg black
+            self.appState.defaultFgColor = 7
         # phase 2 
         self.ansi.initColorPairs_cga()
+        #self.ansi.initColorPairs_ice_colors()
+        self.appState.sideBar_minimum_width = 12
+        self.appState.bottomBar_minimum_height = 5
+        if self.statusBar != None:
+            self.statusBar.colorPickerButton.enabled = False
 
 
     def initMouse(self):
@@ -478,7 +495,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 #if self.appState.colorMode == "256":
                 self.statusBar.colorPicker.show()
             # Window is too narrow, but tall enough to show more stuff on the bottom.
-        elif realmaxY - 10 > self.mov.sizeY:
+        elif realmaxY - self.appState.bottomBar_minimum_height > self.mov.sizeY:
             #if self.appState.colorMode == "256":
             self.statusBar.colorPicker.show()
 
@@ -490,7 +507,11 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 newColor = 1
         elif self.appState.colorMode == "16":
-            if self.colorfg < 16:
+            if self.appState.iceColors:
+                hiColor = 15
+            else:
+                hiColor = 16
+            if self.colorfg < hiColor:
                 newColor = self.colorfg + 1
             else:
                 newColor = 1
@@ -504,7 +525,10 @@ class UserInterface():  # Separate view (curses) from this controller
             newColor = self.colorfg - 1
         else:
             if self.appState.colorMode == "16":
-                newColor = 16
+                if self.appState.iceColors:
+                    newColor = 15
+                else:
+                    newColor = 16
             elif self.appState.colorMode == "256":
                 newColor = 255
             else:
@@ -519,12 +543,25 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.colorMode == "256":
             pass
         elif self.appState.colorMode == "16":
-            if self.colorbg < 8:
+            if self.appState.iceColors:
+                lowColor = 0
+                hiColor = 15
+            else:
+                lowColor = 1
+                hiColor = 8
+            if self.colorbg < hiColor:
                 newColor = self.colorbg + 1
                 if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
                     newColor = self.colorbg + 1
             else:
-                newColor = 1
+                newColor = lowColor
+            # no ice colors - only 8 bg colors
+            #elif self.colorbg < 8:
+            #    newColor = self.colorbg + 1
+            #    if (self.colorfg == 7 and self.colorbg == 7) or (self.colorfg == 15 and self.colorbg == 7):  # skip over red on red
+            #        newColor = self.colorbg + 1
+            #else:
+            #    newColor = 1
             self.setBgColor(newColor)
 
     def prevBgColor(self):
@@ -532,12 +569,18 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.colorMode == "256":
             pass
         else:
-            if self.colorbg > 1:
-                newColor = self.colorbg - 1
-                if self.colorfg == 7 and self.colorbg == 7 or self.colorfg == 15 and self.colorbg == 7:  # skip over red on red
-                    newColor = self.colorbg - 1
+            if self.appState.iceColors:
+                lowColor = 0
+                hiColor = 15
             else:
-                newColor = 8
+                lowColor = 1
+                hiColor = 8
+            if self.colorbg > lowColor:
+                newColor = self.colorbg - 1
+                #if self.colorfg == 7 and self.colorbg == 7 or self.colorfg == 15 and self.colorbg == 7:  # skip over red on red
+                #    newColor = self.colorbg - 1
+            else:
+                newColor = hiColor
             self.setBgColor(newColor)
 
     def cursorOff(self):
@@ -850,7 +893,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # check and see if the window is wide enough for a nice side sauce
             wideViewer = False
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
-            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width:
+            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width_256:
                 wideViewer = True
             #fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
@@ -1879,7 +1922,11 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.colorMode == "16":
             colorPickerFGOffset = 0
             self.addstr(statusBarLineNum+1, colorPickerFGOffset, "FG:", curses.color_pair(mainColor))
-            for c in range(1,17):
+            #hiColor = 7     # for old way, using bold to get high colors
+            hiColor = 17     # for old way, using bold to get high colors
+            if self.appState.iceColors:
+                hiColor = 16
+            for c in range(1,hiColor):
                 cp = self.ansi.colorPairMap[(c, 0)]
                 if c > 8:
                     if c == self.colorfg:
@@ -1897,12 +1944,18 @@ class UserInterface():  # Separate view (curses) from this controller
             # bg color
             colorPickerBGOffset = 21
             self.addstr(statusBarLineNum+1, colorPickerBGOffset, "BG:", curses.color_pair(mainColor))
-            for c in range(1,9):
+            hiColor = 9     # for old way, using bold to get high colors
+            if self.appState.iceColors:
+                hiColor = 16
+            for c in range(1,hiColor):
                 cp = self.ansi.colorPairMap[(c, 0)]
                 if c == self.colorbg: #or (c == 8 and self.colorbg == 0):
                     #self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
-                    if c == 9: # black bg
-                        self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(mainColor)) 
+                    if not self.appState.iceColors:
+                        if c == 9: # black bg
+                            self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(mainColor)) 
+                        else:
+                            self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
                     else:
                         self.addstr(statusBarLineNum+1, colorPickerBGOffset+3+c, 'X', curses.color_pair(self.ansi.colorPairMap[(16, c)])) 
                 else:
@@ -2000,9 +2053,9 @@ class UserInterface():  # Separate view (curses) from this controller
         returnValue = True
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
         if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
-            if realmaxY - 10 < self.mov.sizeY:  # I'm not tall enough
+            if realmaxY - self.appState.bottomBar_minimum_height < self.mov.sizeY:  # I'm not tall enough
                 returnValue = False     # and gosh darnit, pepple like me.
-        if realmaxY - 10 < self.mov.sizeY:
+        if realmaxY - self.appState.bottomBar_minimum_height < self.mov.sizeY:
             if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width:
                 returnValue = False
         #debugString = f"big enough: {returnValue}"
@@ -4514,7 +4567,7 @@ Can use ESC or META instead of ALT
             for colnum in range(mov.sizeX):
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])
-                if self.appState.cursorMode == "Paint" and not self.playing:
+                if self.appState.cursorMode == "Paint" and not self.playing and not self.appState.playingHelpScreen:
                     if self.appState.brush != None:
                         # draw brush preview
                         # If we're drawing within the brush area:
@@ -4536,7 +4589,7 @@ Can use ESC or META instead of ALT
                                     charContent = brushChar
                                     charColor = self.appState.brush.newColorMap[brush_col][brush_line]
                 if linenum == self.appState.mouse_line and colnum == self.appState.mouse_col:
-                    if self.appState.cursorMode == "Draw" and not self.playing:  # Drawing preview instead
+                    if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
                         charContent = self.appState.drawChar
                         charColor = [self.colorfg, self.colorbg]
                 try:

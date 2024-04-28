@@ -46,6 +46,7 @@ class Button():
         self.sub_buttons = {}
         self.parameter = None
         self.hidden :bool = False
+        self.enabled = True     # Responds to clicks
         self.selected :bool = False
         self.picker :bool = False
         self.invisible :bool = invisible # If true, responds to clicks but does not show. Useful for "overlays"
@@ -112,7 +113,7 @@ class Button():
         #result = self.do_nothing()
         result = None
         #if self.hidden == False:
-        if not self.hidden:
+        if self.enabled and not self.hidden:
             self.selected = True
             self.handler.draw()
             result = self.handler.on_click()
@@ -230,6 +231,7 @@ class ColorPicker:
         self.x = x
         self.y = y
         self.totalColors = 256
+        self.appState = caller.appState
         if colorMode == "256":
             self.height = 8
             self.width = 38
@@ -246,8 +248,10 @@ class ColorPicker:
             # is wrong
             #self.height = 10
             #self.width = 4
-
+            
             self.totalColors = 16
+            if self.appState.iceColors:
+                self.totalColors = 15
         self.caller = caller
         self.handler = ColorPickerHandler(self, window, width=self.width, height=self.height)
 

@@ -18,6 +18,7 @@ class AppState():
         self.curOpenFileName = ""
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
+        self.iceColors = False
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
@@ -90,6 +91,11 @@ class AppState():
         self.sideBarEnabled = True # to show color picker, sauce info, etc
         self.sideBarColumn = 0  # location, usually just right of the border
         self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideBar_minimum_width_256 = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideBar_minimum_width_16 = 12 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.bottomBar_minimum_height = 10  # same as above, but for height
+        self.bottomBar_minimum_height_256 = 10 
+        self.bottomBar_minimum_height_16 = 4 
         self.colorBar_height = 8
         self.sideBarShowing = False
         self.themesEnabled = True

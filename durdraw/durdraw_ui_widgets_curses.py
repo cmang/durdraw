@@ -479,13 +479,18 @@ class ColorPickerHandler:
         width_counter = 0   # for color block width
         #for fg in range(1,self.appState.totalFgColors+1):  # 0-255
         firstColor = 1
+        if self.colorPicker.appState.iceColors:
+            firstColor = 0
         for fg in range(firstColor,self.totalColors+1):  # 0-255
             #color_pair = curses.color_pair(fg)
             if self.colorMode == "256":
                 color_pair = curses.color_pair(fg)
             elif self.colorMode == "16":
-                color_pair_number = self.ansi.colorPairMap[(fg, 0)]
-                color_pair = curses.color_pair(color_pair_number)
+                try:
+                    color_pair_number = self.ansi.colorPairMap[(fg, 0)]
+                    color_pair = curses.color_pair(color_pair_number)
+                except KeyError:
+                    pdb.set_trace()
             if col >= self.width - 2:
                 col = 0
                 line += 1
