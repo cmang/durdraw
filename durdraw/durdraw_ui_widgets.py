@@ -223,11 +223,12 @@ class DrawCharPicker:
 class ColorPicker:
     """ Draw a color palette, let the user click a color.
     Makes the user's selected color available somewhere. """
-    def __init__(self, window, x=0, y=0, caller=None, colorMode="256"):
+    def __init__(self, window, x=0, y=0, caller=None, colorMode="256", type="fg"):
         self.hidden = True
         self.window = window
         self.colorMap = {}
         self.colorMode = colorMode
+        self.type = type    # "fg" or "bg," or maybe "fgbg"
         self.x = x
         self.y = y
         self.totalColors = 256
@@ -246,7 +247,7 @@ class ColorPicker:
 
             # tall and thin - good, but color order
             # is wrong
-            #self.height = 10
+         #self.height = 10
             #self.width = 4
             
             self.totalColors = 16
@@ -604,6 +605,9 @@ class StatusBar():
 
         colorPicker_16 = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller, colorMode="16")
         self.colorPicker_16 = colorPicker_16
+
+        #colorPicker_bg_16 = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller, colorMode="16", type="bg")
+        #self.colorPicker_bg_16 = colorPicker_bg_16
 
         #pdb.set_trace()
         #colorPicker.show()  # for testing
