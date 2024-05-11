@@ -316,6 +316,18 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
   - [x] Disable menu shortcut key (F10 by default)
   - [x] Disable help window shortcut key (F1 by default)
 
+### MEDIA AND THANKS
+
+If you write, podcast, vlog, etc about Durdraw, or if you just like using it, I'd love to know! Please contact me at the Github project page, or at samfoster@gmail.com.
+
+Special thanks to the following folks for writing or publishing about Durdraw:
+
+Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
+Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
+Bryan Lunduke - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
+Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
+LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
 
 ### CREDITS
 
