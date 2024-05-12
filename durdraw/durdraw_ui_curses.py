@@ -1307,7 +1307,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.commandMode = False
                     #if self.appState.colorMode == "256":
                     #    self.statusBar.colorPickerButton.on_click()
-                    self.statusBar.colorPickerButton.on_click()
+                    #self.statusBar.colorPickerButton.on_click()
+                    self.selectColorPicker()
                 elif c == 122:  # alt-z = undo
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
@@ -1928,6 +1929,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum-1, 0, debugstring, curses.color_pair(mainColor))
             debugstring2 = f"ButtonPress: {self.pressingButton}"
             self.addstr(statusBarLineNum-2, 0, debugstring2, curses.color_pair(mainColor))
+            colorValue = curses.color_content(self.colorbg)
+            debugstring3= f"bg: {colorValue}"
+            self.addstr(statusBarLineNum-3, 0, debugstring3, curses.color_pair(mainColor))
         # Draw FG and BG colors
         if self.appState.colorMode == "256":
             self.addstr(statusBarLineNum+1, 0, "FG:", curses.color_pair(clickColor) | curses.A_BOLD)
@@ -2235,10 +2239,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
                     #if self.appState.colorMode == "256":
-                    if self.appState.sideBarShowing:
-                        self.statusBar.colorPicker.switchTo()
-                    else:
-                        self.statusBar.colorPickerButton.on_click()
+                    #if self.appState.sideBarShowing:
+                    #    self.statusBar.colorPicker.switchTo()
+                    #else:
+                    #    self.statusBar.colorPickerButton.on_click()
+                    self.selectColorPicker()
                 # Animation Keystrokes
                 elif c == 68:     #alt-D - set delay for current frame
                     self.getDelayValue()
