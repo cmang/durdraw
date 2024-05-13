@@ -1602,7 +1602,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
                                 frange=self.appState.playbackRange)
                         c = None
-                    elif c <= 128 and c >= 32:      # normal printable character
+                    elif c != None and c <= 128 and c >= 32:      # normal printable character
                         self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
 
             new_time = time.time()
