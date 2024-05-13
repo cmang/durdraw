@@ -1257,6 +1257,20 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
             c = self.stdscr.getch()
+
+            if c in [532]:  # 532 - alt-down, prev BG color
+                self.prevBgColor()
+                c = None
+            elif c in [573]:  # 573 - alt-up, next BG color
+                self.nextBgColor()
+                c = None
+            elif c in [552]:  # 552 - alt-left, prev FG color
+                self.prevFgColor()
+                c = None
+            elif c in [567]:  # 567 - alt-right, next FG color
+                self.nextFgColor()
+                c = None
+
             if c == 27:
                 self.metaKey = 1
                 self.commandMode = True
@@ -2158,7 +2172,21 @@ class UserInterface():  # Separate view (curses) from this controller
             self.stdscr.refresh()
             c = self.stdscr.getch()
             self.testWindowSize()
-            if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
+            #if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
+            
+            if c in [532]:  # 532 - alt-down, prev BG color
+                self.prevBgColor()
+                c = None
+            elif c in [573]:  # 573 - alt-up, next BG color
+                self.nextBgColor()
+                c = None
+            elif c in [552]:  # 552 - alt-left, prev FG color
+                self.prevFgColor()
+                c = None
+            elif c in [567]:  # 567 - alt-right, next FG color
+                self.nextFgColor()
+                c = None
+
             if self.metaKey == 1:
                 if c == 111:                # alt-o - open
                     load_filename = self.openFilePicker()
