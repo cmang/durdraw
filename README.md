@@ -318,9 +318,9 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
 
 ### MEDIA AND THANKS
 
-If you write, podcast, vlog, etc about Durdraw, or if you just like using it, I'd love to know! Please contact me at the Github project page, or at samfoster@gmail.com.
+If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
-Special thanks to the following folks for writing or publishing about Durdraw:
+Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
 Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
 
@@ -333,6 +333,22 @@ Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-termin
 Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
 
 LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+
+### SUPPORT 
+
+Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
+
+Contributions help cover essential costs like development time, domain registration, and web hosting.
+
+You can contribute to this project using any of these platforms:
+
+Paypal - https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6
+Buymeacoffee - https://buymeacoffee.com/samfoster
+Patreon - https://patreon.com/SamFoster
+
+Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for guidelines and information on how you can contribute to the project.
+
+If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!"
 
 ### CREDITS
 
