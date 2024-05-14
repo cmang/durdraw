@@ -343,7 +343,9 @@ Contributions help cover essential costs like development time, domain registrat
 You can contribute to this project using any of these platforms:
 
 Paypal - https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6
+
 Buymeacoffee - https://buymeacoffee.com/samfoster
+
 Patreon - https://patreon.com/SamFoster
 
 Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for guidelines and information on how you can contribute to the project.
