@@ -350,7 +350,7 @@ Patreon - https://patreon.com/SamFoster
 
 Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for guidelines and information on how you can contribute to the project.
 
-If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!"
+If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
 
 ### CREDITS
 
