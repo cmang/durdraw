@@ -316,7 +316,7 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
   - [x] Disable menu shortcut key (F10 by default)
   - [x] Disable help window shortcut key (F1 by default)
 
-### MEDIA AND THANKS
+## MEDIA AND THANKS
 
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
@@ -334,7 +334,7 @@ Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=
 
 LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
 
-### SUPPORT 
+## SUPPORT 
 
 Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
 
@@ -352,7 +352,7 @@ Other ways to support Durdraw include reporting bugs, providing feedback, and co
 
 If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
 
-### CREDITS
+## CREDITS
 
 Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
@@ -362,7 +362,7 @@ Development: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA
 
-### LEGAL
+## LEGAL
 
 Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
