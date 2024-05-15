@@ -324,7 +324,7 @@ Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
 
 Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
 
-Bryan Lunduke - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
 
 Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
 
