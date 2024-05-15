@@ -311,9 +311,28 @@ A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
-### CREDITS
 
-Developer: Sam Foster
+## MEDIA AND THANKS
+
+Special thanks to the following individuals and organizations for featuring Durdraw in their content:
+
+Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
+
+Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
+
+Bryan Lunduke - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+
+Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
+
+Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
+
+LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+
+If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
+
+## CREDITS
+
+Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
 Home page: http://durdraw.org
 
@@ -321,7 +340,7 @@ Development: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA
 
-### LEGAL
+## LEGAL
 
 Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
