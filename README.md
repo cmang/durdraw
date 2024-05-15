@@ -318,8 +318,6 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
 
 ## MEDIA AND THANKS
 
-If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
-
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
 Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
@@ -333,6 +331,8 @@ Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-termin
 Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
 
 LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+
+If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
 ## SUPPORT 
 
