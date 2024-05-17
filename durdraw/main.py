@@ -38,6 +38,7 @@ def main():
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
                     nargs='+')
+    parser.add_argument("-d", "--delayexit", help="Wait X seconds after playback before exiting (requires -p)", nargs=1, type=float)
     #parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
     parserStartScreenMutex.add_argument("--startup", help="Show startup screen",
                     action="store_true")
@@ -223,9 +224,11 @@ def main():
         if args.times:
             app.playNumberOfTimes = args.times[0]
         for movie in args.play:
+            ui.stdscr.clear()
             ui.loadFromFile(movie, 'dur')
             ui.startPlaying()
-            ui.stdscr.clear()
+        if args.delayexit:
+            time.sleep(args.delayexit[0])
         ui.verySafeQuit()
     if args.export_ansi:
         # Export ansi and exit
