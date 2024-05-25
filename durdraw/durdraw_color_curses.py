@@ -366,7 +366,7 @@ class AnsiArtStuff():
                 fg_range = [0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15]
             else:
                 fg_range = list(range(0, fg_count))
-            for bg in range(-1, bg_count):
+            for bg in range(0, bg_count):
                 for fg in fg_range:
                     curses.init_pair(pair, fg, bg)
                     #try:
@@ -385,7 +385,7 @@ class AnsiArtStuff():
         except Exception as E:
             #debug_filename = 'debugy.txt'
             #debug_file = open(debug_filename, "w")
-            #debug_file.write(str(self.colorPairMap))
+            #debug_file.write(str(E))
             #debug_file.close()
             return False
 
