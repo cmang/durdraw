@@ -667,7 +667,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if realmaxY != self.realmaxY or realmaxX != self.realmaxX:
             self.resizeHandler()
         self.realmaxY, self.realmaxX = realmaxY, realmaxX
-        while self.realmaxX < 80:
+        while self.realmaxX < 80 and not self.appState.playOnlyMode:
             self.smallWindowMode()   # go into small window loop.stdscr
 
     def smallWindowMode(self):
