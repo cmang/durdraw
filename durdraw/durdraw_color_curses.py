@@ -369,6 +369,10 @@ class AnsiArtStuff():
             for bg in range(-1, bg_count):
                 for fg in fg_range:
                     curses.init_pair(pair, fg, bg)
+                    #try:
+                    #    curses.init_extended_pair(pair, fg, bg)
+                    #except Exception as E:
+                    #    pdb.set_trace()
                     self.colorPairMap.update({(fg,bg):pair})
                     pair += 1
             self.appState.totalFgColors = fg + 1
@@ -386,7 +390,7 @@ class AnsiArtStuff():
             return False
 
     def initColorPairs_256color(self):   # High color pairs, 256 color
-        return self.initColorPairs_general(fg_count=256, bg_count=256)
+        return self.initColorPairs_general(fg_count=256, bg_count=1)
 
     def initColorPairs_256color_dead_again(self):   # High color pairs, 256 color
         """ Initialize 256 color mode color pairs """

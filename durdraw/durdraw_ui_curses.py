@@ -547,7 +547,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ switch to the next bg color, cycle around if at beginning """
         if self.appState.colorMode == "256":
             lowColor = 0
-            hiColor = 255
+            #hiColor = 255
+            hiColor = 0
             if self.colorbg < hiColor:
                 newColor = self.colorbg + 1
             else:
@@ -579,7 +580,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ switch to prev bg color, cycle around to end if at beginning """
         if self.appState.colorMode == "256":
             lowColor = 0
-            hiColor = 255
+            #hiColor = 255
+            hiColor = 0
             if self.colorbg > lowColor:
                 newColor = self.colorbg - 1
             else:
