@@ -238,6 +238,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                             #caller.notify(f"Error in byte {i}, char: {code}, line: {line_num}, col: {col_num}")
                 if len(codeList) > 1 and appState.colorMode == "256":
                     # 256 foreground color
+                    bg_color = default_bg_color
                     if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3:
                         fg_color = codeList.pop()
                         codeList = [fg_color]
