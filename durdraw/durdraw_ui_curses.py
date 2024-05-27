@@ -3835,6 +3835,10 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.notify(f"16 color file. Switching to 16 color mode and reloading file.")
                         self.switchTo16ColorMode()
                         self.loadFromFile(shortfile, 'ascii')
+                # If drawing does contain high colors, and backgrounds... remove the backgrounds until 256 bg colors works.
+                elif self.mov.contains_high_colors():
+                    if self.mov.contains_background_colors():
+                        self.mov.strip_backgrounds()
             self.hardRefresh()
 
         elif loadFormat == 'dur':

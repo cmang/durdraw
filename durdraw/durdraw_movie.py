@@ -377,7 +377,15 @@ class Movie():
                     if pair[1] > 0:
                         return True
         return False
-        
+
+    def strip_backgrounds(self):
+        """ Change all background colors to 0, or default background """
+        for frame in self.frames:
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair[1] > 0:
+                        pair[1] = 0
+        return True
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
