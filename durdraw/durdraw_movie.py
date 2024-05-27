@@ -383,8 +383,7 @@ class Movie():
         for frame in self.frames:
             for line in frame.newColorMap:
                 for pair in line:
-                    if pair[1] > 0:
-                        pair[1] = 0
+                    pair[1] = 0
         return True
 
     def toJSON(self):
