@@ -473,6 +473,10 @@ class ColorPickerHandler:
         col = 1
         if self.colorMode == "16":
             col = 0
+        if self.colorMode == "256":
+            plain_color_pair = curses.color_pair(9)
+        elif self.colorMode == "16":
+            plain_color_pair = curses.color_pair(8)
         #maxWidth = self.realmaxX
         #maxHeight = self.realmaxY
         #for fg in range(0,curses.COLORS):  # 0-255
@@ -516,12 +520,8 @@ class ColorPickerHandler:
                 bg += 1
                 if bg == 8:
                     bg = 0
-            if fg == self.colorPicker.caller.colorfg:
+            if fg == self.colorPicker.caller.colorfg or fg == 0 and colorbg == 8:
                 if fg == 1: # black
-                    if self.colorMode == "256":
-                        plain_color_pair = curses.color_pair(9)
-                    elif self.colorMode == "16":
-                        plain_color_pair = curses.color_pair(8)
                     if self.appState.colorPickerSelected:
                         if fg == bg:
                             curses_addstr(self.window, line, col, 'X', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK | curses.A_BOLD)
@@ -561,15 +561,44 @@ class ColorPickerHandler:
                                     curses_addstr(self.window, line, col, 'F', color_pair | curses.A_BOLD)
                                 else:
                                     curses_addstr(self.window, line, col, 'F', color_pair)
+
+            # 16 color, black background (8), showing color 1 (black). . why the fuck is it 9 lol
+            elif self.colorMode == "16" and fg == 1 and bg == 9:
+                if self.appState.colorPickerSelected:
+                    curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                else:
+                    curses_addstr(self.window, line, col, 'B', plain_color_pair)
+            # 16 color, black background (8), showing color 8 (grey)
+            elif self.colorMode == "16" and fg == 9 and bg == 9:
+                # draw fill character unmodified
+                if fg > 8:
+                    curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
+                else:
+                    curses_addstr(self.window, line, col, self.fillChar, color_pair)
+
             elif fg == bg:
                 if self.appState.colorPickerSelected:
                     if self.colorMode == "256":
                         curses_addstr(self.window, line, col, 'B', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                    elif self.colorMode == "16" and fg == 9:  # black, so show as default color
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                    elif self.colorMode == "16" and fg == 0:  # black, so show as default color
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                    elif self.colorMode == "16" and bg != 0:
+                        curses_addstr(self.window, line, col, 'B', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
                 else:
                     if self.colorMode == "256":
                         curses_addstr(self.window, line, col, 'B', color_pair | curses.A_BOLD)
-                    elif self.colorMode == "16":
-                        curses_addstr(self.window, line, col, 'B', color_pair)
+                    elif self.colorMode == "16" and fg == 1:  # black, so show as default color
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_BLINK)
+                    elif self.colorMode == "16" and fg == 9:  # black, so show as default color
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_BLINK)
+                    elif self.colorMode == "16" and bg != 0:
+                        curses_addstr(self.window, line, col, 'B', color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                    #if self.colorMode == "16" and fg == 8:  # black, so show as default color
+                    #    curses_addstr(self.window, line, col, 'B', plain_color_pair)
+                    #elif self.colorMode == "16":
+                    #    curses_addstr(self.window, line, col, 'B', color_pair)
             else:
                 if self.colorMode == "256":
                     curses_addstr(self.window, line, col, self.fillChar, color_pair)
@@ -581,6 +610,11 @@ class ColorPickerHandler:
                         #self.colorPicker.caller.notify(debug_string)
                     else:
                         curses_addstr(self.window, line, col, self.fillChar, color_pair)
+            if self.colorMode == "16" and bg == 0 and fg == 0:    # black bg in 16 color mode
+                if self.appState.colorPickerSelected:
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair | curses.A_UNDERLINE | curses.A_BLINK)
+                else:
+                        curses_addstr(self.window, line, col, 'B', plain_color_pair)
             col += 1
         curses_addstr(self.window, line, col + 5, "     ", color_pair)
         curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
