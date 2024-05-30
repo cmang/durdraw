@@ -17,7 +17,7 @@ class AppState():
         self.quickStart = False
         self.showStartupScreen = True
         self.curOpenFileName = ""
-        python_version = f"{version_info.major}.{version_info.minor}"
+        python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
         self.pyVersion = python_version
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
