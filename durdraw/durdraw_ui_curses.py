@@ -1058,6 +1058,7 @@ class UserInterface():  # Separate view (curses) from this controller
         helpMov.search_and_replace(self, '{ver}', f"{self.appState.durVer}")
         helpMov.search_and_replace(self, '{colormode}', f"{self.appState.colorMode}")
         helpMov.search_and_replace(self, "{charmode}", f"{self.appState.charEncoding}")
+        helpMov.search_and_replace(self, "{pyver}", f"{self.appState.pyVersion}")
 
         while self.playingHelpScreen:
             self.move(self.xy[0], self.xy[1])
@@ -1612,7 +1613,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if frame_delay > 0:
                 realDelayTime = frame_delay
             else:
-                realDelayTime = sleep_time
+                realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
@@ -1633,6 +1634,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.playing = False
                 #self.refresh()
             else: time.sleep(0.005) # to keep from sucking up cpu
+
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
 

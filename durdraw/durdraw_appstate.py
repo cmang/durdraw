@@ -6,6 +6,7 @@ import pdb
 import pickle
 import subprocess
 import sys
+from sys import version_info 
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
 import durdraw.durdraw_sauce as dursauce
@@ -16,6 +17,8 @@ class AppState():
         self.quickStart = False
         self.showStartupScreen = True
         self.curOpenFileName = ""
+        python_version = f"{version_info.major}.{version_info.minor}"
+        self.pyVersion = python_version
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
         self.iceColors = False
