@@ -654,7 +654,7 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 self.stdscr.getch()
         if not pause:
-            curses.napms(1500)
+            curses.napms(2500)
             curses.flushinp()
         self.clearStatusLine()
         self.cursorOn()
@@ -4035,12 +4035,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
                 return None
         self.clearStatusLine()
-        if saveFormat == 'ansi' or saveFormat == 'ansimation':  # ansi = escape codes for colors+ascii
+        if saveFormat == 'ascii' or saveFormat == 'ansi' or saveFormat == 'ansimation':  # ansi = escape codes for colors+ascii
             prompting = True
             while prompting:
                 # Ask if they want CP437 or Utf-8 encoding
                 self.clearStatusLine()
-                self.promptPrint(f"ANSI file encoding? [C]P437, [U]tf-8? (default: {self.appState.charEncoding}): ")
+                self.promptPrint(f"Character encoding to save with? [C]P437, [U]tf-8? (default: {self.appState.charEncoding}): ")
                 c = self.stdscr.getch()
                 time.sleep(0.01)
                 if c == ord('c'): 
@@ -4174,7 +4174,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.notify("Canceled. File not saved.")
                     return False
         if saveFormat == 'ascii':
-            saved = self.saveAsciiFile(filename)
+            saved = self.saveAsciiFile(filename, encoding=encoding)
         if saveFormat == 'durOld':   # dur Old = pickled python objects (ew)
             saved = self.saveDurFile(filename)
         if saveFormat == 'dur':   # dur2 = serialized json gzipped
@@ -4239,16 +4239,26 @@ class UserInterface():  # Separate view (curses) from this controller
             durfile.serialize_to_json_file(self.opts, self.appState, self.mov, filename, gzipped=False)
         return True
 
-    def saveAsciiFile(self, filename):
+    def saveAsciiFile(self, filename, encoding = "default"):
         """ Saves to ascii file, strips trailing blank lines """
         try:
-            f = open(filename, 'w')
+            if encoding == "default":
+                f = open(filename, 'w')
+            elif encoding == "cp437":
+                f = open(filename, 'w', encoding="cp437")
+            elif encoding == "utf-8":
+                f = open(filename, 'w', encoding="utf-8")
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
         # rewrite this. rstrip(' ') looks cool, though.
         outBuffer = '\n'.join(''.join(line).rstrip(' ') for line in self.mov.currentFrame.content).rstrip('\n')
-        f.write(outBuffer + '\n\n')
+        try:
+            f.write(outBuffer + '\n\n')
+        except UnicodeEncodeError:
+            self.notify(f"Error - some characters cannot be saved using encoding {encoding}. (Press any key to continue)", pause=True)
+            f.close()
+            return False
         f.close()
         return True
 
