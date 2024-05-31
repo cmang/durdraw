@@ -623,6 +623,28 @@ class ColorPickerHandler:
         #self.colorPicker.caller.notify(f"showFgPicker")
         self.showColorPicker(type="fg")
 
+    def move_up_256(self):
+        if self.colorMode == "256":
+            color = self.colorPicker.caller.colorfg
+            if color < 32:
+                color -= 16
+            elif color > 31 and color < 52:
+                color = 15
+            else:
+                color -= self.width - 2
+            self.colorPicker.caller.setFgColor(color)
+
+    def move_down_256(self):
+        if self.colorMode == "256":
+            color = self.colorPicker.caller.colorfg
+            if color < 16:
+                color += 16
+            else:
+                color += self.width - 2
+            if color >= self.totalColors:
+                color = self.totalColors
+            self.colorPicker.caller.setFgColor(color)
+
     def showColorPicker(self, type="fg"):
         #self.colorPicker.caller.notify(f"showColorPicker")
         """ Shows picker, has UI loop for letting user pick color with keyboard or mouse """

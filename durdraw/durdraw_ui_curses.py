@@ -2208,18 +2208,24 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.showHelp()
                     c = None
                 #elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
-                elif c in [curses.KEY_LEFT]:      # alt-left - prev bg color
+                elif c in [curses.KEY_LEFT]:      # alt-left - prev fg color
                     self.prevFgColor()
                     c = None
                 #elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
-                elif c in [curses.KEY_RIGHT]:     # alt-right - next bg color
+                elif c in [curses.KEY_RIGHT]:     # alt-right - next fg color
                     self.nextFgColor()
                     c = None
-                elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
-                    self.prevBgColor()
+                elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev bg color
+                    if self.appState.colorMode == "16":
+                        self.prevBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.statusBar.colorPicker.handler.move_down_256()
                     c = None
-                elif c == curses.KEY_UP:     # alt-up - next fg color
-                    self.nextBgColor()
+                elif c == curses.KEY_UP:     # alt-up - next bg color
+                    if self.appState.colorMode == "16":
+                        self.nextBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.statusBar.colorPicker.handler.move_up_256()
                     c = None
                 elif c == 91 or c == 339:   # alt-[ (91) or alt-pgup (339). previous character set
                     self.prevCharSet()
@@ -2349,10 +2355,16 @@ class UserInterface():  # Separate view (curses) from this controller
                     if c == 91:     # 3rd byte (\x5b) in arrow key sequence
                         c = self.stdscr.getch()
                         if c == 65: # real alt-up, not esc-up
-                            self.nextBgColor()
+                            if self.appState.colorMode == "16":
+                                self.nextBgColor()
+                            elif self.appState.colorMode == "256":
+                                self.statusBar.colorPicker.handler.move_up_256()
                             c = None
                         elif c == 66: # real alt-down, not esc-down
-                            self.prevBgColor()
+                            if self.appState.colorMode == "16":
+                                self.prevBgColor()
+                            elif self.appState.colorMode == "256":
+                                self.statusBar.colorPicker.handler.move_down_256()
                             c = None
                         elif c == 67: # real alt-right, not esc-right
                             self.nextFgColor()
