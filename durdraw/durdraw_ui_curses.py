@@ -846,6 +846,11 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             charValue = ord(character)  # ascii/cp437
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
+        try:
+            ibmpc_value = str(ord(character.encode('cp437')))
+            inspectorString += inspectorString + f", cp437 value: {ibmpc_value}"
+        except:
+            pass
         self.notify(inspectorString, pause=True)
 
     def clickedInfoButton(self):
