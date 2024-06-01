@@ -1063,7 +1063,7 @@ class UserInterface():  # Separate view (curses) from this controller
         while self.playingHelpScreen:
             self.move(self.xy[0], self.xy[1])
             self.refresh()
-            self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(promptColor))
+            #self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(promptColor)) <- now done in self.refresh()
             #self.addstr(self.statusBarLineNum - 1, 51, "this color", curses.color_pair(clickColor) | curses.A_BOLD)
             mouseState = False
             c = self.stdscr.getch()
@@ -2179,10 +2179,16 @@ class UserInterface():  # Separate view (curses) from this controller
             #if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
             
             if c in [532]:  # 532 - alt-down, prev BG color
-                self.prevBgColor()
+                if self.appState.colorMode == "16":
+                    self.prevBgColor()
+                elif self.appState.colorMode == "256":
+                    self.statusBar.colorPicker.handler.move_down_256()
                 c = None
             elif c in [573]:  # 573 - alt-up, next BG color
-                self.nextBgColor()
+                if self.appState.colorMode == "16":
+                    self.nextBgColor()
+                elif self.appState.colorMode == "256":
+                    self.statusBar.colorPicker.handler.move_up_256()
                 c = None
             elif c in [552]:  # 552 - alt-left, prev FG color
                 self.prevFgColor()
@@ -4754,6 +4760,8 @@ Can use ESC or META instead of ALT
         for x in range(screenLineNum, mov.sizeY):
             self.addstr(x, 0, " " * mov.sizeX)
         curses.panel.update_panels()
+        if self.appState.playingHelpScreen:
+            self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
         self.stdscr.refresh()
 
     def addColToCanvas(self):
