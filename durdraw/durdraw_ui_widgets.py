@@ -501,6 +501,8 @@ class StatusBar():
         animMenu.add_item("Set Playback Range", caller.getPlaybackRange, "r", shortcut="esc-R")
         animMenu.add_item("Go to Frame", caller.gotoFrameGetInput, "g", shortcut="esc-g")
         animMenu.add_item("Move Frame", caller.moveCurrentFrame, "m", shortcut="esc-M")
+        animMenu.add_item("Shift Frames Right", caller.shiftMovieRight, "}", shortcut="esc-}")
+        animMenu.add_item("Shift Frames Left", caller.shiftMovieLeft, "{", shortcut="esc-{")
         animMenu.add_item("Transform", caller.openTransformMenu, "t", has_submenu=True)
         animButton = Button("Anim", 0, animButton_offset, caller.openAnimMenu, self.window, appState=self.appState)
         animButton.set_tooltip_command('a')

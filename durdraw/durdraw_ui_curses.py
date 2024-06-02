@@ -2316,6 +2316,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.moveCurrentFrame()
                 elif c == 100:      # alt-d - delete current frame
                     self.deleteCurrentFrame()
+                elif c == 125:      # alt-} - shift frames right
+                    self.shiftMovieRight()
+                elif c == 123:      # alt-{ - shift frames left
+                    self.shiftMovieLeft()
                 elif c == 122:  # alt-z = undo
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
@@ -2768,6 +2772,22 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.appState.playbackRange[1] == self.mov.frameCount + 1:
                 self.appState.playbackRange = (self.appState.playbackRange[0], \
                     self.appState.playbackRange[1] - 1)
+        self.refresh()
+
+    def shiftMovieRight(self):
+        """ Shift all frames to the right, wrapping back around """
+        if self.mov.shift_right():
+            self.mov.nextFrame()
+            self.mov.prevFrame()
+            #self.notify("Shifted frames to the right.")
+        self.refresh()
+
+    def shiftMovieLeft(self):
+        """ Shift all frames to the left, wrapping back around """
+        if self.mov.shift_left():
+            self.mov.nextFrame()
+            self.mov.prevFrame()
+            #self.notify("Shifted frames to the right.")
         self.refresh()
 
     def enterViewMode(self):
