@@ -336,6 +336,9 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 if len(escape_sequence) == 0:
                     escape_sequence = 1
                 move_by_amount = int(escape_sequence)
+                if col_num >= maxWidth:
+                    col_num = 0
+                    line_num += 1
                 col_num += move_by_amount
                 i = end_index + 1
                 continue    # jump the while
