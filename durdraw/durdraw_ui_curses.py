@@ -855,10 +855,11 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def clickedInfoButton(self):
         realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
-        if realmaxX < self.mov.sizeX + self.appState.sideBar_minimum_width: # I'm not wide enough
+        if realmaxX < self.mov.sizeX + self.appState.sideInfo_minimum_width: # I'm not wide enough
             self.showFileInformation(notify=True)
         else:
             self.toggleShowFileInformation()
+            #self.notify(f"realmaxX: {realmaxX}, self.mov.sizeX: {self.mov.sizeX}, self.appState.sideBar_minimum_width: {self.appState.sideBar_minimum_width}", pause=True)
 
     def toggleShowFileInformation(self):
         self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
@@ -917,7 +918,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # check and see if the window is wide enough for a nice side sauce
             wideViewer = False
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
-            if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width_256:
+            if realmaxX >= self.mov.sizeX + self.appState.sideInfo_minimum_width:
                 wideViewer = True
             fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
@@ -2808,10 +2809,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.clear()
 
     def move_cursor_enter(self):
-        bottomLine = self.realmaxY - 3 + self.appState.topLine
         # move the cursor down
+        if self.xy[0] == self.mov.sizeY - 1:
+            self.addLineToCanvas()
         if self.xy[0] < self.mov.sizeY:
-            self.xy = [self.xy[0] + 1, 1]
+            self.move_cursor_down()
 
     def move_cursor_pgup(self):
         # if we're at the top of the screen

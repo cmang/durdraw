@@ -93,7 +93,9 @@ class AppState():
         self.durFileVer = 0     # gets set in main() from DUR_FILE_VER
         self.sideBarEnabled = True # to show color picker, sauce info, etc
         self.sideBarColumn = 0  # location, usually just right of the border
-        self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        #self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideInfo_minimum_width = 8 # Must have this much width beyond canvas width to draw esc-i sauce info
+        self.sideBar_minimum_width = 5 # Must have this much width to draw sidebar. Actually it's the colorBar width.
         self.sideBar_minimum_width_256 = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
         self.sideBar_minimum_width_16 = 12 # Must have this much width to draw sidebar. Actually it's the colorBar width.
         self.bottomBar_minimum_height = 10  # same as above, but for height
