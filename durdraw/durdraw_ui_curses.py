@@ -1258,12 +1258,14 @@ class UserInterface():  # Separate view (curses) from this controller
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
-            self.refresh()
+            # Here refreshScreen=False because we will self.stdscr.refresh() below, after drawing the status bar (to avoid flicker)
+            self.refresh(refreshScreen=False)
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
+            self.stdscr.refresh()
             c = self.stdscr.getch()
 
             if c in [532]:  # 532 - alt-down, prev BG color
@@ -4694,7 +4696,7 @@ Can use ESC or META instead of ALT
         self.stdscr.redrawwin()
         self.refresh()
 
-    def refresh(self):          # rename to redraw()?
+    def refresh(self, refreshScreen=True):          # rename to redraw()?
         """Refresh the screen"""
         topLine = self.appState.topLine
         if self.appState.playingHelpScreen_2:
@@ -4767,7 +4769,8 @@ Can use ESC or META instead of ALT
         curses.panel.update_panels()
         if self.appState.playingHelpScreen:
             self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
-        self.stdscr.refresh()
+        if refreshScreen:
+            self.stdscr.refresh()
 
     def addColToCanvas(self):
         self.undo.push()    # window is big enough
