@@ -919,9 +919,9 @@ class UserInterface():  # Separate view (curses) from this controller
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             if realmaxX > self.mov.sizeX + self.appState.sideBar_minimum_width_256:
                 wideViewer = True
-            #fileInfoColumn = self.mov.sizeX + 2
+            fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
-            fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
+            #fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             # show me the sauce
             fileInfoColor = self.appState.theme['promptColor']
             if wideViewer:
