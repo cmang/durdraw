@@ -3032,7 +3032,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.enableMouseReporting()
         #self.hardRefresh()
         if self.playing:
-            elf.stdscr.nodelay(1)
+            self.stdscr.nodelay(1)
 
     def openFromMenu(self):
         load_filename = self.openFilePicker()
