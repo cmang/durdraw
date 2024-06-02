@@ -2997,6 +2997,12 @@ class UserInterface():  # Separate view (curses) from this controller
     def openMouseToolsMenu(self):
         self.openMenu("Mouse Tools")
 
+    def setCursorModePaint(self):
+        if self.appState.brush == None:
+            self.notify("No brush set. Please use select tool to make one before using Paint.", pause=True)
+        else:
+            self.statusBar.setCursorModePaint()
+
     def openMenu(self, current_menu: str):
         menu_open = True
         self.stdscr.nodelay(0) # wait for input when calling getch

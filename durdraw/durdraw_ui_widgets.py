@@ -523,7 +523,7 @@ class StatusBar():
         toolMenu.add_item("Move", self.setCursorModeMove, "m")
         #toolMenu.add_item("Select", self.setCursorModeSelect, "s")
         toolMenu.add_item("Draw", self.setCursorModeDraw, "d")
-        toolMenu.add_item("Paint", self.setCursorModePaint, "p")
+        toolMenu.add_item("Paint", caller.setCursorModePaint, "p")
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
         toolMenu.add_item("Erase", self.setCursorModeErase, "e")
         toolMenu.add_item("Eyedrop", self.setCursorModeEyedrop, "y")
