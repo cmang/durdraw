@@ -2825,6 +2825,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addLineToCanvas()
         if self.xy[0] < self.mov.sizeY:
             self.move_cursor_down()
+        self.move_cursor_home()
 
     def move_cursor_pgup(self):
         # if we're at the top of the screen
