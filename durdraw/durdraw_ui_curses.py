@@ -2529,6 +2529,21 @@ class UserInterface():  # Separate view (curses) from this controller
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
                     self.appState.mouse_col = mouseX
                     self.appState.mouse_line = mouseY
+                    if mouseState > 2:  # probably click-dragging. We want an instant response, so...
+                        pass
+                        #self.pressingButton = True
+                        #print('\033[?1003h') # enable mouse tracking with the XTERM API
+                        #print('\033[?1003l') # disable mouse reporting
+                        #curses.mousemask(1)
+                        #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                    if mouseState == 1:
+                        self.pressingButton = False
+                        cursorMode = self.appState.cursorMode
+                        if cursorMode != "Draw" or cursorMode != "Paint":
+                            print('\033[?1003l') # disable mouse reporting
+                            curses.mousemask(1)
+                            curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                        #self.notify("Released from drag, hopefully.")
                     if self.appState.debug:
                         # clear mouse state lines
                         blank_line = " " * 80
@@ -4942,7 +4957,7 @@ Can use ESC or META instead of ALT
                 self.mov.currentFrame.content[x].append(' ')         # at the end of each line.
                 self.mov.currentFrame.newColorMap[x].pop(self.xy[1] - 1)     # line & add a blank
                 self.mov.currentFrame.newColorMap[x].append([1,0])         # at the end of each line.
-        self.refresh()
+        self.hardRefresh()
 
     def delLine(self, frange=None):
         """delete current line""" 
@@ -4962,7 +4977,7 @@ Can use ESC or META instead of ALT
             self.mov.currentFrame.newColorMap.pop(self.xy[0])
             self.mov.currentFrame.newColorMap.append([])
             self.mov.currentFrame.newColorMap[len(self.mov.currentFrame.newColorMap) - 1] = [[1,0]] * self.mov.sizeX
-        self.refresh()
+        self.hardRefresh()
 
     def addLine(self, frange=None):
         """Insert new line"""   
