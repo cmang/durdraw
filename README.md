@@ -75,12 +75,6 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
-To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use the --16color option:
-
-```
-    ./start-durdraw --16color
-```
-
 ## GALLERY
 
 [![Watch the Tutorial Part 1](https://github.com/cmang/durdraw/assets/261501/ca33c81b-0559-4fc7-a49b-a11768938d3d)](https://youtu.be/vWczO0Vd_54)
