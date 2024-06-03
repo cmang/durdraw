@@ -1285,6 +1285,10 @@ class UserInterface():  # Separate view (curses) from this controller
             if c == 27:
                 self.metaKey = 1
                 self.pressingButton = False
+                if cursorMode != "Draw" or cursorMode != "Paint":
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
                 # Clear out any canvas state as needed for command mode. For example...
@@ -1292,6 +1296,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 # In other words, un-stick the mouse button in case it's stuck:
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 self.pressingButton = False
+                if cursorMode != "Draw" or cursorMode != "Paint":
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
@@ -1486,6 +1494,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         if mouseState == curses.BUTTON1_CLICKED:
                             if self.pressingButton:
                                 self.pressingButton = False
+                                if cursorMode != "Draw" or cursorMode != "Paint":
+                                    print('\033[?1003l') # disable mouse reporting
+                                    curses.mousemask(1)
+                                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                             
                         if mouseState & curses.BUTTON1_PRESSED:
                             #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
@@ -1496,6 +1508,10 @@ class UserInterface():  # Separate view (curses) from this controller
                                     print('\033[?1003h') # enable mouse tracking with the XTERM APIP
                             else:
                                 self.pressingButton = False
+                                if cursorMode != "Draw" or cursorMode != "Paint":
+                                    print('\033[?1003l') # disable mouse reporting
+                                    curses.mousemask(1)
+                                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         else:
                             if self.pressingButton:
                                 self.pressingButton = False
@@ -2208,6 +2224,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
             if self.metaKey == 1:
                 self.pressingButton = False
+                if cursorMode != "Draw" or cursorMode != "Paint":
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if c == 111:                # alt-o - open
                     load_filename = self.openFilePicker()
                     if load_filename:   # if not False
@@ -2393,8 +2413,16 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.prevFgColor()
                             c = None
                     self.pressingButton = False
+                    if cursorMode != "Draw" or cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 else:
                     self.pressingButton = False
+                    if cursorMode != "Draw" or cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
                             pdb.set_trace()
@@ -2408,6 +2436,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.metaKey = 1
                 self.commandMode = True
                 self.pressingButton = False
+                if cursorMode != "Draw" or cursorMode != "Paint":
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open
@@ -2486,6 +2518,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.move_cursor_end()
             elif c != curses.KEY_MOUSE and self.pressingButton:
                 self.pressingButton = False
+                if cursorMode != "Draw" or cursorMode != "Paint":
+                    print('\033[?1003l') # disable mouse reporting
+                    curses.mousemask(1)
+                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
             elif c == curses.KEY_MOUSE: # We are not playing
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
@@ -2648,6 +2684,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 if mouseState == curses.BUTTON1_CLICKED:
                     self.pressingButton = False
+                    if cursorMode != "Draw" or cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     cmode = self.appState.cursorMode
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
@@ -3324,6 +3364,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     self.pressingButton = False
+                    if cursorMode != "Draw" or cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
                         if mouseLine < len(block_list) - top_line:   # clicked item line
                             if mouseCol < len(block_list[top_line+mouseLine]): # clicked within item width
