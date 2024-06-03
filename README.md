@@ -213,7 +213,7 @@ theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 
 The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
 
-Note that you can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
+You can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
 
 Here is an example 16-color theme:
 
