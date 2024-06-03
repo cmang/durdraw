@@ -1284,13 +1284,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
             if c == 27:
                 self.metaKey = 1
+                self.pressingButton = False
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
-                self.pressingButton = False
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
+                self.pressingButton = False
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
@@ -2206,6 +2207,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None
 
             if self.metaKey == 1:
+                self.pressingButton = False
                 if c == 111:                # alt-o - open
                     load_filename = self.openFilePicker()
                     if load_filename:   # if not False
@@ -2541,8 +2543,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
                         self.move_cursor_down()
                     elif self.appState.cursorMode == "Move":   # select mode/move the cursor
-                        self.xy[1] = mouseX + 1     # set cursor position
-                        self.xy[0] = mouseY + self.appState.topLine
+                        if self.pressingButton:
+                            self.xy[1] = mouseX + 1     # set cursor position
+                            self.xy[0] = mouseY + self.appState.topLine
                     elif self.appState.cursorMode == "Draw":   # Change the color under the cursor
                         if self.pressingButton:
                             if self.appState.debug:
@@ -2590,23 +2593,25 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
                     elif self.appState.cursorMode == "Color":   # Change the color under the cursor
-                        # also set cursor position
-                        self.xy[1] = mouseX + 1 # set cursor position
-                        self.xy[0] = mouseY + self.appState.topLine
-                        self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, pushUndo=False)
-                        self.refresh()
+                        if self.pressingButton:
+                            # also set cursor position
+                            self.xy[1] = mouseX + 1 # set cursor position
+                            self.xy[0] = mouseY + self.appState.topLine
+                            self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, pushUndo=False)
+                            self.refresh()
                     elif self.appState.cursorMode == "Erase":   # Erase character under the cursor
                         # also set cursor position
-                        self.xy[1] = mouseX + 1 # set cursor position
-                        self.xy[0] = mouseY + self.appState.topLine
-                        color_fg = self.appState.defaultFgColor 
-                        color_bg = self.appState.defaultBgColor 
-                        self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
+                        if self.pressingButton:
+                            self.xy[1] = mouseX + 1 # set cursor position
+                            self.xy[0] = mouseY + self.appState.topLine
+                            color_fg = self.appState.defaultFgColor 
+                            color_bg = self.appState.defaultBgColor 
+                            self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
                         self.eyeDrop(mouseX, mouseY + self.appState.topLine)
                         self.statusBar.setCursorModeMove()
                         self.drawStatusBar()
-                    elif self.appState.cursorMode == "Select":   # Change the color under the cursor
+                    elif self.appState.cursorMode == "Select":   # this does not exist lol
                         self.xy[1] = mouseX + 1 # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                         self.startSelecting(mouse=True)
