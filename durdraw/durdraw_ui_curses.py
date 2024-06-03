@@ -1224,6 +1224,7 @@ class UserInterface():  # Separate view (curses) from this controller
             the last frame was drawn.
         """
         self.commandMode = False
+        cursorMode = self.appState.cursorMode
         if not self.statusBar.toolButton.hidden:
             self.statusBar.toolButton.draw()
             self.statusBar.toolButton.hide()
@@ -2188,6 +2189,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def mainLoop(self):
         self.metaKey = 0
         self.commandMode = False
+        cursorMode = self.appState.cursorMode
         mouseX, mouseY = 0, 0
         self.pressingButton = False
         self.drawStatusBar()    # to make sure the inital state looks correct
@@ -2538,7 +2540,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         b1_click = mouseState & curses.BUTTON1_CLICKED
                         b1_dclick = mouseState & curses.BUTTON1_DOUBLE_CLICKED
                         mouseDebugString = f"mX: {mouseX}, mY: {mouseY}, mState: {mouseState}, press:{b1_press} rel:{b1_release} clk:{b1_click} dclk: {b1_dclick}"
-                        self.addstr(self.statusBarLineNum-3, 0, mouseDebugString, curses.color_pair(3) | curses.A_BOLD)
+                        self.addstr(self.statusBarLineNum-4, 0, mouseDebugString, curses.color_pair(3) | curses.A_BOLD)
                         #self.addstr(self.statusBarLineNum-5, 0, mouseDebugStates, curses.color_pair(2) | curses.A_BOLD)
                 except:
                     pass
@@ -3656,6 +3658,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     full_path = f"{current_directory}/{file_list[selected_item_number]}"
                     self.appState.workingLoadDirectory = current_directory
                     return full_path
+            elif c == 21:   # ^U or ctrl-u
+                # clear the search field
+                if search_string != "":
+                    search_string = ""
             elif c == 27:   # esc key
                 if search_string != "":
                     search_string = ""
