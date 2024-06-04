@@ -676,7 +676,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.clear()
         self.stdscr.refresh()
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
-        while self.realmaxX < self.mov.sizeX:
+        #while self.realmaxX < self.mov.sizeX:
+        while self.realmaxX < 80:
             try:
                 self.addstr(0, 0, "Terminal is too small for the UI.")
                 self.addstr(1, 0, "Please enlarge to 80 columns or larger, or press 'q' to quit")
@@ -2593,6 +2594,10 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c == curses.KEY_MOUSE: # We are not playing
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
+                    b1_press = mouseState & curses.BUTTON1_PRESSED
+                    b1_release = mouseState & curses.BUTTON1_RELEASED
+                    b1_click = mouseState & curses.BUTTON1_CLICKED
+                    b1_dclick = mouseState & curses.BUTTON1_DOUBLE_CLICKED
                     self.appState.mouse_col = mouseX
                     self.appState.mouse_line = mouseY
                     self.appState.renderMouseCursor = True
@@ -2621,10 +2626,6 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.addstr(self.statusBarLineNum-3, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
                         self.addstr(self.statusBarLineNum-4, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
                         # print mouse state
-                        b1_press = mouseState & curses.BUTTON1_PRESSED
-                        b1_release = mouseState & curses.BUTTON1_RELEASED
-                        b1_click = mouseState & curses.BUTTON1_CLICKED
-                        b1_dclick = mouseState & curses.BUTTON1_DOUBLE_CLICKED
                         mouseDebugString = f"mX: {mouseX}, mY: {mouseY}, mState: {mouseState}, press:{b1_press} rel:{b1_release} clk:{b1_click} dclk: {b1_dclick}"
                         self.addstr(self.statusBarLineNum-4, 0, mouseDebugString, curses.color_pair(3) | curses.A_BOLD)
                         #self.addstr(self.statusBarLineNum-5, 0, mouseDebugStates, curses.color_pair(2) | curses.A_BOLD)
@@ -2756,7 +2757,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
-                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED:
+                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0:
                     #print('\033[?1003h')
                     #self.notify("Farfenugen")
                     # If we clicked in the sidebar area, aka to the right of the canvas
@@ -5124,8 +5125,8 @@ Can use ESC or META instead of ALT
             # draw selected area inverse
             for linenum in range(firstLineNum, lastLineNum + 1):
                 for colnum in range(firstColNum - 1, lastColNum):
-                    if colnum == self.mov.sizeX - 1:   # prevent overflow on last line
-                        colnum -= 1
+                    #if colnum == self.mov.sizeX - 1:   # prevent overflow on last line
+                    #    colnum -= 1
                     charColor = mov.currentFrame.newColorMap[linenum][colnum]
                     try: # set ncurss color pair
                         cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
@@ -5140,6 +5141,7 @@ Can use ESC or META instead of ALT
             if c in [98, curses.KEY_LEFT, curses.KEY_SLEFT]:
                 self.move_cursor_left()
             elif c in [98, curses.KEY_RIGHT, curses.KEY_SRIGHT]:
+                #if colnum == self.mov.sizeX - 1:   # prevent overflow on last line
                 self.move_cursor_right()
             # 337 and 520 - shift-up, 336 and 513 = shift-down
             elif c in [339, curses.KEY_PPAGE]:  # page up
