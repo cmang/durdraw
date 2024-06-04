@@ -1463,6 +1463,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
                             if self.appState.topLine > self.mov.sizeY - self.realmaxY:
                                 self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+                                # prevent a ghost image on any blank lines at the bottom:
+                                self.stdscr.clear()
+                                self.refresh()
                     elif c in [339, curses.KEY_HOME]:  # 339 = home
                         self.appState.topLine = 0
                     elif c in [338, curses.KEY_END]:   # 338 = end
