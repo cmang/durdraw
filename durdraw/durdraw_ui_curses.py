@@ -3766,6 +3766,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     full_path = f"{current_directory}/{file_list[selected_item_number]}"
                     self.appState.workingLoadDirectory = current_directory
                     return full_path
+            elif c == 9:    # 9 == tab
+                pass
+                #self.filePickerOptionsPicker()
             elif c == 21:   # ^U or ctrl-u
                 # clear the search field
                 if search_string != "":
@@ -3855,6 +3858,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         # reset ui
                         selected_item_number = 0
                         search_string = ""
+                        full_file_list = file_list
 
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
