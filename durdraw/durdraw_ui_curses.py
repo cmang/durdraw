@@ -2758,7 +2758,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
-                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0:
+                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0 or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     #print('\033[?1003h')
                     #self.notify("Farfenugen")
                     # If we clicked in the sidebar area, aka to the right of the canvas
@@ -2769,7 +2769,11 @@ class UserInterface():  # Separate view (curses) from this controller
                             #if self.appState.colorMode == "256":
                                 # Tell the color picker to respond if the click is in its area:
                             #    self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                                if self.appState.colorMode == "16": # set BG color
+                                    self.statusBar.colorPicker.handler.gotDoubleClick(mouseX, mouseY)
+                            else:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
                 #elif mouseState & curses.BUTTON1_RELEASED:
                 #    pass
                     #print('\033[?1003l')

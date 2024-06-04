@@ -842,6 +842,7 @@ class ColorPickerHandler:
         return color
 
     def gotClick(self, mouseX, mouseY):
+        # If clicked on a color, set an FG color
         if not self.colorPicker.hidden and mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
             clickedCol = mouseX - self.x
             clickedLine = mouseY - self.origin
@@ -850,6 +851,18 @@ class ColorPickerHandler:
                     color = self.colorGrid[clickedLine][clickedCol]
                     self.colorPicker.caller.setFgColor(color)
                     self.updateFgPicker()
+
+    def gotDoubleClick(self, mouseX, mouseY):
+        # set a BG color
+        if not self.colorPicker.hidden and mouseY >= self.origin and mouseX < + self.x + len(self.colorGrid[0])-2:   # cpicked in the color picker
+            clickedCol = mouseX - self.x - 1
+            clickedLine = mouseY - self.origin
+            if mouseY < self.origin + self.height:
+                if self.colorGrid[clickedLine][clickedCol] != 0:
+                    color = self.colorGrid[clickedLine][clickedCol]
+                    self.colorPicker.caller.setBgColor(color)
+                    self.updateFgPicker()
+
 
 
     def update(self):
