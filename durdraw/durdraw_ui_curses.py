@@ -199,6 +199,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def enableMouseReporting(self):
         # Use xterm API to report location of mouse cursor
         print('\033[?1003h') # enable mouse tracking with the XTERM API
+        self.hardRefresh()
         #curses.mousemask(1)
         #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
 
@@ -206,6 +207,7 @@ class UserInterface():  # Separate view (curses) from this controller
         print('\033[?1003l') # disable mouse reporting
         curses.mousemask(1)
         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+        self.hardRefresh()
 
     def enableTransBackground(self):
         curses.use_default_colors()
@@ -1300,6 +1302,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.pressingButton = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
+                    self.hardRefresh()
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if self.pushingToClip:
@@ -1505,6 +1508,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.appState.topLine > 0:
                             self.appState.topLine = self.appState.topLine - 1
                     elif c == 12:               # ctrl-l - harder refresh
+                        self.stdscr.clear()
                         self.hardRefresh()
                         c = None
                 else:
@@ -1520,6 +1524,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.pressingButton = False
                                 if cursorMode != "Draw" and cursorMode != "Paint":
                                     print('\033[?1003l') # disable mouse reporting
+                                    self.hardRefresh()
                                     curses.mousemask(1)
                                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                                 if self.pushingToClip:
@@ -1532,10 +1537,12 @@ class UserInterface():  # Separate view (curses) from this controller
                                 if not self.pressingButton:
                                     self.pressingButton = True
                                     print('\033[?1003h') # enable mouse tracking with the XTERM APIP
+                                    self.hardRefresh()
                             else:
                                 self.pressingButton = False
                                 if cursorMode != "Draw" and cursorMode != "Paint":
                                     print('\033[?1003l') # disable mouse reporting
+                                    self.hardRefresh()
                                     curses.mousemask(1)
                                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                                 if self.pushingToClip:
@@ -1547,6 +1554,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                     self.pushingToClip = False
                                 #if self.appState.cursorMode != "Draw":
                                 print('\033[?1003l') # disable mouse reporting
+                                self.hardRefresh()
                                 curses.mousemask(1)
                                 curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         if self.pressingButton or mouseState == curses.BUTTON1_CLICKED:    # self.playing == True
@@ -2265,6 +2273,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.pushingToClip = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
+                    self.hardRefresh()
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if c == 111:                # alt-o - open
@@ -2475,6 +2484,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.pressingButton = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if self.pushingToClip:
@@ -2483,6 +2493,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.pressingButton = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if self.pushingToClip:
@@ -2504,6 +2515,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.pushingToClip = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
+                    self.hardRefresh()
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 self.appState.renderMouseCursor = False
@@ -2590,6 +2602,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 cursorMode = self.appState.cursorMode
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
+                    self.hardRefresh()
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
             elif c == curses.KEY_MOUSE: # We are not playing
@@ -2616,6 +2629,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         cursorMode = self.appState.cursorMode
                         if cursorMode != "Draw" and cursorMode != "Paint":
                             print('\033[?1003l') # disable mouse reporting
+                            self.hardRefresh()
                             curses.mousemask(1)
                             curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                             if self.pushingToClip:
@@ -2632,14 +2646,16 @@ class UserInterface():  # Separate view (curses) from this controller
                         #self.addstr(self.statusBarLineNum-5, 0, mouseDebugStates, curses.color_pair(2) | curses.A_BOLD)
                 except:
                     pass
-                if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
-                    and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                #    and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+                if mouseY + self.appState.topLine < self.mov.sizeY and mouseX < self.mov.sizeX:
                     # we're in the canvas, not playing
 
                     if mouseState & curses.BUTTON1_PRESSED:
                         if not self.pressingButton:
                             self.pressingButton = True
                             print('\033[?1003h') # enable mouse tracking with the XTERM API
+                            self.hardRefresh()
                         if not self.pushingToClip:
                             cmode = self.appState.cursorMode
                             if cmode == "Draw" or cmode == "Paint" or cmode == "Color" or cmode == "Erase":
@@ -2653,6 +2669,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             cursorMode = self.appState.cursorMode
                             if cursorMode != "Draw" and cursorMode != "Paint":
                                 print('\033[?1003l') # disable mouse reporting
+                                self.hardRefresh()
                                 curses.mousemask(1)
                                 curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                             if cursorMode == "Draw" and cursorMode == "Paint":
@@ -2674,7 +2691,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.pressingButton:
                             self.xy[1] = mouseX + 1     # set cursor position
                             self.xy[0] = mouseY + self.appState.topLine
-                    elif self.appState.cursorMode == "Draw":   # Change the color under the cursor
+                    elif self.appState.cursorMode == "Draw":
                         if self.pressingButton:
                             if self.appState.debug:
                                 self.addstr(self.statusBarLineNum-2, 20, "Draw triggered.", curses.color_pair(6) | curses.A_BOLD)
@@ -2690,7 +2707,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=False, pushUndo=False)
                             except IndexError:
                                 self.notify(f"Error, debug info: x={x_param}, y={y_param}, topLine={self.appState.topLine}, mouseX={mouseX}, mouseY={mouseY}", pause=True)
-                            self.refresh()
+                            #self.refresh()
                         else:
                             if self.appState.debug:
                                 self.addstr(self.statusBarLineNum-2, 20, "Draw untriggered.", curses.color_pair(5) | curses.A_BOLD)
@@ -2751,6 +2768,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.pushingToClip = False
                     if self.appState.cursorMode != "Draw" and self.appState.cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     #self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1] - 1] = [self.colorfg, self.colorbg]
@@ -2758,56 +2776,24 @@ class UserInterface():  # Separate view (curses) from this controller
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
-                elif mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0 or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                if mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0 or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     #print('\033[?1003h')
                     #self.notify("Farfenugen")
-                    # If we clicked in the sidebar area, aka to the right of the canvas
-                    # and above the status bar:
-                    if self.appState.sideBarEnabled:
-                        # If we're in the right toolbar sort of area
-                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            #if self.appState.colorMode == "256":
-                                # Tell the color picker to respond if the click is in its area:
-                            #    self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
-                            if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                if self.appState.colorMode == "16": # set BG color
-                                    self.statusBar.colorPicker.handler.gotDoubleClick(mouseX, mouseY)
-                            else:
-                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
-                #elif mouseState & curses.BUTTON1_RELEASED:
-                #    pass
-                    #print('\033[?1003l')
-                    #curses.mousemask(1)
-                    #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
-
-                if mouseState == curses.BUTTON1_CLICKED:
-                    self.pressingButton = False
-                    if cursorMode != "Draw" and cursorMode != "Paint":
-                        print('\033[?1003l') # disable mouse reporting
-                        curses.mousemask(1)
-                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
-                    if self.pushingToClip:
-                        self.pushingToClip = False
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     cmode = self.appState.cursorMode
-                    if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
-                        if cmode == "Draw" or cmode == "Color" or cmode == "Erase" or cmode == "Paint":
-                            self.undo.push()
-                    else:   # Not in the canvas, so give the GUI a click
-                        if cmode == "Draw" or cmode == "Paint":
-                            self.disableMouseReporting()
-                        self.gui.got_click("Click", mouseX, mouseY)
-                        if cmode == "Draw" or cmode == "Paint":
-                            self.enableMouseReporting()
-                    # If we clicked in the sidebar area, aka to the right of the canvas
-                    # and above the status bar:
-                    if self.appState.sideBarEnabled:
-                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
-                            #if self.appState.colorMode == "256":
-                                # Tell the color picker to respond if the click is in its area:
-                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+
+                    #if mouseState & curses.BUTTON1_PRESSED:
+                    #    self.gui.got_click("Click", mouseX, mouseY)
                     # If we clicked in the status bar:
                     if mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar somewhere..
+
+                        if mouseState & curses.BUTTON1_PRESSED:
+                            #if cmode == "Draw" or cmode == "Paint" or cmode == "Color":
+                            self.disableMouseReporting()
+                            self.gui.got_click("Click", mouseX, mouseY)
+                            if cmode == "Draw" or cmode == "Paint":
+                                self.enableMouseReporting()
+
                         # Add stuff here to take mouse 'commands' like clicking
                         # play/next/etc on transport, or clicking "start button"
                         if mouseY == self.statusBarLineNum: # clicked upper bar 
@@ -2877,6 +2863,54 @@ class UserInterface():  # Separate view (curses) from this controller
                         else:
                             if self.appState.debug:
                                 self.notify(str([mouseX, mouseY]))
+                    # If we clicked in the sidebar area, aka to the right of the canvas
+                    # and above the status bar:
+                    if self.appState.sideBarEnabled:
+                        # If we're in the right toolbar sort of area
+                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
+                            #if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                            #    self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                            if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+                                if self.appState.colorMode == "16": # set BG color
+                                    self.statusBar.colorPicker.handler.gotDoubleClick(mouseX, mouseY)
+                            else:
+                                self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
+                #elif mouseState & curses.BUTTON1_RELEASED:
+                #    pass
+                    #print('\033[?1003l')
+                    #curses.mousemask(1)
+                    #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+
+                if mouseState == curses.BUTTON1_CLICKED:
+                    self.pressingButton = False
+                    if cursorMode != "Draw" and cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                    if self.pushingToClip:
+                        self.pushingToClip = False
+                    realmaxY,realmaxX = self.realstdscr.getmaxyx()
+                    cmode = self.appState.cursorMode
+                    #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+                    if mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum and mouseX < self.mov.sizeX: # we're in the canvas
+                        if cmode == "Draw" or cmode == "Color" or cmode == "Erase" or cmode == "Paint":
+                            self.undo.push()
+                    else:   # Not in the canvas, so give the GUI a click
+                        #pass
+                        if cmode == "Draw" or cmode == "Paint":
+                            self.disableMouseReporting()
+                        self.gui.got_click("Click", mouseX, mouseY)
+                        if cmode == "Draw" or cmode == "Paint":
+                            self.enableMouseReporting()
+                    # If we clicked in the sidebar area, aka to the right of the canvas
+                    # and above the status bar:
+                    if self.appState.sideBarEnabled:
+                        if mouseX >= self.appState.sideBarColumn and mouseY < self.statusBarLineNum:
+                            #if self.appState.colorMode == "256":
+                                # Tell the color picker to respond if the click is in its area:
+                            self.statusBar.colorPicker.handler.gotClick(mouseX, mouseY)
             elif c in [curses.KEY_SLEFT, curses.KEY_SRIGHT, 337, 336, 520, 513]:
                 # 337 and 520 - shift-up, 336 and 513 = shift-down
                 # shift-up, shift-down, shift-left and shift-right = start selecting text block
@@ -2891,7 +2925,7 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
                 self.appState.renderMouseCursor = False
-            self.drawStatusBar()
+            #self.drawStatusBar()
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
             self.refresh()
@@ -3480,7 +3514,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.stdscr.clear()
                     prompting = False
                     if self.playing:
-                        elf.stdscr.nodelay(1)
+                        self.stdscr.nodelay(1)
                     return False
             elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
                 if search_string != "":
@@ -3497,6 +3531,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.pushingToClip = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
@@ -4919,9 +4954,9 @@ Can use ESC or META instead of ALT
             self.stdscr.nodelay(1)
 
     def hardRefresh(self):
-        self.stdscr.clear()
+        #self.stdscr.clear()
         self.stdscr.redrawwin()
-        self.refresh()
+        #self.refresh()
 
     def refresh(self, refreshScreen=True):          # rename to redraw()?
         """Refresh the screen"""
@@ -4949,9 +4984,10 @@ Can use ESC or META instead of ALT
                     if self.appState.brush != None:
                         # draw brush preview
                         # If we're drawing within the brush area:
-                        if linenum in range(self.appState.mouse_line, self.appState.mouse_line + self.appState.brush.sizeX):
+                        if linenum in range(self.appState.mouse_line + self.appState.topLine, self.appState.mouse_line + self.appState.brush.sizeX + self.appState.topLine):
                             if colnum in range(self.appState.mouse_col, self.appState.mouse_col + self.appState.brush.sizeY):
-                                brush_line = linenum - self.appState.mouse_line
+                                #brush_line = linenum - self.appState.mouse_line
+                                brush_line = linenum - self.appState.mouse_line - self.appState.topLine
                                 brush_col = colnum - self.appState.mouse_col
                                 try:
                                     brushChar = self.appState.brush.content[brush_col][brush_line]
@@ -4967,7 +5003,7 @@ Can use ESC or META instead of ALT
                                     if self.appState.renderMouseCursor:
                                         charContent = brushChar
                                         charColor = self.appState.brush.newColorMap[brush_col][brush_line]
-                if linenum == self.appState.mouse_line and colnum == self.appState.mouse_col:
+                if linenum == self.appState.mouse_line + self.appState.topLine and colnum == self.appState.mouse_col:
                     if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
                         if self.appState.renderMouseCursor:
                             charContent = self.appState.drawChar
@@ -4984,17 +5020,18 @@ Can use ESC or META instead of ALT
                 else:
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
-            if self.appState.drawBorders:
+            if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ":", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
-        if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
+        #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
+        if self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
             self.addstr(screenLineNum, 0, "." * mov.sizeX, curses.color_pair(self.appState.theme['borderColor']))
             self.addstr(screenLineNum, mov.sizeX, ":", curses.color_pair(self.appState.theme['borderColor']))
-        else:
-            pass
-        for x in range(screenLineNum, mov.sizeY):
-            self.addstr(x, 0, " " * mov.sizeX)
+        screenLineNum += 1
+        spaceMultiplier = mov.sizeX + 1
+        for x in range(screenLineNum, self.realmaxY - 2):
+            self.addstr(x, 0, " " * spaceMultiplier)
         curses.panel.update_panels()
         if self.appState.playingHelpScreen:
             self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
