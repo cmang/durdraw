@@ -5049,9 +5049,10 @@ Can use ESC or META instead of ALT
                 self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [1,0])
         self.mov.sizeX += 1
         self.opts.sizeX += 1
+        self.hardRefresh()
 
     def delColFromCanvas(self):
-        if self.mov.sizeX > 1 and self.xy[1] != self.mov.sizeX:
+        if self.mov.sizeX > 1 and self.xy[1] <= self.mov.sizeX:
             self.undo.push()
             for frameNum in range(0, len(self.mov.frames)):     # Pop current column from every
                 for x in range(len(self.mov.frames[frameNum].content)):     # line
@@ -5060,6 +5061,9 @@ Can use ESC or META instead of ALT
             self.mov.sizeX -= 1
             self.opts.sizeX -= 1
             self.hardRefresh()
+        if self.xy[1] == self.mov.sizeX + 1:
+            self.move_cursor_left()
+        self.hardRefresh()
 
     def addLineToCanvas(self):
         self.undo.push()
