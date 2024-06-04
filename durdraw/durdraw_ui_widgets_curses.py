@@ -860,8 +860,10 @@ class ColorPickerHandler:
             if mouseY < self.origin + self.height:
                 if self.colorGrid[clickedLine][clickedCol] != 0:
                     color = self.colorGrid[clickedLine][clickedCol]
-                    self.colorPicker.caller.setBgColor(color)
-                    self.updateFgPicker()
+                    if self.colorPicker.caller.appState.colorMode == "16" and color < 9:
+                        # Only set BG color if it's one of the non-bright colors. (Sorry, no ice yet)
+                        self.colorPicker.caller.setBgColor(color)
+                        self.updateFgPicker()
 
 
 
