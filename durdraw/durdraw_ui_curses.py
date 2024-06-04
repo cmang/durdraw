@@ -1286,8 +1286,10 @@ class UserInterface():  # Separate view (curses) from this controller
             if c == 27:
                 self.metaKey = 1
                 self.pressingButton = False
+                if self.pushingToClip:
+                    self.pushingToClip = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
-                    disableMouseReporting()
+                    self.disableMouseReporting()
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
                 # Clear out any canvas state as needed for command mode. For example...
@@ -1299,6 +1301,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     print('\033[?1003l') # disable mouse reporting
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                if self.pushingToClip:
+                    self.pushingToClip = False
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
@@ -1363,33 +1367,53 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
                     self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('3')]:    # F3 - insert extended character
                     self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('4')]:    # F4 - insert extended character
                     self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('5')]:    # F5 - insert extended character
                     self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('6')]:    # F6 - insert extended character
                     self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('7')]:    # F7 - insert extended character
                     self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('8')]:    # F8 - insert extended character
                     self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('9')]:    # F9 - insert extended character
                     self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 elif c in [ord('0')]:    # F10 - insert extended character
                     self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
+                    c = None
+                    self.hardRefresh()
                 else:
                     if self.appState.debug:
                         self.notify("keystroke: %d" % c) # alt-unknown
@@ -1497,6 +1521,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                     print('\033[?1003l') # disable mouse reporting
                                     curses.mousemask(1)
                                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                                if self.pushingToClip:
+                                    self.pushingToClip = False
                             
                         if mouseState & curses.BUTTON1_PRESSED:
                             #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
@@ -1511,9 +1537,13 @@ class UserInterface():  # Separate view (curses) from this controller
                                     print('\033[?1003l') # disable mouse reporting
                                     curses.mousemask(1)
                                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                                if self.pushingToClip:
+                                    self.pushingToClip = False
                         else:
                             if self.pressingButton:
                                 self.pressingButton = False
+                                if self.pushingToClip:
+                                    self.pushingToClip = False
                                 #if self.appState.cursorMode != "Draw":
                                 print('\033[?1003l') # disable mouse reporting
                                 curses.mousemask(1)
@@ -2055,6 +2085,11 @@ class UserInterface():  # Separate view (curses) from this controller
         locationString = "(%i,%i)" % (self.xy[1]-1, self.xy[0])
         locationStringOffset = realmaxX - len(locationString) - 1
         self.addstr(statusBarLineNum+1, locationStringOffset, locationString, curses.color_pair(mainColor))
+        # Draw button indicator
+        if self.pressingButton:
+            self.addstr(statusBarLineNum + 1, locationStringOffset - 1, "*", curses.color_pair(3) | curses.A_BOLD)
+        else:
+            self.addstr(statusBarLineNum + 1, locationStringOffset - 1, " ", curses.color_pair(3) | curses.A_BOLD)
         # Draw Range, FPS and Delay buttons
         self.addstr(statusBarLineNum, 13 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
         self.addstr(statusBarLineNum, 17 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
@@ -2191,6 +2226,7 @@ class UserInterface():  # Separate view (curses) from this controller
         mouseX, mouseY = 0, 0
         self.pressingButton = False
         self.drawStatusBar()    # to make sure the inital state looks correct
+        curses.noecho()
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
@@ -2224,6 +2260,8 @@ class UserInterface():  # Separate view (curses) from this controller
 
             if self.metaKey == 1:
                 self.pressingButton = False
+                if self.pushingToClip:
+                    self.pushingToClip = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
                     curses.mousemask(1)
@@ -2371,24 +2409,44 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.startSelecting(firstkey=c)  # start selecting text
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
                     self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('3')]:    # F3 - insert extended character
                     self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('4')]:    # F4 - insert extended character
                     self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('5')]:    # F5 - insert extended character
                     self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('6')]:    # F6 - insert extended character
                     self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('7')]:    # F7 - insert extended character
                     self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('8')]:    # F8 - insert extended character
                     self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('9')]:    # F9 - insert extended character
                     self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c in [ord('0')]:    # F10 - insert extended character
                     self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg)
+                    self.hardRefresh()
+                    c = None
                 elif c == 27:   # 2nd esc byte - possibly alt-arrow.
                     # eg: alt-down: 27 27 91 66 or  \x1b\x1b\x5b\x42
                     c = self.stdscr.getch()
@@ -2417,12 +2475,16 @@ class UserInterface():  # Separate view (curses) from this controller
                         print('\033[?1003l') # disable mouse reporting
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                    if self.pushingToClip:
+                        self.pushingToClip = False
                 else:
                     self.pressingButton = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                    if self.pushingToClip:
+                        self.pushingToClip = False
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
                             pdb.set_trace()
@@ -2436,13 +2498,15 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.metaKey = 1
                 self.commandMode = True
                 self.pressingButton = False
+                if self.pushingToClip:
+                    self.pushingToClip = False
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 c = None
             if c == 24: self.safeQuit()     # ctrl-x
-            elif c == 15:               # ctrl-o - open
+            elif c == 15:               # ctrl-o - open # holy crap, this is still in here? lol
                 load_filename = self.openFilePicker()
                 if load_filename:   # if not False
                     self.clearCanvas(prompting=False)
@@ -2518,6 +2582,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.move_cursor_end()
             elif c != curses.KEY_MOUSE and self.pressingButton:
                 self.pressingButton = False
+                if self.pushingToClip:
+                    self.pushingToClip = False
                 cursorMode = self.appState.cursorMode
                 if cursorMode != "Draw" and cursorMode != "Paint":
                     print('\033[?1003l') # disable mouse reporting
@@ -2537,13 +2603,15 @@ class UserInterface():  # Separate view (curses) from this controller
                         #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                     if mouseState == 1:
                         self.pressingButton = False
+                        if self.pushingToClip:
+                            self.pushingToClip = False
                         cursorMode = self.appState.cursorMode
                         if cursorMode != "Draw" and cursorMode != "Paint":
                             print('\033[?1003l') # disable mouse reporting
                             curses.mousemask(1)
                             curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
-                        if self.pushingToClip:
-                            self.pushingToClip = False
+                            if self.pushingToClip:
+                                self.pushingToClip = False
                         #self.notify("Released from drag, hopefully.")
                     if self.appState.debug:
                         # clear mouse state lines
@@ -2576,6 +2644,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif mouseState & curses.BUTTON1_RELEASED:
                         if self.pressingButton:
                             self.pressingButton = False
+                            if self.pushingToClip:
+                                self.pushingToClip = False
                             cursorMode = self.appState.cursorMode
                             if cursorMode != "Draw" and cursorMode != "Paint":
                                 print('\033[?1003l') # disable mouse reporting
@@ -2673,6 +2743,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 # else, not in the canvas
                 elif self.pressingButton:
                     self.pressingButton = False
+                    if self.pushingToClip:
+                        self.pushingToClip = False
                     if self.appState.cursorMode != "Draw" and self.appState.cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
                         curses.mousemask(1)
@@ -2706,6 +2778,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         print('\033[?1003l') # disable mouse reporting
                         curses.mousemask(1)
                         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                    if self.pushingToClip:
+                        self.pushingToClip = False
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     cmode = self.appState.cursorMode
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # we're in the canvas
@@ -2812,6 +2886,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
             self.refresh()
+            #self.hardRefresh()
 
     def selectColorPicker(self):
         #if self.appState.colorMode == "256":
@@ -3382,6 +3457,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     self.pressingButton = False
+                    if self.pushingToClip:
+                        self.pushingToClip = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
                         curses.mousemask(1)
