@@ -298,6 +298,9 @@ A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
+#### Q: I only see 8 colors in 16 color mode. Why?
+A: Look in your terminal setting for "Use bright colors for bold," or a similarly named option. Durdraw's 16-color mode, like many vintage terminals (including MS-DOS), uses the Bold escape codes to tell the terminal the "bright" colors. This provides compatibility with many older systems. However, some terminals do not support or enable this option by default. Additionally, your terminal decides what colors to assign to the lower 16 colors.
+
 #### Q: Some or all of the F1-F10 keys do not work for me! What can I do?
 A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals will map this to Alt-1 through Alt-0. You can also use the following settings in some terminals to enable the F1-F10 keys:
 
