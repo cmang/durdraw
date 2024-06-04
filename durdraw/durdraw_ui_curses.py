@@ -2929,7 +2929,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.drawStatusBar()
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
-            self.refresh()
+            self.refresh(refreshScreen=False)
             #self.hardRefresh()
 
     def selectColorPicker(self):
