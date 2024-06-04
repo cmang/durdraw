@@ -5070,7 +5070,7 @@ Can use ESC or META instead of ALT
         self.opts.sizeY += 1
 
     def delLineFromCanvas(self):
-        if self.mov.sizeY > 1 and self.xy[0] != self.mov.sizeY - 1:
+        if self.mov.sizeY > 1 and self.xy[0] != self.mov.sizeY:
             self.undo.push()
             for frameNum in range(0, len(self.mov.frames)):
                 self.mov.frames[frameNum].content.pop(self.xy[0])
@@ -5078,6 +5078,8 @@ Can use ESC or META instead of ALT
             self.mov.sizeY -= 1
             self.opts.sizeY -= 1
             self.hardRefresh()
+        if self.xy[0] == self.mov.sizeY: # We're on the last line, and just deleted it.
+            self.move_cursor_up()
 
     def addCol(self, frange=None):
         """Insert column at position of cursor"""
