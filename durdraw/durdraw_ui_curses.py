@@ -1842,7 +1842,6 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.topLine = topLine
         if self.xy[0] < self.appState.topLine:   # if cursor is off screen
             self.xy[0] = self.appState.topLine   # put it back on
-        pass
 
     def drawStatusBar(self):
         if self.statusBar.hidden:
@@ -1868,8 +1867,6 @@ class UserInterface():  # Separate view (curses) from this controller
             resized = True 
         if self.appState.realmaxX != realmaxX:
             resized = True 
-        if resized:
-            self.stdscr.clear()
 
         self.appState.realmaxY = realmaxY
         self.appState.realmaxX = realmaxX
@@ -2181,6 +2178,10 @@ class UserInterface():  # Separate view (curses) from this controller
             drawChar_line = self.statusBar.drawCharPickerButton.realX
             drawChar_col = self.statusBar.drawCharPickerButton.realY + 1
             self.addstr(drawChar_line, drawChar_col, self.appState.drawChar, curses.color_pair(self.colorpair))
+
+        if resized:
+            #self.stdscr.clear()
+            self.hardRefresh()
 
     def window_big_enough_for_colors(self):
         # Returns true if window is either tall enough or wide enough
@@ -4974,10 +4975,12 @@ Can use ESC or META instead of ALT
         if lastLineToDraw > mov.sizeY:
             lastLineToDraw = mov.sizeY
         screenLineNum = 0
+        firstCol = 0
+        lastCol = min(mov.sizeX, self.appState.realmaxX)
         # Draw each character
         for linenum in range(topLine, lastLineToDraw):
             line = mov.currentFrame.content[linenum]
-            for colnum in range(mov.sizeX):
+            for colnum in range(firstCol, lastCol):
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])
                 if self.appState.cursorMode == "Paint" and not self.playing and not self.appState.playingHelpScreen:
@@ -5021,13 +5024,13 @@ Can use ESC or META instead of ALT
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
             if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
-                self.addstr(screenLineNum, mov.sizeX, ":", curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
         if self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
             self.addstr(screenLineNum, 0, "." * mov.sizeX, curses.color_pair(self.appState.theme['borderColor']))
-            self.addstr(screenLineNum, mov.sizeX, ":", curses.color_pair(self.appState.theme['borderColor']))
+            self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
         screenLineNum += 1
         spaceMultiplier = mov.sizeX + 1
         for x in range(screenLineNum, self.realmaxY - 2):
