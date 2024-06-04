@@ -2268,11 +2268,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if c == 111:                # alt-o - open
-                    load_filename = self.openFilePicker()
-                    if load_filename:   # if not False
-                        self.clearCanvas(prompting=False)
-                        self.loadFromFile(load_filename, 'dur')
-                        self.move_cursor_topleft()
+                    self.openFromMenu()     # as if we clicked menu->open
+                    #load_filename = self.openFilePicker()
+                    #if load_filename:   # if not False
+                    #    self.clearCanvas(prompting=False)
+                    #    self.loadFromFile(load_filename, 'dur')
+                    #    self.move_cursor_topleft()
                 elif c == 115:                 # alt-s - save
                     self.save()
                     c = None
@@ -3230,6 +3231,22 @@ class UserInterface():  # Separate view (curses) from this controller
             self.stdscr.nodelay(1)
 
     def openFromMenu(self):
+        #self.stdscr.nodelay(0) # wait for input when calling getch
+        self.clearStatusLine()
+        if self.appState.modified:
+            self.promptPrint("Changes have not been saved! Are you sure you want to load another file? (Y/N) ")
+            prompting = True
+            while prompting:
+                time.sleep(0.01)
+                c = self.stdscr.getch()
+                if c == 121:   # 121 = y
+                    prompting = False
+                elif c == 110 or c == 27: # 110 == n, 27 == esc
+                    prompting = False
+                    return None
+                time.sleep(0.01)
+            self.clearStatusLine()
+
         load_filename = self.openFilePicker()
         if load_filename:   # if not False
             self.clearCanvas(prompting=False)
