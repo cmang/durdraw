@@ -5029,8 +5029,9 @@ Can use ESC or META instead of ALT
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
         if self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
-            self.addstr(screenLineNum, 0, "." * mov.sizeX, curses.color_pair(self.appState.theme['borderColor']))
-            self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+            if screenLineNum < self.statusBarLineNum:
+                self.addstr(screenLineNum, 0, "." * mov.sizeX, curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
         screenLineNum += 1
         spaceMultiplier = mov.sizeX + 1
         for x in range(screenLineNum, self.realmaxY - 2):
