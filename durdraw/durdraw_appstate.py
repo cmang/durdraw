@@ -24,6 +24,7 @@ class AppState():
         self.iceColors = False
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
+        self.renderMouseCursor = False      # show Paint or Draw cursor in canvas
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
         self.cursorBlinks = True     # lord help me, why would anyone not want this to be true?
         self.totalFgColors = 16

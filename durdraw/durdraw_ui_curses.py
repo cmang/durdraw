@@ -2504,6 +2504,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     print('\033[?1003l') # disable mouse reporting
                     curses.mousemask(1)
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                self.appState.renderMouseCursor = False
                 c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open # holy crap, this is still in here? lol
@@ -2594,6 +2595,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
                     self.appState.mouse_col = mouseX
                     self.appState.mouse_line = mouseY
+                    self.appState.renderMouseCursor = True
                     if mouseState > 2:  # probably click-dragging. We want an instant response, so...
                         pass
                         #self.pressingButton = True
@@ -2882,6 +2884,7 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c == None: pass
             elif c <= 128 and c >= 32:      # normal printable character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
+                self.appState.renderMouseCursor = False
             self.drawStatusBar()
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
@@ -2964,6 +2967,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.xy[0] < self.mov.sizeY:
             self.move_cursor_down()
         self.move_cursor_home()
+        self.appState.renderMouseCursor = False
 
     def move_cursor_pgup(self):
         # if we're at the top of the screen
@@ -2981,6 +2985,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # not at top of screen at all, go to top of screen
         elif self.xy[0] > self.appState.topLine:
             self.xy[0] = self.appState.topLine
+        self.appState.renderMouseCursor = False
 
     def move_cursor_pgdown(self):
         bottomLine = self.realmaxY - 3 + self.appState.topLine
@@ -3001,43 +3006,52 @@ class UserInterface():  # Separate view (curses) from this controller
         # middle of screen, go to bottom
         elif self.xy[0] - self.appState.topLine < bottomLine:
             self.xy[0] = bottomLine
+        self.appState.renderMouseCursor = False
 
     def move_cursor_topleft(self):
         self.appState.topLine = 0
         self.xy[0] = 0
         self.xy[1] = 1
         self.refresh()
+        self.appState.renderMouseCursor = False
 
     def move_cursor_left(self):     # pressed LEFT key
         if self.xy[1] > 1:
             self.xy[1] = self.xy[1] - 1
+        self.appState.renderMouseCursor = False
 
     def move_cursor_right(self):    # pressed RIGHT key
         if self.xy[1] < self.mov.sizeX:
             self.xy[1] = self.xy[1] + 1
+        self.appState.renderMouseCursor = False
 
     def move_cursor_up(self):   # pressed UP key
         if self.xy[0] > 0:
             self.xy[0] = self.xy[0] - 1
             if self.xy[0] - self.appState.topLine + 1 == 0 and self.appState.topLine > 0:  # if we're at the top of the screen
                 self.appState.topLine -= 1   # scrolll up a line
+        self.appState.renderMouseCursor = False
 
     def move_cursor_down(self): # pressed DOWN key
         if self.xy[0] < self.mov.sizeY - 1:
             self.xy[0] = self.xy[0] + 1 # down a line
             if self.xy[0]  - self.appState.topLine > self.realmaxY - 3: # if we're at the bottom of the screen
                 self.appState.topLine += 1  # scroll down a line
+        self.appState.renderMouseCursor = False
 
     def move_cursor_home(self):
         self.xy[1] = 1
+        self.appState.renderMouseCursor = False
 
     def move_cursor_end(self):
         self.xy[1] = self.mov.sizeX
+        self.appState.renderMouseCursor = False
 
     def move_cursor_to_line_and_column(self, line, col):
         self.appState.topLine = line
         self.xy[0] = line
         self.xy[1] = col
+        self.appState.renderMouseCursor = False
 
     def getDelayValue(self):
         """ Ask the user for the delay value to set for current frame, then
@@ -4924,12 +4938,14 @@ Can use ESC or META instead of ALT
                                     pass
                                 else:
                                     # It's a character that we should draw as a brush preview
-                                    charContent = brushChar
-                                    charColor = self.appState.brush.newColorMap[brush_col][brush_line]
+                                    if self.appState.renderMouseCursor:
+                                        charContent = brushChar
+                                        charColor = self.appState.brush.newColorMap[brush_col][brush_line]
                 if linenum == self.appState.mouse_line and colnum == self.appState.mouse_col:
                     if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
-                        charContent = self.appState.drawChar
-                        charColor = [self.colorfg, self.colorbg]
+                        if self.appState.renderMouseCursor:
+                            charContent = self.appState.drawChar
+                            charColor = [self.colorfg, self.colorbg]
                 try:
                     # set ncurss color pair
                     cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
