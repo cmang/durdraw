@@ -1273,19 +1273,6 @@ class UserInterface():  # Separate view (curses) from this controller
             self.stdscr.refresh()
             c = self.stdscr.getch()
 
-            if c in [532]:  # 532 - alt-down, prev BG color
-                self.prevBgColor()
-                c = None
-            elif c in [573]:  # 573 - alt-up, next BG color
-                self.nextBgColor()
-                c = None
-            elif c in [552]:  # 552 - alt-left, prev FG color
-                self.prevFgColor()
-                c = None
-            elif c in [567]:  # 567 - alt-right, next FG color
-                self.nextFgColor()
-                c = None
-
             if c == 27:
                 self.metaKey = 1
                 self.pressingButton = False
@@ -1314,17 +1301,31 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
                     sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
-                    self.prevBgColor()
+                elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color (in 16)
+                    if self.appState.colorMode == "16":
+                        self.prevBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.prevFgColor()
+                        #self.statusBar.colorPicker.handler.move_down_256()
                     c = None 
                 elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
-                    self.nextBgColor()
+                    if self.appState.colorMode == "16":
+                        self.nextBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.nextFgColor()
+                        #self.statusBar.colorPicker.handler.move_down_256()
                     c = None 
                 elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
-                    self.prevFgColor()
+                    if self.appState.colorMode == "16":
+                        self.prevFgColor()
+                    elif self.appState.colorMode == "256":
+                        self.statusBar.colorPicker.handler.move_down_256()
                     c = None 
                 elif c == curses.KEY_UP:     # alt-up - next fg color
-                    self.nextFgColor()
+                    if self.appState.colorMode == "16":
+                        self.nextFgColor()
+                    elif self.appState.colorMode == "256":
+                        self.statusBar.colorPicker.handler.move_up_256()
                     c = None 
                 elif c == 91 or c == 339:   # alt-[ previous character set. apparently this doesn't work
                     self.prevCharSet() # during playback, c == -1, so 339 is alt-pgup, as a backup
@@ -2252,25 +2253,6 @@ class UserInterface():  # Separate view (curses) from this controller
             self.testWindowSize()
             #if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
             
-            if c in [532]:  # 532 - alt-down, prev BG color
-                if self.appState.colorMode == "16":
-                    self.prevBgColor()
-                elif self.appState.colorMode == "256":
-                    self.statusBar.colorPicker.handler.move_down_256()
-                c = None
-            elif c in [573]:  # 573 - alt-up, next BG color
-                if self.appState.colorMode == "16":
-                    self.nextBgColor()
-                elif self.appState.colorMode == "256":
-                    self.statusBar.colorPicker.handler.move_up_256()
-                c = None
-            elif c in [552]:  # 552 - alt-left, prev FG color
-                self.prevFgColor()
-                c = None
-            elif c in [567]:  # 567 - alt-right, next FG color
-                self.nextFgColor()
-                c = None
-
             if self.metaKey == 1:
                 self.pressingButton = False
                 if self.pushingToClip:
@@ -2297,22 +2279,28 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.showHelp()
                     c = None
                 #elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color
-                elif c in [curses.KEY_LEFT]:      # alt-left - prev fg color
-                    self.prevFgColor()
+                elif c in [curses.KEY_LEFT]:      # alt-left - prev bg color (for 16)
+                    if self.appState.colorMode == "16":
+                        self.prevBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.prevFgColor()
                     c = None
-                #elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
+                #elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color (for 16)
                 elif c in [curses.KEY_RIGHT]:     # alt-right - next fg color
-                    self.nextFgColor()
+                    if self.appState.colorMode == "16":
+                        self.nextBgColor()
+                    elif self.appState.colorMode == "256":
+                        self.nextFgColor()
                     c = None
                 elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev bg color
                     if self.appState.colorMode == "16":
-                        self.prevBgColor()
+                        self.prevFgColor()
                     elif self.appState.colorMode == "256":
                         self.statusBar.colorPicker.handler.move_down_256()
                     c = None
                 elif c == curses.KEY_UP:     # alt-up - next bg color
                     if self.appState.colorMode == "16":
-                        self.nextBgColor()
+                        self.nextFgColor()
                     elif self.appState.colorMode == "256":
                         self.statusBar.colorPicker.handler.move_up_256()
                     c = None
@@ -2469,21 +2457,27 @@ class UserInterface():  # Separate view (curses) from this controller
                         c = self.stdscr.getch()
                         if c == 65: # real alt-up, not esc-up
                             if self.appState.colorMode == "16":
-                                self.nextBgColor()
+                                self.nextFgColor()
                             elif self.appState.colorMode == "256":
                                 self.statusBar.colorPicker.handler.move_up_256()
                             c = None
                         elif c == 66: # real alt-down, not esc-down
                             if self.appState.colorMode == "16":
-                                self.prevBgColor()
+                                self.prevFgColor()
                             elif self.appState.colorMode == "256":
                                 self.statusBar.colorPicker.handler.move_down_256()
                             c = None
                         elif c == 67: # real alt-right, not esc-right
-                            self.nextFgColor()
+                            if self.appState.colorMode == "16":
+                                self.nextBgColor()
+                            elif self.appState.colorMode == "256":
+                                self.nextFgColor()
                             c = None
                         elif c == 68: # real alt-left, not esc-left
-                            self.prevFgColor()
+                            if self.appState.colorMode == "16":
+                                self.prevBgColor()
+                            elif self.appState.colorMode == "256":
+                                self.prevFgColor()
                             c = None
                     self.pressingButton = False
                     if cursorMode != "Draw" and cursorMode != "Paint":
