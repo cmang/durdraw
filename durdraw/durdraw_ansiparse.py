@@ -238,6 +238,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                             #caller.notify(f"Error in byte {i}, char: {code}, line: {line_num}, col: {col_num}")
                 if len(codeList) > 1 and appState.colorMode == "256":
                     # 256 foreground color
+                    bg_color = default_bg_color
                     if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3:
                         fg_color = codeList.pop()
                         codeList = [fg_color]
@@ -263,7 +264,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                             code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
                             #bold = False
                         if appState.colorMode == "256":
-                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
                         else:
                             #if bold:
                             #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
@@ -335,6 +336,9 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 if len(escape_sequence) == 0:
                     escape_sequence = 1
                 move_by_amount = int(escape_sequence)
+                if col_num >= maxWidth:
+                    col_num = 0
+                    line_num += 1
                 col_num += move_by_amount
                 i = end_index + 1
                 continue    # jump the while

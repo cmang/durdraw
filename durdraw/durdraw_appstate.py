@@ -6,6 +6,7 @@ import pdb
 import pickle
 import subprocess
 import sys
+from sys import version_info 
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
 import durdraw.durdraw_sauce as dursauce
@@ -16,10 +17,14 @@ class AppState():
         self.quickStart = False
         self.showStartupScreen = True
         self.curOpenFileName = ""
+        python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
+        self.pyVersion = python_version
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
+        self.iceColors = False
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
+        self.renderMouseCursor = False      # show Paint or Draw cursor in canvas
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
         self.cursorBlinks = True     # lord help me, why would anyone not want this to be true?
         self.totalFgColors = 16
@@ -48,6 +53,7 @@ class AppState():
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.drawChar = '$'
+        self.brush = None
         self.configFile = None
         self.configFileLoaded = False
         self.configFileName = None
@@ -88,7 +94,14 @@ class AppState():
         self.durFileVer = 0     # gets set in main() from DUR_FILE_VER
         self.sideBarEnabled = True # to show color picker, sauce info, etc
         self.sideBarColumn = 0  # location, usually just right of the border
-        self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        #self.sideBar_minimum_width = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideInfo_minimum_width = 8 # Must have this much width beyond canvas width to draw esc-i sauce info
+        self.sideBar_minimum_width = 5 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideBar_minimum_width_256 = 37 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.sideBar_minimum_width_16 = 12 # Must have this much width to draw sidebar. Actually it's the colorBar width.
+        self.bottomBar_minimum_height = 10  # same as above, but for height
+        self.bottomBar_minimum_height_256 = 10 
+        self.bottomBar_minimum_height_16 = 4 
         self.colorBar_height = 8
         self.sideBarShowing = False
         self.themesEnabled = True
@@ -125,8 +138,11 @@ class AppState():
     def setCursorModeSelect(self):
         self.cursorMode="Select"
 
-    def setCursorModePnt(self):
+    def setCursorModeDraw(self):
         self.cursorMode="Draw"
+
+    def setCursorModePaint(self):
+        self.cursorMode="Paint"
 
     def setCursorModeCol(self):
         self.cursorMode="Color"
@@ -173,6 +189,14 @@ class AppState():
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
             
+
+    def loadThemeList(self):
+        """ Look for theme files in internal durdraw directory """
+        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
+        # Get a list of files from the themes paths
+        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
+        pass
 
     def loadThemeFile(self, themeFilePath, themeMode):
         # If there is a theme set, use it

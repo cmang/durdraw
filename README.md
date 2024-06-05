@@ -5,9 +5,10 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.26.0
+              \_____________________________________________\|  v 0.27.0
 
-![durdraw-0 24 0-example](https://github.com/cmang/durdraw/assets/261501/27efcf7c-96ae-4930-8360-21276dc72fca)
+![durdraw-0 27 0-demo-3](https://github.com/cmang/durdraw/assets/261501/35d8dd7c-bd80-4f35-ba88-c39b338843db)
+
 
 ## OVERVIEW
 
@@ -63,13 +64,7 @@ You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw
 
 ## RUNNING WITHOUT INSTALLING
 
-You may need to install the "PIL" or "pillow" python module first:
-
-```
-    pip3 install pillow
-```
-
-Then you can run Durdraw with:
+You can run Durdraw with:
 
 ```
     ./start-durdraw
@@ -80,13 +75,6 @@ To look at some included example animations:
 ```
     ./start-durdraw -p examples/*.dur
 ```
-
-To edit 16-color PC Scene (MS-DOS/CP437) ANSI art files in a Utf-8 terminal, use the --16color option:
-
-```
-    ./start-durdraw --16color
-```
-
 
 ## GALLERY
 
@@ -226,7 +214,7 @@ theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 
 The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
 
-Note that you can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
+You can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
 
 Here is an example 16-color theme:
 
@@ -306,13 +294,27 @@ A: Yes, but traditional ANSI animation does not provide any control over timing,
 A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
-A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications.
+A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See durformat.md for more details on the .dur file format.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
+#### Q: I only see 8 colors in 16 color mode. Why?
+A: Look in your terminal setting for "Use bright colors for bold," or a similarly named option. Durdraw's 16-color mode, like many vintage terminals (including MS-DOS), uses the Bold escape codes to tell the terminal the "bright" colors. This provides compatibility with many older systems. However, some terminals do not support or enable this option by default. Additionally, your terminal decides what colors to assign to the lower 16 colors.
 
-## MEDIA AND THANKS
+#### Q: Some or all of the F1-F10 keys do not work for me! What can I do?
+A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals will map this to Alt-1 through Alt-0. You can also use the following settings in some terminals to enable the F1-F10 keys:
+
+- **GNOME Terminal**: **Click**: Menu -> Edit -> Preferences -> General, and **uncheck** the box: 
+
+  - [ ] Enable the menu accelerator key (F10 by default)
+
+- **Xfce4-Terminal**: **Click**: Menu -> Edit -> Preferences -> Advanced, and **check** the 2 boxes:
+
+  - [x] Disable menu shortcut key (F10 by default)
+  - [x] Disable help window shortcut key (F1 by default)
+
+## LINKS, MEDIA AND THANKS
 
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
@@ -320,7 +322,7 @@ Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
 
 Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
 
-Bryan Lunduke - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
 
 Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
 
@@ -328,7 +330,35 @@ Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=
 
 LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
 
+Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
+
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
+
+## SUPPORT 
+
+Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
+
+Contributions help cover essential costs like development time, domain registration, and web hosting.
+
+You can contribute to this project using any of these platforms:
+
+Paypal - https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6
+
+Buymeacoffee - https://buymeacoffee.com/samfoster
+
+Patreon - https://patreon.com/SamFoster
+
+Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for information and guidelines.
+
+If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
+
+## COMMUNITY
+
+There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/cmang/durdraw/discussions
+
+We also have a Discord server for Durdraw users. Join us: https://discord.gg/T2ErYc7E
+
+If you are feeling really old school, you can try the #durdraw IRC channel on irc.libera.chat.
 
 ## CREDITS
 

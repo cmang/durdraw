@@ -26,17 +26,10 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main():
-    DUR_VER = '0.26.0'
+    DUR_VER = '0.27.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
-    durlogo = '''
-       __                __
-     _|  |__ __ _____ __|  |_____ _____ __ __ __
-    / _  |  |  |   __|  _  |   __|  _  |  |  |  |\\
-   /_____|_____|__|__|_____|__|___\____|________| |
-   \_____________________________________________\|  v %s
-    Press esc-h for help.
-    ''' % DUR_VER
+    durlogo = 'Durdraw'
     argChecker = ArgumentChecker()
     parser = argparse.ArgumentParser()
     parserStartScreenMutex = parser.add_mutually_exclusive_group()
@@ -45,6 +38,7 @@ def main():
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
     parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
                     nargs='+')
+    parser.add_argument("-d", "--delayexit", help="Wait X seconds after playback before exiting (requires -p)", nargs=1, type=float)
     #parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
     parserStartScreenMutex.add_argument("--startup", help="Show startup screen",
                     action="store_true")
@@ -230,9 +224,11 @@ def main():
         if args.times:
             app.playNumberOfTimes = args.times[0]
         for movie in args.play:
+            ui.stdscr.clear()
             ui.loadFromFile(movie, 'dur')
             ui.startPlaying()
-            ui.stdscr.clear()
+        if args.delayexit:
+            time.sleep(args.delayexit[0])
         ui.verySafeQuit()
     if args.export_ansi:
         # Export ansi and exit

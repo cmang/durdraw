@@ -377,7 +377,26 @@ class Movie():
                     if pair[1] > 0:
                         return True
         return False
-        
+
+    def strip_backgrounds(self):
+        """ Change all background colors to 0, or default background """
+        for frame in self.frames:
+            for line in frame.newColorMap:
+                for pair in line:
+                    pair[1] = 0
+        return True
+
+    def shift_right(self):
+        """ Shift all frames to the right, wrapping the last frame back to the front """
+        # a.insert(0,a.pop())
+        self.frames.insert(0, self.frames.pop())
+        return True
+
+    def shift_left(self):
+        """ Shift all frames to the left, wrapping the first frame around to the back end """
+        # fnord.append(fnord.pop(0))
+        self.frames.append(self.frames.pop(0))
+        return True
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
