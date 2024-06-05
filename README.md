@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.27.0-BETA
+              \_____________________________________________\|  v 0.27.0
 
 ![durdraw-0 24 0-example](https://github.com/cmang/durdraw/assets/261501/27efcf7c-96ae-4930-8360-21276dc72fca)
 
@@ -350,6 +350,14 @@ Patreon - https://patreon.com/SamFoster
 Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for information and guidelines.
 
 If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
+
+## COMMUNITY
+
+There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/cmang/durdraw/discussions
+
+We also have a Discord server for Durdraw users. Join us: https://discord.gg/T2ErYc7E
+
+If you are feeling really old school, you can try the #durdraw IRC channel on irc.libera.chat.
 
 ## CREDITS
 
