@@ -1872,6 +1872,9 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.realmaxX != realmaxX:
             resized = True 
 
+        if resized:
+            self.stdscr.clear()
+
         self.appState.realmaxY = realmaxY
         self.appState.realmaxX = realmaxX
 
@@ -2184,7 +2187,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(drawChar_line, drawChar_col, self.appState.drawChar, curses.color_pair(self.colorpair))
 
         if resized:
-            self.stdscr.clear()
+            self.refresh()
             self.hardRefresh()
 
     def window_big_enough_for_colors(self):
