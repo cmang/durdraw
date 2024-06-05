@@ -2184,7 +2184,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(drawChar_line, drawChar_col, self.appState.drawChar, curses.color_pair(self.colorpair))
 
         if resized:
-            #self.stdscr.clear()
+            self.stdscr.clear()
             self.hardRefresh()
 
     def window_big_enough_for_colors(self):
@@ -2530,6 +2530,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.save()
                 c = None
             elif c == 12:               # ctrl-l - harder refresh
+                self.stdscr.clear()
                 self.hardRefresh()
                 c = None
             elif c in [10, 13, curses.KEY_ENTER]:               # enter (10 if we
