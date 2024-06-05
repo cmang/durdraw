@@ -435,7 +435,15 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def setFgColor(self, fg):
         self.colorfg = fg
-        self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
+        try:
+            self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
+        except KeyError:
+            try:    # If we're trying to use an unreigstered color pair, strip
+                    # out the background and try again.
+                self.colorbg = 0
+                self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
+            except KeyError:
+                selt.nofiy("There was an error setting the color. Please file a bug report explaining how you got to this error.")
 
     def setBgColor(self, bg):
         self.colorbg = bg
@@ -1533,6 +1541,14 @@ class UserInterface():  # Separate view (curses) from this controller
                                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                                 if self.pushingToClip:
                                     self.pushingToClip = False
+
+                        if not self.appState.hasMouseScroll:
+                            curses.BUTTON5_PRESSED = 0
+                            curses.BUTTON4_PRESSED = 0
+                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                            self.move_cursor_up()
+                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                            self.move_cursor_down()
                             
                         if mouseState & curses.BUTTON1_PRESSED:
                             #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
