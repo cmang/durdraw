@@ -1295,11 +1295,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 # In other words, un-stick the mouse button in case it's stuck:
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 self.pressingButton = False
-                if cursorMode != "Draw" and cursorMode != "Paint":
-                    print('\033[?1003l') # disable mouse reporting
-                    self.hardRefresh()
-                    curses.mousemask(1)
-                    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                #if cursorMode != "Draw" and cursorMode != "Paint":
+                #    print('\033[?1003l') # disable mouse reporting
+                #    self.hardRefresh()
+                #    curses.mousemask(1)
+                #    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if self.pushingToClip:
                     self.pushingToClip = False
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
@@ -1725,8 +1725,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.playing = False
         self.statusBar.toolButton.show()
         self.statusBar.animButton.show()
-        if self.appState.cursorMode == "Draw":
+        if self.appState.cursorMode == "Draw" or self.appState.cursorMode == "Paint":
             self.statusBar.drawCharPickerButton.show()
+            self.enableMouseReporting()
 
     def genCharSet(self, firstChar):   # firstChar is a unicode number
         newSet = {}
