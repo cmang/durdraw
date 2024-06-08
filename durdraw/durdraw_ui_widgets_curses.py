@@ -127,13 +127,16 @@ class MenuHandler:
             pass
 
     def show(self):
-        self.rebuild()
-        self.panel.top()
-        #self.panel.move(0,0)
-        #self.panel.move(self.menuOriginLine, 0)
-        #self.panel.move(self.menuOriginLine, self.menu.x)
-        self.panel.move(self.menuOriginLine, self.menu.y)
-        self.panel.show()
+        try:
+            self.rebuild()
+            self.panel.top()
+            #self.panel.move(0,0)
+            #self.panel.move(self.menuOriginLine, 0)
+            #self.panel.move(self.menuOriginLine, self.menu.x)
+            self.panel.move(self.menuOriginLine, self.menu.y)
+            self.panel.show()
+        except: # The window was probably too short, so panel.move() returns ERR.
+            return False
         self.curses_win.keypad(True)
         curses.panel.update_panels()
         curses.doupdate()
