@@ -864,6 +864,16 @@ class UserInterface():  # Separate view (curses) from this controller
             pass
         self.notify(inspectorString, pause=True)
 
+    def clickedChMap(self, mouseX, mouseY):
+        # Find the character the user clicked, then set it
+        # This isn't very wide-character friendly yet.
+        char_offset = mouseX - self.chMap_offset
+        char_number = int(char_offset / 3.1 + 1)    # lol, madness
+        if self.appState.debug:
+            self.notify(f"Clicked character area: {str([mouseX, mouseY])}, F{char_number}")
+        chMapKey = f"f{char_number}"
+        self.appState.drawChar = chr(self.chMap[chMapKey])
+
     def clickedInfoButton(self):
         realmaxY,realmaxX = self.realstdscr.getmaxyx() # test size
         if realmaxX < self.mov.sizeX + self.appState.sideInfo_minimum_width: # I'm not wide enough
@@ -2853,8 +2863,6 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
                         elif mouseY == self.statusBarLineNum+1: # clicked bottom bar 
-                            char_area_start = self.chMap_offset
-                            char_area_end = self.chMap_offset+len(self.chMapString)
                             if self.appState.colorMode == "16":
                                 if mouseX in range(3,19): # clicked a fg color
                                     fg = mouseX - 2
@@ -2862,6 +2870,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                 elif mouseX in range(25,33):   # clicked a bg color
                                     bg = mouseX - 24
                                     self.setBgColor(bg)
+                            char_area_start = self.chMap_offset
+                            char_area_end = self.chMap_offset+len(self.chMapString)
                             if mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
                                 self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
                                 self.nextCharSet()
@@ -2869,14 +2879,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
                                 self.prevCharSet()
                             elif mouseX in range(char_area_start, char_area_end):
-                                # Find the character the user clicked, then set it
-                                # This isn't very wide-character friendly yet.
-                                char_offset = mouseX - char_area_start
-                                char_number = int(char_offset / 3.1 + 1)    # lol, madness
-                                if self.appState.debug:
-                                    self.notify(f"Clicked character area: {str([mouseX, mouseY])}, F{char_number}")
-                                chMapKey = f"f{char_number}"
-                                self.appState.drawChar = chr(self.chMap[chMapKey])
+                                self.clickedChMap(mouseX, mouseY)
                             elif self.appState.debug:
                                 self.notify("bottom bar. " + str([mouseX, mouseY]))
                         else:
