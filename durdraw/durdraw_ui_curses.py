@@ -1296,8 +1296,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.pressingButton = False
                 if self.pushingToClip:
                     self.pushingToClip = False
-                if cursorMode != "Draw" and cursorMode != "Paint":
-                    self.disableMouseReporting()
+                self.disableMouseReporting()
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
                 # Clear out any canvas state as needed for command mode. For example...
