@@ -1355,7 +1355,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol(frange=self.appState.playbackRange)
-                elif c == 48:      # alt-/ - insert line
+                elif c == 47:      # alt-/ - insert line
                     self.addLine(frange=self.appState.playbackRange)
                 elif c == 39:        # alt-' - erase line
                     self.delLine(frange=self.appState.playbackRange)
