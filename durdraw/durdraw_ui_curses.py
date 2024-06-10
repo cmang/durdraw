@@ -335,8 +335,12 @@ class UserInterface():  # Separate view (curses) from this controller
         return ncurses_color_value
 
     def setWindowTitle(self, title):
-        title = f"Durdraw - {title}"
+        if title == "":
+            title = f"durdraw"
+        else:
+            title = f"durdraw - {title}"
         sys.stdout.write(f"\x1b]2;{title}\x07")
+        sys.stdout.write(f'\33]0;{title}\a')
         sys.stdout.flush()
 
     def getPlaybackRange(self):
