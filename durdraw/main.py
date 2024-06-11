@@ -13,6 +13,7 @@ from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
 import durdraw.help
+import durdraw.neofetcher as neofetcher
 
 class ArgumentChecker:
     """ Place to hold any methods for verifying CLI arguments, beyond
@@ -62,6 +63,7 @@ def main():
     parser.add_argument("--cp437", help="Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8. (Requires CP437 capable terminal and font) (beta)", action="store_true")
     parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an .ansi file and exit")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
+    parser.add_argument("--fetch", help="Replace fetch strings with Neofetch output", action="store_true")
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
@@ -99,8 +101,6 @@ def main():
            app.width = term_size[0]
         if term_size[1] > 24:
             app.height = term_size[1] - 2
-    if args.play:
-        app.showStartupScreen=False
     elif not args.startup:  # quick startup is now the default behavior
         app.showStartupScreen=False
         app.quickStart = True
@@ -210,6 +210,13 @@ def main():
     if args.play:
         app.playOnlyMode = True
         app.editorRunning = False
+
+    if args.fetch:
+        #app.playOnlyMode = True
+        app.fetchMode = True
+        app.fetchData = neofetcher.run()
+        #app.editorRunning = False
+        #app.drawBorders = False
     #ui = curses.wrapper(UI_Curses, app)
     ui = UI_Curses(app)
     if app.hasMouse:
@@ -218,7 +225,7 @@ def main():
         ui.enableTransBackground()
     if args.filename:
         ui.loadFromFile(args.filename, 'dur')
-    if args.play:
+    if args.play or args.fetch:
         # Just play files and exit
         app.drawBorders = False
         if args.times:
@@ -226,6 +233,8 @@ def main():
         for movie in args.play:
             ui.stdscr.clear()
             ui.loadFromFile(movie, 'dur')
+            if app.fetchMode:
+                ui.replace_neofetch_keys()
             ui.startPlaying()
         if args.delayexit:
             time.sleep(args.delayexit[0])

@@ -25,6 +25,7 @@ import durdraw.durdraw_file as durfile
 from durdraw.durdraw_ui_widgets import StatusBar
 import durdraw.durdraw_gui_manager as durgui
 import durdraw.durdraw_movie as durmovie
+import durdraw.neofetcher as neofetcher
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_ansiparse as dur_ansiparse
 import durdraw.durdraw_sauce as dursauce
@@ -1242,6 +1243,13 @@ class UserInterface():  # Separate view (curses) from this controller
         helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
         self.notify(helpString, pause=True)
         self.cursorOff()
+
+    def replace_neofetch_keys(self):
+        """ Find all the Neofetch {keys} in the drawing, and replace them with
+            Neofetch populated data """
+        for key in neofetcher.neo_keys:
+            dur_key = '{' + key + '}'
+            self.mov.search_and_replace(self, dur_key, self.appState.fetchData[key])
 
     def startPlaying(self):
         """ Start playing the animation - start a "game" style loop, make FPS

@@ -136,7 +136,10 @@ class MenuHandler:
             self.panel.move(self.menuOriginLine, self.menu.y)
             self.panel.show()
         except: # The window was probably too short, so panel.move() returns ERR.
-            return False
+            curses_cursorOn()
+            self.menu.hide()
+            response = "Close"  # default thing to do when done, returned to menu wrapper
+            return response
         self.curses_win.keypad(True)
         curses.panel.update_panels()
         curses.doupdate()

@@ -45,6 +45,8 @@ class AppState():
         #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"  # placeholder during initialization
         self.cursorMode = "Move"  # Move/Select, Draw and Color
+        self.fetchMode = False    # use neofetch, replace {variables} in dur file
+        self.fetchData = None       # a {} dict containing key:value for neofetch output.
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
@@ -162,6 +164,19 @@ class AppState():
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
 
+    def loadThemeList(self):
+        """ Look for theme files in internal durdraw directory """
+        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
+        # Get a list of files from the themes paths
+        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        self.internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
+        #user_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        #self.user_theme_file_list = glob.glob(f"{user_theme_path}/*.dtheme.ini")
+        # Turn lists into an index of Theme name, Theme type, and Path to 
+        available_themes = []   # populate with a list of dicts containing name=, path=, type=
+        for filename in self.internal_theme_file_list:
+            pass
+
     def loadConfigFile(self):
         # Load configuration filea
         configFullPath = os.path.expanduser("~/.durdraw/durdraw.ini")
@@ -189,14 +204,6 @@ class AppState():
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
             
-
-    def loadThemeList(self):
-        """ Look for theme files in internal durdraw directory """
-        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
-        # Get a list of files from the themes paths
-        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
-        internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
-        pass
 
     def loadThemeFile(self, themeFilePath, themeMode):
         # If there is a theme set, use it
