@@ -467,6 +467,7 @@ class StatusBar():
         mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
+        mainMenu.add_item("Apply NeoFetch Keys", caller.apply_neofetch_keys, "a")
         mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")

@@ -1244,6 +1244,13 @@ class UserInterface():  # Separate view (curses) from this controller
         self.notify(helpString, pause=True)
         self.cursorOff()
 
+    def apply_neofetch_keys(self):
+        """ Called by the user at Runtime to search/replace inside the app. """
+        self.undo.push()
+        self.appState.fetchData = neofetcher.run()    # populate fetchData with NeoFetch data ...
+        self.replace_neofetch_keys()        # ... so this can work.
+        self.refresh()
+
     def replace_neofetch_keys(self):
         """ Find all the Neofetch {keys} in the drawing, and replace them with
             Neofetch populated data """
@@ -4239,6 +4246,9 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.colorMode == "256":
                     if self.mov.contains_background_colors():
                         self.mov.strip_backgrounds()
+
+                # Remove un-printable characters, eg: errant \n from old .dur files, where enter accidentally inserted ^Ms.
+                self.mov.strip_unprintable_characters()
                 
                 return True
 
@@ -4724,7 +4734,8 @@ class UserInterface():  # Separate view (curses) from this controller
             if ircColors:
                 string = string + '\n'
             else:
-                string = string + '\r\n'
+                #string = string + '\r\n'
+                string = string + '\n'
         try:
             f.write(string)
             saved = True
@@ -4843,14 +4854,14 @@ class UserInterface():  # Separate view (curses) from this controller
             return False
         tmpAnsiFileName = filename + '.tmp.ans' # remove this file when done
         tmpPngFileName = filename + '.tmp.ans.png' # remove this file when done
-        if not self.saveAnsiFile(tmpAnsiFileName, lastLineNum=lastLineNum, firstLineNum=firstLineNum, firstColNum=firstColNum, lastColNum=lastColNum):
+        if not self.saveAnsiFile(tmpAnsiFileName, lastLineNum=lastLineNum, firstLineNum=firstLineNum, firstColNum=firstColNum, lastColNum=lastColNum, encoding="cp437"):
             self.notify("Saving ansi failed, make sure you can write to current directory.")
             return False
         devnull = open('/dev/null', 'w')
         if font == 'ansi':
-            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, tmpPngFileName], stdout=devnull)
+            ansiLoveReturn = subprocess.call(['ansilove', '-c', str(self.mov.sizeX + 1), tmpAnsiFileName, tmpPngFileName], stdout=devnull)
         else:   # amiga font
-            ansiLoveReturn = subprocess.call(['ansilove', tmpAnsiFileName, "-f", font], stdout=devnull)
+            ansiLoveReturn = subprocess.call(['ansilove', '-c', str(self.mov.sizeX + 1), tmpAnsiFileName, "-f", font], stdout=devnull)
         devnull.close()
         os.remove(tmpAnsiFileName)
         if ansiLoveReturn == 0: # this doesnt seem right either, as ansilove always
@@ -4919,6 +4930,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov.nextFrame()
             self.refresh()
         # open all the pngs so we can save them to gif
+        from PIL import Image
         pngImages = [Image.open(fn) for fn in tmpPngNames]
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
         self.pngsToGif(filename, pngImages, sleep_time)
