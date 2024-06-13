@@ -2398,7 +2398,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == 116: # or c =- 84:    # alt-t or alt-T - mouse tools menu
                     self.commandMode = False
                     self.openMenu("Mouse Tools")
-                    #self.statusBar.toolButton.on_click() 
+                    #self.statusBar.toolButton.on_click()
                 elif c == 99:     # alt-c - color picker
                     self.commandMode = False
                     #if self.appState.colorMode == "256":
@@ -3640,7 +3640,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         folders =  ["../"]
-        default_masks = ['*.dur', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
+        default_masks = ['*.dur', '*.durf', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
         masks = default_masks
         if self.appState.workingLoadDirectory: 
             if os.path.exists(self.appState.workingLoadDirectory):
