@@ -26,7 +26,7 @@ class ArgumentChecker:
         else:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
-def main():
+def main(fetch_args=None):
     DUR_VER = '0.28.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
@@ -67,7 +67,9 @@ def main():
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    args = parser.parse_args()
+            
+    args = parser.parse_args(fetch_args)
+
     if args.version:
         print(DUR_VER)
         exit(0)
