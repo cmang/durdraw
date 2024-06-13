@@ -18,7 +18,7 @@ setup(
     packages=['durdraw'],
     install_requires=['pillow', 'windows-curses;platform_system=="Windows"'],
     include_package_data = True, 
-    package_data = {'durdraw': ['help/*', 'charsets/*', 'themes/*', 'plugins/*']},
+    package_data = {'durdraw': ['help/*', 'charsets/*', 'themes/*', 'plugins/*', 'neofetch/*', 'durf/*']},
     #package_data = {'durdraw': ["charsets/*"]},
     data_files = [
     #    ('share/icons', ['data/durdraw.png']),
@@ -49,6 +49,7 @@ setup(
     entry_points={
     'console_scripts': [
         'durdraw = durdraw.main:main',
+        'durfetch = durdraw.durfetch:main',
     ],
 },
 )
