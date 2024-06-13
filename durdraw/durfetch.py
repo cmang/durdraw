@@ -25,13 +25,19 @@ def all_internal_durf_files():
 def get_internal_durf_path():
     return str(pathlib.Path(__file__).parent.joinpath("durf/"))
 
+def remove_suffix(text, suffix):
+    # For compatibility with older Python versions, older than 3.8.
+    # thanks, David Foster @ https://stackoverflow.com/questions/1038824/how-do-i-remove-a-substring-from-the-end-of-a-string-remove-a-suffix-of-the-str
+    return text[:-len(suffix)] if text.endswith(suffix) and len(suffix) != 0 else text
+
 def make_epilog():
     text = "Available animations for -l:\n\n"
     internal_file_list = []
     for filename in all_internal_durf_files():
         #basename = os.path.basename(filename)
         #print(basename)
-        name = os.path.basename(filename).removesuffix('.durf')
+        #name = os.path.basename(filename).removesuffix('.durf')
+        name = remove_suffix(os.path.basename(filename), '.durf')
         internal_file_list.append(name)
     internal_file_list.sort()
     for name in internal_file_list:
