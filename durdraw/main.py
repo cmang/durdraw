@@ -91,13 +91,9 @@ def main(fetch_args=None):
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
     if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
         app.width = args.width[0]
-    else:
-        app.width = 80      # "sane" default screen size, 80x24..
     #if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
     if args.height and args.height[0] > 1 and args.height[0] < term_size[1]:
         app.height = args.height[0]
-    else:
-        app.height = 24 - 1
     if args.max:
         if term_size[0] > 80:
            app.width = term_size[0]
@@ -196,10 +192,7 @@ def main(fetch_args=None):
             print(f"Theme: Default (none)")
 
         print("Undo history size = %d" % app.undoHistorySize)
-        if app.width == 80 and app.height == 24:
-            print("Canvas size: %i columns, %i lines (Default)" % (app.width, app.height))
-        else:
-            print("Canvas size: %i columns, %i lines" % (app.width, app.height))
+        print("Canvas size: %i columns, %i lines" % (app.width, app.height))
         if args.wait:
             try:
                 choice = input("Press Enter to Continue...")

@@ -31,6 +31,8 @@ class AppState():
         self.totalBgColors = 8
         self.defaultFgColor = 7
         self.defaultBgColor = 0
+        self.width = 80     # default canvas width/columns
+        self.height = 23    # default canvas height/lines
         self.stickyColorPicker = True # true to keep color picker on screen
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc

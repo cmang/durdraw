@@ -4137,10 +4137,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 f = open(filename, 'r', encoding='cp437')
                 raw_text = f.read()
             # Load file into a new frame, make a new movie,
-            default_width= 80   # default with for ANSI file
+            #default_width= 80   # default with for ANSI file
             if filename[-4].lower() == ".diz" or filename.lower().endswith("file_id.ans"):
                 default_width = 44   # default with for file_id.diz
-            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=default_width)
+            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug)
             self.appState.topLine = 0
             newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
             newMovie = Movie(newMovieOpts)

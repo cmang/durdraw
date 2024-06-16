@@ -191,12 +191,12 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             height = sauce.height
             #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
     if not sauce.height:
-        width, height = get_width_and_height_of_ansi_blob(text, width=80)
+        width, height = get_width_and_height_of_ansi_blob(text)
         width = sauce.width
     if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
-        width, height = get_width_and_height_of_ansi_blob(text, width=80)
-    #width = max(width, maxWidth)
-    width = max(width, 80)
+        width, height = get_width_and_height_of_ansi_blob(text)
+    width = max(width, maxWidth)
+    #width = max(width, 80)
     height += 1
     if appState.debug:
         caller.notify(f"Guessed width: {width}, height: {height}")
