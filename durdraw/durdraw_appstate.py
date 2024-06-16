@@ -15,7 +15,7 @@ class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self): # User friendly defeaults
         self.quickStart = False
-        self.showStartupScreen = True
+        self.showStartupScreen = False
         self.curOpenFileName = ""
         python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
         self.pyVersion = python_version
@@ -33,6 +33,7 @@ class AppState():
         self.defaultBgColor = 0
         self.width = 80     # default canvas width/columns
         self.height = 23    # default canvas height/lines
+        self.wrapWidth = 80    # Default width to wrap at when loading ASCII files (.asc/.txt)
         self.stickyColorPicker = True # true to keep color picker on screen
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc

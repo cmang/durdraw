@@ -53,6 +53,7 @@ def main(fetch_args=None):
     parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
     parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
+    parser.add_argument("--wrap", help="Number of columns to wrap lines at when loading ASCII and ANSI files (default 80)", nargs=1, type=int)
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
     parser.add_argument("--cursor", help="Cursor mode (block, underscore, or pipe)", nargs=1)
@@ -84,8 +85,6 @@ def main(fetch_args=None):
         app.setDebug(True)
     if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
-    app.showStartupScreen=True
-
 
     term_size = os.get_terminal_size()
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
@@ -99,6 +98,8 @@ def main(fetch_args=None):
            app.width = term_size[0]
         if term_size[1] > 24:
             app.height = term_size[1] - 2
+    if args.wrap:
+        app.wrapWidth = args.wrap[0]
     elif not args.startup:  # quick startup is now the default behavior
         app.showStartupScreen=False
         app.quickStart = True

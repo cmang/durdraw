@@ -185,8 +185,9 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             #if sauce.height == None:
             #    sauce.height = 25
             if sauce.width == None:
-                sauce.width = 80
-            maxWidth = sauce.width
+                #sauce.width = 80
+                sauce.width = maxWidth
+                maxWidth = sauce.width
             width = sauce.width
             height = sauce.height
             #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")

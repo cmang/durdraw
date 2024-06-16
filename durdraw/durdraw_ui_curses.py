@@ -4141,7 +4141,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #default_width= 80   # default with for ANSI file
             if filename[-4].lower() == ".diz" or filename.lower().endswith("file_id.ans"):
                 default_width = 44   # default with for file_id.diz
-            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug)
+            newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=self.appState.wrapWidth)
             self.appState.topLine = 0
             newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
             newMovie = Movie(newMovieOpts)
