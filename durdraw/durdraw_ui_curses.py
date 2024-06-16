@@ -2217,8 +2217,8 @@ class UserInterface():  # Separate view (curses) from this controller
         bottomLine = self.realmaxY - 3 + self.appState.topLine
         if self.xy[0] > self.mov.sizeY - 1:  # cursor is past bottom of the canvas
             self.xy[0] = self.mov.sizeY - 1
-        if self.xy[1] > self.opts.sizeX:    # cursor is past right edge of the canvas
-            self.xy[1] = self.opts.sizeX
+        if self.xy[1] > self.mov.sizeX:    # cursor is past right edge of the canvas
+            self.xy[1] = self.mov.sizeX
         # if it's off screen.. fix that, too
         if self.xy[0] - self.appState.topLine > realmaxY - 3:
             self.xy[0] = realmaxY - 3 + self.appState.topLine
@@ -2685,7 +2685,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         #self.notify("Released from drag, hopefully.")
                     if self.appState.debug:
                         # clear mouse state lines
-                        blank_line = " " * 80
+                        winHeight,winWidth = self.realstdscr.getmaxyx()
+                        blank_line = " " * winWidth
                         self.addstr(self.statusBarLineNum-3, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
                         self.addstr(self.statusBarLineNum-4, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
                         # print mouse state
