@@ -713,9 +713,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.undo.push()
             self.xy[1] = self.xy[1] - 1
             if self.playing:
-                self.insertChar(ord(' '), fg=1, bg=0, frange=self.appState.playbackRange)
+                self.insertChar(ord(' '), fg=self.appState.defaultFgColor, bg=self.appState.defaultBgColor, frange=self.appState.playbackRange)
             else:
-                self.insertChar(ord(' '), fg=1, bg=0)
+                self.insertChar(ord(' '), fg=self.appState.defaultFgColor, bg=self.appState.defaultFgColor)
             self.xy[1] = self.xy[1] - 1
 
     def deleteKeyPop(self, frange=None):
@@ -5064,7 +5064,13 @@ Can use ESC or META instead of ALT
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
-                else:
+                # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
+                # then print with defualt charaacters instead. This should prevent the cursor from
+                # disappearing, as well as let you preview "invisible" text under the cursor.
+                elif charColor[1] == 1 and charColor[0] == 0 and  self.appState.colorMode == "16":
+                    visible_color_pair = self.ansi.colorPairMap[(self.appState.defaultFgColor, self.appState.defaultBgColor)] 
+                    self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
+                else:   # Normal character. No funny business. Print to the screen
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
             if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
