@@ -719,6 +719,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.xy[1] = self.xy[1] - 1
 
     def deleteKeyPop(self, frange=None):
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         if self.xy[1] > 0:
             self.undo.push()
             if frange:  # framge range
@@ -726,12 +727,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.mov.frames[frameNum].content[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
                     self.mov.frames[frameNum].content[self.xy[0]].append(' ')         # at the end of each line.
                     self.mov.frames[frameNum].newColorMap[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
-                    self.mov.frames[frameNum].newColorMap[self.xy[0]].append([1,0])         # at the end of each line.
+                    self.mov.frames[frameNum].newColorMap[self.xy[0]].append([fg,bg])         # at the end of each line.
             else:
                 self.mov.currentFrame.content[self.xy[0]].pop(self.xy[1] - 1)
                 self.mov.currentFrame.content[self.xy[0]].append(' ')
                 self.mov.currentFrame.newColorMap[self.xy[0]].pop(self.xy[1] - 1)
-                self.mov.currentFrame.newColorMap[self.xy[0]].append([1,0])         # at the end of each line.
+                self.mov.currentFrame.newColorMap[self.xy[0]].append([fg,bg])         # at the end of each line.
 
 
     def insertColor(self, fg=1, bg=0, frange=None, x=None, y=None, pushUndo=True):
@@ -5101,10 +5102,11 @@ Can use ESC or META instead of ALT
 
     def addColToCanvas(self):
         self.undo.push()    # window is big enough
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         for frameNum in range(0, len(self.mov.frames)):
             for x in range(len(self.mov.frames[frameNum].content)):
                 self.mov.frames[frameNum].content[x].insert(self.xy[1] - 1, ' ')
-                self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [1,0])
+                self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [fg,bg])
         self.mov.sizeX += 1
         self.opts.sizeX += 1
         self.hardRefresh()
@@ -5147,19 +5149,20 @@ Can use ESC or META instead of ALT
 
     def addCol(self, frange=None):
         """Insert column at position of cursor"""
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         self.undo.push()
         if frange:  # framge range
             for frameNum in range(frange[0] - 1, frange[1]):
                 for x in range(len(self.mov.frames[frameNum].content)):
                     self.mov.frames[frameNum].content[x].insert(self.xy[1] - 1, ' ')
                     self.mov.frames[frameNum].content[x].pop()
-                    self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [1,0])
+                    self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [fg,bg])
                     self.mov.frames[frameNum].newColorMap[x].pop()
         else:
             for x in range(len(self.mov.currentFrame.content)):
                 self.mov.currentFrame.content[x].insert(self.xy[1] - 1, ' ')
                 self.mov.currentFrame.content[x].pop()
-                self.mov.currentFrame.newColorMap[x].insert(self.xy[1] - 1, [1,0])
+                self.mov.currentFrame.newColorMap[x].insert(self.xy[1] - 1, [fg,bg])
                 self.mov.currentFrame.newColorMap[x].pop()
         # insert bit here to shift color map to the right from the column
         # onward. how: start at top right character, work down to bottom 
@@ -5170,24 +5173,26 @@ Can use ESC or META instead of ALT
     def delCol(self, frange=None):
         """Erase column at position of cursor"""
         self.undo.push()
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         if frange:  # framge range
             for frameNum in range(frange[0] - 1, frange[1]):
                 for x in range(len(self.mov.frames[frameNum].content)):     # Pop current column from every
                     self.mov.frames[frameNum].content[x].pop(self.xy[1] - 1)     # line & add a blank
                     self.mov.frames[frameNum].content[x].append(' ')         # at the end of each line.
                     self.mov.frames[frameNum].newColorMap[x].pop(self.xy[1] - 1)     # line & add a blank
-                    self.mov.frames[frameNum].newColorMap[x].append([1,0])         # at the end of each line.
+                    self.mov.frames[frameNum].newColorMap[x].append([fg,bg])         # at the end of each line.
         else:
             for x in range(len(self.mov.currentFrame.content)):         # Pop current column from every
                 self.mov.currentFrame.content[x].pop(self.xy[1] - 1)     # line & add a blank
                 self.mov.currentFrame.content[x].append(' ')         # at the end of each line.
                 self.mov.currentFrame.newColorMap[x].pop(self.xy[1] - 1)     # line & add a blank
-                self.mov.currentFrame.newColorMap[x].append([1,0])         # at the end of each line.
+                self.mov.currentFrame.newColorMap[x].append([fg,bg])         # at the end of each line.
         self.hardRefresh()
 
     def delLine(self, frange=None):
         """delete current line""" 
         self.undo.push()
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         if frange:
             for frameNum in range(frange[0] - 1, frange[1]):
                 self.mov.frames[frameNum].content.pop(self.xy[0])
@@ -5195,30 +5200,31 @@ Can use ESC or META instead of ALT
                 self.mov.frames[frameNum].content[len(self.mov.frames[frameNum].content) - 1] = list(' ' * self.mov.sizeX)
                 self.mov.frames[frameNum].newColorMap.pop(self.xy[0])
                 self.mov.frames[frameNum].newColorMap.append([])
-                self.mov.frames[frameNum].newColorMap[len(self.mov.frames[frameNum].newColorMap) - 1] = [[1,0]] * self.mov.sizeX
+                self.mov.frames[frameNum].newColorMap[len(self.mov.frames[frameNum].newColorMap) - 1] = [[fg,bg]] * self.mov.sizeX
         else:
             self.mov.currentFrame.content.pop(self.xy[0])
             self.mov.currentFrame.content.append([])
             self.mov.currentFrame.content[len(self.mov.currentFrame.content) - 1] = list(' ' * self.mov.sizeX)
             self.mov.currentFrame.newColorMap.pop(self.xy[0])
             self.mov.currentFrame.newColorMap.append([])
-            self.mov.currentFrame.newColorMap[len(self.mov.currentFrame.newColorMap) - 1] = [[1,0]] * self.mov.sizeX
+            self.mov.currentFrame.newColorMap[len(self.mov.currentFrame.newColorMap) - 1] = [[fg,bg]] * self.mov.sizeX
         self.hardRefresh()
 
     def addLine(self, frange=None):
         """Insert new line"""   
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
         self.undo.push()
         if frange:
             for frameNum in range(frange[0] - 1, frange[1]):
                 self.mov.frames[frameNum].content.insert(self.xy[0], list(' ' * self.mov.sizeX))
                 self.mov.frames[frameNum].content.pop()
-                self.mov.frames[frameNum].newColorMap.insert(self.xy[0], [[1,0]] * self.mov.sizeX)
+                self.mov.frames[frameNum].newColorMap.insert(self.xy[0], [[fg,bg]] * self.mov.sizeX)
                 self.mov.frames[frameNum].newColorMap.pop()
                 self.refresh()
         else:
             self.mov.currentFrame.content.insert(self.xy[0], list(' ' * self.mov.sizeX))
             self.mov.currentFrame.content.pop()
-            self.mov.currentFrame.newColorMap.insert(self.xy[0], [[1,0]] * self.mov.sizeX)
+            self.mov.currentFrame.newColorMap.insert(self.xy[0], [[fg,bg]] * self.mov.sizeX)
             self.mov.currentFrame.newColorMap.pop()
         self.refresh()
 
