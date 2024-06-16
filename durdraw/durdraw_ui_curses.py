@@ -5607,8 +5607,8 @@ Can use ESC or META instead of ALT
                 charColumn = startPoint[1] + colNum
                 charLine = startPoint[0] + lineNum
                 character = ord(" ")
-                charFg = 1
-                charBg = 0
+                charFg = self.appState.defaultFgColor
+                charBg = self.appState.defaultBgColor
                 if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
                     if not frange:
                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
