@@ -865,7 +865,7 @@ class UserInterface():  # Separate view (curses) from this controller
         inspectorString = f"Fg: {fg}, Bg: {bg}, Char: {character}, {charType} value: {charValue}"
         try:
             ibmpc_value = str(ord(character.encode('cp437')))
-            inspectorString += inspectorString + f", cp437 value: {ibmpc_value}"
+            inspectorString = inspectorString + f", cp437 value: {ibmpc_value}"
         except:
             pass
         self.notify(inspectorString, pause=True)
