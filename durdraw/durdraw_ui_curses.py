@@ -5067,9 +5067,16 @@ Can use ESC or META instead of ALT
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
-                elif charColor[1] == 1 and charColor[0] == 0 and  self.appState.colorMode == "16":
-                    visible_color_pair = self.ansi.colorPairMap[(self.appState.defaultFgColor, self.appState.defaultBgColor)] 
-                    self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
+                elif colnum + 1 == self.xy[1] and linenum == self.xy[0]:    # under the cursor
+                    if self.appState.colorMode == "16":
+                        visible_color_pair = self.ansi.colorPairMap[(self.appState.defaultFgColor, self.appState.defaultBgColor)] 
+                        #self.addstr(screenLineNum, colnum, "X", visible_color_pair)
+                        # black on black
+                        if charColor[0] == 1 and charColor[1] == 0 or \
+                          charColor[0] == 1 and charColor[1] == 8:
+                            # make it show
+                            self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
+                        # black on black
                 else:   # Normal character. No funny business. Print to the screen
                     self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
