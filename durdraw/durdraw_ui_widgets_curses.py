@@ -933,6 +933,7 @@ class ButtonHandler:
 
     def draw(self, plusX=0, plusY=9):
         if not self.button.invisible:
+            self.color = curses.color_pair(self.appState.theme['clickColor']) | curses.A_BOLD   # reload color from theme
             textColor = self.color
             if self.button.selected:
                 #curses_notify(self.window, "Tacos")
