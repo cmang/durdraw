@@ -734,6 +734,22 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.mov.currentFrame.newColorMap[self.xy[0]].pop(self.xy[1] - 1)
                 self.mov.currentFrame.newColorMap[self.xy[0]].append([fg,bg])         # at the end of each line.
 
+    def reverseDelete(self, frange=None):
+        fg, bg = self.appState.defaultFgColor, self.appState.defaultBgColor
+        if self.xy[1] > 0:
+            self.undo.push()
+            if frange:  # framge range
+                for frameNum in range(frange[0] - 1, frange[1]):
+                    self.mov.frames[frameNum].content[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
+                    self.mov.frames[frameNum].content[self.xy[0]].insert(0, ' ')         # at the end of each line.
+                    self.mov.frames[frameNum].newColorMap[self.xy[0]].pop(self.xy[1] - 1)     # line & add a blank
+                    self.mov.frames[frameNum].newColorMap[self.xy[0]].insert(0, [fg,bg])         # at the end of each line.
+            else:
+                self.mov.currentFrame.content[self.xy[0]].pop(self.xy[1] - 1)
+                self.mov.currentFrame.content[self.xy[0]].insert(0, ' ')
+                self.mov.currentFrame.newColorMap[self.xy[0]].pop(self.xy[1] - 1)
+                self.mov.currentFrame.newColorMap[self.xy[0]].insert(0, [fg,bg])         # at the end of each line.
+
 
     def insertColor(self, fg=1, bg=0, frange=None, x=None, y=None, pushUndo=True):
         """ Sets the color for an x/y location on the current frame,
@@ -1673,6 +1689,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.statusBar.colorPickerButton.on_click()
                     elif c in [330]:              # delete
                         self.deleteKeyPop(frange=self.appState.playbackRange)
+                    elif c in [383]:              # shift-delete - delete from opposite direction
+                        self.reverseDelete(frange=self.appState.playbackRange)
                     elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
                         self.xy[1] = 1
                     elif c in [5, curses.KEY_END]:      # ctrl-e or end
@@ -2465,7 +2483,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     c = None
                 elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
                     self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg)
-                    self.hardRefresh()
+                    #self.hardRefresh()
+                    self.refresh()
                     c = None
                 elif c in [ord('3')]:    # F3 - insert extended character
                     self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg)
@@ -2588,6 +2607,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.backspace()
             elif c in [330]:              # delete
                 self.deleteKeyPop()
+            elif c in [383]:              # shift-delete - delete from opposite direction
+                self.reverseDelete()
             elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
                 #if self.appState.colorMode == "256":
                     #self.statusBar.colorPickerButton.on_click()
