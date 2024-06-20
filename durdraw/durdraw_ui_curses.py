@@ -4749,7 +4749,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if not firstColNum:
             firstColNum = 0 # Don't crop leftmost blank columns
         if not firstLineNum:
-            firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+            #firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
+            firstLineNum = 0    # also don't crop leading blank lines. rude
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
@@ -4845,10 +4846,13 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the first non-blank line, return
             that # (aka, first used line of the frame) """
         # start at the first line, work up until we find a character.
-        for lineNum in range(0, self.mov.sizeY):
+        for lineNum in range(0, frame.sizeY):
             for colNum in range(0, frame.sizeX):
-                if not frame.content[lineNum][colNum] in [' ', '']:
-                    return lineNum  # we found a non-empty character
+                try:
+                    if not frame.content[lineNum][colNum] in [' ', '']:
+                        return lineNum  # we found a non-empty character
+                except Exception as E:
+                    pdb.set_trace()
         return 1 # blank frame, only save the first line.
 
     def findFrameLastLine(self, frame):
@@ -4866,10 +4870,16 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the last non-blank column, return
             that # + 1 (aka, last used column of the frame) """
         # start at the last column, work back until we find a character.
-        for colNum in reversed(list(range(0, frame.sizeX))):
-            for lineNum in reversed(list(range(0, self.mov.sizeY))):
-                if not frame.content[lineNum][colNum] in [' ', '']:
-                    return colNum + 1  # we found a non-empty character
+        #for colNum in reversed(list(range(0, frame.sizeX))):
+        #    for lineNum in reversed(list(range(0, frame.sizeY))):
+        for colNum in reversed(range(0, frame.sizeX)):
+            for lineNum in reversed(range(0, frame.sizeY)):
+                try:
+                    if not frame.content[lineNum][colNum] in [' ', '']:
+                        return colNum + 1  # we found a non-empty character
+                except Exception as E:
+                    pdb.set_trace()
+        #pdb.set_trace()
         return 1 # blank frame, only save the first line.
 
     def findFrameFirstCol(self, frame):
@@ -4877,7 +4887,7 @@ class UserInterface():  # Separate view (curses) from this controller
             that # (aka, first used column of the frame) """
         # start at the first column, work forward until we find a character.
         for colNum in range(0, frame.sizeX):
-            for lineNum in range(0, self.mov.sizeY):
+            for lineNum in range(0, frame.sizeY):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -4917,7 +4927,9 @@ class UserInterface():  # Separate view (curses) from this controller
         if not lastColNum:
             lastColNum = self.findFrameLastCol(self.mov.currentFrame)
         if not firstColNum:
-            firstColNum = self.findFrameFirstCol(self.mov.currentFrame)
+            #firstColNum = self.findFrameFirstCol(self.mov.currentFrame)    
+            # ^ don't truncate the first columns. That's rude.
+            firstColNum = 0
         characterWidth = 8  # 9 pixels wide
         from PIL import Image
         cropImage = Image.open(tmpPngFileName)
@@ -5150,7 +5162,9 @@ Can use ESC or META instead of ALT
             for x in range(len(self.mov.frames[frameNum].content)):
                 self.mov.frames[frameNum].content[x].insert(self.xy[1] - 1, ' ')
                 self.mov.frames[frameNum].newColorMap[x].insert(self.xy[1] - 1, [fg,bg])
+                self.mov.frames[frameNum].sizeX += 1
         self.mov.sizeX += 1
+        #self.mov.currentFrame.sizeX += 1
         self.opts.sizeX += 1
         self.hardRefresh()
 
@@ -5161,7 +5175,9 @@ Can use ESC or META instead of ALT
                 for x in range(len(self.mov.frames[frameNum].content)):     # line
                     self.mov.frames[frameNum].content[x].pop(self.xy[1] - 1)
                     self.mov.frames[frameNum].newColorMap[x].pop(self.xy[1] - 1)
+                self.mov.frames[frameNum].sizeX -= 1
             self.mov.sizeX -= 1
+            #self.mov.currentFrame.sizeX -= 1
             self.opts.sizeX -= 1
             self.hardRefresh()
         if self.xy[1] == self.mov.sizeX + 1:
@@ -5175,7 +5191,9 @@ Can use ESC or META instead of ALT
         for frameNum in range(0, len(self.mov.frames)):
             self.mov.frames[frameNum].content.insert(self.xy[0] + 1, list(' ' * self.mov.sizeX))
             self.mov.frames[frameNum].newColorMap.insert(self.xy[0] + 1, [[fg,bg]] * self.mov.sizeX)
+            self.mov.frames[frameNum].sizeY += 1
         self.mov.sizeY += 1
+        #self.mov.currentFrame.sizeY += 1
         self.opts.sizeY += 1
 
     def delLineFromCanvas(self):
@@ -5184,7 +5202,9 @@ Can use ESC or META instead of ALT
             for frameNum in range(0, len(self.mov.frames)):
                 self.mov.frames[frameNum].content.pop(self.xy[0])
                 self.mov.frames[frameNum].newColorMap.pop(self.xy[0])
+                self.mov.frames[frameNum].sizeY -= 1
             self.mov.sizeY -= 1
+            #self.mov.currentFrame.sizeY -= 1
             self.opts.sizeY -= 1
             self.hardRefresh()
         if self.xy[0] == self.mov.sizeY: # We're on the last line, and just deleted it.
