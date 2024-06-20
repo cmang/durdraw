@@ -651,8 +651,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def move(self, y, x):
         realLine = y - self.appState.topLine
+        realCol = x - self.appState.firstCol
         try:
-            self.stdscr.move(realLine, x)
+            self.stdscr.move(realLine, realCol)
         except curses.error:
             self.testWindowSize()
 
@@ -2078,7 +2079,7 @@ class UserInterface():  # Separate view (curses) from this controller
             colorValue = curses.color_content(self.colorfg)
             debugstring = f"Fg: {self.colorfg}, bg: {self.colorbg}, cpairs: {cp}, {cp2}, pairs: {pairs}, ext: {extColors}, {colorValue}"
             self.addstr(statusBarLineNum-1, 0, debugstring, curses.color_pair(mainColor))
-            debugstring2 = f"ButtonPress: {self.pressingButton}"
+            debugstring2 = f"ButtonPress: {self.pressingButton}, firstCol: {self.appState.firstCol}"
             self.addstr(statusBarLineNum-2, 0, debugstring2, curses.color_pair(mainColor))
             colorValue = curses.color_content(self.colorbg)
             debugstring3= f"bg: {colorValue}"
@@ -2478,7 +2479,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
                 elif c in [75]: # alt-K = start marking selection
-                    startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
+                    startPoint=(self.xy[0] + self.appState.topLine, self.xy[1] + firstCol)
                     self.startSelecting(firstkey=c)  # start selecting text
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
@@ -2721,7 +2722,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
                 #    and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
-                if mouseY + self.appState.topLine < self.mov.sizeY and mouseX < self.mov.sizeX:
+                if mouseY + self.appState.topLine < self.mov.sizeY and mouseX + self.appState.firstCol < self.mov.sizeX:
                     # we're in the canvas, not playing
 
                     if mouseState & curses.BUTTON1_PRESSED:
@@ -2762,7 +2763,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.move_cursor_down()
                     elif self.appState.cursorMode == "Move":   # select mode/move the cursor
                         if self.pressingButton:
-                            self.xy[1] = mouseX + 1     # set cursor position
+                            self.xy[1] = mouseX + 1 + self.appState.firstCol     # set cursor position
                             self.xy[0] = mouseY + self.appState.topLine
                     elif self.appState.cursorMode == "Draw":
                         if self.pressingButton:
@@ -2775,7 +2776,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             # Insert the selected character.
                             drawChar = self.appState.drawChar
                             try:
-                                x_param = mouseX + 1
+                                x_param = mouseX + 1 + self.appState.firstCol
                                 y_param = mouseY + self.appState.topLine
                                 self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=False, pushUndo=False)
                             except IndexError:
@@ -2798,7 +2799,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 if self.appState.debug:
                                     self.addstr(self.statusBarLineNum-2, 20, "Paint painting.", curses.color_pair(6) | curses.A_BOLD)
                                 try:
-                                    x_param = mouseX + 1
+                                    x_param = mouseX + 1 + self.appState.firstCol
                                     y_param = mouseY + self.appState.topLine
                                     #self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=False, pushUndo=False)
                                     self.pasteFromClipboard(startPoint = [y_param, x_param], clipBuffer=self.appState.brush, transparent=True, pushUndo=False)
@@ -2813,24 +2814,24 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif self.appState.cursorMode == "Color":   # Change the color under the cursor
                         if self.pressingButton:
                             # also set cursor position
-                            self.xy[1] = mouseX + 1 # set cursor position
+                            self.xy[1] = mouseX + 1 + self.appState.firstCol # set cursor position
                             self.xy[0] = mouseY + self.appState.topLine
-                            self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1, y=mouseY + self.appState.topLine, pushUndo=False)
+                            self.insertColor(fg=self.colorfg, bg=self.colorbg, x=mouseX+1 + self.appState.firstCol, y=mouseY + self.appState.topLine, pushUndo=False)
                             self.refresh()
                     elif self.appState.cursorMode == "Erase":   # Erase character under the cursor
                         # also set cursor position
                         if self.pressingButton:
-                            self.xy[1] = mouseX + 1 # set cursor position
+                            self.xy[1] = mouseX + 1 + self.appState.firstCol# set cursor position
                             self.xy[0] = mouseY + self.appState.topLine
                             color_fg = self.appState.defaultFgColor 
                             color_bg = self.appState.defaultBgColor 
-                            self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX, y=mouseY + self.appState.topLine, pushUndo=False)
+                            self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX + self.appState.firstCol, y=mouseY + self.appState.topLine, pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
-                        self.eyeDrop(mouseX, mouseY + self.appState.topLine)
+                        self.eyeDrop(mouseX + self.appState.firstCol, mouseY + self.appState.topLine)
                         self.statusBar.setCursorModeMove()
                         self.drawStatusBar()
                     elif self.appState.cursorMode == "Select":   # this does not exist lol
-                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[1] = mouseX + 1 + self.appState.firstCol # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                         self.startSelecting(mouse=True)
 
@@ -2961,7 +2962,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     realmaxY,realmaxX = self.realstdscr.getmaxyx()
                     cmode = self.appState.cursorMode
                     #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
-                    if mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum and mouseX < self.mov.sizeX: # we're in the canvas
+                    if mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum and mouseX + self.appState.firstCol < self.mov.sizeX: # we're in the canvas
                         if cmode == "Draw" or cmode == "Color" or cmode == "Erase" or cmode == "Paint":
                             self.undo.push()
                     else:   # Not in the canvas, so give the GUI a click
@@ -2983,7 +2984,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # shift-up, shift-down, shift-left and shift-right = start selecting text block
                 # shift-up and shift-down not defined in ncurses :(
                 # doesn't seem to work in screen?
-                startPoint=(self.xy[0] + self.appState.topLine, self.xy[1])
+                startPoint=(self.xy[0] + self.appState.topLine, self.xy[1] + self.appState.firstCol)
                 self.startSelecting(firstkey=c)  # start selecting text
                 # pass c to something here that starts selecting and moves
                 # the cursor based on c, and knows whether it's selecting
@@ -3113,10 +3114,15 @@ class UserInterface():  # Separate view (curses) from this controller
         # middle of screen, go to bottom
         elif self.xy[0] - self.appState.topLine < bottomLine:
             self.xy[0] = bottomLine
+
+        if self.xy[1] < self.appState.firstCol + 1:# Scrolled off screen ot the left, Need to scroll left
+            self.appState.firstCol = self.xy[1] - 1
+
         self.appState.renderMouseCursor = False
 
     def move_cursor_topleft(self):
         self.appState.topLine = 0
+        self.appState.firstCol = 0
         self.xy[0] = 0
         self.xy[1] = 1
         self.refresh()
@@ -3125,11 +3131,16 @@ class UserInterface():  # Separate view (curses) from this controller
     def move_cursor_left(self):     # pressed LEFT key
         if self.xy[1] > 1:
             self.xy[1] = self.xy[1] - 1
+        if self.xy[1] < self.appState.firstCol + 1:# Scrolled off screen ot the left, Need to scroll left
+            self.appState.firstCol = self.xy[1] - 1
         self.appState.renderMouseCursor = False
 
     def move_cursor_right(self):    # pressed RIGHT key
         if self.xy[1] < self.mov.sizeX:
             self.xy[1] = self.xy[1] + 1
+        #lastCol = min(mov.sizeX, self.appState.realmaxX)
+        if self.xy[1] - self.appState.firstCol > self.appState.realmaxX: # scrolled off screen to the right, need to scroll right
+            self.appState.firstCol = self.xy[1] - self.appState.realmaxX
         self.appState.renderMouseCursor = False
 
     def move_cursor_up(self):   # pressed UP key
@@ -3148,10 +3159,15 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def move_cursor_home(self):
         self.xy[1] = 1
+        self.appState.firstCol = 0
+        if self.xy[1] < self.appState.firstCol + 1: # Scrolled off screen ot the left, Need to scroll left
+            self.appState.firstCol = self.xy[1] - 1
         self.appState.renderMouseCursor = False
 
     def move_cursor_end(self):
         self.xy[1] = self.mov.sizeX
+        if self.xy[1] > self.appState.realmaxX: # scrolled off screen to the right, need to scroll right
+            self.appState.firstCol = self.xy[1] - self.appState.realmaxX
         self.appState.renderMouseCursor = False
 
     def move_cursor_to_line_and_column(self, line, col):
@@ -4168,6 +4184,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 default_width = 44   # default with for file_id.diz
             newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=self.appState.wrapWidth)
             self.appState.topLine = 0
+            self.appState.firstCol = 0
             newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
             newMovie = Movie(newMovieOpts)
             # add the frame with the loaded ANSI file to the movie
@@ -5046,8 +5063,8 @@ Can use ESC or META instead of ALT
         if lastLineToDraw > mov.sizeY:
             lastLineToDraw = mov.sizeY
         screenLineNum = 0
-        firstCol = 0
-        lastCol = min(mov.sizeX, self.appState.realmaxX)
+        firstCol = self.appState.firstCol
+        lastCol = min(mov.sizeX, self.appState.realmaxX + firstCol)
         # Draw each character
         for linenum in range(topLine, lastLineToDraw):
             line = mov.currentFrame.content[linenum]
@@ -5059,10 +5076,10 @@ Can use ESC or META instead of ALT
                         # draw brush preview
                         # If we're drawing within the brush area:
                         if linenum in range(self.appState.mouse_line + self.appState.topLine, self.appState.mouse_line + self.appState.brush.sizeX + self.appState.topLine):
-                            if colnum in range(self.appState.mouse_col, self.appState.mouse_col + self.appState.brush.sizeY):
+                            if colnum in range(self.appState.mouse_col + self.appState.firstCol, self.appState.mouse_col + self.appState.brush.sizeY + self.appState.firstCol):
                                 #brush_line = linenum - self.appState.mouse_line
                                 brush_line = linenum - self.appState.mouse_line - self.appState.topLine
-                                brush_col = colnum - self.appState.mouse_col
+                                brush_col = colnum - self.appState.mouse_col - self.appState.firstCol
                                 try:
                                     brushChar = self.appState.brush.content[brush_col][brush_line]
                                 except IndexError:
@@ -5077,7 +5094,7 @@ Can use ESC or META instead of ALT
                                     if self.appState.renderMouseCursor:
                                         charContent = brushChar
                                         charColor = self.appState.brush.newColorMap[brush_col][brush_line]
-                if linenum == self.appState.mouse_line + self.appState.topLine and colnum == self.appState.mouse_col:
+                if linenum == self.appState.mouse_line + self.appState.topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
                     if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
                         if self.appState.renderMouseCursor:
                             charContent = self.appState.drawChar
@@ -5088,9 +5105,9 @@ Can use ESC or META instead of ALT
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
-                    self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
-                    self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
@@ -5105,7 +5122,7 @@ Can use ESC or META instead of ALT
                             self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
                         # black on black
                 else:   # Normal character. No funny business. Print to the screen
-                    self.addstr(screenLineNum, colnum, charContent, curses.color_pair(cursesColorPair))
+                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
             if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
@@ -5295,7 +5312,7 @@ Can use ESC or META instead of ALT
                         cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                     except: # Or if we can't, fail to the terminal's default color
                         cursesColorPair = 0
-                    self.addstr(linenum - self.appState.topLine, colnum, mov.currentFrame.content[linenum][colnum], curses.color_pair(cursesColorPair) | curses.A_REVERSE)
+                    self.addstr(linenum - self.appState.topLine, colnum - self.appState.firstCol, mov.currentFrame.content[linenum][colnum], curses.color_pair(cursesColorPair) | curses.A_REVERSE)
             width = lastColNum - firstColNum + 1
             height = lastLineNum - firstLineNum + 1
             # end draw block area
@@ -5485,7 +5502,7 @@ Can use ESC or META instead of ALT
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
                         and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
                         # We're in in edit/canvas area
-                        self.xy[1] = mouseX + 1 # set cursor position
+                        self.xy[1] = mouseX + 1 + self.appState.firstCol # set cursor position
                         self.xy[0] = mouseY + self.appState.topLine
                             
 
