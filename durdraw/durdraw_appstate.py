@@ -34,6 +34,8 @@ class AppState():
         self.width = 80     # default canvas width/columns
         self.height = 23    # default canvas height/lines
         self.wrapWidth = 80    # Default width to wrap at when loading ASCII files (.asc/.txt)
+        self.minWindowWidth = 40    # smaller than this, and Durdraw complains that it can't draw the UI
+        self.full_ui_width = 80   # smaller than this, and draw the streamlined UI
         self.stickyColorPicker = True # true to keep color picker on screen
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc

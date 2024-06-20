@@ -682,7 +682,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if realmaxY != self.realmaxY or realmaxX != self.realmaxX:
             self.resizeHandler()
         self.realmaxY, self.realmaxX = realmaxY, realmaxX
-        while self.realmaxX < 80 and not self.appState.playOnlyMode:
+        #while self.realmaxX < 80 and not self.appState.playOnlyMode:
+        while self.realmaxX < self.appState.minWindowWidth and not self.appState.playOnlyMode:
             self.smallWindowMode()   # go into small window loop.stdscr
 
     def smallWindowMode(self):
@@ -692,10 +693,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.refresh()
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
         #while self.realmaxX < self.mov.sizeX:
-        while self.realmaxX < 80:
+        while self.realmaxX < self.appState.minWindowWidth:
             try:
                 self.addstr(0, 0, "Terminal is too small for the UI.")
-                self.addstr(1, 0, "Please enlarge to 80 columns or larger, or press 'q' to quit")
+                self.addstr(1, 0, f"Please enlarge to {self.appState.minWindowWidth} columns or larger, or press 'q' to quit")
             except:     # if window is too small for the message ^
                 pass
             c = self.stdscr.getch()
@@ -2029,10 +2030,10 @@ class UserInterface():  # Separate view (curses) from this controller
         canvasSizeOffset = realmaxX - len(canvasSizeBar) - 1     # right of transport
         self.addstr(statusBarLineNum, canvasSizeOffset, canvasSizeBar, curses.color_pair(mainColor))
 
-        frameBar = "F: %i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
-        rangeBar = "R: %i-%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
-        fpsBar = "<FPS>: %i " % (self.opts.framerate)
-        delayBar = "D: %.2f " % (self.mov.currentFrame.delay)
+        frameBar = "F:%i/%i " % (self.mov.currentFrameNumber, self.mov.frameCount)
+        rangeBar = "R:%i-%i " % (self.appState.playbackRange[0], self.appState.playbackRange[1])
+        fpsBar = "<FPS>:%i " % (self.opts.framerate)
+        delayBar = "D:%.2f " % (self.mov.currentFrame.delay)
 
         # Ugly hardcoded locations. These should be handled in the GUI
         # framework instead.
@@ -2058,10 +2059,11 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.drawCharPickerButton.show()
 
         # Draw elements that aren't in the GUI framework
-        self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
-        self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
+        if self.realmaxX >= self.appState.full_ui_width:
+            self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
+            self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
+            self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
+            self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
 
         # Move char button to the left of frameBar_offset
 
@@ -2117,7 +2119,7 @@ class UserInterface():  # Separate view (curses) from this controller
         #    y = y + 3
 
         # draw 16-color picker
-        if self.appState.colorMode == "16":
+        if self.appState.colorMode == "16" and self.realmaxX > self.appState.full_ui_width:
             colorPickerFGOffset = 0
             self.addstr(statusBarLineNum+1, colorPickerFGOffset, "FG:", curses.color_pair(mainColor))
             #hiColor = 7     # for old way, using bold to get high colors
@@ -2167,17 +2169,18 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(statusBarLineNum + 1, locationStringOffset - 1, "*", curses.color_pair(3) | curses.A_BOLD)
         else:
             self.addstr(statusBarLineNum + 1, locationStringOffset - 1, " ", curses.color_pair(3) | curses.A_BOLD)
-        # Draw Range, FPS and Delay buttons
-        self.addstr(statusBarLineNum, 13 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
-        self.addstr(statusBarLineNum, 17 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
-        if self.appState.modified:
-            self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
-        else:
-            self.addstr(statusBarLineNum + 1, realmaxX - 1, " ", curses.color_pair(4) | curses.A_BOLD)
-        if not self.playing:
-            self.addstr(statusBarLineNum, 2 + line_1_offset, "F", curses.color_pair(clickColor) | curses.A_BOLD)  # Frame button
-            self.addstr(statusBarLineNum, 31 + line_1_offset, "R", curses.color_pair(clickColor) | curses.A_BOLD)  # Range button
-            self.addstr(statusBarLineNum, 23 + line_1_offset, "D", curses.color_pair(clickColor) | curses.A_BOLD)  # Delay button
+        if self.realmaxX >= self.appState.full_ui_width:
+            # Draw Range, FPS and Delay buttons
+            self.addstr(statusBarLineNum, 13 + line_1_offset, "<", curses.color_pair(clickColor) | curses.A_BOLD)  # FPS buttons
+            self.addstr(statusBarLineNum, 17 + line_1_offset, ">", curses.color_pair(clickColor) | curses.A_BOLD)
+            if self.appState.modified:
+                self.addstr(statusBarLineNum + 1, realmaxX - 1, "*", curses.color_pair(4) | curses.A_BOLD)
+            else:
+                self.addstr(statusBarLineNum + 1, realmaxX - 1, " ", curses.color_pair(4) | curses.A_BOLD)
+            if not self.playing:
+                self.addstr(statusBarLineNum, 2 + line_1_offset, "F", curses.color_pair(clickColor) | curses.A_BOLD)  # Frame button
+                self.addstr(statusBarLineNum, 31 + line_1_offset, "R", curses.color_pair(clickColor) | curses.A_BOLD)  # Range button
+                self.addstr(statusBarLineNum, 23 + line_1_offset, "D", curses.color_pair(clickColor) | curses.A_BOLD)  # Delay button
         # draw transport
         transportString = "|< << |> >> >|" 
         transportOffset = realmaxX - len(transportString) - 9 
@@ -2886,25 +2889,26 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.clickHighlight(tOffset + 12, ">|")
                                 self.mov.nextFrame()
                                 self.mov.gotoFrame(self.mov.frameCount)
-                            elif mouseX == 13 + offset:    # clicked FPS down
-                                self.clickHighlight(13 + offset, "<")
-                                self.decreaseFPS()
-                            elif mouseX == 17 + offset:    # clicked FPS up
-                                self.clickHighlight(17 + offset, ">")
-                                self.increaseFPS()
-                            elif mouseX == 23 + offset:  # clicked Delay button
-                                self.clickHighlight(23 + offset, "D")
-                                self.getDelayValue()
-                            elif mouseX == 31 + offset:  # clicked Range button
-                                self.clickHighlight(31 + offset, "R")
-                                self.getPlaybackRange()
-                            elif mouseX == 2 + offset:   # clicked Frame button
-                                self.clickHighlight(2 + offset, "F")
-                                self.gotoFrameGetInput()
+                            if self.realmaxX >= self.appState.full_ui_width: # full/wide UI mode, 80+ col
+                                if mouseX == 13 + offset:    # clicked FPS down
+                                    self.clickHighlight(13 + offset, "<")
+                                    self.decreaseFPS()
+                                elif mouseX == 17 + offset:    # clicked FPS up
+                                    self.clickHighlight(17 + offset, ">")
+                                    self.increaseFPS()
+                                elif mouseX == 23 + offset:  # clicked Delay button
+                                    self.clickHighlight(23 + offset, "D")
+                                    self.getDelayValue()
+                                elif mouseX == 31 + offset:  # clicked Range button
+                                    self.clickHighlight(31 + offset, "R")
+                                    self.getPlaybackRange()
+                                elif mouseX == 2 + offset:   # clicked Frame button
+                                    self.clickHighlight(2 + offset, "F")
+                                    self.gotoFrameGetInput()
 
 
                         elif mouseY == self.statusBarLineNum+1: # clicked bottom bar 
-                            if self.appState.colorMode == "16":
+                            if self.appState.colorMode == "16" and self.realmaxX >= self.appState.full_ui_width:
                                 if mouseX in range(3,19): # clicked a fg color
                                     fg = mouseX - 2
                                     self.setFgColor(fg)
