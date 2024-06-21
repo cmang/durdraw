@@ -791,14 +791,16 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.notify(f"Please save your work and restart Durdraw. Sorry for the inconvenience.")
                     break
             if x < self.mov.sizeX and moveCursor:
-                self.xy[1] = self.xy[1] + 1 
+                self.move_cursor_right()
+                #self.xy[1] = self.xy[1] + 1 
         else:
             self.mov.currentFrame.content[y][x - 1] = chr(c)
             #self.mov.currentFrame.colorMap.update(
             #        {(y,x - 1):(fg,bg)} )
             self.mov.currentFrame.newColorMap[y][x - 1] = [fg, bg]
             if x < self.mov.sizeX and moveCursor:
-                self.xy[1] = self.xy[1] + 1 
+                self.move_cursor_right()
+                #self.xy[1] = self.xy[1] + 1 
 
     def pickUpDrawingChar(self, col, line):
         # Sets the drawing chaaracter to the character under teh cusror.
