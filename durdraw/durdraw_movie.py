@@ -209,6 +209,12 @@ class Movie():
             self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
 
+    def hasMultipleFrames(self):
+        if len(self.frames) > 1:
+            return True
+        else:
+            return False
+
     def growCanvasWidth(self, growth):
         self.sizeX += growth
         self.opts.sizeX += growth

@@ -5384,8 +5384,14 @@ Can use ESC or META instead of ALT
                     #    self.mov.currentFrame.flip_horizontal()
                     if chr(prompt_ch) in ['t', 'T']:    # Cut to clipboard
                         self.clearStatusBar()
-                        self.promptPrint("Cut across all frames in playback range (Y/N)? ")
-                        askingAboutRange = True
+                        if self.mov.hasMultipleFrames():
+                            self.promptPrint("Cut across all frames in playback range (Y/N)? ")
+                            askingAboutRange = True
+                        else:
+                            self.copySegmentToClipboard([firstLineNum, firstColNum], height, width)
+                            self.undo.push()
+                            self.deleteSegment([firstLineNum, firstColNum], height, width)
+                            askingAboutRange = False
                         while askingAboutRange:
                             prompt_ch = self.stdscr.getch()
                             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
@@ -5403,8 +5409,13 @@ Can use ESC or META instead of ALT
                         prompting = False
                     elif chr(prompt_ch) in ['d', 'D']:    # delete/clear
                         self.clearStatusBar()
-                        self.promptPrint("Delete across all frames in playback range (Y/N)? ")
-                        askingAboutRange = True
+                        if self.mov.hasMultipleFrames():
+                            self.promptPrint("Delete across all frames in playback range (Y/N)? ")
+                            askingAboutRange = True
+                        else:
+                            self.undo.push()
+                            self.deleteSegment([firstLineNum, firstColNum], height, width)
+                            askingAboutRange = False
                         while askingAboutRange:
                             prompt_ch = self.stdscr.getch()
                             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
@@ -5420,8 +5431,13 @@ Can use ESC or META instead of ALT
                         prompting = False
                     elif chr(prompt_ch) in ['l', 'L']:    # color
                         self.clearStatusBar()
-                        self.promptPrint("Color across all frames in playback range (Y/N)? ")
-                        askingAboutRange = True
+                        if self.mov.hasMultipleFrames():
+                            self.promptPrint("Color across all frames in playback range (Y/N)? ")
+                            askingAboutRange = True
+                        else:
+                            self.undo.push()
+                            self.colorSegment([firstLineNum, firstColNum], height, width)
+                            askingAboutRange = False
                         while askingAboutRange:
                             prompt_ch = self.stdscr.getch()
                             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
@@ -5473,8 +5489,13 @@ Can use ESC or META instead of ALT
                             prompting = False
                         else:
                             self.clearStatusBar()
-                            self.promptPrint("Fill across all frames in playback range (Y/N)? ")
-                            askingAboutRange = True
+                            if self.mov.hasMultipleFrames():
+                                self.promptPrint("Fill across all frames in playback range (Y/N)? ")
+                                askingAboutRange = True
+                            else:   # Just one frame, so don't worry about the range.
+                                self.undo.push()
+                                self.fillSegment([firstLineNum, firstColNum], height, width, fillChar=drawChar)
+                                askingAboutRange = False
                         while askingAboutRange:
                             prompt_ch = self.stdscr.getch()
                             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
@@ -5535,8 +5556,13 @@ Can use ESC or META instead of ALT
 
     def askHowToPaste(self):
         self.clearStatusBar()
-        self.promptPrint("Paste across all frames in playback range (Y/N)? ")
-        askingAboutRange = True
+        if self.mov.hasMultipleFrames():
+            self.promptPrint("Paste across all frames in playback range (Y/N)? ")
+            askingAboutRange = True
+        else:   # only one frame
+            self.undo.push()
+            self.pasteFromClipboard()
+            askingAboutRange = False
         while askingAboutRange:
             prompt_ch = self.stdscr.getch()
             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
