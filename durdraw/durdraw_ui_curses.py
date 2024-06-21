@@ -2402,6 +2402,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c == ord('P'):      # alt-P - pick up charcter
                     self.pickUpDrawingChar(self.xy[1] - 1, self.xy[0])
                     #self.notify(f"Picked up character: {self.appState.drawChar}")
+                elif c == ord(' '):     # alt-space - insert drawing character
+                    drawChar = self.appState.drawChar
+                    x_param = self.xy[1]
+                    y_param = self.xy[0]
+                    self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=True, pushUndo=True)
                 elif c == ord('l'): # alt-l - color under cursor
                     self.insertColor(fg=self.colorfg, bg=self.colorbg, pushUndo=True)
                 elif c == 73:       # alt-I - Character Inspector
