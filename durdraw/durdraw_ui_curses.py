@@ -1408,6 +1408,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     #    self.statusBar.colorPickerButton.on_click()
                     #self.statusBar.colorPickerButton.on_click()
                     self.selectColorPicker()
+                elif c == ord(' '):     # alt-space - insert drawing character
+                    drawChar = self.appState.drawChar
+                    x_param = self.xy[1]
+                    y_param = self.xy[0]
+                    self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=True, pushUndo=True, frange=self.appState.playbackRange)
                 elif c == 122:  # alt-z = undo
                     self.clickedUndo()
                 elif c == 114:  # alt-r = redo
