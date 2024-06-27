@@ -1533,11 +1533,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.appState.topLine = 0
                     elif c in [338, curses.KEY_END]:   # 338 = end
                         self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
-                    elif c == curses.KEY_LEFT:      # left - previous file
-                        pass
-                    elif c == curses.KEY_RIGHT:      # right - next file
-                        pass
-
+                    elif c == curses.KEY_LEFT:      # left - scroll left
+                        self.scroll_viewer_left()
+                    elif c == curses.KEY_RIGHT:      # right - scroll right
+                        self.scroll_viewer_right()
                     if c in [61, 43]: # esc-= and esc-+ - fps up
                         self.increaseFPS()
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -3077,7 +3076,9 @@ class UserInterface():  # Separate view (curses) from this controller
     def enterViewMode(self):
         self.statusBar.hide()
         self.stdscr.clear()
+        old_xy = self.xy
         old_top_line = self.appState.topLine
+        old_first_col = self.appState.firstCol
         self.appState.topLine = 0
         oldDrawBorders = self.appState.drawBorders  # to turn back on when done
         self.appState.playOnlyMode = True
@@ -3086,6 +3087,8 @@ class UserInterface():  # Separate view (curses) from this controller
         # Return to normal when done
         self.appState.playOnlyMode = False
         self.appState.topLine = old_top_line
+        self.appState.firstCol = old_first_col
+        self.xy = old_xy
         self.statusBar.show()
         self.appState.drawBorders = oldDrawBorders
         self.cursorOn()
@@ -3165,6 +3168,18 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.xy[1] - self.appState.firstCol > self.appState.realmaxX: # scrolled off screen to the right, need to scroll right
             self.appState.firstCol = self.xy[1] - self.appState.realmaxX
         self.appState.renderMouseCursor = False
+
+    def scroll_viewer_left(self):   # pressed LEFT key in viewer mode
+        if self.appState.firstCol > 0:
+            self.appState.firstCol = self.appState.firstCol - 1
+
+    def scroll_viewer_right(self):
+        # if we are already scrolled right
+        last_column_shown = self.appState.firstCol + self.appState.realmaxX
+        if last_column_shown > self.mov.sizeX:
+            pass    # do nothing
+        else:   # otherwise, scroll right one
+            self.appState.firstCol += 1
 
     def move_cursor_up(self):   # pressed UP key
         if self.xy[0] > 0:
