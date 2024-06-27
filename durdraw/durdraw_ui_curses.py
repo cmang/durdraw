@@ -1342,9 +1342,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 resized = True
                 self.appState.realmaxX = realmaxX
             if resized:
+                pass
                 #self.notify("Debug: resized")
-                self.appState.topLine = 0
-                self.appState.firstCol = 0
+                #self.appState.topLine = 0
+                #self.appState.firstCol = 0
 
             #debugstring = f"self.appState.realmaxY: {self.appState.realmaxY}, self.appState.realmaxX: {self.appState.realmaxX}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
             #self.addstr(self.statusBarLineNum - 1, 0, debugstring)
