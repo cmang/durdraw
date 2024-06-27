@@ -965,7 +965,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # check and see if the window is wide enough for a nice side sauce
             wideViewer = False
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
-            if realmaxX >= self.mov.sizeX + self.appState.sideInfo_minimum_width:
+            if realmaxX + self.appState.firstCol >= self.mov.sizeX + self.appState.sideInfo_minimum_width:
                 wideViewer = True
             fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
@@ -1320,11 +1320,11 @@ class UserInterface():  # Separate view (curses) from this controller
         while self.playing:
             # catch keyboard input - to change framerate or stop playing animation
             # get keyboard input, returns -1 if none available
-            if self.appState.viewModeShowInfo: 
-                self.showFileInformation()
             self.move(self.xy[0], self.xy[1])
             # Here refreshScreen=False because we will self.stdscr.refresh() below, after drawing the status bar (to avoid flicker)
             self.refresh(refreshScreen=False)
+            if self.appState.viewModeShowInfo: 
+                self.showFileInformation()
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
