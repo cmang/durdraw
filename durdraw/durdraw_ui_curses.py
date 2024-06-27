@@ -1285,6 +1285,8 @@ class UserInterface():  # Separate view (curses) from this controller
             the last frame was drawn.
         """
         self.commandMode = False
+        oldTopLine = self.appState.topLine
+        oldFirstCol = self.appState.firstCol
         cursorMode = self.appState.cursorMode
         if not self.statusBar.toolButton.hidden:
             self.statusBar.toolButton.draw()
@@ -1328,8 +1330,26 @@ class UserInterface():  # Separate view (curses) from this controller
             if not self.appState.playOnlyMode:
                 self.drawStatusBar()
                 self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
-            self.stdscr.refresh()
             c = self.stdscr.getch()
+
+            # handle resize
+            resized = False
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+            if self.appState.realmaxY != realmaxY:
+                resized = True
+                self.appState.realmaxY = realmaxY
+            if self.appState.realmaxX != realmaxX:
+                resized = True
+                self.appState.realmaxX = realmaxX
+            if resized:
+                #self.notify("Debug: resized")
+                self.appState.topLine = 0
+                self.appState.firstCol = 0
+
+            #debugstring = f"self.appState.realmaxY: {self.appState.realmaxY}, self.appState.realmaxX: {self.appState.realmaxX}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
+            #self.addstr(self.statusBarLineNum - 1, 0, debugstring)
+
+            self.stdscr.refresh()
 
             if c == 27:
                 self.metaKey = 1
@@ -1773,6 +1793,8 @@ class UserInterface():  # Separate view (curses) from this controller
                 #self.refresh()
             else: time.sleep(0.005) # to keep from sucking up cpu
 
+        self.appState.topLine = oldTopLine
+        self.appState.firstCol = oldFirstCol
         self.stdscr.nodelay(0) # back to wait for input when calling getch
         self.cursorOn()
 
@@ -1915,7 +1937,7 @@ class UserInterface():  # Separate view (curses) from this controller
         topLine = self.mov.sizeY - self.realmaxY - 2
         if topLine < 0:
             topLine = 0
-        self.appState.topLine = topLine
+        #self.appState.topLine = topLine
         if self.xy[0] < self.appState.topLine:   # if cursor is off screen
             self.xy[0] = self.appState.topLine   # put it back on
 
@@ -5107,7 +5129,7 @@ Can use ESC or META instead of ALT
         else:
             mov = self.mov
         # Figure out the last line to draw
-        lastLineToDraw = topLine + self.realmaxY - 2 # right above the status line
+        lastLineToDraw = topLine + self.appState.realmaxY - 2 # right above the status line
         if self.appState.playOnlyMode:
             lastLineToDraw += 2
         if lastLineToDraw > mov.sizeY:
