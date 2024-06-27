@@ -5146,7 +5146,7 @@ Can use ESC or META instead of ALT
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
-                elif colnum + 1 == self.xy[1] and linenum == self.xy[0]:    # under the cursor
+                elif not self.appState.playOnlyMode and colnum + 1 == self.xy[1] and linenum == self.xy[0]:    # under the cursor
                     if self.appState.colorMode == "16":
                         visible_color_pair = self.ansi.colorPairMap[(self.appState.defaultFgColor, self.appState.defaultBgColor)] 
                         #self.addstr(screenLineNum, colnum, "X", visible_color_pair)
