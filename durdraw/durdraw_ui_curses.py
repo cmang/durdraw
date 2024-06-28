@@ -3713,7 +3713,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.pressingButton = False
                     if self.pushingToClip:
                         self.pushingToClip = False
-                    if cursorMode != "Draw" and cursorMode != "Paint":
+                    if self.appState.cursorMode != "Draw" and self.appState.cursorMode != "Paint":
                         print('\033[?1003l') # disable mouse reporting
                         self.hardRefresh()
                         curses.mousemask(1)
