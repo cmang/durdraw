@@ -1152,6 +1152,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
+                try:
+                    curses.BUTTON5_PRESSED
+                except:
+                    curses.BUTTON5_PRESSED = 0
+                try:
+                    curses.BUTTON4_PRESSED
+                except:
+                    curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     if self.appState.topLine > 0:
                         self.appState.topLine = self.appState.topLine - 1
@@ -1531,6 +1539,14 @@ class UserInterface():  # Separate view (curses) from this controller
                         if not self.appState.hasMouseScroll:
                             curses.BUTTON5_PRESSED = 0
                             curses.BUTTON4_PRESSED = 0
+                        try:
+                            curses.BUTTON5_PRESSED
+                        except:
+                            curses.BUTTON5_PRESSED = 0
+                        try:
+                            curses.BUTTON4_PRESSED
+                        except:
+                            curses.BUTTON4_PRESSED = 0
                         if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                             if self.appState.topLine > 0:
                                 self.appState.topLine = self.appState.topLine - 1
@@ -1618,6 +1634,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
                         if not self.appState.hasMouseScroll:
                             curses.BUTTON5_PRESSED = 0
+                            curses.BUTTON4_PRESSED = 0
+                        try:
+                            curses.BUTTON5_PRESSED
+                        except:
+                            curses.BUTTON5_PRESSED = 0
+                        try:
+                            curses.BUTTON4_PRESSED
+                        except:
                             curses.BUTTON4_PRESSED = 0
                         if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                             self.move_cursor_up()
@@ -2802,6 +2826,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     if not self.appState.hasMouseScroll:
                         curses.BUTTON5_PRESSED = 0
                         curses.BUTTON4_PRESSED = 0
+                    try:
+                        curses.BUTTON5_PRESSED
+                    except:
+                        curses.BUTTON5_PRESSED = 0
+                    try:
+                        curses.BUTTON4_PRESSED
+                    except:
+                        curses.BUTTON4_PRESSED = 0
                     if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                         self.move_cursor_up()
                     elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
@@ -2894,6 +2926,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                try:
+                    curses.BUTTON5_PRESSED
+                except:
+                    curses.BUTTON5_PRESSED = 0
+                try:
+                    curses.BUTTON4_PRESSED
+                except:
                     curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON1_PRESSED or mouseState & curses.BUTTON4_PRESSED or mouseState & curses.BUTTON5_PRESSED or b1_press > 0 or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     #print('\033[?1003h')
@@ -3709,6 +3749,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0 
+                try:
+                    curses.BUTTON5_PRESSED
+                except:
+                    curses.BUTTON5_PRESSED = 0
+                try:
+                    curses.BUTTON4_PRESSED
+                except:
+                    curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     # scroll up
                     # if the item isn't at the top of teh screen, move it up
@@ -4062,6 +4110,14 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                try:
+                    curses.BUTTON5_PRESSED
+                except:
+                    curses.BUTTON5_PRESSED = 0
+                try:
+                    curses.BUTTON4_PRESSED
+                except:
                     curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     # scroll up
@@ -5589,6 +5645,14 @@ Can use ESC or META instead of ALT
                 # enable mouse tracking only when the button is pressed
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
+                    curses.BUTTON4_PRESSED = 0
+                try:
+                    curses.BUTTON5_PRESSED
+                except:
+                    curses.BUTTON5_PRESSED = 0
+                try:
+                    curses.BUTTON4_PRESSED
+                except:
                     curses.BUTTON4_PRESSED = 0
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
