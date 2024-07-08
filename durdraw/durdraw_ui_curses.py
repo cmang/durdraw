@@ -458,7 +458,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.colorbg = 0
                 self.colorpair = self.ansi.colorPairMap[(self.colorfg, self.colorbg)] 
             except KeyError:
-                self.notify("There was an error setting the color. Please file a bug report explaining how you got to this error.")
+                self.notify(f"There was an error setting the color. fg: {self.colorfg}, bg: {self.colorbg}. Please file a bug report explaining how you got to this error.")
 
     def setBgColor(self, bg):
         self.colorbg = bg
