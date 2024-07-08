@@ -171,6 +171,16 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.statusBar != None:
             self.statusBar.colorPickerButton.enabled = False
 
+    def toggleMouse(self):
+        """ enable and disable mouse """
+        self.appState.hasMouse = not self.appState.hasMouse    # flip true/false
+        if self.appState.hasMouse:
+            self.initMouse()
+        else:
+            self.disableMouse()
+
+    def disableMouse(self):
+        curses.mousemask(0)
 
     def initMouse(self):
         curses.mousemask(1)     # click response without drag support
@@ -1857,6 +1867,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # geometric shapes
                 #{'f1':0x25dc, 'f2':0x25dd, 'f3':0x25de, 'f4':0x25df, 'f5':0x25e0, 'f6':0x25e1, 'f7':0x25e2, 'f8':0x25e3, 'f9':0x25e4, 'f10':0x25e5},    # little curves and triangles
                 {'f1':0x25e2, 'f2':0x25e3, 'f3':0x25e5, 'f4':0x25e4, 'f5':0x25c4, 'f6':0x25ba, 'f7':0x25b2, 'f8':0x25bc, 'f9':0x25c0, 'f10':0x25b6 },    # little curves and triangles
+                #{'f1':'🮜', 'f2':'🮝', 'f3':'🮞', 'f4':'🮟', 'f5':0x25c4, 'f6':0x25ba, 'f7':0x25b2, 'f8':0x25bc, 'f9':0x25c0, 'f10':0x25b6 },    # little curves and triangles
 
                 # terminal graphic characters
                 {'f1':9622, 'f2':9623, 'f3':9624, 'f4':9625, 'f5':9626, 'f6':9627, 'f7':9628, 'f8':9629, 'f9':9630, 'f10':9631 },   # terminal graphic characters
