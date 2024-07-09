@@ -1437,6 +1437,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addLine(frange=self.appState.playbackRange)
                 elif c == 39:        # alt-' - erase line
                     self.delLine(frange=self.appState.playbackRange)
+                elif c == 105:      # alt-i - File/Canvas Information
+                    self.clickedInfoButton()
                 elif c == 109 or c == 102:    # alt-m or alt-f - load menu
                     #self.statusBar.menuButton.on_click() 
                     self.commandMode = False
@@ -3086,9 +3088,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 # the cursor based on c, and knows whether it's selecting
                 # via shift-arrow or mouse.
             elif c == None: pass
-            elif c <= 128 and c >= 32:      # normal printable character
+            elif c <= 128 and c >= 32:      # printable ASCII character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
                 self.appState.renderMouseCursor = False
+            #else:
+            #    self.notify(f"Weird character: {chr(c)} or {c}")
             #self.drawStatusBar()
             if self.appState.viewModeShowInfo: 
                 self.showFileInformation()
