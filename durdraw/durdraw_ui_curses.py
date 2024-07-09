@@ -5264,7 +5264,11 @@ Can use ESC or META instead of ALT
                           charColor[0] == 1 and charColor[1] == 8:
                             # make it show
                             self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
-                        # black on black
+                        # not black on black
+                        else:   # 16 color Normal character, under the cursor. No funny business. Print to the screen
+                            self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+                    else:   # 256 color Normal character, under the cursor. No funny business. Print to the screen
+                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
                 else:   # Normal character. No funny business. Print to the screen
                     self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
