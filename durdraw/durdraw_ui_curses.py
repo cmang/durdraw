@@ -4846,8 +4846,9 @@ class UserInterface():  # Separate view (curses) from this controller
         try:
             f.write(string)
             saved = True
-        except UnicodeEncodeError:
-            self.notify("Error: Some characters were not compatible with this encoding. File not saved.")
+        except UnicodeEncodeError as encodeError:
+            self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
+            self.notify(f"{encodeError}", pause=True)
             saved = False
             #f.close()
             #return False
@@ -4883,6 +4884,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if not firstLineNum:
             #firstLineNum = self.findFrameFirstLine(self.mov.currentFrame)
             firstLineNum = 0    # also don't crop leading blank lines. rude
+        error_encoding = False
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
@@ -4905,6 +4907,15 @@ class UserInterface():  # Separate view (curses) from this controller
                         colorCode = self.ansi.getColorCodeIrc(1,0)
                     else:
                         colorCode = self.ansi.getColorCode(1,0)
+                # Make sure encoding this character encodes correctly
+                try:
+                    char.encode('cp437')
+                except UnicodeEncodeError as encodeError:
+                    self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
+                    self.notify(f"line: {lineNum}, col: {colNum} ", pause=True)
+                    saved = False
+                    error_encoding = True
+                    break
                 # If we don't have extended ncurses 6 color pairs,
                 # we don't have background colors.. so write the background as black/0
                 string = string + colorCode + char
@@ -4913,14 +4924,16 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 #string = string + '\r\n'
                 string = string + '\n'
-        try:
-            f.write(string)
-            saved = True
-        except UnicodeEncodeError:
-            self.notify("Error: Some characters were not compatible with this encoding. File not saved.")
-            saved = False
-            #f.close()
-            #return False
+        if not error_encoding:
+            try:
+                f.write(string)
+                saved = True
+            except UnicodeEncodeError as encodeError:
+                self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
+                self.notify(f"{encodeError}", pause=True)
+                saved = False
+                #f.close()
+                #return False
         if ircColors:
             string2 = string + '\n'
         else:
