@@ -2463,7 +2463,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addLine()
                 elif c == 39:       # alt-' - erase line
                     self.delLine()
-                elif c == 121:      # alt-y - Eyedrop
+                elif c == 121 or c == ord('u'):      # alt-y - Eyedrop, alt-u is what Aciddraw used
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
                 elif c == ord('P'):      # alt-P - pick up charcter
                     self.pickUpDrawingChar(self.xy[1] - 1, self.xy[0])
