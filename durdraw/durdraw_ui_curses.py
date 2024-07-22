@@ -2550,7 +2550,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
                 elif c in [75]: # alt-K = start marking selection
-                    startPoint=(self.xy[0] + self.appState.topLine, self.xy[1] + firstCol)
+                    startPoint=(self.xy[0] + self.appState.topLine, self.xy[1] + self.appState.firstCol)
                     self.startSelecting(firstkey=c)  # start selecting text
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg)
