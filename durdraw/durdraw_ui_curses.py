@@ -4909,7 +4909,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         colorCode = self.ansi.getColorCode(1,0)
                 # Make sure encoding this character encodes correctly
                 try:
-                    char.encode('cp437')
+                    #char.encode('cp437')
+                    char.encode(encoding)
                 except UnicodeEncodeError as encodeError:
                     self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
                     self.notify(f"line: {lineNum}, col: {colNum} ", pause=True)
