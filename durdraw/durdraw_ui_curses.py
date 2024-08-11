@@ -2386,7 +2386,8 @@ class UserInterface():  # Separate view (curses) from this controller
             # spot for refresh
             curses.panel.update_panels()
             self.stdscr.refresh()
-            c = self.stdscr.getch()
+            c = self.stdscr.getch() # non-wide characters, for old ncurses
+            #c = ord(self.stdscr.get_wch()) # wide characters, for ncursesw
             self.testWindowSize()
             #if c in ["\x1b\x1b\x5b\x42"]: self.notify("alt-down")
             
@@ -4544,7 +4545,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     encoding = "utf-8"
                     prompting = False
                 elif c in [13, curses.KEY_ENTER]:
-                    encoding = "default"
+                    encoding = self.appState.charEncoding
                     prompting = False
                 elif c == 27: # 27 = esc = cancel
                     self.notify("Canceled. File not saved.")
