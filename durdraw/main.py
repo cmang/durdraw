@@ -94,10 +94,7 @@ def main(fetch_args=None):
     if args.height and args.height[0] > 1 and args.height[0] < term_size[1]:
         app.height = args.height[0]
     if args.max:
-        if term_size[0] > 80:
-           app.width = term_size[0]
-        if term_size[1] > 24:
-            app.height = term_size[1] - 2
+        app.maximize_canvas()
     if args.wrap:
         app.wrapWidth = args.wrap[0]
     elif not args.startup:  # quick startup is now the default behavior
@@ -135,6 +132,9 @@ def main(fetch_args=None):
             if 'disable-mouse' in mainConfig:
                 if mainConfig.getboolean('disable-mouse'):
                     app.hasMouse = False
+            if 'max-canvas' in mainConfig:
+                if mainConfig.getboolean('max-canvas'):
+                    app.maximize_canvas()
         # load theme set in config file
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
