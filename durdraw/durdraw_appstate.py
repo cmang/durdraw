@@ -139,6 +139,13 @@ class AppState():
             }
         self.theme = self.theme_16
 
+    def maximize_canvas(self):
+        term_size = os.get_terminal_size()
+        if term_size[0] > 80:
+           self.width = term_size[0]
+        if term_size[1] > 24:
+            self.height = term_size[1] - 2
+
     def setCursorModeMove(self):
         self.cursorMode="Move"
 
