@@ -124,8 +124,15 @@ def main(fetch_args=None):
         app.blackbg = False
     else: app.blackbg = True
 
-    # load configuration file and theme
+    # load configuration file
     if app.loadConfigFile():
+        # Load main optiona
+        if 'Main' in app.configFile:
+            mainConfig = app.configFile['Main']
+            # load color mode 
+            if 'color-mode' in mainConfig:
+                app.colorMode = mainConfig['color-mode']
+        # load theme set in config file
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
         else:

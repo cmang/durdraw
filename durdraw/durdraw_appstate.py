@@ -208,7 +208,15 @@ class AppState():
                 self.loadThemeFile(themeConfig['theme-16'], themeMode)
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
-            
+
+    def getConfigOption(self, section: str, item: str):
+        # section = something like [Main], item = something like color-mode:
+        try:    # see if section and item exist, otherwise return False
+            configSection = self.configFile[section]
+            configItem = configSection[item]
+            return configItem
+        except KeyError:
+            return False
 
     def loadThemeFile(self, themeFilePath, themeMode):
         # If there is a theme set, use it
