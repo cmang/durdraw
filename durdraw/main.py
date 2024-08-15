@@ -132,6 +132,9 @@ def main(fetch_args=None):
             # load color mode 
             if 'color-mode' in mainConfig:
                 app.colorMode = mainConfig['color-mode']
+            if 'disable-mouse' in mainConfig:
+                if mainConfig.getboolean('disable-mouse'):
+                    app.hasMouse = False
         # load theme set in config file
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
