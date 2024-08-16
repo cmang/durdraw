@@ -40,11 +40,6 @@ def main(fetch_args=None):
     parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
                     nargs='+')
     parser.add_argument("-d", "--delayexit", help="Wait X seconds after playback before exiting (requires -p)", nargs=1, type=float)
-    #parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
-    parserStartScreenMutex.add_argument("--startup", help="Show startup screen",
-                    action="store_true")
-    parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
-                    action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
     parserColorModeMutex.add_argument("--256color", help="Try 256 color mode", action="store_true", dest='hicolor')
@@ -77,16 +72,19 @@ def main(fetch_args=None):
     if args.times and not args.play:
         print("-x option requires -p")
         exit(1)
+
+    # Initialize application
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
     app.setDurVer(DUR_VER)
     app.setDurFileVer(DUR_FILE_VER)
     app.setDebug(DEBUG_MODE)
+    term_size = os.get_terminal_size()
+
+    # Parse general command-line paramaters
     if args.debug:
         app.setDebug(True)
     if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
-
-    term_size = os.get_terminal_size()
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
     if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
         app.width = args.width[0]
@@ -97,9 +95,8 @@ def main(fetch_args=None):
         app.maximize_canvas()
     if args.wrap:
         app.wrapWidth = args.wrap[0]
-    elif not args.startup:  # quick startup is now the default behavior
-        app.showStartupScreen=False
-        app.quickStart = True
+    app.showStartupScreen=False
+    app.quickStart = True
     if args.nomouse:
         app.hasMouse = False
     if args.notheme:
