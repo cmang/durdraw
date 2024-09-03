@@ -58,6 +58,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.realmaxX = realmaxX
         self.statusBarLineNum = realmaxY - 2
         self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
+        if self.appState.charEncoding == 'cp437':
+            self.stdscr.encoding = 'cp437'
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
         self.panel.bottom()
         self.panel.show()
@@ -639,23 +641,32 @@ class UserInterface():  # Separate view (curses) from this controller
         except curses.error:
             pass    # .. if terminal supports it.
 
-    def addstr(self, y, x, str, attr=None): # addstr(y, x, str[, attr]) and addstr(str[, attr])
+    def addstr(self, y, x, string, attr=None): # addstr(y, x, str[, attr]) and addstr(str[, attr])
         """ Wraps ncurses addstr in a try;except, prevents addstr from
             crashing cureses if it fails """
         if not attr:
             try:
-                if self.appState.charEncoding == 'utf-8':
-                    self.stdscr.addstr(y, x, str.encode('utf-8'))
-                else:
-                    self.stdscr.addstr(y, x, str)
+                self.stdscr.addstr(y, x, string.encode(self.appState.charEncoding, 'replace'))
+                #if self.appState.charEncoding == 'utf-8':
+                #    self.stdscr.addstr(y, x, string.encode('utf-8'))
+                #else:
+                #    self.stdscr.addstr(y, x, string)
+            except UnicodeEncodeError:
+                # Replace non-ascii characters with ' '
+                string = string.encode('ascii', 'replace').decode('ascii').replace('?', ' ')
+                self.stdscr.addstr(y, x, string) 
             except curses.error:
                 self.testWindowSize()
         else:
             try:
-                if self.appState.charEncoding == 'utf-8':
-                    self.stdscr.addstr(y, x, str.encode('utf-8'), attr)
-                else:
-                    self.stdscr.addstr(y, x, str, attr)
+                self.stdscr.addstr(y, x, string.encode(self.appState.charEncoding, 'replace'), attr)
+                #if self.appState.charEncoding == 'utf-8':
+                #    self.stdscr.addstr(y, x, strng.encode('utf-8'), attr)
+                #else:
+                #    self.stdscr.addstr(y, x, string, attr)
+            except UnicodeEncodeError:
+                string = string.encode('ascii', 'replace').decode('ascii').replace('?', ' ')
+                self.stdscr.addstr(y, x, string, attr)
             except curses.error:
                 self.testWindowSize()
 
@@ -1429,6 +1440,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.nextCharSet()
                 elif c == 83:       # alt-S - pick a character set
                     self.showCharSetPicker()
+                    self.stdscr.nodelay(1) # do not wait for input when calling getch
                 elif c == 46:       # alt-. - insert column
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
@@ -1900,13 +1912,13 @@ class UserInterface():  # Separate view (curses) from this controller
             self.chMap = self.fullCharMap[self.charMapNumber]
 
             # Map a dict of F1-f10 to character values 
-            if self.appState.charEncoding == 'cp437':
-                # ibm-pc/cp437 ansi block character
-                self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
-                self.fullCharMap = [ self.chMap ]
-                self.appState.colorPickChar = self.appState.CP438_BLOCK  # ibm-pc/cp437 ansi block character
-                self.appState.blockChar = self.appState.CP438_BLOCK
-                self.appState.drawChar = self.appState.CP438_BLOCK
+            #if self.appState.charEncoding == 'cp437':
+            #    # ibm-pc/cp437 ansi block character
+            #    self.chMap = {'f1':176, 'f2':177, 'f3':178, 'f4':219, 'f5':223, 'f6':220, 'f7':221, 'f8':222, 'f9':254, 'f10':250 }
+            #    self.fullCharMap = [ self.chMap ]
+            #    self.appState.colorPickChar = self.appState.CP438_BLOCK  # ibm-pc/cp437 ansi block character
+            #    self.appState.blockChar = self.appState.CP438_BLOCK
+            #    self.appState.drawChar = self.appState.CP438_BLOCK
         elif self.appState.characterSet == "Unicode Block":
             self.setUnicodeBlock(block=self.appState.unicodeBlock)
             self.chMap = self.fullCharMap[self.charMapNumber]
@@ -1956,9 +1968,22 @@ class UserInterface():  # Separate view (curses) from this controller
         # checks self.charMapNumber and does the rest
         self.chMap = self.fullCharMap[self.charMapNumber]
         #self.chMapString = "F1%c F2%c F3%c F4%c F5%c F6%c F7%c F8%c F9%c F10%c " % \
+        # Build a string, one character a time
+        self.chMapString = ""
+        for fkey in range(1,11):
+            keyIndex = f"f{fkey}"
+            keyString = f"F{fkey}"
+            try:    # See if we can encode character in the current mode.
+                #keyChar = chr(self.chMap[keyIndex]).encode(self.appState.charEncoding)
+                keyChar = chr(self.chMap[keyIndex]).encode(self.appState.charEncoding)
+                #keyChar = keyChar.encode(self.appState.charEncoding)
+            except: # If character can't encode, eg: in cp437 mode, make it blank
+                keyChar = ' '
+            self.chMapString += f"{keyString}{keyChar}" 
         self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
                 (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
                 self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        #self.chMapString = self.chMapStringncoding=self.appState.charEncoding)
 
     def clearStatusLine(self):
         # fyi .. width and height in this context should go into
@@ -2164,6 +2189,14 @@ class UserInterface():  # Separate view (curses) from this controller
         # Draw character map for f1-f10 (block characters)
         self.addstr(statusBarLineNum+1, self.chMap_offset-1, "<", curses.color_pair(clickColor) | curses.A_BOLD)
         self.addstr(statusBarLineNum+1, self.chMap_offset+31, ">", curses.color_pair(clickColor) | curses.A_BOLD)
+
+        #if self.appState.charEncoding == "cp437":
+        #    try:
+        #        chMapString = self.chMapString.encode('cp437')
+        #    except: # can't encode as cp437, so just render as blank
+        #        chMapString = ' '
+
+
         if self.colorfg > 8 and self.appState.colorMode == "16":    # bright color
             self.addstr(statusBarLineNum+1, self.chMap_offset, self.chMapString, curses.color_pair(self.colorpair) | curses.A_BOLD)
         else:   # normal color
@@ -2171,7 +2204,6 @@ class UserInterface():  # Separate view (curses) from this controller
 
         # draw current character set #
         charSetNumberString = f"({self.charMapNumber+1}/{len(self.fullCharMap)})"
-
         if self.appState.colorMode == "16":   # put it to the right instead of the left, to make room for BG colors
             self.addstr(statusBarLineNum+1, self.chMap_offset+len(self.chMapString)+2, charSetNumberString, curses.color_pair(mainColor)) 
         #if self.appState.colorMode == 256:
