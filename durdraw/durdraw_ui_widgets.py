@@ -470,7 +470,7 @@ class StatusBar():
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
         mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
-        mainMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "_", shortcut="esc-L")
+        mainMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
