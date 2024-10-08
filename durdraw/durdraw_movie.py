@@ -225,6 +225,24 @@ class Movie():
         self.opts.sizeY = self.opts.sizeY - shrinkage 
         #self.width = self.width - shrinkage
 
+    def search_and_replace_color_pair(self, old_color, new_color):
+        found = False
+        for frame in self.frames:
+            line_num = 0
+            col_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair == old_color:
+                        try:
+                            frame.newColorMap[line_num][col_num] = new_color
+                        except:
+                            pdb.set_trace()
+                        #found = True
+                    col_num += 1
+                line_num += 1
+                col_num = 0
+
+
     def search_and_replace_color(self, old_color :int, new_color :int):
         found = False
         for frame in self.frames:

@@ -2508,6 +2508,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=True, pushUndo=True)
                 elif c == ord('l'): # alt-l - color under cursor
                     self.insertColor(fg=self.colorfg, bg=self.colorbg, pushUndo=True)
+                elif c == ord('L'): # alt-l - color under cursor
+                    self.replaceColorUnderCursor()
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
                 elif c == 105:      # alt-i - File/Canvas Information
@@ -3140,6 +3142,42 @@ class UserInterface():  # Separate view (curses) from this controller
         #if self.appState.colorMode == "16":
         #    self.statusBar.colorPicker_bg_16.showFgPicker()
         self.appState.colorPickerSelected = False
+
+    def replaceColorUnderCursor(self):
+        self.commandMode = False
+        #self.notify("Pick a new color")
+        # Search and replace color under cursor
+        # Save old (UI) color setting, so we can use the color picker and then set the color back when done
+        ui_fg = self.colorfg
+        ui_bg = self.colorbg
+        #charColor = [self.colorfg, self.colorbg]
+        #old_color_pair = 
+        # Get color pair under cursor
+        #old_fg, new_bg = self.mov.currentFrame.newColorMap[line][col]
+        old_fg, old_bg = self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1]]
+        oldCharColor = [old_fg, old_bg]
+        oldColorPair = self.ansi.colorPairMap[tuple(oldCharColor)]
+        # Print a message for the user to set the New color
+        self.clearStatusLine()
+        message = "Please pick the New color."
+        self.addstr(self.statusBarLineNum, 0, message, curses.color_pair(self.appState.theme['notificationColor']))
+        self.stdscr.refresh()
+        # Use color picker to pick new destination color (pair)
+        self.selectColorPicker()
+        self.clearStatusLine()
+        new_fg = self.colorfg
+        new_bg = self.colorbg
+        newCharColor = [new_fg, new_bg]
+        newColorPair = self.ansi.colorPairMap[tuple(newCharColor)] 
+        # Use movie search and replace color function
+        self.undo.push()
+        self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
+        #self.notify(f"Replaced {oldCharColor} with {newCharColor}")
+        # Set UI color back to what it should be
+        self.setFgColor(ui_fg)
+        self.setBgColor(ui_bg)
+        self.stdscr.refresh()
+
 
     def cloneToNewFrame(self):
         """ Take current frame, clone it to a new one, insert it immediately after current frame """
