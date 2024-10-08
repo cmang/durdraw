@@ -3156,7 +3156,6 @@ class UserInterface():  # Separate view (curses) from this controller
         #old_fg, new_bg = self.mov.currentFrame.newColorMap[line][col]
         old_fg, old_bg = self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1]]
         oldCharColor = [old_fg, old_bg]
-        oldColorPair = self.ansi.colorPairMap[tuple(oldCharColor)]
         # Print a message for the user to set the New color
         self.clearStatusLine()
         message = "Please pick the New color."
@@ -3168,7 +3167,6 @@ class UserInterface():  # Separate view (curses) from this controller
         new_fg = self.colorfg
         new_bg = self.colorbg
         newCharColor = [new_fg, new_bg]
-        newColorPair = self.ansi.colorPairMap[tuple(newCharColor)] 
         # Use movie search and replace color function
         self.undo.push()
         self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
