@@ -2062,7 +2062,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # Move it far right enough for the menus.
         # self.line_1_offset = 15
         if self.appState.narrowWindow:
-            self.line_1_offset = 0  # anchor left
+            self.line_1_offset = -2  # anchor left
         else:
             self.line_1_offset = realmaxX - 63  # anchor to the right by transport
         line_1_offset = self.line_1_offset
@@ -2138,9 +2138,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.animButton.update_real_xy(x = statusBarLineNum)
         if self.appState.showCharSetButton:
             self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
-        # Put character picker button left of character picker
-        self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum + 1)
-        self.statusBar.drawCharPickerButton.update_real_xy(y = self.chMap_offset-11)
+        if not self.appState.narrowWindow:
+            # Put character picker button left of character picker
+            self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum + 1)
+            self.statusBar.drawCharPickerButton.update_real_xy(y = self.chMap_offset-11)
         #if self.appState.colorMode == "256":
         #    self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
         canvasSizeBar = f"[{self.mov.sizeX}x{self.mov.sizeY}]"
@@ -2160,20 +2161,26 @@ class UserInterface():  # Separate view (curses) from this controller
         delayBar_offset = 23 + line_1_offset
         rangeBar_offset = 31 + line_1_offset
         #chMap_offset = 35    # how far in to show the character map
-        self.chMap_offset = realmaxX - 50    # how far in to show the character map
+        if self.appState.narrowWindow:
+            if self.appState.colorMode == "16":
+                self.chMap_offset = 1    # how far in to show the character map
+            else:
+                self.chMap_offset = 7    # how far in to show the character map
+        else:
+            self.chMap_offset = realmaxX - 50    # how far in to show the character map
         # > is hardcoded at 66. yeesh.
         chMap_next_offset = self.chMap_offset + 31
 
         # Move the draw button to under the frameBar for 16 color mode
-        if self.appState.colorMode == "16":
-            self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
-            self.statusBar.drawCharPickerButton.update_real_xy(y = frameBar_offset-5)
-            if realmaxX < 87:   # too small to show the draw character.
-                self.statusBar.drawCharPickerButton.hide()
-            else:
-                self.statusBar.drawCharPickerButton.show()
-        if self.appState.colorMode == "256":
-            self.statusBar.drawCharPickerButton.show()
+        #if self.appState.colorMode == "16":
+        #    self.statusBar.drawCharPickerButton.update_real_xy(x = statusBarLineNum)
+        #    self.statusBar.drawCharPickerButton.update_real_xy(y = frameBar_offset-5)
+        #    if realmaxX < 87:   # too small to show the draw character.
+        #        self.statusBar.drawCharPickerButton.hide()
+        #    else:
+        #        self.statusBar.drawCharPickerButton.show()
+        #if self.appState.colorMode == "256":
+        #    self.statusBar.drawCharPickerButton.show()
 
         # Draw elements that aren't in the GUI framework
         self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
