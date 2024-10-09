@@ -479,6 +479,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def switchToColorMode(self, newMode: str):
         """ newMode, eg: '16' or '256' """
+        self.appState.inferno = None
         if newMode == "16":
             #self.statusBar.colorPicker.hide()
             self.appState.colorMode = "16"
