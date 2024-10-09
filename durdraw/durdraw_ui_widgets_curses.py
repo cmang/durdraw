@@ -336,7 +336,8 @@ class DrawCharPickerHandler:
         prompting = True
         curses.flushinp()
         while prompting:
-            c = self.window.getch()
+            #c = self.window.getch()
+            c = self.window.get_wch()
             time.sleep(0.01)
             if c in [curses.KEY_F1]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f1'])
@@ -370,7 +371,10 @@ class DrawCharPickerHandler:
                 prompting = False
             elif c in [27, 13, curses.KEY_ENTER]:   # 27 = esc, 13 = enter, cancel
                 prompting = False
-            else:
+            elif type(c) == str:    # Is a printable/unicode character
+                self.caller.appState.drawChar = c
+                prompting = False
+            else:   # is an integer, but probably still a printable character
                 try:
                     if chr(c).isprintable():
                         newChar = chr(c)
