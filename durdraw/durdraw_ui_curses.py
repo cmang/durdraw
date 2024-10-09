@@ -1296,10 +1296,15 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def apply_neofetch_keys(self):
         """ Called by the user at Runtime to search/replace inside the app. """
-        self.undo.push()
-        self.appState.fetchData = neofetcher.run()    # populate fetchData with NeoFetch data ...
-        self.replace_neofetch_keys()        # ... so this can work.
-        self.refresh()
+        neofetch = self.appState.isAppAvail("neofetch")
+        if neofetch:
+            self.undo.push()
+            self.appState.fetchData = neofetcher.run()    # populate fetchData with NeoFetch data ...
+            self.replace_neofetch_keys()        # ... so this can work.
+            self.refresh()
+        else:
+            self.notify("Neofetch not found in path. Please install it and try again.")
+            return False
 
     def replace_neofetch_keys(self):
         """ Find all the Neofetch {keys} in the drawing, and replace them with

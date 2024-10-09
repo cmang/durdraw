@@ -13,7 +13,12 @@ import durdraw.durdraw_sauce as dursauce
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
-    def __init__(self): # User friendly defeaults
+    def __init__(self):
+        # Check for optional dependencies
+        self.ansiLove = self.isAppAvail("ansilove")
+        self.neofetch = self.isAppAvail("neofetch")
+
+        # User friendly defeaults
         self.quickStart = False
         self.showStartupScreen = False
         self.curOpenFileName = ""
@@ -55,7 +60,6 @@ class AppState():
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
-        self.ansiLove = self.isAppAvail("ansilove")
         self.PIL = self.checkForPIL()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
