@@ -2621,7 +2621,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     #    self.statusBar.colorPicker.switchTo()
                     #else:
                     #    self.statusBar.colorPickerButton.on_click()
-                    self.selectColorPicker()
+                    #self.selectColorPicker()
+                    self.statusBar.colorPickerButton.on_click()
                 # Animation Keystrokes
                 elif c == 68:     #alt-D - set delay for current frame
                     self.getDelayValue()
