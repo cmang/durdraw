@@ -59,6 +59,8 @@ class AppState():
         self.cursorMode = "Move"  # Move/Select, Draw and Color
         self.fetchMode = False    # use neofetch, replace {variables} in dur file
         self.fetchData = None       # a {} dict containing key:value for neofetch output.
+        self.inferno = None
+        self.inferno_opts = None
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
@@ -281,6 +283,34 @@ class AppState():
             #    return False
             return False
         return True
+
+    def loadDurFileToMov(self, fileName):
+        """ Takes a file path, returns a movie object """
+        fileName = os.path.expanduser(fileName)
+        #self.helpMov = Movie(self.opts) # initialize a new movie to work with
+        try:
+            f = open(fileName, 'rb')
+        except Exception as e:
+            return False
+        if (f.read(2) == b'\x1f\x8b'): # gzip magic number
+            # file == gzip compressed
+            f.close()
+            try:
+                f = gzip.open(fileName, 'rb')
+            except Exception as e:
+                return False
+        else:
+            f.seek(0)
+        try:    # Load json help file
+            #pdb.set_trace()
+            loadedContainer = durfile.open_json_dur_file(f, self)
+            opts = loadedContainer['opts']
+            mov = loadedContainer['mov']
+            return mov, opts
+        except:
+            #pass    # loading json help file failed for some reason, so...
+            return False
+
 
     def loadHelpFile(self, helpFileName, page=1):
         helpFileName = os.path.expanduser(helpFileName)

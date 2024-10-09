@@ -9,6 +9,7 @@ import gzip
 import locale
 import os
 import os.path
+import pathlib
 import pdb
 import pickle
 import shutil
@@ -973,6 +974,7 @@ class UserInterface():  # Separate view (curses) from this controller
         infoStringList.append(f"Height: {self.mov.sizeY}")
 
         infoStringList.append(f"Color mode: {colorMode}")
+        infoStringList.append(f"Playing: {self.playing}")
 
         if len(infoStringList) > 0:
             infoString = ', '.join(infoStringList)
@@ -1313,11 +1315,20 @@ class UserInterface():  # Separate view (curses) from this controller
             dur_key = '{' + key + '}'
             self.mov.search_and_replace(self, dur_key, self.appState.fetchData[key])
 
-    def startPlaying(self):
+    def startPlaying(self, mov=None, opts=None):
         """ Start playing the animation - start a "game" style loop, make FPS
             by drawing if current time == greater than a delta plus the time
             the last frame was drawn.
         """
+        tempMovie = None
+        tempOpts = None
+        if mov != None: # playing a movie other than the main or help file
+            tempMovie = self.mov
+            self.mov = mov
+        if opts != None:
+            tempOpts = self.opts
+            self.opts = opts
+
         self.commandMode = False
         oldTopLine = self.appState.topLine
         oldFirstCol = self.appState.firstCol
@@ -1831,8 +1842,11 @@ class UserInterface():  # Separate view (curses) from this controller
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
-                if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
-                    self.mov.gotoFrame(self.appState.playbackRange[0])
+                if not self.appState.playOnlyMode:
+                    if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
+                        self.mov.gotoFrame(self.appState.playbackRange[0])
+                    else:
+                        self.mov.nextFrame()
                 else:
                     self.mov.nextFrame()
                 if not self.appState.playOnlyMode: # if we're not in play-only
@@ -1848,6 +1862,12 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.playing = False
                 #self.refresh()
             else: time.sleep(0.005) # to keep from sucking up cpu
+
+
+        if tempMovie != None:   # Need to switch back to main movie
+            self.mov = tempMovie
+        if tempOpts != None:
+            self.opts = tempOpts
 
         self.appState.topLine = oldTopLine
         self.appState.firstCol = oldFirstCol
@@ -2470,6 +2490,11 @@ class UserInterface():  # Separate view (curses) from this controller
         mouseX, mouseY = 0, 0
         self.pressingButton = False
         self.drawStatusBar()    # to make sure the inital state looks correct
+
+        intense_burning = ['idkfa']
+        sumbitch = []
+        sumbitch_len = 25
+
         curses.noecho()
         while 1:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
@@ -3186,6 +3211,14 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c == None: pass
             elif c <= 128 and c >= 32:      # printable ASCII character
                 self.insertChar(c, fg=self.colorfg, bg=self.colorbg)
+
+                sumbitch.append(chr(c)) # cheat codes
+                if len(sumbitch) >= sumbitch_len:
+                    sumbitch.pop(0)
+                for heat in intense_burning:
+                    if ''.join(sumbitch).endswith(heat):
+                        self.activate_heat_code()
+
                 self.appState.renderMouseCursor = False
             #else:
             #    self.notify(f"Weird character: {chr(c)} or {c}")
@@ -3282,7 +3315,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.notify("Shifted frames to the right.")
         self.refresh()
 
-    def enterViewMode(self):
+    def enterViewMode(self, mov=None, opts=None):
         self.statusBar.hide()
         self.stdscr.clear()
         old_xy = self.xy
@@ -3291,7 +3324,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.topLine = 0
         oldDrawBorders = self.appState.drawBorders  # to turn back on when done
         self.appState.playOnlyMode = True
-        self.startPlaying()
+        self.startPlaying(mov=mov, opts=opts)
 
         # Return to normal when done
         self.appState.playOnlyMode = False
@@ -5330,6 +5363,14 @@ Can use ESC or META instead of ALT
         self.cursorOn()
         if self.playing == True:
             self.stdscr.nodelay(1)
+
+    def activate_heat_code(self):
+        # hell's inferno
+        if self.appState.inferno == None:
+            inferno_fullpath = pathlib.Path(__file__).parent.joinpath("help/inferno.dur")
+            self.appState.inferno, self.appState.inferno_opts = self.appState.loadDurFileToMov(inferno_fullpath)
+        self.enterViewMode(mov=self.appState.inferno, opts=self.appState.inferno_opts)
+        #self.notify("heat code activated")
 
     def hardRefresh(self):
         #self.stdscr.clear()
