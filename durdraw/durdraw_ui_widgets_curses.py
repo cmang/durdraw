@@ -372,7 +372,8 @@ class DrawCharPickerHandler:
             elif c in [27, 13, curses.KEY_ENTER]:   # 27 = esc, 13 = enter, cancel
                 prompting = False
             elif type(c) == str:    # Is a printable/unicode character
-                self.caller.appState.drawChar = c
+                if c.isprintable():
+                    self.caller.appState.drawChar = c
                 prompting = False
             else:   # is an integer, but probably still a printable character
                 try:
