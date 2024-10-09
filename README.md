@@ -203,12 +203,26 @@ If you did not already do so during installation, you can install a sample confi
 
 This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
 
+
 Here is an example durdraw.ini file:
 
 <pre>
 ; Durdraw 0.20 Configuration File
+
+[Main]
+; color-mode sets the color mode to start in. Available options: 16, 256
+;color-mode: 16
+; disable-mouse.. disablse the mouse.
+;disable-mouse: True
+; max-canvas atuomatically sets the canvas size to the terminal window size at startup.
+;max-canvas: True
+; Cursor mode requests a cursor type from the terminal. Available options: block, underscore, pipe
+;cursor-mode: underscore
+
 [Theme]
+; theme-16 points to the theme file to use in 16 color mode.
 theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
+; theme-256 points to the theme file to use in 256 color mode.
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 </pre>
 
