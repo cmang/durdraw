@@ -625,9 +625,9 @@ class ColorPickerHandler:
         curses_addstr(self.window, line, col + 5, "     ", color_pair)
         curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
 
-    def showFgPicker(self):
+    def showFgPicker(self, message=None):
         #self.colorPicker.caller.notify(f"showFgPicker")
-        self.showColorPicker(type="fg")
+        self.showColorPicker(type="fg", message=message)
 
     def move_up_256(self):
         if self.colorMode == "256":
@@ -653,7 +653,7 @@ class ColorPickerHandler:
                 color = self.totalColors
             self.colorPicker.caller.setFgColor(color)
 
-    def showColorPicker(self, type="fg"):
+    def showColorPicker(self, type="fg", message=None):
         #self.colorPicker.caller.notify(f"showColorPicker")
         """ Shows picker, has UI loop for letting user pick color with keyboard or mouse """
         if type == "fg":
@@ -743,7 +743,7 @@ class ColorPickerHandler:
                 color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
-                self.colorPicker.caller.drawStatusBar()
+                elf.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
                 #color = 255
                 color = self.totalColors
@@ -827,6 +827,9 @@ class ColorPickerHandler:
                         self.hide()
                     #self.hide()
                     prompting = False
+
+            # Show message, eg: "pick new color"
+            #curses_addstr(self.window, self.appState.realmaxX - 2, 0, message, curses.color_pair(self.appState.theme['notificationColor']))
 
         if not self.appState.colorPickerSelected:
             if self.appState.sideBarShowing:

@@ -278,7 +278,7 @@ class ColorPicker:
         #self.showFgPicker()
         self.handler.show()
 
-    def showFgPicker(self):
+    def showFgPicker(self, message=None):
         """ Returns the color picked by the user
         """
         # Draw foreground colors 1-5 in a panel.
@@ -286,7 +286,7 @@ class ColorPicker:
         # to select color (arrows and return). Then return the
         # selected color.
         self.hidden = False
-        color = self.handler.showFgPicker()
+        color = self.handler.showFgPicker(message=message)
         if not self.caller.appState.sideBarShowing:
             self.hide()
         return color
