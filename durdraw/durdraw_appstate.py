@@ -17,6 +17,7 @@ class AppState():
         # Check for optional dependencies
         self.ansiLove = self.isAppAvail("ansilove")
         self.neofetch = self.isAppAvail("neofetch")
+        self.PIL = self.checkForPIL()
 
         # User friendly defeaults
         self.quickStart = False
@@ -61,7 +62,6 @@ class AppState():
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
-        self.PIL = self.checkForPIL()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.drawChar = '$'
