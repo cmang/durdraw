@@ -285,19 +285,9 @@ menuTitleColor: the color of menu titles
 menuBorderColor: the color of the border around menus
 ```
 
-
-## OTHER TIPS
-
-    * To use themes, copy durdraw.ini to ~/.durdraw/ and edit it. Durdraw
-      will also check in the current directory for durdraw.ini.
-
-    * The mouse can be used for moving the cursor (even over SSH) and
-      clicking buttons, if your terminal supports Xterm mouse reporting.
-      In iTerm2 this is under Profiles, Terminal and Terminal Emulation.
-
 ## OPTIONAL INSTALLATION
 
-For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now.
+For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now. You also need the PIL python module.
 
 ## FAQ
 
