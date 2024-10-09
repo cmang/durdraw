@@ -1715,31 +1715,33 @@ class UserInterface():  # Separate view (curses) from this controller
                                 if mouseY == self.statusBarLineNum: # clicked upper bar
                                     offset = 6  # making room for the menu bar
                                     tOffset = realmaxX - (realmaxX - self.transportOffset) + 6
-                                    if mouseX in [tOffset, tOffset + 1]:  # clicked pause button
-                                        self.clickHighlight(tOffset, "||")
-                                        self.stopPlaying()
-                                    elif mouseX == 12 + offset:    # clicked FPS down
-                                        self.clickHighlight(12 + offset, "<")
-                                        self.decreaseFPS()
-                                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                                    elif mouseX == 16 + offset:    # clicked FPS up
-                                        self.clickHighlight(16 + offset, ">")
-                                        self.increaseFPS()
-                                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                    if not self.appState.narrowWindow:
+                                        if mouseX in [tOffset, tOffset + 1]:  # clicked pause button
+                                            self.clickHighlight(tOffset, "||")
+                                            self.stopPlaying()
+                                        elif mouseX == 12 + offset:    # clicked FPS down
+                                            self.clickHighlight(12 + offset, "<")
+                                            self.decreaseFPS()
+                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                        elif mouseX == 16 + offset:    # clicked FPS up
+                                            self.clickHighlight(16 + offset, ">")
+                                            self.increaseFPS()
+                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                                 elif mouseY == self.statusBarLineNum+1:    # clicked bottom bar
-                                    if mouseX in range(4,20): 
-                                        fg = mouseX - 3  
-                                        self.setFgColor(fg)
-                                    elif mouseX in range(25,33):    
-                                        bg = mouseX - 24
-                                        self.setBgColor(bg)
-                                    elif mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
-                                        self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
-                                        self.nextCharSet()
-                                    elif mouseX == self.chMap_offset - 1:  # clicked previous character set
-                                        self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
-                                        self.prevCharSet()
-                                    elif self.appState.debug:
+                                    if not self.appState.narrowWindow:
+                                        if mouseX in range(4,20): 
+                                            fg = mouseX - 3  
+                                            self.setFgColor(fg)
+                                        elif mouseX in range(25,33):    
+                                            bg = mouseX - 24
+                                            self.setBgColor(bg)
+                                        elif mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
+                                            self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
+                                            self.nextCharSet()
+                                        elif mouseX == self.chMap_offset - 1:  # clicked previous character set
+                                            self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
+                                            self.prevCharSet()
+                                    if self.appState.debug:
                                         self.notify("bottom bar. " + str([mouseX, mouseY]))
                                 elif self.appState.debug:
                                     self.notify("clicked. " + str([mouseX, mouseY]))
@@ -2012,8 +2014,22 @@ class UserInterface():  # Separate view (curses) from this controller
     def drawStatusBar(self):
         if self.statusBar.hidden:
             return False
-
         
+        if self.realmaxX >= self.appState.full_ui_width:    # Wide big window
+            self.appState.narrowWindow = False
+            # show menu buttons
+            self.statusBar.menuButton.show()
+            self.statusBar.toolButton.show()
+            self.statusBar.animButton.show()
+            self.statusBar.drawCharPickerButton.show()
+        else:   # narrow small window
+            self.appState.narrowWindow = True
+            # hide menu buttons
+            self.statusBar.menuButton.hide()
+            self.statusBar.toolButton.hide()
+            self.statusBar.animButton.hide()
+            self.statusBar.drawCharPickerButton.hide()
+
         self.setWindowTitle(self.appState.curOpenFileName)
 
         mainColor = self.appState.theme['mainColor']
@@ -2032,6 +2048,7 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.realmaxY != realmaxY:
             resized = True 
         if self.appState.realmaxX != realmaxX:
+            #self.notify("resized")
             resized = True 
 
         if resized:
@@ -2044,7 +2061,10 @@ class UserInterface():  # Separate view (curses) from this controller
         # stuff. Frame, FPS, Delay and Range.
         # Move it far right enough for the menus.
         # self.line_1_offset = 15
-        self.line_1_offset = realmaxX - 63  # anchor to the right by transport
+        if self.appState.narrowWindow:
+            self.line_1_offset = 0  # anchor left
+        else:
+            self.line_1_offset = realmaxX - 63  # anchor to the right by transport
         line_1_offset = self.line_1_offset
 
         statusBarLineNum = realmaxY - 2
@@ -2156,11 +2176,21 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.drawCharPickerButton.show()
 
         # Draw elements that aren't in the GUI framework
-        if self.realmaxX >= self.appState.full_ui_width:
-            self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
-            self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
-            self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
-            self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
+        self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
+        #if not self.appState.narrowWindow:    # Wide big window
+        #    self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
+        #    self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
+        #    self.addstr(statusBarLineNum, delayBar_offset, delayBar, curses.color_pair(mainColor))
+        #    self.addstr(statusBarLineNum, rangeBar_offset, rangeBar, curses.color_pair(mainColor))
+        #else:   # Narrow small window
+        #    # Draw frame #. that's important.
+        #    frameBar_offset = 0
+        #    fpsBar_offset = frameBar_offset + len(frameBar) + 1
+        #    self.addstr(statusBarLineNum, frameBar_offset, frameBar, curses.color_pair(mainColor))
+        #    self.addstr(statusBarLineNum, fpsBar_offset, fpsBar, curses.color_pair(mainColor))
 
         # Move char button to the left of frameBar_offset
 
@@ -2175,7 +2205,7 @@ class UserInterface():  # Separate view (curses) from this controller
             colorValue = curses.color_content(self.colorfg)
             debugstring = f"Fg: {self.colorfg}, bg: {self.colorbg}, cpairs: {cp}, {cp2}, pairs: {pairs}, ext: {extColors}, {colorValue}"
             self.addstr(statusBarLineNum-1, 0, debugstring, curses.color_pair(mainColor))
-            debugstring2 = f"ButtonPress: {self.pressingButton}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
+            debugstring2 = f"ButtonPress: {self.pressingButton}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}, resized: {resized}"
             self.addstr(statusBarLineNum-2, 0, debugstring2, curses.color_pair(mainColor))
             colorValue = curses.color_content(self.colorbg)
             debugstring3= f"bg: {colorValue}"
@@ -2289,12 +2319,21 @@ class UserInterface():  # Separate view (curses) from this controller
         transportString = "|< << |> >> >|" 
         transportOffset = realmaxX - len(transportString) - 9 
         self.transportOffset = transportOffset
-        if self.playing:
-            transportString = "|< << || >> >|" 
-            self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(mainColor))
-            self.addstr(statusBarLineNum, transportOffset+6, "||", curses.color_pair(clickColor) | curses.A_BOLD)
-        else:
-            transportString = "|< << |> >> >|" 
+        if self.appState.narrowWindow:  # small window, only show |>
+            transportOffset = realmaxX - 12
+            if self.playing:
+                playButtonString = "||" 
+            else:
+                playButtonString = "|>" 
+            self.addstr(statusBarLineNum, transportOffset, playButtonString, curses.color_pair(clickColor) | curses.A_BOLD)
+
+        else:   # wide window, show full transport
+            if self.playing:
+                transportString = "|< << || >> >|" 
+                self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(mainColor))
+                self.addstr(statusBarLineNum, transportOffset+6, "||", curses.color_pair(clickColor) | curses.A_BOLD)
+            else:
+                transportString = "|< << |> >> >|" 
             self.addstr(statusBarLineNum, transportOffset, transportString, curses.color_pair(clickColor) | curses.A_BOLD)
         # Draw the new status bar
         if self.commandMode:
@@ -2333,6 +2372,16 @@ class UserInterface():  # Separate view (curses) from this controller
         prev_tip.set_location(row = statusBarLineNum, column = trans_prev_offset)
         next_tip = self.statusBar.other_tooltips.get_tip("k")
         next_tip.set_location(row = statusBarLineNum, column = trans_next_offset)
+    
+        # hide un-used tool tips in narrow view
+        if self.appState.narrowWindow:
+            play_tip.alwaysHidden = True
+            prev_tip.alwaysHidden = True
+            next_tip.alwaysHidden = True
+        else:
+            play_tip.alwaysHidden = False
+            prev_tip.alwaysHidden = False
+            next_tip.alwaysHidden = False
 
         #if self.appState.colorMode == "16":
         #    colorPicker_tip.hide()
@@ -3011,24 +3060,24 @@ class UserInterface():  # Separate view (curses) from this controller
                         if mouseY == self.statusBarLineNum: # clicked upper bar 
                             offset = self.line_1_offset # line 1 of the status bar 
                             tOffset = self.transportOffset
-                            if mouseX in [tOffset + 6, tOffset + 7]:  # clicked play button
-                                self.clickHighlight(tOffset + 6, "|>")
-                                self.startPlaying()
-                                self.metaKey = 0
-                            elif mouseX in [tOffset + 3, tOffset + 4]: # goto prev frame
-                                self.clickHighlight(tOffset + 3, "<<")
-                                self.mov.prevFrame()
-                            elif mouseX in [tOffset + 9, tOffset + 10]: # goto next frame
-                                self.clickHighlight(tOffset + 9, ">>")
-                                self.mov.nextFrame()
-                            elif mouseX in [tOffset, tOffset + 1]: # goto first frame
-                                self.clickHighlight(tOffset, "|<")
-                                self.mov.gotoFrame(1)
-                            elif mouseX in [tOffset + 12, tOffset + 13]: # goto last frame
-                                self.clickHighlight(tOffset + 12, ">|")
-                                self.mov.nextFrame()
-                                self.mov.gotoFrame(self.mov.frameCount)
-                            if self.realmaxX >= self.appState.full_ui_width: # full/wide UI mode, 80+ col
+                            if not self.appState.narrowWindow:
+                                if mouseX in [tOffset + 6, tOffset + 7]:  # clicked play button
+                                    self.clickHighlight(tOffset + 6, "|>")
+                                    self.startPlaying()
+                                    self.metaKey = 0
+                                elif mouseX in [tOffset + 3, tOffset + 4]: # goto prev frame
+                                    self.clickHighlight(tOffset + 3, "<<")
+                                    self.mov.prevFrame()
+                                elif mouseX in [tOffset + 9, tOffset + 10]: # goto next frame
+                                    self.clickHighlight(tOffset + 9, ">>")
+                                    self.mov.nextFrame()
+                                elif mouseX in [tOffset, tOffset + 1]: # goto first frame
+                                    self.clickHighlight(tOffset, "|<")
+                                    self.mov.gotoFrame(1)
+                                elif mouseX in [tOffset + 12, tOffset + 13]: # goto last frame
+                                    self.clickHighlight(tOffset + 12, ">|")
+                                    self.mov.nextFrame()
+                                    self.mov.gotoFrame(self.mov.frameCount)
                                 if mouseX == 13 + offset:    # clicked FPS down
                                     self.clickHighlight(13 + offset, "<")
                                     self.decreaseFPS()
@@ -5371,7 +5420,8 @@ Can use ESC or META instead of ALT
                 self.addstr(screenLineNum, 0, "." * mov.sizeX, curses.color_pair(self.appState.theme['borderColor']))
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
         screenLineNum += 1
-        spaceMultiplier = mov.sizeX + 1
+        #spaceMultiplier = mov.sizeX + 1
+        spaceMultiplier = self.realmaxY
         for x in range(screenLineNum, self.realmaxY - 2):
             self.addstr(x, 0, " " * spaceMultiplier)
         curses.panel.update_panels()

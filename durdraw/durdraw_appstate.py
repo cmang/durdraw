@@ -21,6 +21,7 @@ class AppState():
         # User friendly defeaults
         self.quickStart = False
         self.showStartupScreen = False
+        self.narrowWindow = False
         self.curOpenFileName = ""
         python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
         self.pyVersion = python_version
