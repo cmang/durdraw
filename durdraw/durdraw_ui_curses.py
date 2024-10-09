@@ -3134,11 +3134,11 @@ class UserInterface():  # Separate view (curses) from this controller
             self.refresh(refreshScreen=False)
             #self.hardRefresh()
 
-    def selectColorPicker(self):
+    def selectColorPicker(self, message=None):
         #if self.appState.colorMode == "256":
         self.appState.colorPickerSelected = True
         #self.statusBar.colorPicker.handler.showColorPicker()
-        self.statusBar.colorPicker.showFgPicker()
+        self.statusBar.colorPicker.showFgPicker(message=message)
         #if self.appState.colorMode == "16":
         #    self.statusBar.colorPicker_bg_16.showFgPicker()
         self.appState.colorPickerSelected = False
@@ -3154,14 +3154,15 @@ class UserInterface():  # Separate view (curses) from this controller
         #old_color_pair = 
         # Get color pair under cursor
         #old_fg, new_bg = self.mov.currentFrame.newColorMap[line][col]
-        old_fg, old_bg = self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1]]
+        old_fg, old_bg = self.mov.currentFrame.newColorMap[self.xy[0]][self.xy[1]-1]
         oldCharColor = [old_fg, old_bg]
         # Print a message for the user to set the New color
         self.clearStatusLine()
-        message = "Please pick the New color."
-        self.addstr(self.statusBarLineNum, 0, message, curses.color_pair(self.appState.theme['notificationColor']))
+        printMessage = "Please pick the New color."
+        self.addstr(self.statusBarLineNum, 0, printMessage, curses.color_pair(self.appState.theme['notificationColor']))
         self.stdscr.refresh()
         # Use color picker to pick new destination color (pair)
+        #self.selectColorPicker(message=printMessage)
         self.selectColorPicker()
         self.clearStatusLine()
         new_fg = self.colorfg
