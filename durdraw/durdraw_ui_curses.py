@@ -3276,13 +3276,13 @@ class UserInterface():  # Separate view (curses) from this controller
             askingAboutRange = False
         while askingAboutRange:
             prompt_ch = self.stdscr.getch()
-            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+            if chr(prompt_ch) in ['y', 'Y']:    # yes, all in range
+                self.undo.push()
+                self.mov.search_and_replace_color_pair(oldCharColor, newCharColor, frange=self.appState.playbackRange)
+                askingAboutRange = False
+            if chr(prompt_ch) in ['n', 'N']:    # No, only current frame
                 self.undo.push()
                 self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
-                askingAboutRange = False
-            if chr(prompt_ch) in ['n', 'N']:    # No, only one frame
-                self.undo.push()
-                self.mov.search_and_replace_color_pair(oldCharColor, newCharColor, allFrames=False)
                 askingAboutRange = False
             elif prompt_ch == 27:  # esc, cancel
                 askingAboutRange = False

@@ -225,9 +225,11 @@ class Movie():
         self.opts.sizeY = self.opts.sizeY - shrinkage 
         #self.width = self.width - shrinkage
 
-    def search_and_replace_color_pair(self, old_color, new_color, allFrames = True):
-        if allFrames:
-            for frame in self.frames:
+    def search_and_replace_color_pair(self, old_color, new_color, frange=None):
+        if frange != None:  # apply to all frames in range
+            for frameNum in range(frange[0] - 1, frange[1]):
+            #for frame in self.frames:
+                frame = self.frames[frameNum]
                 line_num = 0
                 col_num = 0
                 for line in frame.newColorMap:
@@ -241,7 +243,7 @@ class Movie():
                         col_num += 1
                     line_num += 1
                     col_num = 0
-        else:
+        else:   # only apply to current frame
             frame = self.currentFrame
             line_num = 0
             col_num = 0
