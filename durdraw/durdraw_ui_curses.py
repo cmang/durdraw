@@ -1644,10 +1644,10 @@ class UserInterface():  # Separate view (curses) from this controller
 
                         #self.showFileInformation()
 
-                    elif c == curses.KEY_DOWN:
+                    elif c in [curses.KEY_DOWN, ord('j')]:
                         if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
                             self.appState.topLine += 1
-                    elif c == curses.KEY_UP:
+                    elif c in [curses.KEY_UP, ord('k')]:
                         if self.appState.topLine > 0:
                             self.appState.topLine = self.appState.topLine - 1
                     elif c == 12:               # ctrl-l - harder refresh
