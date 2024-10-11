@@ -2595,7 +2595,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=True, pushUndo=True)
                 elif c == ord('l'): # alt-l - color under cursor
                     self.insertColor(fg=self.colorfg, bg=self.colorbg, pushUndo=True)
-                elif c == ord('L'): # alt-l - color under cursor
+                elif c == ord('L'): # alt-L - search and replace color
                     self.replaceColorUnderCursor()
                 elif c == 73:       # alt-I - Character Inspector
                     self.showCharInspector()
@@ -3265,8 +3265,28 @@ class UserInterface():  # Separate view (curses) from this controller
         new_bg = self.colorbg
         newCharColor = [new_fg, new_bg]
         # Use movie search and replace color function
-        self.undo.push()
-        self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
+    
+        askingAboutRange = False
+        if self.mov.hasMultipleFrames():
+            self.promptPrint("Apply to all frames in playback range (Y/N)? ")
+            askingAboutRange = True
+        else:   # only 1 frame in movie, so just apply to akk without asking
+            self.undo.push()
+            self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
+            askingAboutRange = False
+        while askingAboutRange:
+            prompt_ch = self.stdscr.getch()
+            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                self.undo.push()
+                self.mov.search_and_replace_color_pair(oldCharColor, newCharColor)
+                askingAboutRange = False
+            if chr(prompt_ch) in ['n', 'N']:    # No, only one frame
+                self.undo.push()
+                self.mov.search_and_replace_color_pair(oldCharColor, newCharColor, allFrames=False)
+                askingAboutRange = False
+            elif prompt_ch == 27:  # esc, cancel
+                askingAboutRange = False
+
         #self.notify(f"Replaced {oldCharColor} with {newCharColor}")
         # Set UI color back to what it should be
         self.setFgColor(ui_fg)
