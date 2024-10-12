@@ -4033,6 +4033,7 @@ class UserInterface():  # Separate view (curses) from this controller
         current_line_number = 0
         search_string = ''
         mask_all = False
+        tabbed = False
         top_line = 0    # topmost viewable line, for scrolling
         prompting = True
         # Turn on keyboard buffer waiting here, if necessary..
@@ -4066,9 +4067,15 @@ class UserInterface():  # Separate view (curses) from this controller
                 current_line_number += 1
 
             if mask_all:
-                self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
+                if tabbed:
+                    self.addstr(realmaxY - 4, 0, f"[X]", curses.A_REVERSE)
+                else:
+                    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
             else:
-                self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+                if tabbed:
+                    self.addstr(realmaxY - 4, 0, f"[ ]", curses.A_REVERSE)
+                else:
+                    self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
             self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
             #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
             #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
@@ -4116,14 +4123,56 @@ class UserInterface():  # Separate view (curses) from this controller
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
+
+
             self.stdscr.refresh()
+
             # Read keyboard input
             c = self.stdscr.getch()
+
+            if tabbed:
+                # Change focus from files to other elements, ie: Show All Files checkbox
+                #c = self.stdscr.getch()
+                if c in [9, curses.KEY_UP, curses.KEY_DOWN]:       # 9 = Tab    
+                    # Change focus away, back to file lister
+                    tabbed = False
+                elif c in [ord(' '), 13, curses.KEY_ENTER]:     # 13 = enter
+                    # Check or uncheck Show All Files
+                    mask_all = not mask_all
+                    if mask_all:
+                        masks = ['*.*']
+                    else:
+                        masks = default_masks
+
+                    # update file list
+                    matched_files = []
+                    file_list = []
+                    for file in os.listdir(current_directory):
+                        for mask in masks:
+                            if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                matched_files.append(file)
+                                break
+                    for dirname in folders:
+                        file_list.append(dirname)
+                    file_list += sorted(matched_files)
+                    # reset ui
+                    selected_item_number = 0
+                    search_string = ""
+                    full_file_list = file_list
+                elif c in [27]:     # esc
+                    tabbed = False
+                    prompting = False
+                c = None
+
             self.stdscr.clear()
             if c == curses.KEY_LEFT:
                 pass
             elif c == curses.KEY_RIGHT:
                 pass
+            elif c in [9]:  # 9 == tab key
+                tabbed = not tabbed
+
+
             elif c == curses.KEY_UP:
                 # move cursor up
                 if selected_item_number > 0:
@@ -4333,6 +4382,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         selected_item_number += 1
                         if selected_item_number == len(file_list) - top_line:
                             top_line += 1
+            elif c == None:
+                pass
             else: # add to search string
                 search_string += chr(c)
                 selected_item_number = 0
