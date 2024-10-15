@@ -29,6 +29,7 @@ class AppState():
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
         self.iceColors = False
+        self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.renderMouseCursor = False      # show Paint or Draw cursor in canvas

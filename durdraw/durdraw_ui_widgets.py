@@ -431,6 +431,7 @@ class StatusBar():
         settingsMenu.add_item("C64 Colors", caller.enableTrueC64Colors, "c")
         settingsMenu.add_item("Deafult Colors", caller.resetColorsToDefault, "d")
         settingsMenu.add_item("Toggle Mouse", caller.toggleMouse, "m")
+        settingsMenu.add_item("Toggle Color Scroll", caller.toggleColorScrolling, "s")
         settingsMenu.is_submenu = True
         #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)

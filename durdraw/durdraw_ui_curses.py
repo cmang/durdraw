@@ -2979,9 +2979,15 @@ class UserInterface():  # Separate view (curses) from this controller
                     except:
                         curses.BUTTON4_PRESSED = 0
                     if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                        self.move_cursor_up()
+                        if self.appState.scrollColors:
+                            self.nextFgColor()
+                        else:
+                            self.move_cursor_up()
                     elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                        self.move_cursor_down()
+                        if self.appState.scrollColors:
+                            self.prevFgColor()
+                        else:
+                            self.move_cursor_down()
                     elif self.appState.cursorMode == "Move":   # select mode/move the cursor
                         if self.pressingButton:
                             self.xy[1] = mouseX + 1 + self.appState.firstCol     # set cursor position
@@ -3685,6 +3691,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.move_cursor_topleft()
             self.stdscr.clear()
             self.hardRefresh()
+
+    def toggleColorScrolling(self):
+        self.appState.scrollColors = not self.appState.scrollColors
 
     def toggleSideBar(self):
         if self.appState.sideBarEnabled:

@@ -134,6 +134,9 @@ def main(fetch_args=None):
                     app.maximize_canvas()
             if 'cursor-mode' in mainConfig:
                 app.screenCursorMode = mainConfig['cursor-mode']
+            if 'scroll-colors' in mainConfig:
+                if mainConfig.getboolean('scroll-colors'):
+                    app.scrollColors = True
         # load theme set in config file
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
