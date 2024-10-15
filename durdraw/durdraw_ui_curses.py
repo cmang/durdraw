@@ -85,9 +85,13 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.appState.colorMode == "256":
             if self.ansi.initColorPairs_256color():
                 self.init_256_colors_misc()
+                self.appState.totalFgColors = 255
+                self.appState.totalBgColors = 1
             else:
                 self.appState.colorMode = "16"
                 self.appState.maxColors = 16
+                self.appState.totalFgColors = 16
+                self.appState.totalBgColors = 8
         if self.appState.colorMode == "16":
             self.init_16_colors_misc()
         if not app.quickStart and app.showStartupScreen:
@@ -496,6 +500,8 @@ class UserInterface():  # Separate view (curses) from this controller
             # switch to 16 color sidebar picker
             self.statusBar.colorPicker.hide()
             self.statusBar.colorPicker = self.statusBar.colorPicker_16
+            self.appState.totalFgColors = 16
+            self.appState.totalBgColors = 8
             #self.statusBar.colorPicker.show()
         if newMode == "256":
             self.appState.colorMode = "256"
@@ -504,6 +510,8 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov.change_palette_16_to_256()
             self.appState.loadThemeFromConfig("Theme-256")
             self.statusBar.colorPickerButton.show()
+            self.appState.totalFgColors = 255
+            self.appState.totalBgColors = 1
             if self.appState.blackbg:
                 self.enableTransBackground()
             #self.statusBar.charSetButton.show()
@@ -4049,7 +4057,7 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 file_list = full_file_list
 
-            # draw list of files from top of the window to bottomk
+            # draw list of files from top of the window to bottom
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             page_size = realmaxY - 4
             current_line_number = 0

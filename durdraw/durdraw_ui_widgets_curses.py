@@ -779,20 +779,24 @@ class ColorPickerHandler:
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
-                if mouseState & curses.BUTTON4_PRESSED: # wheel up
+                if mouseState & curses.BUTTON4_PRESSED: # wheel down?
                     color += 1
-                    if color >= curses.COLORS:
-                        color = 0
-                    #self.colorPicker.caller.colorfg = color
+                    if color > appState.totalFgColors:
+                        if appState.colorMode == "16":
+                            color = 1
+                        elif appState.colorMode == "256":
+                            color = 0
                     self.colorPicker.caller.setFgColor(color)
                     self.updateFgPicker()
                     self.colorPicker.caller.drawStatusBar()
-                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    if color == 0:
-                        color = curses.COLORS - 1
-                    else:
-                        color -= 1
-                    #self.colorPicker.caller.colorfg = color
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel up?
+                    color -= 1
+                    if appState.colorMode == "16":
+                        if color <= 0:
+                            color = appState.totalFgColors 
+                    elif appState.colorMode == "256":
+                        if color < 0:
+                            color = appState.totalFgColors 
                     self.colorPicker.caller.setFgColor(color)
                     self.updateFgPicker()
                     self.colorPicker.caller.drawStatusBar()
@@ -802,14 +806,6 @@ class ColorPickerHandler:
                     self.gotClick(mouseX, mouseY)
                     prompting = False
 
-                    #clickedCol = mouseX - self.x
-                    #clickedLine = mouseY - self.origin
-                    #if mouseY < self.origin + self.height:
-                    #    if self.colorGrid[clickedLine][clickedCol] != 0:
-                    #        # We're in the grid. Set color
-                    #        color = self.colorGrid[clickedLine][clickedCol]
-                    #        self.colorPicker.caller.setFgColor(color)
-                    #        self.updateFgPicker()
                 elif mouseY < mov.sizeY and mouseX < mov.sizeX \
                         and mouseY + appState.topLine < appState.topLine + self.colorPicker.caller.statusBarLineNum:
                     # we did click in the canvas.
