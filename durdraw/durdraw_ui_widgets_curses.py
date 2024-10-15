@@ -857,10 +857,22 @@ class ColorPickerHandler:
             clickedCol = mouseX - self.x
             clickedLine = mouseY - self.origin
             if mouseY < self.origin + self.height:
-                if self.colorGrid[clickedLine][clickedCol] != 0:
-                    color = self.colorGrid[clickedLine][clickedCol]
-                    self.colorPicker.caller.setFgColor(color)
-                    self.updateFgPicker()
+                if self.appState.colorMode == "16":
+                    if self.colorGrid[clickedLine][clickedCol] != 0:
+                        color = self.colorGrid[clickedLine][clickedCol]
+                        self.colorPicker.caller.setFgColor(color)
+                        self.updateFgPicker()
+                elif self.appState.colorMode == "256":
+                    if self.colorGrid[clickedLine][clickedCol] != 0:
+                        color = self.colorGrid[clickedLine][clickedCol]
+                        self.colorPicker.caller.setFgColor(color)
+                        self.updateFgPicker()
+                    if self.colorGrid[clickedLine][clickedCol] == 0:
+                        if clickedLine == 0 and clickedCol == 0:    # true black, not a fake black
+                            color = self.colorGrid[clickedLine][clickedCol]
+                            self.colorPicker.caller.setFgColor(color)
+                            self.updateFgPicker()
+                
 
     def gotDoubleClick(self, mouseX, mouseY):
         # set a BG color
