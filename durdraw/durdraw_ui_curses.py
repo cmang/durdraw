@@ -4057,7 +4057,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
             for filename in file_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
-                    if  selected_item_number == current_line_number:    # if file is selected
+                    if  selected_item_number == current_line_number and not tabbed:    # if file is selected
                         self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
                     else:
                         if file_list[current_line_number] in folders:
