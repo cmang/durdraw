@@ -4325,7 +4325,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
                         if mouseLine < len(file_list) - top_line:   # clicked item line
-                            if mouseCol < len(file_list[top_line+mouseLine]): # clicked within item width
+                            if mouseCol < len(file_list[top_line+mouseLine] + file_modtime_string): # clicked within item width
                                 selected_item_number = top_line+mouseLine
                                 if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                                     if file_list[selected_item_number] in folders:  # clicked directory
