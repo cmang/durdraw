@@ -4051,6 +4051,7 @@ class UserInterface():  # Separate view (curses) from this controller
         search_string = ''
         mask_all = False
         tabbed = False
+        show_modtime = True     # show a column for file modified times
         top_line = 0    # topmost viewable line, for scrolling
         prompting = True
         # Turn on keyboard buffer waiting here, if necessary..
@@ -4070,17 +4071,32 @@ class UserInterface():  # Separate view (curses) from this controller
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             page_size = realmaxY - 4
             current_line_number = 0
+            file_column_number = 0
+            if show_modtime:
+                file_column_number = 20
             if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
                 top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
             for filename in file_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
                     if  selected_item_number == current_line_number and not tabbed:    # if file is selected
-                        self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
+                        if file_list[current_line_number] in folders:
+                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
+                        else:
+                            # not a folder, print modified column
+                            if show_modtime:
+                                full_path = f"{current_directory}/{file_list[current_line_number]}"
+                                file_modtime_string = durfile.get_file_mod_date_time(full_path)
+                                self.addstr(current_line_number - top_line, 0, file_modtime_string, curses.color_pair(self.appState.theme['menuItemColor']))
+                            self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.A_REVERSE)
                     else:
                         if file_list[current_line_number] in folders:
                             self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
                         else:
-                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
+                            if show_modtime:
+                                full_path = f"{current_directory}/{file_list[current_line_number]}"
+                                file_modtime_string = durfile.get_file_mod_date_time(full_path)
+                                self.addstr(current_line_number - top_line, 0, file_modtime_string, curses.color_pair(self.appState.theme['menuItemColor']))
+                            self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
                 current_line_number += 1
 
             if mask_all:
@@ -4142,7 +4158,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
 
-            self.stdscr.refresh()
+            #self.stdscr.refresh()
 
             # Read keyboard input
             c = self.stdscr.getch()
@@ -4182,13 +4198,13 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None
 
             self.stdscr.clear()
+
             if c == curses.KEY_LEFT:
                 pass
             elif c == curses.KEY_RIGHT:
                 pass
             elif c in [9]:  # 9 == tab key
                 tabbed = not tabbed
-
 
             elif c == curses.KEY_UP:
                 # move cursor up
