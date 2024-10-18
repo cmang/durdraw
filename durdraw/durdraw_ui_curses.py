@@ -1184,7 +1184,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.topLine > 0:
                     self.appState.topLine = self.appState.topLine - 1
             elif c in [curses.KEY_DOWN, ord('j')]:  # scroll down
-                if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
+                if self.appState.topLine + self.realmaxY < helpMov.sizeY:  # wtf?
                     self.appState.topLine += 1
             elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b'), ord('<')]:  # page up, and vim keys
                 self.appState.topLine = self.appState.topLine - self.realmaxY + 3
@@ -1193,7 +1193,7 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f'), ord('>')]:  # page down, and vi keys
                 self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
                 if self.appState.topLine > helpMov.sizeY - self.realmaxY:
-                    self.appState.topLine = helpMov.sizeY - self.realmaxY + 2
+                    self.appState.topLine = helpMov.sizeY - self.realmaxY 
             elif c in [339, curses.KEY_HOME]:  # 339 = home
                 self.appState.topLine = 0
             elif c in [338, curses.KEY_END]:   # 338 = end
@@ -1218,7 +1218,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.topLine > 0:
                         self.appState.topLine = self.appState.topLine - 1
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    if self.appState.topLine + self.realmaxY - 3 < helpMov.sizeY - 1:  # wtf?
+                    if self.appState.topLine + self.realmaxY < helpMov.sizeY:  # wtf?
                         self.appState.topLine += 1
 
             new_time = time.time()
@@ -1622,7 +1622,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             if self.appState.topLine > 0:
                                 self.appState.topLine = self.appState.topLine - 1
                         elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                            if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
+                            if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
                                 self.appState.topLine += 1
 
                     elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
@@ -1633,10 +1633,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
                             self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
                             if self.appState.topLine > self.mov.sizeY - self.realmaxY:
-                                self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+                                self.appState.topLine = self.mov.sizeY - self.realmaxY 
                                 # prevent a ghost image on any blank lines at the bottom:
-                                self.stdscr.clear()
-                                self.refresh()
+                                #self.stdscr.clear()
+                                #self.refresh()
                     elif c in [339, curses.KEY_HOME]:  # 339 = home
                         self.appState.topLine = 0
                     elif c in [338, curses.KEY_END]:   # 338 = end
@@ -1675,7 +1675,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         #self.showFileInformation()
 
                     elif c in [curses.KEY_DOWN, ord('j')]:
-                        if self.appState.topLine + self.realmaxY - 3 < self.mov.sizeY - 1:  # wtf?
+                        if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
                             self.appState.topLine += 1
                     elif c in [curses.KEY_UP, ord('k')]:
                         if self.appState.topLine > 0:
