@@ -4630,7 +4630,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.mov.contains_background_colors():   # but using background colors...
                         #self.notify("Contains background colors.")
                         # Must be a 16 color ANSI. Switch since 256 can't do background colors.
-                        if not self.appState.playOnlyMode:
+                        if self.appState.debug:
                             self.notify(f"16 color file. Switching to 16 color mode and reloading file.")
                         self.switchTo16ColorMode()
                         self.loadFromFile(shortfile, 'ascii')
@@ -4679,7 +4679,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.notify(f"Loaded 256 color file in 16 color mode.")
                 if fileColorMode == "256" and fileColorMode != self.appState.colorMode and self.appState.maxColors > 255:
                     #self.notify(f"Warning: Loading a 256 color file in 16 color mode. Some colors may not be displayed.")
-                    if not self.appState.playOnlyMode:
+                    if self.appState.debug:
                         self.notify(f"256 color file. Switching to 256 color mode.")
                     self.switchTo256ColorMode()
                     self.loadFromFile(shortfile, 'dur')
@@ -4704,7 +4704,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 if fileColorMode == "16" and fileColorMode != self.appState.colorMode:
                     #self.notify(f"Warning: Loading 16 color ANSI in {self.appState.colorMode} color mode will lose background colors.", pause=True)
-                    if not self.appState.playOnlyMode:
+                    if self.appState.debug:
                         self.notify(f"16 color file. Switching to 16 color mode.")
                     self.switchTo16ColorMode()
                     self.loadFromFile(shortfile, 'dur')
