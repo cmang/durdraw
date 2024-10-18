@@ -27,6 +27,7 @@ class AppState():
         python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
         self.pyVersion = python_version
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.fileColorMode = None
         self.maxColors = 256
         self.iceColors = False
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
