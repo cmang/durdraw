@@ -954,6 +954,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.wrapWidth = 120
         else:
             self.appState.wrapWidth = 80
+        self.notify(f"Line wrapping for loading ANSIs set to: {self.appState.wrapWidth}")
 
     def toggleInjecting(self):
         self.appState.can_inject = not self.appState.can_inject
