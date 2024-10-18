@@ -4503,7 +4503,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # then loadFromFile could return a movie object instead.
         """ If we load old .dur files, convert to the latest format """
         # aka "fill in the blanks"
-        if self.appState.debug: self.notify(f"Converting to new format. Current format: {self.opts.saveFileFormat}")
+        #if self.appState.debug: self.notify(f"Converting to new format. Current format: {self.opts.saveFileFormat}")
         if self.opts.saveFileFormat < 3:  # version 4 should rename saveFileFormat
             if self.appState.debug: self.notify(f"Upgrading to format 3. Making old color map.")
             # to saveFormatVersion
@@ -4597,7 +4597,7 @@ class UserInterface():  # Separate view (curses) from this controller
             except UnicodeDecodeError:
                 f.close()
                 if self.appState.charEncoding == 'utf-8':
-                    if not self.appState.playOnlyMode:
+                    if not self.appState.playOnlyMode and self.appState.debug:
                         self.notify("This appears to be a CP437 ANSI/ASCII - Converting to Unicode.")
                 f = open(filename, 'r', encoding='cp437')
                 raw_text = f.read()
@@ -4671,7 +4671,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 f.seek(0)
                 fileColorMode, fileCharEncoding = durfile.get_dur_file_colorMode_and_charMode(f)
 
-                if fileColorMode == "256" and fileColorMode != self.appState.colorMode:
+                if fileColorMode == "256" and fileColorMode != self.appState.colorMode and self.appState.maxColors == 16:
+                    if not self.appState.playOnlyMode:
+                        self.notify(f"Loaded 256 color file in 16 color mode.")
+                if fileColorMode == "256" and fileColorMode != self.appState.colorMode and self.appState.maxColors > 255:
                     #self.notify(f"Warning: Loading a 256 color file in 16 color mode. Some colors may not be displayed.")
                     if not self.appState.playOnlyMode:
                         self.notify(f"256 color file. Switching to 256 color mode.")
