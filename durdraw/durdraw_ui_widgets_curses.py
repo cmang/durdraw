@@ -696,7 +696,7 @@ class ColorPickerHandler:
             #self.colorPicker.caller.drawStatusBar()
             self.update()
             c = self.window.getch()
-            if c in [98, curses.KEY_LEFT]:
+            if c in [98, curses.KEY_LEFT, ord('h')]:
                 if color == 0:
                     color = self.totalColors
                 else:
@@ -705,7 +705,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c in [102, curses.KEY_RIGHT]:
+            elif c in [102, curses.KEY_RIGHT, ord('l')]:
                 color += 1
                 #if color >= curses.COLORS:
                 if color > self.totalColors:
@@ -714,7 +714,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c == curses.KEY_UP:
+            elif c in [curses.KEY_UP, ord('k')]:
                 if self.colorMode == "256":
                     if color < 32:
                         color -= 16
@@ -730,7 +730,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c == curses.KEY_DOWN:
+            elif c in [curses.KEY_DOWN, ord('j')]:
                 if self.colorMode == "256":
                     if color < 16:
                         color += 16
