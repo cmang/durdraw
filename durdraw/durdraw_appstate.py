@@ -334,7 +334,7 @@ class AppState():
 
 
     def loadHelpFileThread(self, helpFileName):
-        help_loading_thread = threading.Thread(target=self.thread_check_dependencies, argv=helpFileName)
+        help_loading_thread = threading.Thread(target=self.loadHelpFile, args=(helpFileName,))
         help_loading_thread.start()
 
     def loadHelpFile(self, helpFileName, page=1):
