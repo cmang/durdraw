@@ -333,6 +333,10 @@ class AppState():
             return False
 
 
+    def loadHelpFileThread(self, helpFileName):
+        help_loading_thread = threading.Thread(target=self.thread_check_dependencies, argv=helpFileName)
+        help_loading_thread.start()
+
     def loadHelpFile(self, helpFileName, page=1):
         helpFileName = os.path.expanduser(helpFileName)
         #self.helpMov = Movie(self.opts) # initialize a new movie to work with

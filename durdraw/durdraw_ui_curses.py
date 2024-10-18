@@ -147,7 +147,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
         if self.appState.playOnlyMode == False:
             self.appState.loadHelpFile(self.appState.durhelp256_fullpath)
-            self.appState.loadHelpFile(self.appState.durhelp256_page2_fullpath, page=2)
+            #self.appState.loadHelpFile(self.appState.durhelp256_page2_fullpath, page=2)
         self.colorbg = 0    # default bg black
         self.colorfg = 7    # default fg white
         self.appState.sideBar_minimum_width = 37
@@ -161,7 +161,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.loadThemeFromConfig('Theme-16')
         if self.appState.playOnlyMode == False:
             self.appState.loadHelpFile(self.appState.durhelp16_fullpath)
-            self.appState.loadHelpFile(self.appState.durhelp16_page2_fullpath, page=2)
+            #self.appState.loadHelpFile(self.appState.durhelp16_page2_fullpath, page=2)
         if self.appState.customThemeFile:
             self.appState.loadThemeFile(self.appState.customThemeFile, 'Theme-256')
         self.colorfg = 8    # default fg white

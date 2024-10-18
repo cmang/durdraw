@@ -159,23 +159,23 @@ def main(fetch_args=None):
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
-    durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
+    #durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
     durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur")
     #durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page1.dur")
-    durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
+    #durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
     durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-long.dur")
     #durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page1.dur")
-    durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
+    #durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
     app.durhelp256_fullpath = durhelp256_fullpath
-    app.durhelp256_page2_fullpath = durhelp256_page2_fullpath
+    #app.durhelp256_page2_fullpath = durhelp256_page2_fullpath
     app.durhelp16_fullpath = durhelp16_fullpath
-    app.durhelp16_page2_fullpath = durhelp16_page2_fullpath
+    #app.durhelp16_page2_fullpath = durhelp16_page2_fullpath
     #app.loadHelpFile(durhelp_fullpath)
-    app.loadHelpFile(durhelp16_fullpath)
-    app.loadHelpFile(durhelp16_page2_fullpath, page=2)
-    if not app.hasHelpFile:
-        durhelp_fullpath = 'durdraw/help/durhelp.dur'
-        app.loadHelpFile(durhelp_fullpath)
+    #app.loadHelpFile(durhelp16_fullpath)
+    #app.loadHelpFile(durhelp16_page2_fullpath, page=2)
+    #if not app.hasHelpFile:
+    #    durhelp_fullpath = 'durdraw/help/durhelp.dur'
+    #    app.loadHelpFile(durhelp_fullpath)
 
     if app.showStartupScreen:
         print(durlogo)
