@@ -6,6 +6,7 @@ import pdb
 import pickle
 import subprocess
 import sys
+import threading
 from sys import version_info 
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
@@ -14,10 +15,16 @@ import durdraw.durdraw_sauce as dursauce
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
     def __init__(self):
+
         # Check for optional dependencies
-        self.ansiLove = self.isAppAvail("ansilove")
-        self.neofetch = self.isAppAvail("neofetch")
-        self.PIL = self.checkForPIL()
+        #self.ansiLove = self.isAppAvail("ansilove")
+        #self.neofetch = self.isAppAvail("neofetch")
+        #self.PIL = self.checkForPIL()
+
+        self.ansiLove = None
+        self.neofetch = None
+        self.PIL = None
+        self.check_dependencies()
 
         # User friendly defeaults
         self.quickStart = False
@@ -156,6 +163,16 @@ class AppState():
            self.width = term_size[0]
         if term_size[1] > 24:
             self.height = term_size[1] - 2
+
+    def check_dependencies(self):
+        dependency_thread = threading.Thread(target=self.thread_check_dependencies)
+        dependency_thread.start()
+
+    def thread_check_dependencies(self):
+        # Check for optional dependencies
+        self.ansiLove = self.isAppAvail("ansilove")
+        self.neofetch = self.isAppAvail("neofetch")
+        self.PIL = self.checkForPIL()
 
     def setCursorModeMove(self):
         self.cursorMode="Move"
