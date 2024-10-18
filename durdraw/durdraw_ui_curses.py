@@ -117,7 +117,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         self.playing = False
         curses.noecho()
-        curses.raw()
+        #curses.raw()
+        curses.cbreak()
         curses.nonl()
         self.stdscr.keypad(1)
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
@@ -3554,6 +3555,23 @@ class UserInterface():  # Separate view (curses) from this controller
         self.clearStatusLine()
         if exiting:
             self.verySafeQuit()
+
+    def jumpToPythonConsole(self):
+        #self.getReadyToSuspend()
+        pdb.set_trace()
+        self.resumeFromSuspend()
+
+    def getReadyToSuspend(self):
+        # Get the terminal ready for fun times
+        curses.nocbreak()
+        #self.stdscr.keypad(0)
+        curses.echo()
+
+    def resumeFromSuspend(self):
+        # Get the terminal ready for fun times
+        curses.cbreak()
+        #self.stdscr.keypad(0)
+        curses.noecho()
 
     def verySafeQuit(self): # non-interactive part.. close out curses screen and exit.
         curses.nocbreak()
