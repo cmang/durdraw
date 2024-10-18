@@ -949,6 +949,12 @@ class UserInterface():  # Separate view (curses) from this controller
     def toggleDebug(self):
         self.appState.debug = not self.appState.debug
 
+    def toggleWideWrapping(self):
+        if self.appState.wrapWidth < 120:
+            self.appState.wrapWidth = 120
+        else:
+            self.appState.wrapWidth = 80
+
     def toggleInjecting(self):
         self.appState.can_inject = not self.appState.can_inject
 
