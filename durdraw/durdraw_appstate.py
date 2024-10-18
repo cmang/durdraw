@@ -29,6 +29,8 @@ class AppState():
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
         self.maxColors = 256
         self.iceColors = False
+        self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
+        self.showBgColorPicker = True # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
@@ -96,7 +98,6 @@ class AppState():
         self.durhelp256_page2_fullpath = None
         self.durhelp16_fullpath = None
         self.durhelp16_page2_fullpath = None
-        self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         # This doesn't work yet (color pairs past 256 colors. They set, but the background color doesn't get set.
         #if sys.version_info >= (3, 10):
         #    if curses.has_extended_color_support(): # Requires Ncures 6

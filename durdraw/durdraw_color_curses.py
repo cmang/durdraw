@@ -317,9 +317,9 @@ class AnsiArtStuff():
             fg = color_256_to_ansi_16[fg]
         code = '\033[38;5;'    # begin escape sequence
         code = code + str(fg)
-        #code = code + ';'
-        #code = code + '48;5;'
-        #code = code + str(bg)
+        code = code + ';'
+        code = code + '48;5;'
+        code = code + str(bg)
         #code = code + str('0')
         code = code + 'm'
         return code

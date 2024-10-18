@@ -688,7 +688,7 @@ class UserInterface():  # Separate view (curses) from this controller
         except curses.error:
             self.testWindowSize()
 
-    def notify(self, message, pause=False):
+    def notify(self, message, pause=False, wait_time=2500):
         self.cursorOff()
         self.clearStatusLine()
         self.addstr(self.statusBarLineNum, 0, message, curses.color_pair(self.appState.theme['notificationColor']))
@@ -701,7 +701,7 @@ class UserInterface():  # Separate view (curses) from this controller
             else:
                 self.stdscr.getch()
         if not pause:
-            curses.napms(2500)
+            curses.napms(wait_time)
             curses.flushinp()
         self.clearStatusLine()
         self.cursorOn()
@@ -942,6 +942,9 @@ class UserInterface():  # Separate view (curses) from this controller
     def toggleShowFileInformation(self):
         self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo
         self.stdscr.clear()
+
+    def toggleDebug(self):
+        self.appState.debug = not self.appState.debug
 
     def showFileInformation(self, notify = False):
         # eventually show a pop-up window with editable sauce info
@@ -5540,10 +5543,23 @@ Can use ESC or META instead of ALT
                     cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
+                injecting = False
+                if self.appState.can_inject and self.appState.colorMode == "256":
+                    injecting = True
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
                     self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
-                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    # Let's try injecting!
+                    if injecting:
+                        moveCode = f"\x1b[{screenLineNum + 1};{colnum - self.appState.firstCol + 1}H"
+                        colorCode = self.ansi.getColorCode256(charColor[0],charColor[1])
+                        sys.stdout.write(moveCode)
+                        sys.stdout.write(colorCode)
+                        sys.stdout.write(charContent)
+                        pass
+                        #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
+                    else:
+                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
@@ -5562,7 +5578,27 @@ Can use ESC or META instead of ALT
                     else:   # 256 color Normal character, under the cursor. No funny business. Print to the screen
                         self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
                 else:   # Normal character. No funny business. Print to the screen
-                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+                    #injecting = True
+                    if injecting and charColor[1] != 0:
+                        #self.stdscr.move(screenLineNum, colnum - self.appState.firstCol)
+                        #self.stdscr.refresh()
+                        moveCode = f"\x1b[{screenLineNum + 1};{colnum - self.appState.firstCol + 1}H"
+                        colorCode = self.ansi.getColorCode256(charColor[0],charColor[1])
+                        #sys.stdout.write(f"\x1b[38:5:{charColor[0]}m")   # FG
+                        sys.stdout.write(moveCode)
+                        sys.stdout.write(colorCode)
+                        #sys.stdout.write(f"\x1b[48:5:{charColor[1]}m")   # BG
+                        sys.stdout.write(charContent)
+                        #time.sleep(0.001)
+                        #self.stdscr.refresh()
+                        #self.notify("Injected", wait_time=40)
+                        #sys.stdout.write("\x1b[48:5:46m")
+                        #sys.stdout.write("\x1b[38:5:19m")
+                        #self.addstr(screenLineNum, colnum - self.appState.firstCol, f"{charContent}")
+                        pass
+                        #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
+                    else:
+                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
             if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
