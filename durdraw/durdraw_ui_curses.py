@@ -2187,6 +2187,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.menuButton.update_real_xy(x = statusBarLineNum)
         self.statusBar.toolButton.update_real_xy(x = statusBarLineNum)
         self.statusBar.animButton.update_real_xy(x = statusBarLineNum)
+        self.statusBar.colorPickerButton.update_real_xy(x = statusBarLineNum + 1)
         if self.appState.showCharSetButton:
             self.statusBar.charSetButton.update_real_xy(x = statusBarLineNum + 1)
         if not self.appState.narrowWindow:
