@@ -116,9 +116,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.undo.setHistorySize(self.appState.undoHistorySize)
         self.xy = [0, 1]     # cursor position x/y - was "curs"
         self.playing = False
-        curses.noecho()
         #curses.raw()
         curses.cbreak()
+        curses.noecho()
         curses.nonl()
         self.stdscr.keypad(1)
         self.realmaxY,self.realmaxX = self.realstdscr.getmaxyx()
@@ -2787,7 +2787,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.pushingToClip = False
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
-                            pdb.set_trace()
+                            self.jumpToPythonConsole()
                         else:
                             self.notify("keystroke: %d" % c) # alt-unknown
                 self.commandMode = False
@@ -3557,20 +3557,20 @@ class UserInterface():  # Separate view (curses) from this controller
             self.verySafeQuit()
 
     def jumpToPythonConsole(self):
-        #self.getReadyToSuspend()
+        self.getReadyToSuspend()
         pdb.set_trace()
         self.resumeFromSuspend()
 
     def getReadyToSuspend(self):
         # Get the terminal ready for fun times
         curses.nocbreak()
-        #self.stdscr.keypad(0)
+        self.stdscr.keypad(0)
         curses.echo()
 
     def resumeFromSuspend(self):
         # Get the terminal ready for fun times
         curses.cbreak()
-        #self.stdscr.keypad(0)
+        self.stdscr.keypad(1)
         curses.noecho()
 
     def verySafeQuit(self): # non-interactive part.. close out curses screen and exit.
