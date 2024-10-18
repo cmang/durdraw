@@ -188,9 +188,11 @@ class UserInterface():  # Separate view (curses) from this controller
             self.disableMouse()
 
     def disableMouse(self):
+        print('\033[?1003l') # disable mouse reporting
         curses.mousemask(0)
 
     def initMouse(self):
+        print('\033[?1003h') # enable mouse tracking with the XTERM API
         curses.mousemask(1)     # click response without drag support
         curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
         #print('\033[?1003h') # enable mouse tracking with the XTERM API
