@@ -949,6 +949,14 @@ class UserInterface():  # Separate view (curses) from this controller
     def toggleDebug(self):
         self.appState.debug = not self.appState.debug
 
+    def toggleInjecting(self):
+        self.appState.can_inject = not self.appState.can_inject
+
+    def toggleIceColors(self):
+        self.appState.iceColors = not self.appState.iceColors
+        self.ansi.initColorPairs_cga()
+        self.init_16_colors_misc()
+
     def showFileInformation(self, notify = False):
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName

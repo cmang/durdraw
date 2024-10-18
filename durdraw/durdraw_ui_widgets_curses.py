@@ -531,7 +531,7 @@ class ColorPickerHandler:
                 bg += 1
                 if bg == 8:
                     bg = 0
-            if fg == self.colorPicker.caller.colorfg or fg == 0 and colorbg == 8:
+            if fg == self.colorPicker.caller.colorfg or fg == 0 and bg == 8:
                 if fg == 1: # black
                     if self.appState.colorPickerSelected:
                         if fg == bg:
@@ -551,7 +551,7 @@ class ColorPickerHandler:
                             else:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE | curses.A_BOLD)
                         if self.colorMode == "16":
-                            if fg > 8:
+                            if fg > 8 and self.appState.iceColors == False:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE | curses.A_BOLD)
                             else:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE )
@@ -563,12 +563,12 @@ class ColorPickerHandler:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_BOLD)
                         if self.colorMode == "16":
                             if fg == bg:
-                                if fg > 8:
+                                if fg > 8 and self.appState.iceColors == False:
                                     curses_addstr(self.window, line, col, 'X', color_pair | curses.A_BOLD)
                                 else:
                                     curses_addstr(self.window, line, col, 'X', color_pair)
                             else:
-                                if fg > 8:
+                                if fg > 8 and self.appState.iceColors == False:
                                     curses_addstr(self.window, line, col, 'F', color_pair | curses.A_BOLD)
                                 else:
                                     curses_addstr(self.window, line, col, 'F', color_pair)
@@ -582,7 +582,7 @@ class ColorPickerHandler:
             # 16 color, black background (8), showing color 8 (grey)
             elif self.colorMode == "16" and fg == 9 and bg == 9:
                 # draw fill character unmodified
-                if fg > 8:
+                if fg > 8 and self.appState.iceColors == False:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
                 else:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair)
@@ -615,7 +615,7 @@ class ColorPickerHandler:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair)
                 elif self.colorMode == "16":
                     # draw bright colors in 16 color mode
-                    if fg > 8:
+                    if fg > 8 and self.appState.iceColors == False:
                         curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
                         #debug_string = str(color_pair)
                         #self.colorPicker.caller.notify(debug_string)

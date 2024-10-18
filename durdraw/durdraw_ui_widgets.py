@@ -432,8 +432,12 @@ class StatusBar():
         #settingsMenu.add_item("Deafult Colors", caller.resetColorsToDefault, "d")
         settingsMenu.add_item("Toggle Mouse", caller.toggleMouse, "m")
         settingsMenu.add_item("Toggle Color Scroll", caller.toggleColorScrolling, "s")
+        if self.appState.mental:    # Experimental stuff
+            settingsMenu.add_item("Toggle iCE Colors (MENTAL)", caller.toggleIceColors, "i")
+            settingsMenu.add_item("Toggle Injecting (MENTAL)", caller.toggleInjecting, "j")
         if self.appState.debug:
             settingsMenu.add_item("Toggle Debug", caller.toggleDebug, "d")
+            settingsMenu.add_item("Python Console", caller.jumpToPythonConsole, "p")
         settingsMenu.is_submenu = True
         #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)
