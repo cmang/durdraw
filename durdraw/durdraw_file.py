@@ -279,7 +279,8 @@ def open_json_dur_file(f, appState):
     currentFrame = 0
     lineNum = 0
     for frame in loadedMovieData['DurMovie']['frames']:
-        newMov.insertCloneFrame()
+        #newMov.insertCloneFrame()
+        newMov.addEmptyFrame()
         newMov.nextFrame()
         for line in frame['contents']:
             #pdb.set_trace()
