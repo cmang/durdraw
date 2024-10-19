@@ -76,6 +76,12 @@ To look at some included example animations:
     ./start-durdraw -p examples/*.dur
 ```
 
+## OPTIONAL INSTALLATION
+
+For PNG and animated GIF export, please install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now, and only with CP437 compatible charcters. You also need the PIL python module.
+
+For Durfetch support, please install Neofetch and place it in your path.
+
 ## GALLERY
 
 [![Watch the Tutorial Part 1](https://github.com/cmang/durdraw/assets/261501/ca33c81b-0559-4fc7-a49b-a11768938d3d)](https://youtu.be/vWczO0Vd_54)
@@ -93,7 +99,7 @@ To look at some included example animations:
 
 ## COMMAND LINE USAGE
 
-You can play a .dur file or series of .dur files with:
+You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
 
 ```
     $ durdraw -p filename.dur
@@ -146,50 +152,95 @@ options:
 ## INTERACTIVE USAGE/EDITING
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
-You can use the "Esc" (or "Meta") key to access commands:
+
+You can click highlighted areas of the screen.
+
+You can use the "Esc" (or "Meta") key to access keyboar shortcuts and commands:
 
 ```
-  .. Art Editing .....................   
-  : F1-F10 - insert character        :   
-  : esc-up - next fg color           :   
-  : esc-down - prev fg color         :   
-  : esc-right - next bg color (16c)  :   
-  : esc-left - prev bg color         :
-  : esc-/ - insert line              :   .. Animation .......................
-  : esc-' - delete line              :   : esc-k - next frame               :
-  : esc-. - insert column            :   : esc-j - previous frame           :
-  : esc-, - delete column            :   : esc-p - start/stop payback       :
-  : esc-] - next character group     :   : esc-n - clone frame              :
-  : esc-[ - previous character group :   : esc-N - append empty frame       :
-  : esc-S - change character set     :   : esc-d - delete frame             :
-  : esc-y - eyedrop (pick up color)  :   : esc-D - set frame delay          :
-  : esc-l - color character          :   : esc-+/esc-- - faster/slower      :
-  : esc-c - color picker             :   : esc-R - set playback/edit range  :
-  : shift-arrows - select for copy   :   : esc-g - go to frame #            :
-  : esc-K - mark selection           :   : esc-M - move frame               :
-  : esc-v - paste                    :   :..................................:
-  :..................................:
-                                         .. UI/Misc .........................
-  .. File Operations .................   : esc-m - main menu                :
-  : esc-C - new/clear canvas         :   : esc-t - mouse tools              :
-  : esc-o - open                     :   : esc-z - undo                     :
-  : esc-s - save                     :   : esc-r - redo                     :
-  :..................................:   : esc-V - view mode                :
-                                         : esc-i - file/canvas info         :
-  .. Canvas Size .....................   : esc-I - character inspector      :
-  : esc-" - insert line              :   : tab - focus canvas or colors     :
-  : esc-: - delete line              :   : ctrl-l - redraw screen           :
-  : esc-> - insert column            :   : esc-h - help                     :
-  : esc-< - delete column            :   : esc-q - quit                     :
+   ____________.       _________   __________ _________  _____          _______
+.-\\___     /  |______/  _     /.-\\___     //  _     /_/  _  \_.____.  \     /
+|    |/    /   |    /    /    /:|    |/    /    /    /Y    Y    Y    |  /    /
+|    /    /|   |   /    _   _/ ||    /    /:   _   _/ :    _    |    /\/    /
+|        /:|   :    :   Y      |:        /:|   Y      |    Y    |          /:H7
+|____     |_________|___|      |_____     |____|      |    |____|____/\_____|
+.-- `-----' ----------- `------': - `-----' -- `------'----' -----------------.
+|                                                                             |
+`-----------------------------------------------------------------------------'
+
+  .. Art Editing .....................   .. Animation .......................
+  : F1-F10 - insert character        :   : esc-k - next frame               :
+  : esc-1 to esc-0 - same as F1-F10  :   : esc-j - previous frame           :
+  : esc-space - insert draw char     :   : esc-p - start/stop payback       :
+  : esc-c/tab - color picker         :   : esc-n - clone frame              :
+  : esc-left - next fg color         :   : esc-N - append empty frame       :
+  : esc-right - prev fg color        :   : esc-d - delete frame             :
+  : esc-up - change color up         :   : esc-D - set frame delay          :
+  : esc-down - change color down     :   : esc-+/esc-- - faster/slower      :
+  : esc-/ - insert line              :   : esc-R - set playback/edit range  :
+  : esc-' - delete line              :   : esc-g - go to frame #            :
+  : esc-. - insert column            :   : esc-M - move frame               :
+  : esc-, - delete column            :   : esc-{ - shift frames left        :
+  : esc-] - next character group     :   : esc-} - shift frames right       :
+  : esc-[ - previous character group :   :..................................:
+  : esc-S - change character set     :
+  : esc-L - replace color            :   .. UI/Misc .........................
+  : esc-y - eyedrop (pick up color)  :   : esc-m - main menu                :
+  : esc-P - pick up character        :   : esc-a - animation menu           :
+  : esc-l - color character          :   : esc-t - mouse tools              :
+  : shift-arrows - select for copy   :   : esc-z - undo                     :
+  : esc-K - mark selection           :   : esc-r - redo                     :
+  : esc-v - paste                    :   : esc-V - view mode                :
+  :..................................:   : esc-i - file/canvas info         :
+                                         : esc-I - character inspector      :
+  .. File Operations .................   : esc-F - search/find string       :
+  : esc-C - new/clear canvas         :   : ctrl-l - redraw screen           :
+  : esc-o - open                     :   : esc-h - help                     :
+  : esc-s - save                     :   : esc-q - quit                     :
   :..................................:   :..................................:
 
-                                                            Prev   Next
-                                                            Frame  Frame
-                                                            |      |
-Main   Frame     Speed     Frame   Play/Edit  Mouse   First | Play |  Last
-Menu   Number      |       Delay   Range      Tools   Frame | Pause|  Frame
- |     |           |        |       |          |         |  |  |   |  |
-[Menu] F: 1/8    <FPS>: 8   D: 0.00 R: 1/8   [Move]      |< << |> >> >|  
+  .. Canvas Size .....................
+  : esc-" - insert line              :
+  : esc-: - delete line              :
+  : esc-> - insert column            :
+  : esc-< - delete column            :
+  :..................................:
+
+                                                          esc-j  esc-k
+                                                          Prev   Next  Canvas
+esc-f  esc-g   esc--                                      Frame  Frame   Size
+esc-m  Go to   esc-+      esc-D   esc-R      esc-t        | esc-p|         |
+ Main  Frame   Speed      Frame   Play/Edit  Mouse  First | Play/| Last    |
+ Menu  Number     |       Delay   Range      Tools  Frame | Pause| Frame   |
+  |    |          |        |       |          |        |  |  |   |  |      |
+[Menu] F: 1/7   <FPS>: 8   D: 0.00 R: 1/8   [Move]     |< << |> >> >| [80x24]
+
+ tab
+ esc-c                     esc-S
+ Pick        esc-[ esc-]   Charset set   F1-F10         esc-[ esc-]
+ Foreground    Character   or Unicode    Insert Special  Prev/Next    Cursor
+ Color             Group   Block         Characters     Char Group  Position
+  |                  |        |             |                     \       |
+FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐F9■F10·>  (12,10)
+
+ ANIMATION:
+
+    Use the Animation Menu [Anim] or keyboard commands to insert (esc-n),
+    delete (esc-d), move (esc-M) and edit frames. Use esc-k and esc-j to
+    flip to the next and previous frames. The "Play" button (|> or esc-p)
+    starts or stops playback.
+
+    When the animation is playing, all changes made effect all frames
+    within the current playback/edit Range (R: or esc-R). Change playback
+    speed (<FPS> or Frames Per Second) with esc-+ (or esc-=) and esc--.
+    F: shows the current frame number, and you can go to a specific frame
+    with esc-g.
+
+ BRUSHES:
+
+    To make a brush, use shift-arrow or esc-K to make a selection, then
+    press b. To use the brush, click the Mouse Tools menu (esc-t) and select
+    Paint (P). You can now use the mouse to paint with your custom brush.
 ```
 
 ## CONFIGURATION
@@ -289,9 +340,9 @@ menuBorderColor: the color of the border around menus
 
 ## DURFETCH
 
-Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch.
+Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch. You can also use built-in example animations.
 
-Note that this feature is beta, but can be fun to play with. If anyone wants to improve this feature, please feel free.
+Note that this feature is in beta, and is far from perfect, but it can be fun to play with. If anyone wants to improve durfetch, please feel free.
 
 Keys will only be replaced if there is enough room in the art for the replacement value.
 
@@ -341,29 +392,25 @@ linux-tux
 unixbox
 ```
 
-## OPTIONAL INSTALLATION
-
-For PNG and animated GIF export, install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now. You also need the PIL python module.
-
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
-A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash and post it as a bug report at https://github.com/cmang/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. I will do my best to try to fix it ASAP. Speaking of your terminal, it will probably start acting weird if Durdraw crashed. You can usually fix it by typing "reset" and pressing enter.
+A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash and post it as a bug report at https://github.com/cmang/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. I will do my best to try to fix it ASAP. Your terminal will probably start acting weird if Durdraw crashed. You can usually fix it by typing "reset" and pressing enter.
 
 #### Q: Don't TheDraw and some other programs already do ANSI animation?
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to govern the playback speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL). Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
+A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL), and in Docker using the provided Dockerfile. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
-#### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, etc?
+#### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, Atari ST, etc?
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See durformat.md for more details on the .dur file format.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
 
 #### Q: I only see 8 colors in 16 color mode. Why?
-A: Look in your terminal setting for "Use bright colors for bold," or a similarly named option. Durdraw's 16-color mode, like many vintage terminals (including MS-DOS), uses the Bold escape codes to tell the terminal the "bright" colors. This provides compatibility with many older systems. However, some terminals do not support or enable this option by default. Additionally, your terminal decides what colors to assign to the lower 16 colors.
+A: Look in your terminal setting for "Use bright colors for bold," or a similarly named option. Durdraw's 16-color mode, like many vintage terminals (including MS-DOS), uses the Bold escape codes to tell the terminal that colors are "bright." This provides compatibility with many older systems. However, some terminals do not support or enable this option by default. Additionally, your terminal decides what colors to assign to the lower 16 colors. In many terminals, Durdraw can override the default 16 color palette. To do this, click on Menu -> Settings and select VGA, Commodore 64 or ZX Spectrum colors.
 
 #### Q: Some or all of the F1-F10 keys do not work for me! What can I do?
 A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals will map this to Alt-1 through Alt-0. You can also use the following settings in some terminals to enable the F1-F10 keys:
