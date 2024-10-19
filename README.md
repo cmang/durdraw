@@ -402,6 +402,33 @@ linux-tux
 unixbox
 ```
 
+Here is an example durfetch output (without the color, animation or GUI):
+
+```
+            Software                                                _...         .
+                                                                 .;i;'`          `4.
+         OS: Fedora Linux 39 (KDE Plasma) x86_64                ;;` `-..,,._      j;t
+       Host: 20JVS0W500 ThinkPad L470 W10DG      ..........     ';    `""``"""-..4i; ;
+     Kernel: 6.8.4-200.fc39.x86_64               :  ..  . :      .` .d$L .d8:  `;;;  ;
+      Shell: bash 5.2.26                         :........`     .` j`  `jF```L  `` .`
+   Terminal: /dev/pts/23                         : .     |\.    ; jM,_, $L   ;L  -`
+       Font:                                     :   ;.  L_ >  .` `4M; ;MMMM$MF  `.   
+   Packages: 2701 (rpm)                          .._ ;_`>  \\ ;     ;    ;;`"`    ;   
+    Desktop:                                     . /   \\  ; ;`.  \ ``--`  _.    ;    
+         WM:                                      \ \._.'``.;`  "-.`.__..-`   _.`     
+   WM Theme:                                     : `"----". `. _   `"-;;--"`  `.      
+                                                 :--------.`..l_`;  ;  _    .  `.     
+                                                 : .:.. . :  (_)_`;"` ; ;_.-"   ;     
+            Hardware                             :--------:   (_/;_;.`         .`     
+                                                 :      . :     `._\`.   __.--` ;
+ CPU: Intel i3-6006U (4) @ 2.000GHz              :--------:       /--.```.._ .._`._
+ GPU: Intel Skylake GT2 [HD Graphics 520]        :........:    __.;--.`;`--;`_ .;. ``--...
+ RAM: 13776MiB / 15869MiB                                 .;i$b.`\``--.;`-.; " ;  ````---.``.
+ Res: 1920x1080                                           ;bggg$; ;8$$b.`;;;;;.i;    .-`\-`.`
+                                                           ``"""`jbgggii;.,,;;"`  .-`     \`
+                                                                  ``"""""```     ``````````
+```
+
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
