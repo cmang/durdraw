@@ -289,7 +289,7 @@ menuBorderColor: the color of the border around menus
 
 ## DURFETCH
 
-Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and quires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch.
+Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch.
 
 Note that this feature is beta, but can be fun to play with. If anyone wants to improve this feature, please feel free.
 
