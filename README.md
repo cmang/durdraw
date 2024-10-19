@@ -9,6 +9,7 @@ Durdraw
 
 ![durdraw-0 28-demo](https://github.com/user-attachments/assets/3bdb0c46-7f21-4514-9b48-ac00ca62e68e)
 
+
 ## OVERVIEW
 
 Durdraw is an ASCII, Unicode and ANSI art editor for UNIX-like systems (Linux,
