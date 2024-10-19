@@ -37,7 +37,7 @@ def main(fetch_args=None):
     parserFilenameMutex = parser.add_mutually_exclusive_group()
     parserColorModeMutex = parser.add_mutually_exclusive_group()
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
-    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
+    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur, .ANS or .ASC file or files, then exit",
                     nargs='+')
     parser.add_argument("-d", "--delayexit", help="Wait X seconds after playback before exiting (requires -p)", nargs=1, type=float)
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
@@ -59,7 +59,8 @@ def main(fetch_args=None):
     parser.add_argument("--cp437", help="Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8. (Requires CP437 capable terminal and font) (beta)", action="store_true")
     parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an .ansi file and exit")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
-    parser.add_argument("--mental", action="store_true", help="Enable experimental (not ready for prime time) options")
+    #--mental -- Enable experimental (not ready for prime time) options
+    parser.add_argument("--mental", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--fetch", help="Replace fetch strings with Neofetch output", action="store_true")
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
@@ -138,6 +139,8 @@ def main(fetch_args=None):
             if 'scroll-colors' in mainConfig:
                 if mainConfig.getboolean('scroll-colors'):
                     app.scrollColors = True
+            if 'mental-mode' in mainConfig:
+                app.mental = True
         # load theme set in config fileFalse
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
