@@ -6,7 +6,7 @@ with open("README.md") as f_readme:
 
 setup(
     name='durdraw',
-    version='0.28.0-BETA',
+    version='0.28.0',
     author='Sam Foster',
     author_email='samfoster@gmail.com',
     description='Animated Color ASCII and Unicode Art Editor',
