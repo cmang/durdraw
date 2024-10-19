@@ -106,6 +106,12 @@ You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
     $ durdraw -p file1.dur file2.dur file3.dur ...
 ```
 
+Or view a downloaded ANSI artpack with:
+
+```
+    $ durdraw -p *.DIZ *.ASC *.ANS
+```
+
 Other command-line options:
 
 <pre>
