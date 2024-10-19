@@ -251,7 +251,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 
 ## CONFIGURATION
 
-You can create a custom startup file where you can set a theme and option options.
+You can create a custom startup file where you can set a theme and other options.
 
 If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
 
