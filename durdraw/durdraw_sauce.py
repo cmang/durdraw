@@ -30,6 +30,9 @@ class SauceParser():
         self.fileType_offset = 95
         self.tinfo1_offset = 96
         self.tinfo2_offset = 98
+        # Number of lines in the extra SAUCE comment block. 1 byte.  0 indicates no comment block is present. 
+        self.comnt_lines = 105
+        self.comnt_first_line = 133 # comment lines are 64 bytes long
 
         # other stuff
         self.sauce_blob = None
