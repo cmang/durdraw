@@ -104,19 +104,20 @@ Other command-line options:
 
 <pre>
 
-usage: start-durdraw [-h] [-p PLAY [PLAY ...]] [-q | -w | -x TIMES] [--256color | --16color] [-b]
-                     [-W WIDTH] [-H HEIGHT] [-m] [--nomouse] [-A] [-u UNDOSIZE] [-V] [--debug]
+usage: durdraw [-h] [-p PLAY [PLAY ...]] [-d DELAYEXIT] [-x TIMES] [--256color | --16color] [-b] [-W WIDTH] [-H HEIGHT] [-m]
+                     [--wrap WRAP] [--nomouse] [--cursor CURSOR] [--notheme] [--theme THEME] [--cp437] [--export-ansi] [-u UNDOSIZE]
+                     [--fetch] [-V]
                      [filename]
 
 positional arguments:
   filename              .dur or ascii file to load
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -p PLAY [PLAY ...], --play PLAY [PLAY ...]
                         Just play .dur file or files, then exit
-  -q, --quick           Skip startup screen
-  -w, --wait            Pause at startup screen
+  -d DELAYEXIT, --delayexit DELAYEXIT
+                        Wait X seconds after playback before exiting (requires -p)
   -x TIMES, --times TIMES
                         Play X number of times (requires -p)
   --256color            Try 256 color mode
@@ -127,16 +128,17 @@ optional arguments:
   -H HEIGHT, --height HEIGHT
                         Set canvas height
   -m, --max             Maximum canvas size for terminal (overrides -W and -H)
+  --wrap WRAP           Number of columns to wrap lines at when loading ASCII and ANSI files (default 80)
   --nomouse             Disable mouse support
   --cursor CURSOR       Cursor mode (block, underscore, or pipe)
-  --notheme             Disable theme support
+  --notheme             Disable theme support (use default theme)
   --theme THEME         Load a custom theme file
-  --cp437               Encode extended characters using Code Page 437 (IBM-PC/MS-DOS) encoding
-                        instead of Utf-8. (Needs CP437 capable terminal and font)
-  --export-ansi         Export loaded art to an ANSI file and exit
+  --cp437               Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8.
+                        (Requires CP437 capable terminal and font) (beta)
+  --export-ansi         Export loaded art to an .ansi file and exit
   -u UNDOSIZE, --undosize UNDOSIZE
-                        Set the number of undo history states - default is 100. More requires more
-                        RAM, less saves RAM.
+                        Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.
+  --fetch               Replace fetch strings with Neofetch output
   -V, --version         Show version number and exit
 
 </pre>
@@ -283,6 +285,60 @@ promptColor: the color of user prompt messages
 menuItemColor: the color of menu items
 menuTitleColor: the color of menu titles
 menuBorderColor: the color of the border around menus
+```
+
+## DURFETCH
+
+Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and quires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch.
+
+Note that this feature is beta, but can be fun to play with. If anyone wants to improve this feature, please feel free.
+
+Keys will only be replaced if there is enough room in the art for the replacement value.
+
+The following values can be used in your art and automatically interpreted by Durfetch:
+
+```
+{OS}
+{Host}
+{Kernel}
+{Uptime}
+{Packages}
+{Shell}
+{Resolution}
+{DE}
+{WM}
+{WM Theme}
+{Terminal}
+{Terminal Font}
+{CPU}
+{GPU}
+{Memory}
+```
+
+The durfetch executable takes the following command-line paramaters:
+
+```
+usage: durfetch [-h] [-r | -l LOAD] [--linux | --bsd] [filename ...]
+
+An animated fetcher. A front-end for Durdraw and Neofetch integration.
+
+positional arguments:
+  filename              .durf ASCII and ANSI art file or files to use
+
+options:
+  -h, --help            show this help message and exit
+  -r, --rand            Pick a random animation to play
+  -l LOAD, --load LOAD  Load an internal animation
+  --linux               Show a Linux animation
+  --bsd                 Show a BSD animation
+
+Available animations for -l:
+
+bsd
+cm-eye
+linux-fire
+linux-tux
+unixbox
 ```
 
 ## OPTIONAL INSTALLATION
