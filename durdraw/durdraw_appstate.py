@@ -39,7 +39,7 @@ class AppState():
         self.maxColors = 256
         self.iceColors = False
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
-        self.showBgColorPicker = True # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
+        self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
