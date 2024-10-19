@@ -6,6 +6,7 @@ import pdb
 import pickle
 import subprocess
 import sys
+import threading
 from sys import version_info 
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
@@ -13,15 +14,33 @@ import durdraw.durdraw_sauce as dursauce
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
-    def __init__(self): # User friendly defeaults
+    def __init__(self):
+
+        # Check for optional dependencies
+        #self.ansiLove = self.isAppAvail("ansilove")
+        #self.neofetch = self.isAppAvail("neofetch")
+        #self.PIL = self.checkForPIL()
+
+        self.ansiLove = None
+        self.neofetch = None
+        self.PIL = None
+        self.check_dependencies()
+
+        # User friendly defeaults
         self.quickStart = False
-        self.showStartupScreen = True
+        self.mental = False # Mental mode - enable experimental options/features
+        self.showStartupScreen = False
+        self.narrowWindow = False
         self.curOpenFileName = ""
         python_version = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
         self.pyVersion = python_version
         self.colorMode = "256"  # or 16, or possibly "none" or "true" or "rgb" (24 bit rgb "truecolor")
+        self.fileColorMode = None
         self.maxColors = 256
         self.iceColors = False
+        self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
+        self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
+        self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.renderMouseCursor = False      # show Paint or Draw cursor in canvas
@@ -31,6 +50,11 @@ class AppState():
         self.totalBgColors = 8
         self.defaultFgColor = 7
         self.defaultBgColor = 0
+        self.width = 80     # default canvas width/columns
+        self.height = 23    # default canvas height/lines
+        self.wrapWidth = 80    # Default width to wrap at when loading ASCII files (.asc/.txt)
+        self.minWindowWidth = 40    # smaller than this, and Durdraw complains that it can't draw the UI
+        self.full_ui_width = 80   # smaller than this, and draw the streamlined UI
         self.stickyColorPicker = True # true to keep color picker on screen
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
@@ -45,11 +69,13 @@ class AppState():
         #self.characterSet = "Unicode Block"
         self.unicodeBlock = "Braille Patterns"  # placeholder during initialization
         self.cursorMode = "Move"  # Move/Select, Draw and Color
+        self.fetchMode = False    # use neofetch, replace {variables} in dur file
+        self.fetchData = None       # a {} dict containing key:value for neofetch output.
+        self.inferno = None
+        self.inferno_opts = None
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
-        self.ansiLove = self.isAppAvail("ansilove")
-        self.PIL = self.checkForPIL()
         self.undoHistorySize = 100  # How far back our undo history can
         self.playbackRange = (1,1)
         self.drawChar = '$'
@@ -81,7 +107,6 @@ class AppState():
         self.durhelp256_page2_fullpath = None
         self.durhelp16_fullpath = None
         self.durhelp16_page2_fullpath = None
-        self.showBgColorPicker = False  # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         # This doesn't work yet (color pairs past 256 colors. They set, but the background color doesn't get set.
         #if sys.version_info >= (3, 10):
         #    if curses.has_extended_color_support(): # Requires Ncures 6
@@ -132,6 +157,23 @@ class AppState():
             }
         self.theme = self.theme_16
 
+    def maximize_canvas(self):
+        term_size = os.get_terminal_size()
+        if term_size[0] > 80:
+           self.width = term_size[0]
+        if term_size[1] > 24:
+            self.height = term_size[1] - 2
+
+    def check_dependencies(self):
+        dependency_thread = threading.Thread(target=self.thread_check_dependencies)
+        dependency_thread.start()
+
+    def thread_check_dependencies(self):
+        # Check for optional dependencies
+        self.ansiLove = self.isAppAvail("ansilove")
+        self.neofetch = self.isAppAvail("neofetch")
+        self.PIL = self.checkForPIL()
+
     def setCursorModeMove(self):
         self.cursorMode="Move"
 
@@ -162,6 +204,19 @@ class AppState():
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
 
+    def loadThemeList(self):
+        """ Look for theme files in internal durdraw directory """
+        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
+        # Get a list of files from the themes paths
+        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        self.internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
+        #user_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        #self.user_theme_file_list = glob.glob(f"{user_theme_path}/*.dtheme.ini")
+        # Turn lists into an index of Theme name, Theme type, and Path to 
+        available_themes = []   # populate with a list of dicts containing name=, path=, type=
+        for filename in self.internal_theme_file_list:
+            pass
+
     def loadConfigFile(self):
         # Load configuration filea
         configFullPath = os.path.expanduser("~/.durdraw/durdraw.ini")
@@ -188,15 +243,15 @@ class AppState():
                 self.loadThemeFile(themeConfig['theme-16'], themeMode)
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
-            
 
-    def loadThemeList(self):
-        """ Look for theme files in internal durdraw directory """
-        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
-        # Get a list of files from the themes paths
-        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
-        internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
-        pass
+    def getConfigOption(self, section: str, item: str):
+        # section = something like [Main], item = something like color-mode:
+        try:    # see if section and item exist, otherwise return False
+            configSection = self.configFile[section]
+            configItem = configSection[item]
+            return configItem
+        except KeyError:
+            return False
 
     def loadThemeFile(self, themeFilePath, themeMode):
         # If there is a theme set, use it
@@ -249,6 +304,38 @@ class AppState():
             #    return False
             return False
         return True
+
+    def loadDurFileToMov(self, fileName):
+        """ Takes a file path, returns a movie object """
+        fileName = os.path.expanduser(fileName)
+        #self.helpMov = Movie(self.opts) # initialize a new movie to work with
+        try:
+            f = open(fileName, 'rb')
+        except Exception as e:
+            return False
+        if (f.read(2) == b'\x1f\x8b'): # gzip magic number
+            # file == gzip compressed
+            f.close()
+            try:
+                f = gzip.open(fileName, 'rb')
+            except Exception as e:
+                return False
+        else:
+            f.seek(0)
+        try:    # Load json help file
+            #pdb.set_trace()
+            loadedContainer = durfile.open_json_dur_file(f, self)
+            opts = loadedContainer['opts']
+            mov = loadedContainer['mov']
+            return mov, opts
+        except:
+            #pass    # loading json help file failed for some reason, so...
+            return False
+
+
+    def loadHelpFileThread(self, helpFileName):
+        help_loading_thread = threading.Thread(target=self.loadHelpFile, args=(helpFileName,))
+        help_loading_thread.start()
 
     def loadHelpFile(self, helpFileName, page=1):
         helpFileName = os.path.expanduser(helpFileName)

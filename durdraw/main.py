@@ -13,6 +13,7 @@ from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
 import durdraw.help
+import durdraw.neofetcher as neofetcher
 
 class ArgumentChecker:
     """ Place to hold any methods for verifying CLI arguments, beyond
@@ -25,8 +26,8 @@ class ArgumentChecker:
         else:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
-def main():
-    DUR_VER = '0.27.1'
+def main(fetch_args=None):
+    DUR_VER = '0.28.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = 'Durdraw'
@@ -36,14 +37,9 @@ def main():
     parserFilenameMutex = parser.add_mutually_exclusive_group()
     parserColorModeMutex = parser.add_mutually_exclusive_group()
     parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
-    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur file or files, then exit",
+    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur, .ANS or .ASC file or files, then exit",
                     nargs='+')
     parser.add_argument("-d", "--delayexit", help="Wait X seconds after playback before exiting (requires -p)", nargs=1, type=float)
-    #parserStartScreenMutex.add_argument("-q", "--quick", help="Skip startup screen",
-    parserStartScreenMutex.add_argument("--startup", help="Show startup screen",
-                    action="store_true")
-    parserStartScreenMutex.add_argument("-w", "--wait", help="Pause at startup screen",
-                    action="store_true")
     parserStartScreenMutex.add_argument("-x", "--times", help="Play X number of times (requires -p)",
                     nargs=1, type=int)
     parserColorModeMutex.add_argument("--256color", help="Try 256 color mode", action="store_true", dest='hicolor')
@@ -52,6 +48,7 @@ def main():
     parser.add_argument("-W", "--width", help="Set canvas width", nargs=1, type=int)
     parser.add_argument("-H", "--height", help="Set canvas height", nargs=1, type=int)
     parser.add_argument("-m", "--max", help="Maximum canvas size for terminal (overrides -W and -H)", action="store_true")
+    parser.add_argument("--wrap", help="Number of columns to wrap lines at when loading ASCII and ANSI files (default 80)", nargs=1, type=int)
     parser.add_argument("--nomouse", help="Disable mouse support",
                     action="store_true")
     parser.add_argument("--cursor", help="Cursor mode (block, underscore, or pipe)", nargs=1)
@@ -62,48 +59,46 @@ def main():
     parser.add_argument("--cp437", help="Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8. (Requires CP437 capable terminal and font) (beta)", action="store_true")
     parser.add_argument("--export-ansi", action="store_true", help="Export loaded art to an .ansi file and exit")
     parser.add_argument("-u", "--undosize", help="Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.", nargs=1, type=int)
+    #--mental -- Enable experimental (not ready for prime time) options
+    parser.add_argument("--mental", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--fetch", help="Replace fetch strings with Neofetch output", action="store_true")
     parser.add_argument("-V", "--version", help="Show version number and exit",
                     action="store_true")
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    args = parser.parse_args()
+            
+    args = parser.parse_args(fetch_args)
+
     if args.version:
         print(DUR_VER)
         exit(0)
     if args.times and not args.play:
         print("-x option requires -p")
         exit(1)
+
+    # Initialize application
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
     app.setDurVer(DUR_VER)
     app.setDurFileVer(DUR_FILE_VER)
     app.setDebug(DEBUG_MODE)
+    term_size = os.get_terminal_size()
+
+    # Parse general command-line paramaters
     if args.debug:
         app.setDebug(True)
     if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
-    app.showStartupScreen=True
-
-
-    term_size = os.get_terminal_size()
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
     if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
         app.width = args.width[0]
-    else:
-        app.width = 80      # "sane" default screen size, 80x24..
     #if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
     if args.height and args.height[0] > 1 and args.height[0] < term_size[1]:
         app.height = args.height[0]
-    else:
-        app.height = 24 - 1
     if args.max:
-        if term_size[0] > 80:
-           app.width = term_size[0]
-        if term_size[1] > 24:
-            app.height = term_size[1] - 2
-    if args.play:
-        app.showStartupScreen=False
-    elif not args.startup:  # quick startup is now the default behavior
-        app.showStartupScreen=False
-        app.quickStart = True
+        app.maximize_canvas()
+    if args.wrap:
+        app.wrapWidth = args.wrap[0]
+    app.showStartupScreen=False
+    app.quickStart = True
     if args.nomouse:
         app.hasMouse = False
     if args.notheme:
@@ -125,8 +120,28 @@ def main():
         app.blackbg = False
     else: app.blackbg = True
 
-    # load configuration file and theme
+    # load configuration file
     if app.loadConfigFile():
+        # Load main optiona
+        if 'Main' in app.configFile:
+            mainConfig = app.configFile['Main']
+            # load color mode 
+            if 'color-mode' in mainConfig:
+                app.colorMode = mainConfig['color-mode']
+            if 'disable-mouse' in mainConfig:
+                if mainConfig.getboolean('disable-mouse'):
+                    app.hasMouse = False
+            if 'max-canvas' in mainConfig:
+                if mainConfig.getboolean('max-canvas'):
+                    app.maximize_canvas()
+            if 'cursor-mode' in mainConfig:
+                app.screenCursorMode = mainConfig['cursor-mode']
+            if 'scroll-colors' in mainConfig:
+                if mainConfig.getboolean('scroll-colors'):
+                    app.scrollColors = True
+            if 'mental-mode' in mainConfig:
+                app.mental = True
+        # load theme set in config fileFalse
         if app.colorMode == "256":
             app.loadThemeFromConfig("Theme-256")
         else:
@@ -147,23 +162,23 @@ def main():
 
     # Load help file - first look for resource path, eg: python module dir
     durhelp_fullpath = ''
-    durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
+    #durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
     durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur")
     #durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page1.dur")
-    durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
+    #durhelp256_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-page2.dur")
     durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-long.dur")
     #durhelp16_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page1.dur")
-    durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
+    #durhelp16_page2_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-16-page2.dur")
     app.durhelp256_fullpath = durhelp256_fullpath
-    app.durhelp256_page2_fullpath = durhelp256_page2_fullpath
+    #app.durhelp256_page2_fullpath = durhelp256_page2_fullpath
     app.durhelp16_fullpath = durhelp16_fullpath
-    app.durhelp16_page2_fullpath = durhelp16_page2_fullpath
+    #app.durhelp16_page2_fullpath = durhelp16_page2_fullpath
     #app.loadHelpFile(durhelp_fullpath)
-    app.loadHelpFile(durhelp16_fullpath)
-    app.loadHelpFile(durhelp16_page2_fullpath, page=2)
-    if not app.hasHelpFile:
-        durhelp_fullpath = 'durdraw/help/durhelp.dur'
-        app.loadHelpFile(durhelp_fullpath)
+    #app.loadHelpFile(durhelp16_fullpath)
+    #app.loadHelpFile(durhelp16_page2_fullpath, page=2)
+    #if not app.hasHelpFile:
+    #    durhelp_fullpath = 'durdraw/help/durhelp.dur'
+    #    app.loadHelpFile(durhelp_fullpath)
 
     if app.showStartupScreen:
         print(durlogo)
@@ -194,10 +209,7 @@ def main():
             print(f"Theme: Default (none)")
 
         print("Undo history size = %d" % app.undoHistorySize)
-        if app.width == 80 and app.height == 24:
-            print("Canvas size: %i columns, %i lines (Default)" % (app.width, app.height))
-        else:
-            print("Canvas size: %i columns, %i lines" % (app.width, app.height))
+        print("Canvas size: %i columns, %i lines" % (app.width, app.height))
         if args.wait:
             try:
                 choice = input("Press Enter to Continue...")
@@ -210,6 +222,17 @@ def main():
     if args.play:
         app.playOnlyMode = True
         app.editorRunning = False
+
+    if args.mental:
+        # Enable exprimental options
+        app.mental = True
+
+    if args.fetch:
+        #app.playOnlyMode = True
+        app.fetchMode = True
+        app.fetchData = neofetcher.run()
+        #app.editorRunning = False
+        #app.drawBorders = False
     #ui = curses.wrapper(UI_Curses, app)
     ui = UI_Curses(app)
     if app.hasMouse:
@@ -218,7 +241,7 @@ def main():
         ui.enableTransBackground()
     if args.filename:
         ui.loadFromFile(args.filename, 'dur')
-    if args.play:
+    if args.play or args.fetch:
         # Just play files and exit
         app.drawBorders = False
         if args.times:
@@ -226,6 +249,8 @@ def main():
         for movie in args.play:
             ui.stdscr.clear()
             ui.loadFromFile(movie, 'dur')
+            if app.fetchMode:
+                ui.replace_neofetch_keys()
             ui.startPlaying()
         if args.delayexit:
             time.sleep(args.delayexit[0])

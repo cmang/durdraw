@@ -136,7 +136,10 @@ class MenuHandler:
             self.panel.move(self.menuOriginLine, self.menu.y)
             self.panel.show()
         except: # The window was probably too short, so panel.move() returns ERR.
-            return False
+            curses_cursorOn()
+            self.menu.hide()
+            response = "Close"  # default thing to do when done, returned to menu wrapper
+            return response
         self.curses_win.keypad(True)
         curses.panel.update_panels()
         curses.doupdate()
@@ -333,7 +336,8 @@ class DrawCharPickerHandler:
         prompting = True
         curses.flushinp()
         while prompting:
-            c = self.window.getch()
+            #c = self.window.getch()
+            c = self.window.get_wch()
             time.sleep(0.01)
             if c in [curses.KEY_F1]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f1'])
@@ -367,7 +371,11 @@ class DrawCharPickerHandler:
                 prompting = False
             elif c in [27, 13, curses.KEY_ENTER]:   # 27 = esc, 13 = enter, cancel
                 prompting = False
-            else:
+            elif type(c) == str:    # Is a printable/unicode character
+                if c.isprintable():
+                    self.caller.appState.drawChar = c
+                prompting = False
+            else:   # is an integer, but probably still a printable character
                 try:
                     if chr(c).isprintable():
                         newChar = chr(c)
@@ -523,7 +531,7 @@ class ColorPickerHandler:
                 bg += 1
                 if bg == 8:
                     bg = 0
-            if fg == self.colorPicker.caller.colorfg or fg == 0 and colorbg == 8:
+            if fg == self.colorPicker.caller.colorfg or fg == 0 and bg == 8:
                 if fg == 1: # black
                     if self.appState.colorPickerSelected:
                         if fg == bg:
@@ -543,7 +551,7 @@ class ColorPickerHandler:
                             else:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE | curses.A_BOLD)
                         if self.colorMode == "16":
-                            if fg > 8:
+                            if fg > 8 and self.appState.iceColors == False:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE | curses.A_BOLD)
                             else:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_UNDERLINE )
@@ -555,12 +563,12 @@ class ColorPickerHandler:
                                 curses_addstr(self.window, line, col, 'F', color_pair | curses.A_BOLD)
                         if self.colorMode == "16":
                             if fg == bg:
-                                if fg > 8:
+                                if fg > 8 and self.appState.iceColors == False:
                                     curses_addstr(self.window, line, col, 'X', color_pair | curses.A_BOLD)
                                 else:
                                     curses_addstr(self.window, line, col, 'X', color_pair)
                             else:
-                                if fg > 8:
+                                if fg > 8 and self.appState.iceColors == False:
                                     curses_addstr(self.window, line, col, 'F', color_pair | curses.A_BOLD)
                                 else:
                                     curses_addstr(self.window, line, col, 'F', color_pair)
@@ -574,7 +582,7 @@ class ColorPickerHandler:
             # 16 color, black background (8), showing color 8 (grey)
             elif self.colorMode == "16" and fg == 9 and bg == 9:
                 # draw fill character unmodified
-                if fg > 8:
+                if fg > 8 and self.appState.iceColors == False:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
                 else:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair)
@@ -607,7 +615,7 @@ class ColorPickerHandler:
                     curses_addstr(self.window, line, col, self.fillChar, color_pair)
                 elif self.colorMode == "16":
                     # draw bright colors in 16 color mode
-                    if fg > 8:
+                    if fg > 8 and self.appState.iceColors == False:
                         curses_addstr(self.window, line, col, self.fillChar, color_pair | curses.A_BOLD)
                         #debug_string = str(color_pair)
                         #self.colorPicker.caller.notify(debug_string)
@@ -622,9 +630,9 @@ class ColorPickerHandler:
         curses_addstr(self.window, line, col + 5, "     ", color_pair)
         curses_addstr(self.window, line, col + 5, str(self.colorPicker.caller.colorfg), color_pair)
 
-    def showFgPicker(self):
+    def showFgPicker(self, message=None):
         #self.colorPicker.caller.notify(f"showFgPicker")
-        self.showColorPicker(type="fg")
+        self.showColorPicker(type="fg", message=message)
 
     def move_up_256(self):
         if self.colorMode == "256":
@@ -650,7 +658,7 @@ class ColorPickerHandler:
                 color = self.totalColors
             self.colorPicker.caller.setFgColor(color)
 
-    def showColorPicker(self, type="fg"):
+    def showColorPicker(self, type="fg", message=None):
         #self.colorPicker.caller.notify(f"showColorPicker")
         """ Shows picker, has UI loop for letting user pick color with keyboard or mouse """
         if type == "fg":
@@ -688,7 +696,7 @@ class ColorPickerHandler:
             #self.colorPicker.caller.drawStatusBar()
             self.update()
             c = self.window.getch()
-            if c in [98, curses.KEY_LEFT]:
+            if c in [98, curses.KEY_LEFT, ord('h')]:
                 if color == 0:
                     color = self.totalColors
                 else:
@@ -697,7 +705,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c in [102, curses.KEY_RIGHT]:
+            elif c in [102, curses.KEY_RIGHT, ord('l')]:
                 color += 1
                 #if color >= curses.COLORS:
                 if color > self.totalColors:
@@ -706,7 +714,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c == curses.KEY_UP:
+            elif c in [curses.KEY_UP, ord('k')]:
                 if self.colorMode == "256":
                     if color < 32:
                         color -= 16
@@ -722,7 +730,7 @@ class ColorPickerHandler:
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
-            elif c == curses.KEY_DOWN:
+            elif c in [curses.KEY_DOWN, ord('j')]:
                 if self.colorMode == "256":
                     if color < 16:
                         color += 16
@@ -740,7 +748,7 @@ class ColorPickerHandler:
                 color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
-                self.colorPicker.caller.drawStatusBar()
+                elf.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
                 #color = 255
                 color = self.totalColors
@@ -771,20 +779,24 @@ class ColorPickerHandler:
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
                     curses.BUTTON4_PRESSED = 0
-                if mouseState & curses.BUTTON4_PRESSED: # wheel up
+                if mouseState & curses.BUTTON4_PRESSED: # wheel down?
                     color += 1
-                    if color >= curses.COLORS:
-                        color = 0
-                    #self.colorPicker.caller.colorfg = color
+                    if color > appState.totalFgColors:
+                        if appState.colorMode == "16":
+                            color = 1
+                        elif appState.colorMode == "256":
+                            color = 0
                     self.colorPicker.caller.setFgColor(color)
                     self.updateFgPicker()
                     self.colorPicker.caller.drawStatusBar()
-                elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                    if color == 0:
-                        color = curses.COLORS - 1
-                    else:
-                        color -= 1
-                    #self.colorPicker.caller.colorfg = color
+                elif mouseState & curses.BUTTON5_PRESSED:   # wheel up?
+                    color -= 1
+                    if appState.colorMode == "16":
+                        if color <= 0:
+                            color = appState.totalFgColors 
+                    elif appState.colorMode == "256":
+                        if color < 0:
+                            color = appState.totalFgColors 
                     self.colorPicker.caller.setFgColor(color)
                     self.updateFgPicker()
                     self.colorPicker.caller.drawStatusBar()
@@ -794,14 +806,6 @@ class ColorPickerHandler:
                     self.gotClick(mouseX, mouseY)
                     prompting = False
 
-                    #clickedCol = mouseX - self.x
-                    #clickedLine = mouseY - self.origin
-                    #if mouseY < self.origin + self.height:
-                    #    if self.colorGrid[clickedLine][clickedCol] != 0:
-                    #        # We're in the grid. Set color
-                    #        color = self.colorGrid[clickedLine][clickedCol]
-                    #        self.colorPicker.caller.setFgColor(color)
-                    #        self.updateFgPicker()
                 elif mouseY < mov.sizeY and mouseX < mov.sizeX \
                         and mouseY + appState.topLine < appState.topLine + self.colorPicker.caller.statusBarLineNum:
                     # we did click in the canvas.
@@ -824,6 +828,9 @@ class ColorPickerHandler:
                         self.hide()
                     #self.hide()
                     prompting = False
+
+            # Show message, eg: "pick new color"
+            #curses_addstr(self.window, self.appState.realmaxX - 2, 0, message, curses.color_pair(self.appState.theme['notificationColor']))
 
         if not self.appState.colorPickerSelected:
             if self.appState.sideBarShowing:
@@ -850,10 +857,22 @@ class ColorPickerHandler:
             clickedCol = mouseX - self.x
             clickedLine = mouseY - self.origin
             if mouseY < self.origin + self.height:
-                if self.colorGrid[clickedLine][clickedCol] != 0:
-                    color = self.colorGrid[clickedLine][clickedCol]
-                    self.colorPicker.caller.setFgColor(color)
-                    self.updateFgPicker()
+                if self.appState.colorMode == "16":
+                    if self.colorGrid[clickedLine][clickedCol] != 0:
+                        color = self.colorGrid[clickedLine][clickedCol]
+                        self.colorPicker.caller.setFgColor(color)
+                        self.updateFgPicker()
+                elif self.appState.colorMode == "256":
+                    if self.colorGrid[clickedLine][clickedCol] != 0:
+                        color = self.colorGrid[clickedLine][clickedCol]
+                        self.colorPicker.caller.setFgColor(color)
+                        self.updateFgPicker()
+                    if self.colorGrid[clickedLine][clickedCol] == 0:
+                        if clickedLine == 0 and clickedCol == 0:    # true black, not a fake black
+                            color = self.colorGrid[clickedLine][clickedCol]
+                            self.colorPicker.caller.setFgColor(color)
+                            self.updateFgPicker()
+                
 
     def gotDoubleClick(self, mouseX, mouseY):
         # set a BG color
@@ -930,6 +949,7 @@ class ButtonHandler:
 
     def draw(self, plusX=0, plusY=9):
         if not self.button.invisible:
+            self.color = curses.color_pair(self.appState.theme['clickColor']) | curses.A_BOLD   # reload color from theme
             textColor = self.color
             if self.button.selected:
                 #curses_notify(self.window, "Tacos")

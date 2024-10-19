@@ -132,10 +132,11 @@ class Movie():
     def __init__(self, opts):
         self.frameCount = 0  # total number of frames
         self.currentFrameNumber = 0
-        self.sizeX = opts.sizeX
-        self.sizeY = opts.sizeY
+        self.sizeX = opts.sizeX     # Number of columns
+        self.sizeY = opts.sizeY     # Number of lines
         self.opts = opts
         self.frames = []
+        self.layers = {}    # Key can be a layer #, or something special. eg: "masks
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1]
@@ -208,6 +209,12 @@ class Movie():
             self.currentFrameNumber -= 1
             self.currentFrame = self.frames[self.currentFrameNumber - 1]
 
+    def hasMultipleFrames(self):
+        if len(self.frames) > 1:
+            return True
+        else:
+            return False
+
     def growCanvasWidth(self, growth):
         self.sizeX += growth
         self.opts.sizeX += growth
@@ -217,6 +224,41 @@ class Movie():
         self.sizeY = self.sizeY - shrinkage
         self.opts.sizeY = self.opts.sizeY - shrinkage 
         #self.width = self.width - shrinkage
+
+    def search_and_replace_color_pair(self, old_color, new_color, frange=None):
+        if frange != None:  # apply to all frames in range
+            for frameNum in range(frange[0] - 1, frange[1]):
+            #for frame in self.frames:
+                frame = self.frames[frameNum]
+                line_num = 0
+                col_num = 0
+                for line in frame.newColorMap:
+                    for pair in line:
+                        if pair == old_color:
+                            try:
+                                frame.newColorMap[line_num][col_num] = new_color
+                            except:
+                                pdb.set_trace()
+                            #found = True
+                        col_num += 1
+                    line_num += 1
+                    col_num = 0
+        else:   # only apply to current frame
+            frame = self.currentFrame
+            line_num = 0
+            col_num = 0
+            for line in frame.newColorMap:
+                for pair in line:
+                    if pair == old_color:
+                        try:
+                            frame.newColorMap[line_num][col_num] = new_color
+                        except:
+                            pdb.set_trace()
+                        #found = True
+                    col_num += 1
+                line_num += 1
+                col_num = 0
+
 
     def search_and_replace_color(self, old_color :int, new_color :int):
         found = False
@@ -384,6 +426,25 @@ class Movie():
             for line in frame.newColorMap:
                 for pair in line:
                     pair[1] = 0
+        return True
+
+    def strip_unprintable_characters(self):
+        """ Remove all non-printable characters from canvas """
+        #frame_num = 0
+        for frame in self.frames:
+            line_num = 0
+            col_num = 0
+            for line in frame.content:
+                for char in line:
+                    if char.isprintable():
+                        pass
+                    else:   # Not a printable character, so replace it with a ' '
+                        #line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
+                        #line = list(line_str)
+                        frame.content[line_num][col_num] = ' '
+                    col_num += 1
+                col_num = 0
+                line_num += 1
         return True
 
     def shift_right(self):
