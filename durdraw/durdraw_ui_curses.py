@@ -4702,8 +4702,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.switchTo256ColorMode()
                     self.loadFromFile(shortfile, 'dur')
 
-                if fileCharEncoding != self.appState.charEncoding:
-                    self.notify(f"Warning: File uses {fileCharEncoding} character encoding, but Durdraw is in {self.appState.charEncoding} mode.")
+                #if fileCharEncoding != self.appState.charEncoding:
+                #    self.notify(f"Warning: File uses {fileCharEncoding} character encoding, but Durdraw is in {self.appState.charEncoding} mode.")
                 newMovie =  durfile.open_json_dur_file(f, self.appState)
                 self.opts = newMovie['opts']
                 self.mov = newMovie['mov']
