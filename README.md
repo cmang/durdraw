@@ -115,7 +115,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -p PLAY [PLAY ...], --play PLAY [PLAY ...]
-                        Just play .dur file or files, then exit
+                        Just play .dur, .ANS or .ASC file or files, then exit
   -d DELAYEXIT, --delayexit DELAYEXIT
                         Wait X seconds after playback before exiting (requires -p)
   -x TIMES, --times TIMES
