@@ -408,8 +408,6 @@ Here are some durfetch examples:
 
 ![unixy3](https://github.com/user-attachments/assets/812514d4-0216-4f41-8384-84563fa664b7)
 
-![durfetch-colorful3](https://github.com/user-attachments/assets/a91834bb-b880-4cb3-a902-4f509a867420)
-
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
