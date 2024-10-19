@@ -1006,7 +1006,7 @@ class UserInterface():  # Separate view (curses) from this controller
         infoStringList.append(f"Color mode: {colorMode}")
         if self.appState.fileColorMode:
             infoStringList.append(f"File color mode: {self.appState.fileColorMode}")
-        infoStringList.append(f"Playing: {self.playing}")
+        infoStringList.append(f"Playing: {self.playing} ")
 
         if len(infoStringList) > 0:
             infoString = ', '.join(infoStringList)
