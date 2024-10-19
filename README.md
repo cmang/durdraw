@@ -245,8 +245,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 
 ## CONFIGURATION
 
-You can create a custom startup file where you can set a theme.
-
+You can create a custom startup file where you can set a theme and option options.
 
 If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
 
@@ -256,26 +255,31 @@ If you did not already do so during installation, you can install a sample confi
 
 This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
 
-
-Here is an example durdraw.ini file:
+Here is an example durdraw.ini file, showing the available options:
 
 <pre>
-; Durdraw 0.20 Configuration File
+; Durdraw 0.28.0 Configuration File
 
 [Main]
+
 ; color-mode sets the color mode to start in. Available options: 16, 256
 ;color-mode: 16
-; disable-mouse.. disablse the mouse.
+
+; disable-mouse disablse the mouse.
 ;disable-mouse: True
+
 ; max-canvas atuomatically sets the canvas size to the terminal window size at startup.
 ;max-canvas: True
+
 ; Cursor mode requests a cursor type from the terminal. Available options: block, underscore, pipe
 ;cursor-mode: underscore
 
+; When scroll-colors is enabled, using the mouse wheel in the canvas changes the
+; foreground color instead of moving the cursor.
+;scroll-colors: True
+
 [Theme]
-; theme-16 points to the theme file to use in 16 color mode.
-theme-16: ~/.durdraw/themes/purpledrank-16.dtheme.ini
-; theme-256 points to the theme file to use in 256 color mode.
+theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 </pre>
 
