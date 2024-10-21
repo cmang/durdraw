@@ -3739,9 +3739,8 @@ class UserInterface():  # Separate view (curses) from this controller
             except urllib.request.HTTPError:
                 self.notify("There was an error downloading the file.")
             # save it to a temporary file
-            with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            with tempfile.NamedTemporaryFile() as fp:
                 fp.write(file_data)
-                fp.close()
                 # Clear the canvas and Open it 
                 load_filename = fp.name
                 self.clearCanvas(prompting=False)
@@ -3749,7 +3748,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.move_cursor_topleft()
                 self.stdscr.clear()
                 self.hardRefresh()
-            # File now deletes after With ends
+                fp.close()
                 
 
         elif uri_type == "local" and load_filename != False:   # if not False
