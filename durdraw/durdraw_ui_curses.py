@@ -3745,6 +3745,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 load_filename = fp.name
                 self.clearCanvas(prompting=False)
                 self.loadFromFile(load_filename, 'dur')
+                self.appState.curOpenFileName = pathlib.Path(url).name
                 self.move_cursor_topleft()
                 self.stdscr.clear()
                 self.hardRefresh()
