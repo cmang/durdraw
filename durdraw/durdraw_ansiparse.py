@@ -22,6 +22,7 @@ import pdb
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_sauce as dursauce
+import durdraw.plugins.convert_charset as durchar
 
 def ansi_color_to_durcolor(ansiColor):
     colorName = ansi_color_to_durcolor_table[ansiColor]
@@ -172,7 +173,7 @@ def get_width_and_height_of_ansi_blob(text, width=80):
     height = line_num
     return width, height
 
-def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, maxWidth=80):
+def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, convert_control_codes=True, maxWidth=80):
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
     if filename:
@@ -422,6 +423,9 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 line_num += 1
             character = text[i]
             try:
+                # Convert CP437 control codes
+                if ord(character) < 0x19:
+                    character = chr(durchar.cp437_control_codes_to_utf8[ord(character)])
                 new_frame.content[line_num][col_num] = character
             except IndexError:
                 parse_error = True
