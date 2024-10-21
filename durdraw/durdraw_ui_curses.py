@@ -4521,17 +4521,37 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
 
 
-                    else:
-                        search_files_list = os.listdir(current_directory)
-                    for file in search_files_list:
-                        for mask in masks:
-                            if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                matched_files.append(file)
-                                break
-                    for dirname in folders:
-                        file_list.append(dirname)
-                    file_list += sorted(matched_files)
-                elif c in [27]:     # esc
+                    else:   # update with files, not 16c
+                        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        # remove leading paths
+                        new_folders = []
+                        for path_string in folders:
+                            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                        folders = new_folders
+                        for dirname in folders:
+                            file_list.append(dirname)
+                        file_list += sorted(matched_files)
+                        # stash away file list so we can use it for search, and pop it back
+                        # in when user hits esc
+                        full_file_list = file_list
+
+                        for file in os.listdir(current_directory):
+                            for mask in masks:
+                                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                    matched_files.append(file)
+                                    break
+
+                                    search_files_list = os.listdir(current_directory)
+                                for file in search_files_list:
+                                    for mask in masks:
+                                        if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                            matched_files.append(file)
+                                            break
+                                for dirname in folders:
+                                    file_list.append(dirname)
+                                file_list += sorted(matched_files)
+
+                if c in [27]:     # esc
                     prompting = False
                 c = None
 
@@ -5762,6 +5782,7 @@ class UserInterface():  # Separate view (curses) from this controller
                duration=sleeptime * 1000, loop=0)
 
     def showHelp(self):
+        self.stdscr.clear()
         if self.appState.hasHelpFile:
             #self.showAnimatedHelpScreen()
             #self.showAnimatedHelpScreen(page=2)
