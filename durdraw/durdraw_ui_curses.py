@@ -4359,7 +4359,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             url = sixteenc_api.get_url_for_file(pack, preview_filename)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                     pass
-                if url != None:
+                if url != None and url != '':
                     #self.notify(f"preview URL: {url}")
                     try:
                         with urllib.request.urlopen(url) as response:
