@@ -40,6 +40,8 @@ class AppState():
         self.iceColors = False
         self.sixteenc_available = True # Enabled if 16colo.rs browsing is available
         self.sixteenc_browsing = False   # Enabled if we are currently browsing 16c
+        self.sixteenc_dizcache = {} # {"packname": dizdata} 
+        self.sixteenc_cached_years = [] # [1996, etc]
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
@@ -385,4 +387,6 @@ class AppState():
         #    self.hasHelpFile = False
         #    self.helpMov = None
         #    return False
+
+
 

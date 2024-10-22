@@ -4085,6 +4085,55 @@ class UserInterface():  # Separate view (curses) from this controller
                         selected_item_number = block_list.index(blockname)
                         break   # stop at the first match
 
+    def sixteenc_update_diz_cache(self, year):
+        """ cache file_id.diz files for the packs in a given year.
+          Populate self.appState.sixteenc_dizcache with {"packname": diz_data_frame}
+          diz_data_frame is type Dur Frame
+        """
+        url = None
+        file_data = None
+        preview_mov = None
+
+        if year in self.appState.sixteenc_cached_years:
+            return False
+        else:
+            self.appState.sixteenc_cached_years.append(year)
+
+        # Get list of packs for given year from 16c
+        year_packs = self.sixteenc_api.list_packs_for_year(year)
+        if year_packs == False:
+            # There was a problem getting the packs. HTTP error
+            return False
+        # For each pack in the returned list, see if self.appState.sixteenc_dizcache has
+        # the pack as a key.
+        # If not, download the file_id.diz and populate self.appState.sixteenc_dizcache.
+        for pack in year_packs:
+            if pack not in self.appState.sixteenc_dizcache:
+                pack_files = self.sixteenc_api.list_files_for_pack(pack)
+                #self.notify(f"pack: {pack}, pack_files: {pack_files}")
+                if pack_files != False:
+                    preview_filename="FILE_ID.DIZ"
+                    if "FILE_ID.ANS" in (name.lower() for name in pack_files):
+                        preview_filename = name
+                    elif "FILE_ID.DIZ" in (name.lower() for name in pack_files):
+                        preview_filename = name
+                    url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
+                if url != None and url != '':   # success
+                    #self.notify(f"preview URL: {url}")
+                    try:
+                        with urllib.request.urlopen(url) as response:
+                            file_data = response.read()
+                    except urllib.request.HTTPError:
+                        #self.notify(f"There was an error downloading: {url}")a
+                        return False
+                else:
+                    return False
+                if file_data != None:
+                    decoded_data = file_data.decode('cp437')
+                    load_width = 44     # file_id.diz width
+                    diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
+                    self.appState.sixteenc_dizcache[pack] = diz_frame
+
     def openFilePicker(self):
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
@@ -4095,7 +4144,7 @@ class UserInterface():  # Separate view (curses) from this controller
         file_list = []
         preview_mov = None
         selected_item_number = 0
-        sixteenc_api = None
+        self.sixteenc_api = None
 
         # Set the directory listing for local files
         if self.appState.workingLoadDirectory: 
@@ -4122,9 +4171,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         matched_files.append(file)
                         break
         elif self.appState.sixteenc_browsing:
-            sixteenc_api = SixteenColorsAPI()
+            self.sixteenc_api = SixteenColorsAPI()
             if self.sixteenc_years == None:
-                self.sixteenc_years = sixteenc_api.list_years()
+                self.sixteenc_years = self.sixteenc_api.list_years()
             # Set the initial listing/UI for 16colo.rs browsing
             if self.sixteenc_levels[self.sixteenc_level] == "root":
                 self.sixteenc_current_year = None
@@ -4135,7 +4184,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 search_files_list = file_list
 
             elif self.sixteenc_levels[self.sixteenc_level] == "year":
-                sixteenc_packs = sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
                 folders = ['../'] + sixteenc_packs
                 #file_list = folders
                 file_list = []
@@ -4143,7 +4192,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 search_files_list = file_list
 
             elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                sixteenc_files = sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
+                sixteenc_files = self.sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
                 folders = ['../']
                 #file_list = folders
                 file_list = folders + sixteenc_files
@@ -4197,10 +4246,10 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.appState.sixteenc_browsing:
                 show_modtime = False
                 # If there's no 16c cache, make a new API object and cache the years
-                if sixteenc_api == None:
-                    sixteenc_api = SixteenColorsAPI()
+                if self.sixteenc_api == None:
+                    self.sixteenc_api = SixteenColorsAPI()
                 if self.sixteenc_years == None:
-                    self.sixteenc_years = sixteenc_api.list_years()
+                    self.sixteenc_years = self.sixteenc_api.list_years()
                 # If we aren't in a year, then populate the directory list with years
                 if self.sixteenc_current_year == None:
                     # We are at the top level, so list the years.
@@ -4341,48 +4390,20 @@ class UserInterface():  # Separate view (curses) from this controller
 
             # If there is a preview to load, load it
             if self.appState.sixteenc_browsing:
-                url = None
-                file_data = None
-                preview_mov = None
+                selected_item = file_list[selected_item_number]
                 if self.sixteenc_levels[self.sixteenc_level] == "year":
                     # If a pack is selected, download the file_id.diz and preview it
-                    if {file_list[selected_item_number]} != "../" and {file_list[selected_item_number]} != None:
-                        pack =  file_list[selected_item_number]
-                        pack_files = sixteenc_api.list_files_for_pack(pack)
-                        #self.notify(f"pack: {pack}, pack_files: {pack_files}")
-                        if pack_files != False:
-                            preview_filename="FILE_ID.DIZ"
-                            if "FILE_ID.ANS" in (name.lower() for name in pack_files):
-                                preview_filename = name
-                            elif "FILE_ID.DIZ" in (name.lower() for name in pack_files):
-                                preview_filename = name
-                            url = sixteenc_api.get_url_for_file(pack, preview_filename)
+                    if selected_item != '../':
+                        if selected_item not in self.appState.sixteenc_dizcache:
+                            pass
+                            #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
+                        if selected_item in self.appState.sixteenc_dizcache:
+                            preview_frame = self.appState.sixteenc_dizcache[selected_item]
+                            self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                     pass
-                if url != None and url != '':
-                    #self.notify(f"preview URL: {url}")
-                    try:
-                        with urllib.request.urlopen(url) as response:
-                            file_data = response.read()
-                    except urllib.request.HTTPError:
-                        self.notify(f"There was an error downloading: {url}")
-                if file_data != None:
-                    # Load downloaded file data into preview movie
-                    with tempfile.TemporaryDirectory() as temp_path:
-                        # write file to temp directory, but with original name
-                        temp_filename = pathlib.Path(url).name
-                        preview_filename = temp_path + '/' + temp_filename
-                        #self.notify(f"Full load path: {load_filename}")
-                        with open(preview_filename, mode='wb') as fp:
-                            fp.write(file_data)
-                            load_width = 44     # file_id.diz width
-                            preview_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = preview_filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
-                            #preview_mov_opts = Options(width=preview_frame.width, height=preview_frame.height)
-                            #preview_mov = Movie(preview_mov_opts)
-                            #preview_mov.addFrame(preview_frame)
-                            #preview_mov.deleteCurrentFrame()
-                            #self.refresh(mov=preview_mov, col_offset=40, preview=True)
-                            self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
+
+
 
             #self.stdscr.refresh()
 
@@ -4454,7 +4475,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     self.sixteenc_current_year = file_list[selected_item_number]
                                                 except:
                                                     pdb.set_trace()
-                                                sixteenc_packs = sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
                                                 try:
                                                     folders = ['../'] + sixteenc_packs
                                                 except:
@@ -4617,10 +4638,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         selected_item_number = 0
 
                         # If there's no 16c cache, make a new API object and cache the years
-                        if sixteenc_api == None:
-                            sixteenc_api = SixteenColorsAPI()
+                        if self.sixteenc_api == None:
+                            self.sixteenc_api = SixteenColorsAPI()
                         if self.sixteenc_years == None:
-                            self.sixteenc_years = sixteenc_api.list_years()
+                            self.sixteenc_years = self.sixteenc_api.list_years()
 
                         # If we're at the root, navigate into the selected year
                         if self.sixteenc_levels[self.sixteenc_level] == "root":
@@ -4760,7 +4781,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.sixteenc_current_year = file_list[selected_item_number]
                             except:
                                 pdb.set_trace()
-                            sixteenc_packs = sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                            sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
                             try:
                                 folders = ['../'] + sixteenc_packs
                             except:
@@ -4772,6 +4793,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             selected_item_number = 0
                             top_line = 0
                             search_string = ""
+                            self.sixteenc_update_diz_cache(self.sixteenc_current_year)
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "year":
                             if file_list[selected_item_number] == '../':
@@ -4793,7 +4815,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 # Navigate from year into the pack
                                 self.sixteenc_current_pack = file_list[selected_item_number]
                                 try:
-                                    sixteenc_files = sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
+                                    sixteenc_files = self.sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
                                 except:
                                     pdb.set_trace()
                                 selected_item_number = 0
@@ -4813,7 +4835,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             if file_list[selected_item_number] == '../':
                                 # Navigating back down from pack into year
                                 selected_item_number = 0
-                                sixteenc_packs = sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
                                 try:
                                     folders = ['../'] + sixteenc_packs
                                 except:
@@ -4828,7 +4850,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 # Picked a file, so download and load it :)
                                 filename = file_list[selected_item_number]
                                 #pdb.set_trace()
-                                url = sixteenc_api.get_url_for_file(self.sixteenc_current_pack, filename)
+                                url = self.sixteenc_api.get_url_for_file(self.sixteenc_current_pack, filename)
                                 return url, "remote"
                             c = None
 
