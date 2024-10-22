@@ -4128,9 +4128,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     for name in pack_files:
                         if name.lower() == "file_id.ans":
                             preview_filename = name
-                        elif name.lower() == "file_id.diz":
-                            preview_filename = name
-                        elif name.lower() == "file_id.txt":
+                        elif name.lower() == "file_id.diz" and preview_filename == None:
                             preview_filename = name
                     if preview_filename == None:
                         url = None
