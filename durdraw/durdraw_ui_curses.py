@@ -6062,9 +6062,6 @@ Can use ESC or META instead of ALT
                     cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                 except: # Or if we can't, fail to the terminal's default color
                     cursesColorPair = 0
-                injecting = False
-                #if self.appState.can_inject and self.appState.colorMode == "256":
-                #    injecting = True
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
                     self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
@@ -6072,7 +6069,8 @@ Can use ESC or META instead of ALT
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
-                self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
+                else:
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
             if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine < self.frame.sizeY:
                 self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
