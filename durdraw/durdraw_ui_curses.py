@@ -3741,14 +3741,14 @@ class UserInterface():  # Separate view (curses) from this controller
         if uri_type == "remote":   # Remote URL, from 16colo.rs
             url = load_filename
             #self.notify(f"url: {url}")
-
+            file_data = b"There was an error downloading the file."
             # Download remote file
             try:
                 with urllib.request.urlopen(url) as response:
                     file_data = response.read()
                     #f = open(filename, 'r', encoding='cp437')
-            except urllib.request.HTTPError:
-                self.notify("There was an error downloading the file.")
+            except urllib.request.HTTPError as E:
+                self.notify(f"There was an error downloading the file: {E.code}")
             # save it to a temporary file
             #with tempfile.NamedTemporaryFile() as fp:
             with tempfile.TemporaryDirectory() as temp_path:
