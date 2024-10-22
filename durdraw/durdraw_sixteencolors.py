@@ -78,7 +78,7 @@ class SixteenColorsAPI:
             return False
         for item in pack_files_json_data['files']:
             if item['filename'] == filename:
-                location = item['file_location']
+                location = item['uri']
         #print(f"Get URL for File JSON data: {pack_files_json_data}")
         url = self.website_prefix + urllib.parse.quote(location)
         return url
