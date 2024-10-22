@@ -4399,6 +4399,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                             selected_item_number = 0
                                             search_string = ""
                                         elif self.appState.sixteenc_browsing:
+                                            search_string = ""
                                             # Clicked a year or pack name in 16c, so navigate in.
                                             if self.sixteenc_levels[self.sixteenc_level] == "root":
                                                 # Enter into a year
@@ -4494,12 +4495,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     # scroll up
                     # if the item isn't at the top of teh screen, move it up
+                    current_section = 0
                     if selected_item_number > top_line:
                         selected_item_number -= 1
                     elif top_line > 0:
                         top_line -= 1
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
                     # scroll down 
+                    current_section = 0
                     if selected_item_number < len(file_list) - 1:
                         selected_item_number += 1
                         if selected_item_number == len(file_list) - top_line:
@@ -4592,6 +4595,23 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
                     else:   # update with files, not 16c
+
+                        # update file list
+                        matched_files = []
+                        file_list = []
+                        full_file_list = []
+                        search_files_list = os.listdir(current_directory)
+                        for file in search_files_list:
+                            for mask in masks:
+                                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                    matched_files.append(file)
+                                    break
+                        file_list += sorted(matched_files)
+                        # reset ui
+                        selected_item_number = 0
+                        search_string = ""
+                        full_file_list = file_list
+
                         folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                         # remove leading paths
                         new_folders = []
@@ -4600,11 +4620,13 @@ class UserInterface():  # Separate view (curses) from this controller
                         folders = new_folders
                         for dirname in folders:
                             file_list.append(dirname)
-                        file_list += sorted(matched_files)
+                        #file_list += sorted(matched_files)
                         # stash away file list so we can use it for search, and pop it back
                         # in when user hits esc
-                        full_file_list = file_list
 
+                        file_list = folders
+                        full_file_list = file_list
+                        search_files_list = file_list
                         #for file in os.listdir(current_directory):
                         #    for mask in masks:
                         #        if fnmatch.fnmatch(file.lower(), mask.lower()):
@@ -4703,6 +4725,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.sixteenc_level += 1    # from "root" to "year"
                             selected_item_number = 0
                             top_line = 0
+                            search_string = ""
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "year":
                             if file_list[selected_item_number] == '../':
@@ -4718,6 +4741,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 full_file_list = file_list
                                 search_files_list = file_list
                                 top_line = 0
+                                search_string = ""
                                 c = None
                             else:
                                 # Navigate from year into the pack
@@ -4737,6 +4761,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 file_list = sorted(file_list)
                                 self.sixteenc_level += 1    # from "year" to "pack"
                                 top_line = 0
+                                search_string = ""
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                             if file_list[selected_item_number] == '../':
@@ -4752,6 +4777,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 search_files_list = file_list
                                 self.sixteenc_level = 1    # from "root" to "year"
                                 top_line = 0
+                                search_string = ""
                             else:
                                 # Picked a file, so download and load it :)
                                 filename = file_list[selected_item_number]
