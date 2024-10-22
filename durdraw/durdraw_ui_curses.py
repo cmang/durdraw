@@ -16,6 +16,7 @@ import shutil
 import sys
 import subprocess
 import tempfile
+import threading
 import time
 import urllib
 
@@ -60,6 +61,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.sixteenc_levels = ["root", "year", "pack"]  # hierarchy to replace directory hierarchy
         self.sixteenc_level = 0 # 0 = "root"
         self.sixteenc_years = None # [] A list of all the years
+        self.diz_caching_thread = None
         # initialize screen and draw the 'canvas'
         locale.setlocale(locale.LC_ALL, '')    # set your locale
         self.realstdscr = curses.initscr()
@@ -4085,6 +4087,16 @@ class UserInterface():  # Separate view (curses) from this controller
                         selected_item_number = block_list.index(blockname)
                         break   # stop at the first match
 
+    def sixteenc_update_diz_cache_start_thread(self, year):
+        #if self.diz_caching_thread == None:
+        #    self.diz_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,))
+        #if self.diz_caching_thread.is_alive():
+        if year in self.appState.sixteenc_cached_years:
+            # Thread already ran or running
+            return False
+        new_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,))
+        new_caching_thread.start()
+
     def sixteenc_update_diz_cache(self, year):
         """ cache file_id.diz files for the packs in a given year.
           Populate self.appState.sixteenc_dizcache with {"packname": diz_data_frame}
@@ -4112,12 +4124,19 @@ class UserInterface():  # Separate view (curses) from this controller
                 pack_files = self.sixteenc_api.list_files_for_pack(pack)
                 #self.notify(f"pack: {pack}, pack_files: {pack_files}")
                 if pack_files != False:
-                    preview_filename="FILE_ID.DIZ"
-                    if "FILE_ID.ANS" in (name.lower() for name in pack_files):
-                        preview_filename = name
-                    elif "FILE_ID.DIZ" in (name.lower() for name in pack_files):
-                        preview_filename = name
-                    url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
+                    preview_filename=None
+                    for name in pack_files:
+                        if name.lower() == "file_id.ans":
+                            preview_filename = name
+                        elif name.lower() == "file_id.diz":
+                            preview_filename = name
+                        elif name.lower() == "file_id.txt":
+                            preview_filename = name
+                    if preview_filename == None:
+                        url = None
+                    else:
+                        url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
+                    #pdb.set_trace()
                 if url != None and url != '':   # success
                     #self.notify(f"preview URL: {url}")
                     try:
@@ -4125,18 +4144,21 @@ class UserInterface():  # Separate view (curses) from this controller
                             file_data = response.read()
                     except urllib.request.HTTPError:
                         #self.notify(f"There was an error downloading: {url}")a
-                        return False
+                        pass
+                        #return False
                 else:
-                    return False
+                    pass
                 if file_data != None:
                     decoded_data = file_data.decode('cp437')
                     load_width = 44     # file_id.diz width
                     diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
                     self.appState.sixteenc_dizcache[pack] = diz_frame
+            #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
 
     def openFilePicker(self):
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
+        self.stdscr.nodelay(0) # wait for input when calling getch
         folders =  ["../"]
         default_masks = ['*.dur', '*.durf', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
         masks = default_masks
@@ -4212,6 +4234,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # stash away file list so we can use it for search, and pop it back
         # in when user hits esc
         full_file_list = file_list
+        black_frame = durmovie.Frame(80, 25)  # easy way to clear parts of the screen?
 
         # draw ui
         selected_item_number = 0
@@ -4395,7 +4418,10 @@ class UserInterface():  # Separate view (curses) from this controller
                     # If a pack is selected, download the file_id.diz and preview it
                     if selected_item != '../':
                         if selected_item not in self.appState.sixteenc_dizcache:
-                            pass
+                            self.drawFrame(frame=black_frame, col_offset=40, preview=True)
+                            #pass
+                            #self.stdscr.clear()
+                            #self.stdscr.refresh()
                             #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
                         if selected_item in self.appState.sixteenc_dizcache:
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
@@ -4793,7 +4819,10 @@ class UserInterface():  # Separate view (curses) from this controller
                             selected_item_number = 0
                             top_line = 0
                             search_string = ""
-                            self.sixteenc_update_diz_cache(self.sixteenc_current_year)
+                            # run caching thread to update file_id.diz's for the selected year
+                            if self.sixteenc_current_year not in self.appState.sixteenc_cached_years:
+                                self.sixteenc_update_diz_cache_start_thread(self.sixteenc_current_year)
+                            #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "year":
                             if file_list[selected_item_number] == '../':
