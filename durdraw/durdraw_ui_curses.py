@@ -20,6 +20,8 @@ import threading
 import time
 import urllib
 
+from concurrent.futures import ThreadPoolExecutor
+
 #from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_options import Options
 from durdraw.durdraw_color_curses import AnsiArtStuff
@@ -3558,6 +3560,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 return False
             time.sleep(0.01)
 
+    def killAllHumans(self):    # actually, kill all threads.
+        for thread in threading.enumerate():
+            if thread.is_alive():
+                thread.set()
+
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
         self.clearStatusLine()
@@ -3598,6 +3605,7 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.noecho()
 
     def verySafeQuit(self): # non-interactive part.. close out curses screen and exit.
+        #self.killAllHumans()
         curses.nocbreak()
         self.stdscr.keypad(0)
         curses.echo()
@@ -4095,7 +4103,41 @@ class UserInterface():  # Separate view (curses) from this controller
             # Thread already ran or running
             return False
         new_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,))
+        new_caching_thread.daemon = True
         new_caching_thread.start()
+
+    def sixteenc_cache_diz_for_pack(self, pack):
+        pack_files = self.sixteenc_api.list_files_for_pack(pack)
+        #self.notify(f"pack: {pack}, pack_files: {pack_files}")
+        if pack_files != False:
+            preview_filename=None
+            for name in pack_files:
+                if name.lower() == "file_id.ans":
+                    preview_filename = name
+                elif name.lower() == "file_id.diz" and preview_filename == None:
+                    preview_filename = name
+            if preview_filename == None:
+                url = None
+            else:
+                url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
+            #pdb.set_trace()
+        if url != None and url != '':   # success
+            #self.notify(f"preview URL: {url}")
+            try:
+                with urllib.request.urlopen(url) as response:
+                    file_data = response.read()
+            except urllib.request.HTTPError:
+                #self.notify(f"There was an error downloading: {url}")a
+                pass
+                #return False
+        else:
+            pass
+        if file_data != None:
+            decoded_data = file_data.decode('cp437')
+            load_width = 44     # file_id.diz width
+            diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
+            self.appState.sixteenc_dizcache[pack] = diz_frame
+    #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
 
     def sixteenc_update_diz_cache(self, year):
         """ cache file_id.diz files for the packs in a given year.
@@ -4105,6 +4147,7 @@ class UserInterface():  # Separate view (curses) from this controller
         url = None
         file_data = None
         preview_mov = None
+        packs = []  #packs to cache
 
         if year in self.appState.sixteenc_cached_years:
             return False
@@ -4121,37 +4164,15 @@ class UserInterface():  # Separate view (curses) from this controller
         # If not, download the file_id.diz and populate self.appState.sixteenc_dizcache.
         for pack in year_packs:
             if pack not in self.appState.sixteenc_dizcache:
-                pack_files = self.sixteenc_api.list_files_for_pack(pack)
-                #self.notify(f"pack: {pack}, pack_files: {pack_files}")
-                if pack_files != False:
-                    preview_filename=None
-                    for name in pack_files:
-                        if name.lower() == "file_id.ans":
-                            preview_filename = name
-                        elif name.lower() == "file_id.diz" and preview_filename == None:
-                            preview_filename = name
-                    if preview_filename == None:
-                        url = None
-                    else:
-                        url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
-                    #pdb.set_trace()
-                if url != None and url != '':   # success
-                    #self.notify(f"preview URL: {url}")
-                    try:
-                        with urllib.request.urlopen(url) as response:
-                            file_data = response.read()
-                    except urllib.request.HTTPError:
-                        #self.notify(f"There was an error downloading: {url}")a
-                        pass
-                        #return False
-                else:
-                    pass
-                if file_data != None:
-                    decoded_data = file_data.decode('cp437')
-                    load_width = 44     # file_id.diz width
-                    diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
-                    self.appState.sixteenc_dizcache[pack] = diz_frame
-            #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
+                packs.append(pack)
+
+        # Launch concurrent threads for downloading diz files in parallel
+        max_threads = 10
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            res = executor.map(self.sixteenc_cache_diz_for_pack, packs)
+            #for r in res:
+            #    print(r.status_code)
+
 
     def openFilePicker(self):
         """ Draw UI for selecting a file to load, return the filename """

@@ -168,7 +168,7 @@ def get_width_and_height_of_ansi_blob(text, width=80):
             character = text[i]
             col_num += 1
         i += 1
-    print("")
+    #print("")
     width = max_col
     height = line_num
     return width, height
@@ -208,13 +208,13 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     width = max(width, maxWidth)
     #width = max(width, 80)
     height += 1
-    if appState.debug:
-        caller.notify(f"Guessed width: {width}, height: {height}")
+    #if appState.debug:
+    #    caller.notify(f"Guessed width: {width}, height: {height}")
     #width = min(width, maxWidth)
     height = max(height, 25)
     new_frame = durmovie.Frame(width, height + 1)
-    if appState.debug:
-        caller.notify(f"debug: maxWidth = {maxWidth}")
+    #if appState.debug:
+    #    caller.notify(f"debug: maxWidth = {maxWidth}")
     #parsed_text = ''
     #color_codes = ''
     i = 0   # index into the file blob
@@ -313,8 +313,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                         else:
                             fg_color = 1
                     # 256 Colors
-                if console:    
-                    print(str(escape_codes), end="")
+                #if console:    
+                #    print(str(escape_codes), end="")
 
                 # Add color to color map
                 try:
@@ -448,8 +448,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 parse_error = True
                 if debug:
                     caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, pos: {i}")
-            if console:    
-                print(character, end='')
+           # if console:    
+           #     print(character, end='')
             col_num += 1
         i += 1
     if console:    
