@@ -3736,19 +3736,31 @@ class UserInterface():  # Separate view (curses) from this controller
             try:
                 with urllib.request.urlopen(url) as response:
                     file_data = response.read()
+                    #f = open(filename, 'r', encoding='cp437')
             except urllib.request.HTTPError:
                 self.notify("There was an error downloading the file.")
             # save it to a temporary file
-            with tempfile.NamedTemporaryFile() as fp:
-                fp.write(file_data)
+            #with tempfile.NamedTemporaryFile() as fp:
+            with tempfile.TemporaryDirectory() as temp_path:
+                # write file to temp directory, but with original name
+                filename = pathlib.Path(url).name
+                load_filename = temp_path + '/' + filename
+                #self.notify(f"Full load path: {load_filename}")
+                with open(load_filename, mode='wb') as fp:
+                    fp.write(file_data)
+
+                #fp.write(file_data)
+                #self.notify(f"Length: {len(file_data)}")
                 # Clear the canvas and Open it 
                 load_filename = fp.name
                 self.clearCanvas(prompting=False)
+                #if not self.loadFromFile(load_filename, 'dur'):
                 self.loadFromFile(load_filename, 'dur')
                 self.appState.curOpenFileName = pathlib.Path(url).name
                 self.move_cursor_topleft()
                 self.stdscr.clear()
                 self.hardRefresh()
+                self.appState.fileShortPath = url
                 fp.close()
                 
 
