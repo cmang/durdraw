@@ -494,7 +494,7 @@ Home page: http://durdraw.org
 
 Development: https://github.com/cmang/durdraw
 
-ANSI and ASCII artists: cmang, H7, LDA
+ANSI and ASCII artists: cmang, H7, LDA, HK
 
 ## LEGAL
 
