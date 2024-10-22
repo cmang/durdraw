@@ -4106,7 +4106,9 @@ class UserInterface():  # Separate view (curses) from this controller
             current_directory = os.getcwd()
 
         if not self.appState.sixteenc_browsing:
-            folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+            file_list = []
+            #folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
             # remove leading paths
             new_folders = []
             for path_string in folders:
@@ -4151,9 +4153,13 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
 
-        for dirname in folders:
-            file_list.append(dirname)
+
+        if not self.appState.sixteenc_browsing:
+            for dirname in folders:
+                file_list.append(dirname)
+
         file_list += sorted(matched_files)
+
         # stash away file list so we can use it for search, and pop it back
         # in when user hits esc
         full_file_list = file_list
@@ -4185,8 +4191,11 @@ class UserInterface():  # Separate view (curses) from this controller
 
         while prompting:
 
+            #file_list = []
+            #full_file_list = []
             # If we need to cache 16c years, make it so.
             if self.appState.sixteenc_browsing:
+                show_modtime = False
                 # If there's no 16c cache, make a new API object and cache the years
                 if sixteenc_api == None:
                     sixteenc_api = SixteenColorsAPI()
@@ -4281,10 +4290,11 @@ class UserInterface():  # Separate view (curses) from this controller
             if selected_item_number > len(file_list) - 1:
                 selected_item_number = 0
 
-            try:
-                filename = file_list[selected_item_number]
-            except:
-                pdb.set_trace()
+            if not self.appState.sixteenc_browsing:
+                try:
+                    filename = file_list[selected_item_number]
+                except:
+                    pdb.set_trace()
 
             if self.appState.sixteenc_browsing:
                 full_path = ''
@@ -4403,6 +4413,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         # update file list
                         matched_files = []
                         file_list = []
+                        full_file_list = []
                         if self.appState.sixteenc_browsing:
                             if self.sixteenc_current_pack:
                                 search_files_list = sixteenc_files
@@ -4471,7 +4482,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     # update file list
                     matched_files = []
                     file_list = []
+                    full_file_list = []
                     if self.appState.sixteenc_browsing: 
+                        search_file_list = []
                         pass
                     else:
                         search_files_list = os.listdir(current_directory)
@@ -4504,6 +4517,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     # update file list
                     matched_files = []
                     file_list = []
+                    full_file_list = []
                     if self.appState.sixteenc_browsing:
                         # Just turned on sixteenc browsing
                         self.sixteenc_level = 0
@@ -4534,7 +4548,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
                     else:   # update with files, not 16c
-                        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                         # remove leading paths
                         new_folders = []
                         for path_string in folders:
@@ -4547,21 +4561,21 @@ class UserInterface():  # Separate view (curses) from this controller
                         # in when user hits esc
                         full_file_list = file_list
 
-                        for file in os.listdir(current_directory):
-                            for mask in masks:
-                                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                    matched_files.append(file)
-                                    break
+                        #for file in os.listdir(current_directory):
+                        #    for mask in masks:
+                        #        if fnmatch.fnmatch(file.lower(), mask.lower()):
+                        #            matched_files.append(file)
+                        #            break
 
-                                    search_files_list = os.listdir(current_directory)
-                                for file in search_files_list:
-                                    for mask in masks:
-                                        if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                            matched_files.append(file)
-                                            break
-                                for dirname in folders:
-                                    file_list.append(dirname)
-                                file_list += sorted(matched_files)
+                        #            search_files_list = os.listdir(current_directory)
+                        #        for file in search_files_list:
+                        #            for mask in masks:
+                        #                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                        #                    matched_files.append(file)
+                        #                    break
+                        #        for dirname in folders:
+                        #            file_list.append(dirname)
+                        #        file_list += sorted(matched_files)
 
                 if c in [27]:     # esc
                     prompting = False
@@ -4719,7 +4733,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.appState.sixteenc_browsing:
                             pass
                         else:
-                            folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                         # remove leading paths
                         if not self.appState.sixteenc_browsing:
                             new_folders = []
@@ -4794,6 +4808,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             break   # stop at the first match
 
             self.stdscr.clear()
+        return False, False
 
     def open(self):
         self.clearStatusLine()
