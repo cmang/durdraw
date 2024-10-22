@@ -76,11 +76,16 @@ class SixteenColorsAPI:
                 pack_files_json_data = json.loads(data)  # list of dicts
         except urllib.request.HTTPError:
             return False
+        location = None
         for item in pack_files_json_data['files']:
             if item['filename'] == filename:
-                location = item['uri']
+                #location = item['uri']
+                location = item['file_location']
         #print(f"Get URL for File JSON data: {pack_files_json_data}")
-        url = self.website_prefix + urllib.parse.quote(location)
+        if location == None:
+            url = ''
+        else:
+            url = self.website_prefix + urllib.parse.quote(location)
         return url
 
     def get_raw_file(self, pack, filename):

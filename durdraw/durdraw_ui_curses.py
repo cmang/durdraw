@@ -4093,6 +4093,7 @@ class UserInterface():  # Separate view (curses) from this controller
         masks = default_masks
         matched_files = []
         file_list = []
+        preview_mov = None
         selected_item_number = 0
         sixteenc_api = None
 
@@ -4289,11 +4290,12 @@ class UserInterface():  # Separate view (curses) from this controller
             if selected_item_number > len(file_list) - 1:
                 selected_item_number = 0
 
-            if not self.appState.sixteenc_browsing:
-                try:
-                    filename = file_list[selected_item_number]
-                except:
-                    pdb.set_trace()
+            #if not self.appState.sixteenc_browsing:
+            #    try:
+            #        filename = file_list[selected_item_number]
+            #    except:
+            #        pdb.set_trace()
+            filename = file_list[selected_item_number]
 
             if self.appState.sixteenc_browsing:
                 full_path = ''
@@ -4337,6 +4339,50 @@ class UserInterface():  # Separate view (curses) from this controller
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
 
+            # If there is a preview to load, load it
+            if self.appState.sixteenc_browsing:
+                url = None
+                file_data = None
+                preview_mov = None
+                if self.sixteenc_levels[self.sixteenc_level] == "year":
+                    # If a pack is selected, download the file_id.diz and preview it
+                    if {file_list[selected_item_number]} != "../" and {file_list[selected_item_number]} != None:
+                        pack =  file_list[selected_item_number]
+                        pack_files = sixteenc_api.list_files_for_pack(pack)
+                        #self.notify(f"pack: {pack}, pack_files: {pack_files}")
+                        if pack_files != False:
+                            preview_filename="FILE_ID.DIZ"
+                            if "FILE_ID.ANS" in (name.lower() for name in pack_files):
+                                preview_filename = name
+                            elif "FILE_ID.DIZ" in (name.lower() for name in pack_files):
+                                preview_filename = name
+                            url = sixteenc_api.get_url_for_file(pack, preview_filename)
+                elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                    pass
+                if url != None:
+                    #self.notify(f"preview URL: {url}")
+                    try:
+                        with urllib.request.urlopen(url) as response:
+                            file_data = response.read()
+                    except urllib.request.HTTPError:
+                        self.notify(f"There was an error downloading: {url}")
+                if file_data != None:
+                    # Load downloaded file data into preview movie
+                    with tempfile.TemporaryDirectory() as temp_path:
+                        # write file to temp directory, but with original name
+                        temp_filename = pathlib.Path(url).name
+                        preview_filename = temp_path + '/' + temp_filename
+                        #self.notify(f"Full load path: {load_filename}")
+                        with open(preview_filename, mode='wb') as fp:
+                            fp.write(file_data)
+                            load_width = 44     # file_id.diz width
+                            preview_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = preview_filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
+                            #preview_mov_opts = Options(width=preview_frame.width, height=preview_frame.height)
+                            #preview_mov = Movie(preview_mov_opts)
+                            #preview_mov.addFrame(preview_frame)
+                            #preview_mov.deleteCurrentFrame()
+                            #self.refresh(mov=preview_mov, col_offset=40, preview=True)
+                            self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
 
             #self.stdscr.refresh()
 
@@ -5945,7 +5991,60 @@ Can use ESC or META instead of ALT
         self.stdscr.redrawwin()
         #self.refresh()
 
-    def refresh(self, refreshScreen=True, mov=None):          # rename to redraw()?
+    def drawFrame(self, refreshScreen=True, frame=None, topLine = 0, col_offset = 0, line_offset = 0, preview=False):          # rename to redraw()?
+        """ Like refresh() below, but only draws the frame passed in, not a whole movie. """
+        #topLine = self.appState.topLine
+        topLine = 0
+        # Figure out the last line to draw
+        lastLineToDraw = topLine + self.appState.realmaxY - 3 # right above the status line
+        if lastLineToDraw > frame.sizeY:
+            lastLineToDraw = frame.sizeY
+        screenLineNum = 0
+        firstCol = self.appState.firstCol
+        lastCol = min(frame.sizeX, self.appState.realmaxX + firstCol)
+        # Draw each character
+        for linenum in range(topLine, lastLineToDraw):
+            line = frame.content[linenum]
+            for colnum in range(firstCol, lastCol):
+                charColor = frame.newColorMap[linenum][colnum]
+                charContent = str(line[colnum])
+                try:
+                    # set ncurss color pair
+                    cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
+                except: # Or if we can't, fail to the terminal's default color
+                    cursesColorPair = 0
+                injecting = False
+                #if self.appState.can_inject and self.appState.colorMode == "256":
+                #    injecting = True
+                if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
+                # then print with defualt charaacters instead. This should prevent the cursor from
+                # disappearing, as well as let you preview "invisible" text under the cursor.
+                self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
+            # draw border on right edge of line
+            if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine < self.frame.sizeY:
+                self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+            screenLineNum += 1
+        # draw bottom border
+        #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
+        if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine == frame.sizeY:
+            if screenLineNum < self.statusBarLineNum:
+                borderWidth = min(frame.sizeX, self.realmaxX)
+                self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+        screenLineNum += 1
+        #spaceMultiplier = mov.sizeX + 1
+        spaceMultiplier = self.realmaxY
+        #for x in range(screenLineNum, self.realmaxY - 2):
+        #    self.addstr(x, 0, " " * spaceMultiplier)
+        #curses.panel.update_panels()
+        if refreshScreen:
+            self.stdscr.refresh()
+
+    def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False):          # rename to redraw()?
         """Refresh the screen"""
         topLine = self.appState.topLine
         if self.appState.playingHelpScreen_2:
@@ -6007,7 +6106,7 @@ Can use ESC or META instead of ALT
                 if self.appState.can_inject and self.appState.colorMode == "256":
                     injecting = True
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
-                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
                     # Let's try injecting!
                     if injecting:
@@ -6019,7 +6118,7 @@ Can use ESC or META instead of ALT
                         pass
                         #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
                     else:
-                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                        self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
@@ -6058,14 +6157,14 @@ Can use ESC or META instead of ALT
                         pass
                         #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
                     else:
-                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+                        self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
-            if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
+            if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
-        if self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
+        if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
             if screenLineNum < self.statusBarLineNum:
                 borderWidth = min(mov.sizeX, self.realmaxX)
                 self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
@@ -6075,7 +6174,8 @@ Can use ESC or META instead of ALT
         spaceMultiplier = self.realmaxY
         for x in range(screenLineNum, self.realmaxY - 2):
             self.addstr(x, 0, " " * spaceMultiplier)
-        curses.panel.update_panels()
+        if not preview:
+            curses.panel.update_panels()
         if self.appState.playingHelpScreen:
             self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
         if refreshScreen:

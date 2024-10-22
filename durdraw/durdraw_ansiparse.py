@@ -176,6 +176,10 @@ def get_width_and_height_of_ansi_blob(text, width=80):
 def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, convert_control_codes=True, maxWidth=80):
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
+    sauce = None
+
+    if type(text) is bytes:
+        text = text.decode('cp437')
     if filename:
         # If we can just pull it from the Sauce, cool
         sauce = dursauce.SauceParser()
@@ -192,11 +196,15 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             width = sauce.width
             height = sauce.height
             #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
-    if not sauce.height:
+    if sauce != None:
+        if not sauce.height:
+            width, height = get_width_and_height_of_ansi_blob(text)
+            width = sauce.width
+        if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
+            width, height = get_width_and_height_of_ansi_blob(text)
+    else:
         width, height = get_width_and_height_of_ansi_blob(text)
-        width = sauce.width
-    if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
-        width, height = get_width_and_height_of_ansi_blob(text)
+
     width = max(width, maxWidth)
     #width = max(width, 80)
     height += 1
@@ -427,6 +435,9 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 if ord(character) < 0x19:
                     character = chr(durchar.cp437_control_codes_to_utf8[ord(character)])
                 new_frame.content[line_num][col_num] = character
+            except TypeError as E:
+                print(f"Type error, likely on text: {E}")
+                pdb.set_trace()
             except IndexError:
                 parse_error = True
                 if debug:
@@ -444,7 +455,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     if console:    
         print("")
         print(f"Lines: {line_num}, Columns: {max_col}")
-    if parse_error:
+    if parse_error and appState.debug:
         caller.notify(f"Possible errors detected while loading this file. It may not display correctly.")
     height = line_num
     width = max_col
