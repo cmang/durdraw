@@ -4209,8 +4209,19 @@ class UserInterface():  # Separate view (curses) from this controller
         matched_files = []
         file_list = []
         preview_mov = None
+        old_color_mode = self.appState.colorMode    # in case we switch while file picker is open
         selected_item_number = 0
         self.sixteenc_api = None
+
+        # set correct color mode for initial picker opening
+        if self.appState.sixteenc_browsing:
+            if self.appState.colorMode != "16":
+                self.switchTo16ColorMode()
+        elif not self.appState.sixteenc_browsing:
+            # IF we aren't in the original mode, switch back
+            if old_color_mode != self.appState.colorMode:
+                if old_color_mode == "256":
+                    self.switchTo256ColorMode()
 
         # Set the directory listing for local files
         if self.appState.workingLoadDirectory: 
@@ -4704,6 +4715,17 @@ class UserInterface():  # Separate view (curses) from this controller
                 elif c in [ord(' '), 13, curses.KEY_ENTER]:     # 13 = enter
                     self.appState.sixteenc_browsing = not self.appState.sixteenc_browsing
 
+                    # set correct color mode
+                    if self.appState.sixteenc_browsing:
+                        if self.appState.colorMode != "16":
+                            self.switchTo16ColorMode()
+                    elif not self.appState.sixteenc_browsing:
+                        # IF we aren't in the original mode, switch back
+                        if old_color_mode != self.appState.colorMode:
+                            if old_color_mode == "256":
+                                self.switchTo256ColorMode()
+
+
                     # update file list
                     matched_files = []
                     file_list = []
@@ -5009,6 +5031,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     if search_string != "":
                         search_string = ""
                     else:
+                        # switch back to old color mode
+                        if old_color_mode != self.appState.colorMode:
+                            if old_color_mode == "256":
+                                self.switchTo256ColorMode()
+
                         self.stdscr.clear()
                         prompting = False
                         if self.playing:
@@ -5033,6 +5060,12 @@ class UserInterface():  # Separate view (curses) from this controller
 
             self.stdscr.clear()
         self.cursorOn()
+
+        # switch back to old color mode
+        if old_color_mode != self.appState.colorMode:
+            if old_color_mode == "256":
+                self.switchTo256ColorMode()
+
         return False, False
 
     def open(self):
