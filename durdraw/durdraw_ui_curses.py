@@ -4444,11 +4444,13 @@ class UserInterface():  # Separate view (curses) from this controller
                             #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
                         if selected_item in self.appState.sixteenc_dizcache:
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
-                            self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
+                            left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX)  # anchor right
+                            self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                     if self.sixteenc_current_pack in self.appState.sixteenc_dizcache:
                         preview_frame = self.appState.sixteenc_dizcache[self.sixteenc_current_pack]
-                        self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
+                        left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX)  # anchor right
+                        self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
 
 
 
