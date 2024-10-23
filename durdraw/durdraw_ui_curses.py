@@ -4446,7 +4446,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
                             self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                    pass
+                    if self.sixteenc_current_pack in self.appState.sixteenc_dizcache:
+                        preview_frame = self.appState.sixteenc_dizcache[self.sixteenc_current_pack]
+                        self.drawFrame(frame=preview_frame, col_offset=40, preview=True)
 
 
 
