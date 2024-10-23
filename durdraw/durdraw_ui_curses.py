@@ -4107,6 +4107,7 @@ class UserInterface():  # Separate view (curses) from this controller
         new_caching_thread.start()
 
     def sixteenc_cache_diz_for_pack(self, pack):
+        self.thread_update_user("Downloading previews...")
         pack_files = self.sixteenc_api.list_files_for_pack(pack)
         #self.notify(f"pack: {pack}, pack_files: {pack_files}")
         if pack_files != False:
@@ -4150,11 +4151,23 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.sixteenc_dizcache[pack] = diz_frame
     #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
 
+    def thread_update_user(self, message):
+        # print status update
+        progress_string = message
+        progress_column = self.appState.realmaxX - len(progress_string)   # anchor right
+        progress_line = self.appState.realmaxY  # bottom
+        self.addstr(progress_line, progress_column, progress_string, curses.color_pair(self.appState.theme['menuItemColor']))
+        self.stdscr.refresh()
+
     def sixteenc_update_diz_cache(self, year):
         """ cache file_id.diz files for the packs in a given year.
           Populate self.appState.sixteenc_dizcache with {"packname": diz_data_frame}
           diz_data_frame is type Dur Frame
         """
+
+        # print status update
+        self.thread_update_user("Downloading previews...")
+
         url = None
         file_data = None
         preview_mov = None
@@ -4235,6 +4248,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 file_list = []
                 full_file_list = file_list
                 search_files_list = file_list
+                matched_files = search_files_list
 
             elif self.sixteenc_levels[self.sixteenc_level] == "year":
                 sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
