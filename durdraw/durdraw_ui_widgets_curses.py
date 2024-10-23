@@ -288,15 +288,15 @@ class MenuHandler:
                         else:
                             #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                             prompting = False
-                            self.menu.gui.got_click("Click", mouseX, mouseY)
                             self.hide()
+                            self.menu.gui.got_click("Click", mouseX, mouseY)
                             #curses_notify(self.window, f"This should never happen. mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                                 
                     else:
                         #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                         prompting = False
-                        self.menu.gui.got_click("Click", mouseX, mouseY)
                         self.hide()
+                        self.menu.gui.got_click("Click", mouseX, mouseY)
             #jif c in [104, 63]:  # h H Help
             #    self.hide()
             #    self.items["Help"]["on_click"]()
