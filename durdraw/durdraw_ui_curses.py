@@ -895,6 +895,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.sauce = dursauce.SauceParser()    # empty sauce
             self.appState.curOpenFileName = None
             self.move_cursor_topleft()
+            self.stdscr.clear()
             self.hardRefresh()
 
     def searchForStringPrompt(self):
