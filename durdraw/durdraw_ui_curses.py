@@ -6097,12 +6097,12 @@ Can use ESC or META instead of ALT
                 else:
                     self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
-            if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine < self.frame.sizeY:
+            if not preview and self.appState.drawBorders and screenLineNum + topLine < self.frame.sizeY:
                 self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
-        if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine == frame.sizeY:
+        if not preview and self.appState.drawBorders and screenLineNum + topLine == frame.sizeY:
             if screenLineNum < self.statusBarLineNum:
                 borderWidth = min(frame.sizeX, self.realmaxX)
                 self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
@@ -6116,9 +6116,10 @@ Can use ESC or META instead of ALT
         if refreshScreen:
             self.stdscr.refresh()
 
-    def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False):          # rename to redraw()?
+    def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False, topLine=None):          # rename to redraw()?
         """Refresh the screen"""
-        topLine = self.appState.topLine
+        if topLine == None:
+            topLine = self.appState.topLine
         if self.appState.playingHelpScreen_2:
             mov = self.appState.helpMov_2
         elif self.appState.playingHelpScreen:
@@ -6145,10 +6146,10 @@ Can use ESC or META instead of ALT
                     if self.appState.brush != None:
                         # draw brush preview
                         # If we're drawing within the brush area:
-                        if linenum in range(self.appState.mouse_line + self.appState.topLine, self.appState.mouse_line + self.appState.brush.sizeX + self.appState.topLine):
+                        if linenum in range(self.appState.mouse_line + topLine, self.appState.mouse_line + self.appState.brush.sizeX + topLine):
                             if colnum in range(self.appState.mouse_col + self.appState.firstCol, self.appState.mouse_col + self.appState.brush.sizeY + self.appState.firstCol):
                                 #brush_line = linenum - self.appState.mouse_line
-                                brush_line = linenum - self.appState.mouse_line - self.appState.topLine
+                                brush_line = linenum - self.appState.mouse_line - topLine
                                 brush_col = colnum - self.appState.mouse_col - self.appState.firstCol
                                 try:
                                     brushChar = self.appState.brush.content[brush_col][brush_line]
@@ -6164,7 +6165,7 @@ Can use ESC or META instead of ALT
                                     if self.appState.renderMouseCursor:
                                         charContent = brushChar
                                         charColor = self.appState.brush.newColorMap[brush_col][brush_line]
-                if linenum == self.appState.mouse_line + self.appState.topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
+                if linenum == self.appState.mouse_line + topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
                     if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
                         if self.appState.renderMouseCursor:
                             charContent = self.appState.drawChar
@@ -6231,12 +6232,12 @@ Can use ESC or META instead of ALT
                     else:
                         self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
-            if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
+            if not preview and self.appState.drawBorders and screenLineNum + topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
-        if not preview and self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
+        if not preview and self.appState.drawBorders and screenLineNum + topLine == self.mov.sizeY:
             if screenLineNum < self.statusBarLineNum:
                 borderWidth = min(mov.sizeX, self.realmaxX)
                 self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
