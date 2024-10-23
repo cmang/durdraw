@@ -4178,6 +4178,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         self.stdscr.nodelay(0) # wait for input when calling getch
+        self.cursorOff()
         folders =  ["../"]
         default_masks = ['*.dur', '*.durf', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
         masks = default_masks
@@ -4444,12 +4445,12 @@ class UserInterface():  # Separate view (curses) from this controller
                             #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
                         if selected_item in self.appState.sixteenc_dizcache:
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
-                            left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX)  # anchor right
+                            left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
                             self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                     if self.sixteenc_current_pack in self.appState.sixteenc_dizcache:
                         preview_frame = self.appState.sixteenc_dizcache[self.sixteenc_current_pack]
-                        left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX)  # anchor right
+                        left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
                         self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
 
 
@@ -4553,6 +4554,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     c = None
                                     else:   # clicked a file, try to load it
                                         full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                                        self.cursorOn()
                                         return full_path, "local"
                     if mouseLine == realmaxY - 4:    # on the button bar
                         if mouseCol in range(showall_column,showall_column+3):  # clicked [X] All
@@ -4903,6 +4905,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 filename = file_list[selected_item_number]
                                 #pdb.set_trace()
                                 url = self.sixteenc_api.get_url_for_file(self.sixteenc_current_pack, filename)
+                                self.cursorOn()
                                 return url, "remote"
                             c = None
 
@@ -4970,6 +4973,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         full_path = f"{current_directory}/{file_list[selected_item_number]}"
                         self.appState.workingLoadDirectory = current_directory
+                        self.cursorOn()
                         return full_path, "local"
                     #self.filePickerOptionsPicker()
                 elif c == 21:   # ^U or ctrl-u
@@ -4984,6 +4988,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         prompting = False
                         if self.playing:
                             self.stdscr.nodelay(1)
+                        self.cursorOn()
                         return False, "local"
                 elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
                     if search_string != "":
@@ -5002,6 +5007,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             break   # stop at the first match
 
             self.stdscr.clear()
+        self.cursorOn()
         return False, False
 
     def open(self):
