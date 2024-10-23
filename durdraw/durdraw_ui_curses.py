@@ -4135,6 +4135,17 @@ class UserInterface():  # Separate view (curses) from this controller
         if file_data != None:
             decoded_data = file_data.decode('cp437')
             load_width = 44     # file_id.diz width
+
+            ## Figure out if width/height is in sauce. If so, use that
+            file_sauce = dursauce.SauceParser()    # empty sauce
+            file_sauce.parse_blob(file_data)
+            #self.notify(f"Sauce, pack: {pack}, filename: {preview_filename}, width: {file_sauce.width}", wait_time=100)
+            if file_sauce.width != None:
+                if file_sauce.width > 0 and file_sauce.width < load_width:
+                    load_width = file_sauce.width
+                elif file_sauce.width > load_width:
+                    load_width = file_sauce.width
+
             diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
             self.appState.sixteenc_dizcache[pack] = diz_frame
     #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
