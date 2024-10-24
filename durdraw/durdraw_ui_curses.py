@@ -1459,6 +1459,12 @@ class UserInterface():  # Separate view (curses) from this controller
             self.stdscr.refresh()
 
             if c == 27:
+                if self.appState.durview_running and self.appState.playOnlyMode:
+                    # This block captures Esc before the "UI for Play Only mode"
+                    # part below, so I'm putting this here.
+                    self.playing = False
+                    self.appState.topLine = 0
+                    return True
                 self.metaKey = 1
                 self.pressingButton = False
                 if self.pushingToClip:
@@ -1469,11 +1475,6 @@ class UserInterface():  # Separate view (curses) from this controller
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
-                if self.appState.durview_running and self.appState.playOnlyMode:  # This ^ section captures Esc before the
-                    # "UI for Play Only mode" part below, so I'm putting this here.
-                    self.playing = False
-                    self.appState.topLine = 0
-                    return True
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 self.pressingButton = False
                 #if cursorMode != "Draw" and cursorMode != "Paint":
