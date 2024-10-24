@@ -50,6 +50,7 @@ setup(
     'console_scripts': [
         'durdraw = durdraw.main:main',
         'durfetch = durdraw.durfetch:main',
+        'durview = durdraw.durview:main',
     ],
 },
 )
