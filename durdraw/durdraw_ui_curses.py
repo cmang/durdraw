@@ -1469,7 +1469,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
-                if self.playing and self.appState.playOnlyMode:  # This ^ section captures Esc before the
+                if self.appState.durview_running and self.appState.playOnlyMode:  # This ^ section captures Esc before the
                     # "UI for Play Only mode" part below, so I'm putting this here.
                     self.playing = False
                     self.appState.topLine = 0

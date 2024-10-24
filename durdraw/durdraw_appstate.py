@@ -55,11 +55,15 @@ class AppState():
         self.sixteenc_year = None
         self.sixteenc_pack = None
 
+        # Durview stuff
+        self.durview_running = False
+
+        self.play_queue = []    # List of files to switch between with 'n' and 'p' in Durview and/or play mode
+
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
-        self.durview_running = False
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.renderMouseCursor = False      # show Paint or Draw cursor in canvas
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]
