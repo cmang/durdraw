@@ -1011,7 +1011,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # extract folder name from full path
             folderName = self.appState.fileShortPath
             #infoStringList.append(f"Folder: {folderName}")
-            infoStringList += textwrap.wrap(f"Folder: {folderName}", width=fileInfoWidth, subsequent_indent='  ')
+            infoStringList += textwrap.wrap(f"Location: {folderName}", width=fileInfoWidth, subsequent_indent='  ')
 
         if title:
             infoStringList += textwrap.wrap(f"Title: {title}", width=fileInfoWidth, subsequent_indent='  ')
@@ -1427,7 +1427,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.mov.gotoFrame(self.appState.playbackRange[0])
         mouseX, mouseY = 0, 0
         while self.playing:
-            # catch keyboard input - to change framerate or stop playing animation
+            # catch keyboard input - to change framerate or stop pnlaying animation
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
             # Here refreshScreen=False because we will self.stdscr.refresh() below, after drawing the status bar (to avoid flicker)
@@ -1469,6 +1469,11 @@ class UserInterface():  # Separate view (curses) from this controller
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
+                if self.playing and self.appState.playOnlyMode:  # This ^ section captures Esc before the
+                    # "UI for Play Only mode" part below, so I'm putting this here.
+                    self.playing = False
+                    self.appState.topLine = 0
+                    return True
             if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
                 self.pressingButton = False
                 #if cursorMode != "Draw" and cursorMode != "Paint":
@@ -1675,10 +1680,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.scroll_viewer_left()
                     elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
                         self.scroll_viewer_right()
-                    if c in [61, 43]: # esc-= and esc-+ - fps up
+                    if c in [61, 43]: # = and + - fps up
                         self.increaseFPS()
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                    elif c in [45]: # esc-- (alt minus) - fps down
+                    elif c in [45]: # - (minus) - fps down
                         self.decreaseFPS()
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
 
@@ -1688,10 +1693,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         if not self.appState.editorRunning:
                             self.verySafeQuit()
 
-                    elif c in [10, 13, curses.KEY_ENTER, 27]:   # 27 = esc
+                    elif c in [27, 10, 13, curses.KEY_ENTER]:   # 27 = esc, 10 = LF, 13 = CR
                         self.playing = False
                         self.appState.topLine = 0
-
 
                     elif c in [ord('?')]:
                         self.showViewerHelp()
@@ -3750,7 +3754,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     prompting = False
                 elif c == 110 or c == 27: # 110 == n, 27 == esc
                     prompting = False
-                    return None
+                    return False
                 time.sleep(0.01)
             self.clearStatusLine()
 
@@ -3791,12 +3795,15 @@ class UserInterface():  # Separate view (curses) from this controller
                 fp.close()
                 
 
-        elif uri_type == "local" and load_filename != False:   # if not False
+        elif uri_type == "local" and load_filename != False:   # if not False lol
             self.clearCanvas(prompting=False)
             self.loadFromFile(load_filename, 'dur')
             self.move_cursor_topleft()
             self.stdscr.clear()
             self.hardRefresh()
+
+        elif load_filename == False:    # User hit Esc out of the file picker
+            return False
 
     def toggleColorScrolling(self):
         self.appState.scrollColors = not self.appState.scrollColors
@@ -6947,4 +6954,19 @@ Can use ESC or META instead of ALT
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
         pass
+
+    def runDurView(self):
+        """ Launch the UI for the DurView app """
+        # While there are files to read from the openFilePicker(), put them into view mode
+        #
+        while self.appState.durview_running:
+            #file = self.openFilePicker()
+            opened = self.openFromMenu()
+            if opened == False:
+                # User exited file picker with esc, so exit DurView
+                self.appState.durview_running = False
+            else:
+                self.enterViewMode()
+
+
 

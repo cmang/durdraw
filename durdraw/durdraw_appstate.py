@@ -59,6 +59,7 @@ class AppState():
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
+        self.durview_running = False
         self.screenCursorMode = "default"   # can be block, underscore, pipe
         self.renderMouseCursor = False      # show Paint or Draw cursor in canvas
         self.validScreenCursorModes = ["default", "block", "underscore", "pipe"]

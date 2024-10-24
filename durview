@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+
+# Launches Durview
+
+from durdraw import durview
+
+if __name__ == "__main__":
+    #try:
+    durview.main()
+    #except Exception as e:
+    #    print(f"Exception: {e}")
+    #    print("Caught exception. Exiting.")
+    #    exit(1)
+
