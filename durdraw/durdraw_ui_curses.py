@@ -983,7 +983,7 @@ class UserInterface():  # Separate view (curses) from this controller
         fileInfoColumn = self.mov.sizeX + 2
         # wrap info lines
         # textwrap.wrap(text, width=70, **kwargs)
-        fileInfoWidth = self.appState.realmaxX - fileInfoColumn
+        fileInfoWidth = max(2, self.appState.realmaxX - fileInfoColumn)
         #infoStringList = textwrap.wrap(infoString, width=fileInfoWidth)
 
         # eventually show a pop-up window with editable sauce info
@@ -1005,30 +1005,30 @@ class UserInterface():  # Separate view (curses) from this controller
 
         if fileName:
             #infoStringList.append(f"File: {fileName}", width=fileInfoWidth)
-            infoStringList += textwrap.wrap(f"File: {fileName}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"File: {fileName}", width=fileInfoWidth, subsequent_indent='  ')
 
         if self.appState.fileShortPath:
             # extract folder name from full path
             folderName = self.appState.fileShortPath
             #infoStringList.append(f"Folder: {folderName}")
-            infoStringList += textwrap.wrap(f"Folder: {folderName}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"Folder: {folderName}", width=fileInfoWidth, subsequent_indent='  ')
 
         if title:
-            infoStringList += textwrap.wrap(f"Title: {title}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"Title: {title}", width=fileInfoWidth, subsequent_indent='  ')
 
         if author:
-            infoStringList += textwrap.wrap(f"Artist: {author}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"Artist: {author}", width=fileInfoWidth, subsequent_indent='  ')
 
         if group:
-            infoStringList += textwrap.wrap(f"Group: {group}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"Group: {group}", width=fileInfoWidth, subsequent_indent='  ')
 
         if date:
-            infoStringList += textwrap.wrap(f"Date: {year}/{month}/{day}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"Date: {year}/{month}/{day}", width=fileInfoWidth, subsequent_indent='  ')
 
         # 16c 
         if self.appState.sixteenc_browsing:
-            infoStringList += textwrap.wrap(f"16c Pack: {sixteenc_pack}", width=fileInfoWidth)
-            infoStringList += textwrap.wrap(f"16c Year: {sixteenc_year}",width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"16c Pack: {sixteenc_pack}", width=fileInfoWidth, subsequent_indent='  ')
+            infoStringList += textwrap.wrap(f"16c Year: {sixteenc_year}",width=fileInfoWidth, subsequent_indent='  ')
 
         infoStringList.append(f"Width: {self.mov.sizeX}")
         infoStringList.append(f"Height: {self.mov.sizeY}")
@@ -1036,7 +1036,7 @@ class UserInterface():  # Separate view (curses) from this controller
         infoStringList.append(f"Color mode: {colorMode}")
         if self.appState.fileColorMode:
             infoStringList.append(f"File color mode: {self.appState.fileColorMode}")
-        infoStringList += textwrap.wrap(f"Playing: {self.playing} ", width=fileInfoWidth)
+        infoStringList += textwrap.wrap(f"Playing: {self.playing} ", width=fileInfoWidth, subsequent_indent='  ')
 
         if len(infoStringList) > 0:
             infoString = '\n '.join(infoStringList)
