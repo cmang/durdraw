@@ -16,6 +16,7 @@ import shutil
 import sys
 import subprocess
 import tempfile
+import textwrap
 import threading
 import time
 import urllib
@@ -58,8 +59,8 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.unicodeBlockList = durchar.get_unicode_blocks_list()
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         os.environ.setdefault('ESCDELAY', '10')
-        self.sixteenc_current_year = None
-        self.sixteenc_current_pack = None
+        self.appState.sixteenc_year = None
+        self.appState.sixteenc_pack = None
         self.sixteenc_levels = ["root", "year", "pack"]  # hierarchy to replace directory hierarchy
         self.sixteenc_level = 0 # 0 = "root"
         self.sixteenc_years = None # [] A list of all the years
@@ -979,6 +980,12 @@ class UserInterface():  # Separate view (curses) from this controller
         self.init_16_colors_misc()
 
     def showFileInformation(self, notify = False):
+        fileInfoColumn = self.mov.sizeX + 2
+        # wrap info lines
+        # textwrap.wrap(text, width=70, **kwargs)
+        fileInfoWidth = self.appState.realmaxX - fileInfoColumn
+        #infoStringList = textwrap.wrap(infoString, width=fileInfoWidth)
+
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
         author = self.appState.sauce.author
@@ -988,6 +995,8 @@ class UserInterface():  # Separate view (curses) from this controller
         year = self.appState.sauce.year
         month = self.appState.sauce.month
         day = self.appState.sauce.day
+        sixteenc_year = self.appState.sixteenc_year
+        sixteenc_pack = self.appState.sixteenc_pack
         colorMode = self.appState.colorMode
 
         infoString = ''
@@ -995,24 +1004,31 @@ class UserInterface():  # Separate view (curses) from this controller
         #self.stdscr.nodelay(0) # wait for input when calling getch
 
         if fileName:
-            infoStringList.append(f"File: {fileName}")
+            #infoStringList.append(f"File: {fileName}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"File: {fileName}", width=fileInfoWidth)
 
         if self.appState.fileShortPath:
             # extract folder name from full path
             folderName = self.appState.fileShortPath
-            infoStringList.append(f"Folder: {folderName}")
+            #infoStringList.append(f"Folder: {folderName}")
+            infoStringList += textwrap.wrap(f"Folder: {folderName}", width=fileInfoWidth)
 
         if title:
-            infoStringList.append(f"Title: {title}")
+            infoStringList += textwrap.wrap(f"Title: {title}", width=fileInfoWidth)
 
         if author:
-            infoStringList.append(f"Artist: {author}")
+            infoStringList += textwrap.wrap(f"Artist: {author}", width=fileInfoWidth)
 
         if group:
-            infoStringList.append(f"Group: {group}")
+            infoStringList += textwrap.wrap(f"Group: {group}", width=fileInfoWidth)
 
         if date:
-            infoStringList.append(f"Date: {year}/{month}/{day}")
+            infoStringList += textwrap.wrap(f"Date: {year}/{month}/{day}", width=fileInfoWidth)
+
+        # 16c 
+        if self.appState.sixteenc_browsing:
+            infoStringList += textwrap.wrap(f"16c Pack: {sixteenc_pack}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"16c Year: {sixteenc_year}",width=fileInfoWidth)
 
         infoStringList.append(f"Width: {self.mov.sizeX}")
         infoStringList.append(f"Height: {self.mov.sizeY}")
@@ -1020,13 +1036,13 @@ class UserInterface():  # Separate view (curses) from this controller
         infoStringList.append(f"Color mode: {colorMode}")
         if self.appState.fileColorMode:
             infoStringList.append(f"File color mode: {self.appState.fileColorMode}")
-        infoStringList.append(f"Playing: {self.playing} ")
+        infoStringList += textwrap.wrap(f"Playing: {self.playing} ", width=fileInfoWidth)
 
         if len(infoStringList) > 0:
-            infoString = ', '.join(infoStringList)
-
-
+            infoString = '\n '.join(infoStringList)
             wideViwer = False
+
+
         if notify:
             notifyString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
             self.notify(notifyString, pause=True)
@@ -1036,7 +1052,7 @@ class UserInterface():  # Separate view (curses) from this controller
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             if realmaxX + self.appState.firstCol >= self.mov.sizeX + self.appState.sideInfo_minimum_width:
                 wideViewer = True
-            fileInfoColumn = self.mov.sizeX + 2
+            #fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
             #fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             # show me the sauce
@@ -1440,7 +1456,6 @@ class UserInterface():  # Separate view (curses) from this controller
 
             #debugstring = f"self.appState.realmaxY: {self.appState.realmaxY}, self.appState.realmaxX: {self.appState.realmaxX}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
             #self.addstr(self.statusBarLineNum - 1, 0, debugstring)
-
             self.stdscr.refresh()
 
             if c == 27:
@@ -2482,6 +2497,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         if resized:
             self.refresh()
+            self.showFileInformation()
             self.hardRefresh()
 
     def window_big_enough_for_colors(self):
@@ -4107,7 +4123,7 @@ class UserInterface():  # Separate view (curses) from this controller
         new_caching_thread.start()
 
     def sixteenc_cache_diz_for_pack(self, pack):
-        self.thread_update_user("Downloading previews...")
+        self.thread_update_user("Downloading previews... 1")
         pack_files = self.sixteenc_api.list_files_for_pack(pack)
         #self.notify(f"pack: {pack}, pack_files: {pack_files}")
         if pack_files != False:
@@ -4166,7 +4182,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """
 
         # print status update
-        self.thread_update_user("Downloading previews...")
+        self.thread_update_user("Downloading previews... 2")
 
         url = None
         file_data = None
@@ -4253,7 +4269,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.sixteenc_years = self.sixteenc_api.list_years()
             # Set the initial listing/UI for 16colo.rs browsing
             if self.sixteenc_levels[self.sixteenc_level] == "root":
-                self.sixteenc_current_year = None
+                self.appState.sixteenc_year = None
                 sixteenc_packs = None
                 folders = self.sixteenc_years
                 file_list = []
@@ -4262,7 +4278,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 matched_files = search_files_list
 
             elif self.sixteenc_levels[self.sixteenc_level] == "year":
-                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
                 folders = ['../'] + sixteenc_packs
                 #file_list = folders
                 file_list = []
@@ -4270,7 +4286,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 search_files_list = file_list
 
             elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                sixteenc_files = self.sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
+                sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
                 folders = ['../']
                 #file_list = folders
                 file_list = folders + sixteenc_files
@@ -4330,7 +4346,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.sixteenc_years == None:
                     self.sixteenc_years = self.sixteenc_api.list_years()
                 # If we aren't in a year, then populate the directory list with years
-                if self.sixteenc_current_year == None:
+                if self.appState.sixteenc_year == None:
                     # We are at the top level, so list the years.
                     folders = ["../"]
                     folders += self.sixteenc_years
@@ -4408,7 +4424,7 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
             #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
             if self.appState.sixteenc_browsing:
-                self.addstr(realmaxY - 3, 0, f"Year: {self.sixteenc_current_year}, Pack: {self.sixteenc_current_pack}, Level: {self.sixteenc_levels[self.sixteenc_level]}", curses.color_pair(self.appState.theme['menuTitleColor']))
+                self.addstr(realmaxY - 3, 0, f"Year: {self.appState.sixteenc_year}, Pack: {self.appState.sixteenc_pack}, Level: {self.sixteenc_levels[self.sixteenc_level]}", curses.color_pair(self.appState.theme['menuTitleColor']))
             else:
                 self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
             if search_string != "":
@@ -4466,6 +4482,9 @@ class UserInterface():  # Separate view (curses) from this controller
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
+            if self.appState.thread_update_string != None:
+                self.thread_update_user(thread_update_string)
+
 
             # If there is a preview to load, load it
             if self.appState.sixteenc_browsing:
@@ -4478,14 +4497,14 @@ class UserInterface():  # Separate view (curses) from this controller
                             #pass
                             #self.stdscr.clear()
                             #self.stdscr.refresh()
-                            #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
+                            #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
                         if selected_item in self.appState.sixteenc_dizcache:
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
                             left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
                             self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                    if self.sixteenc_current_pack in self.appState.sixteenc_dizcache:
-                        preview_frame = self.appState.sixteenc_dizcache[self.sixteenc_current_pack]
+                    if self.appState.sixteenc_pack in self.appState.sixteenc_dizcache:
+                        preview_frame = self.appState.sixteenc_dizcache[self.appState.sixteenc_pack]
                         left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
                         self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
 
@@ -4558,10 +4577,10 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 # Enter into a year
                                                 #if file_list[current_line_number] != '../':
                                                 try:
-                                                    self.sixteenc_current_year = file_list[selected_item_number]
+                                                    self.appState.sixteenc_year = file_list[selected_item_number]
                                                 except:
                                                     pdb.set_trace()
-                                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
                                                 try:
                                                     folders = ['../'] + sixteenc_packs
                                                 except:
@@ -4579,7 +4598,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     self.sixteenc_level = 0    # from "year" to "root"
                                                     selected_item_number = 0
                                                     #selected_item_number = 0
-                                                    self.sixteenc_current_year = None
+                                                    self.appState.sixteenc_year = None
                                                     sixteenc_packs = None
                                                     #folders = ['../'] + self.sixteenc_years
                                                     folders = self.sixteenc_years
@@ -4746,7 +4765,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             #self.notify("Root of all 16colors evil")
                             # Update the file or directory listing
                             #if file_list[current_line_number] != '../':
-                            self.sixteenc_current_year = None
+                            self.appState.sixteenc_year = None
                             sixteenc_packs = None
                             #folders = ['../'] + self.sixteenc_years
                             folders = self.sixteenc_years
@@ -4876,10 +4895,10 @@ class UserInterface():  # Separate view (curses) from this controller
                             # Enter into a year
                             #if file_list[current_line_number] != '../':
                             try:
-                                self.sixteenc_current_year = file_list[selected_item_number]
+                                self.appState.sixteenc_year = file_list[selected_item_number]
                             except:
                                 pdb.set_trace()
-                            sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                            sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
                             try:
                                 folders = ['../'] + sixteenc_packs
                             except:
@@ -4892,9 +4911,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             top_line = 0
                             search_string = ""
                             # run caching thread to update file_id.diz's for the selected year
-                            if self.sixteenc_current_year not in self.appState.sixteenc_cached_years:
-                                self.sixteenc_update_diz_cache_start_thread(self.sixteenc_current_year)
-                            #self.sixteenc_update_diz_cache(self.sixteenc_current_year)
+                            if self.appState.sixteenc_year not in self.appState.sixteenc_cached_years:
+                                self.sixteenc_update_diz_cache_start_thread(self.appState.sixteenc_year)
+                            #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "year":
                             if file_list[selected_item_number] == '../':
@@ -4902,7 +4921,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 self.sixteenc_level = 0    # from "year" to "root"
                                 selected_item_number = 0
                                 #selected_item_number = 0
-                                self.sixteenc_current_year = None
+                                self.appState.sixteenc_year = None
                                 sixteenc_packs = None
                                 #folders = ['../'] + self.sixteenc_years
                                 folders = self.sixteenc_years
@@ -4914,9 +4933,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                 c = None
                             else:
                                 # Navigate from year into the pack
-                                self.sixteenc_current_pack = file_list[selected_item_number]
+                                self.appState.sixteenc_pack = file_list[selected_item_number]
                                 try:
-                                    sixteenc_files = self.sixteenc_api.list_files_for_pack(self.sixteenc_current_pack)
+                                    sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
                                 except:
                                     pdb.set_trace()
                                 selected_item_number = 0
@@ -4936,7 +4955,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             if file_list[selected_item_number] == '../':
                                 # Navigating back down from pack into year
                                 selected_item_number = 0
-                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.sixteenc_current_year)
+                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
                                 try:
                                     folders = ['../'] + sixteenc_packs
                                 except:
@@ -4951,7 +4970,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 # Picked a file, so download and load it :)
                                 filename = file_list[selected_item_number]
                                 #pdb.set_trace()
-                                url = self.sixteenc_api.get_url_for_file(self.sixteenc_current_pack, filename)
+                                url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
                                 self.cursorOn()
                                 return url, "remote"
                             c = None
@@ -4992,9 +5011,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         matched_files = []
                         file_list = []
                         if self.appState.sixteenc_browsing:
-                            if self.sixteenc_current_pack:
+                            if self.appState.sixteenc_pack:
                                 search_files_list = sixteenc_files
-                            elif self.sixteenc_current_year:
+                            elif self.appState.sixteenc_year:
                                 search_files_list = sixteenc_packs
                             else:
                                 search_files_list = self.sixteenc_years

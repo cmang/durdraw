@@ -26,6 +26,13 @@ class AppState():
         self.PIL = None
         self.check_dependencies()
 
+        #threading
+        self.stop_event = threading.Event()
+        self.bg_download_thread = None
+        self.bg_download_executor = None
+        # String containnig updates from threads to tell users about
+        self.thread_update_string = None 
+
         # User friendly defeaults
         self.quickStart = False
         self.mental = False # Mental mode - enable experimental options/features
@@ -38,10 +45,16 @@ class AppState():
         self.fileColorMode = None
         self.maxColors = 256
         self.iceColors = False
+
+        # 16c stuff 
         self.sixteenc_available = True # Enabled if 16colo.rs browsing is available
         self.sixteenc_browsing = False   # Enabled if we are currently browsing 16c
         self.sixteenc_dizcache = {} # {"packname": dizdata} 
         self.sixteenc_cached_years = [] # [1996, etc]
+        self.sixteenc_api = None
+        self.sixteenc_year = None
+        self.sixteenc_pack = None
+
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
