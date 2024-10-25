@@ -5075,6 +5075,9 @@ class UserInterface():  # Separate view (curses) from this controller
                         search_string = search_string[:len(search_string)-1]
                 elif c == None:
                     pass
+                elif c == 0x019A:    # getch() gets this when resizing window, for some reason.
+                    # unicode Latin Small Letter L with Bar.
+                    pass
                 else: # add to search string
                     search_string += chr(c)
                     selected_item_number = 0
