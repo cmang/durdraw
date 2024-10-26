@@ -4521,12 +4521,12 @@ class UserInterface():  # Separate view (curses) from this controller
                             #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
                         if selected_item in self.appState.sixteenc_dizcache:
                             preview_frame = self.appState.sixteenc_dizcache[selected_item]
-                            left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
+                            left_diz_column = max(40, realmaxX - preview_frame.sizeX - 3)  # anchor right
                             self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
                 elif self.sixteenc_levels[self.sixteenc_level] == "pack":
                     if self.appState.sixteenc_pack in self.appState.sixteenc_dizcache:
                         preview_frame = self.appState.sixteenc_dizcache[self.appState.sixteenc_pack]
-                        left_diz_column = max(40, self.appState.realmaxX - preview_frame.sizeX - 3)  # anchor right
+                        left_diz_column = max(40, realmaxX - preview_frame.sizeX - 3)  # anchor right
                         self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
 
 
@@ -4830,28 +4830,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         folders = new_folders
                         for dirname in folders:
                             file_list.append(dirname)
-                        #file_list += sorted(matched_files)
-                        # stash away file list so we can use it for search, and pop it back
-                        # in when user hits esc
 
                         file_list = folders
                         full_file_list = file_list
                         search_files_list = file_list
-                        #for file in os.listdir(current_directory):
-                        #    for mask in masks:
-                        #        if fnmatch.fnmatch(file.lower(), mask.lower()):
-                        #            matched_files.append(file)
-                        #            break
-
-                        #            search_files_list = os.listdir(current_directory)
-                        #        for file in search_files_list:
-                        #            for mask in masks:
-                        #                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                        #                    matched_files.append(file)
-                        #                    break
-                        #        for dirname in folders:
-                        #            file_list.append(dirname)
-                        #        file_list += sorted(matched_files)
 
                 if c in [27]:     # esc
                     prompting = False
