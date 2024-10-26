@@ -64,6 +64,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.sixteenc_levels = ["root", "year", "pack"]  # hierarchy to replace directory hierarchy
         self.sixteenc_level = 0 # 0 = "root"
         self.sixteenc_years = None # [] A list of all the years
+        self.selected_item_number = 0
         self.diz_caching_thread = None
         # initialize screen and draw the 'canvas'
         locale.setlocale(locale.LC_ALL, '')    # set your locale
@@ -4234,7 +4235,7 @@ class UserInterface():  # Separate view (curses) from this controller
         file_list = []
         preview_mov = None
         old_color_mode = self.appState.colorMode    # in case we switch while file picker is open
-        selected_item_number = 0
+        #self.selected_item_number = 0
         self.sixteenc_api = None
 
         # set correct color mode for initial picker opening
@@ -4317,7 +4318,7 @@ class UserInterface():  # Separate view (curses) from this controller
         black_frame = durmovie.Frame(80, 25)  # easy way to clear parts of the screen?
 
         # draw ui
-        selected_item_number = 0
+        #self.selected_item_number = 0
         current_line_number = 0
         search_string = ''
         mask_all = False
@@ -4377,11 +4378,11 @@ class UserInterface():  # Separate view (curses) from this controller
             file_column_number = 0
             if show_modtime:
                 file_column_number = 20
-            if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
-                top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            if self.selected_item_number > top_line + page_size-1 or self.selected_item_number < top_line: # item is off the screen
+                top_line = self.selected_item_number - int(page_size-3) # scroll so it's at the bottom
             for filename in file_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
-                    if  selected_item_number == current_line_number and sections[current_section] == "main":    # if file is selected
+                    if  self.selected_item_number == current_line_number and sections[current_section] == "main":    # if file is selected
                         if file_list[current_line_number] in folders:
                             self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
                         else:
@@ -4439,20 +4440,20 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
 
-            if selected_item_number > len(file_list) - 1:
-                selected_item_number = 0
+            if self.selected_item_number > len(file_list) - 1:
+                self.selected_item_number = 0
 
             #if not self.appState.sixteenc_browsing:
             #    try:
-            #        filename = file_list[selected_item_number]
+            #        filename = file_list[self.selected_item_number]
             #    except:
             #        pdb.set_trace()
-            filename = file_list[selected_item_number]
+            filename = file_list[self.selected_item_number]
 
             if self.appState.sixteenc_browsing:
                 full_path = ''
             else:
-                full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                 
             if filename not in folders:
                 # read sauce, if available
@@ -4496,7 +4497,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
             # If there is a preview to load, load it
             if self.appState.sixteenc_browsing:
-                selected_item = file_list[selected_item_number]
+                selected_item = file_list[self.selected_item_number]
                 if self.sixteenc_levels[self.sixteenc_level] == "year":
                     # If a pack is selected, download the file_id.diz and preview it
                     if selected_item != '../':
@@ -4534,12 +4535,13 @@ class UserInterface():  # Separate view (curses) from this controller
                         current_section = 0 # switch to "main" section
                         if mouseLine < len(file_list) - top_line:   # clicked item line
                             if mouseCol < len(file_list[top_line+mouseLine] + file_modtime_string): # clicked within item width
-                                selected_item_number = top_line+mouseLine
+                                self.selected_item_number = top_line+mouseLine
                                 if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                    if file_list[selected_item_number] in folders:  # clicked directory
+                                    #self.notify("Double Clicked on item")
+                                    if file_list[self.selected_item_number] in folders:  # clicked directory
                                         if not self.appState.sixteenc_browsing:
                                             # change directories. holy fuck this is deep
-                                            if file_list[selected_item_number] == "../":
+                                            if file_list[self.selected_item_number] == "../":
                                                 # "cd .."
                                                 if self.appState.sixteenc_browsing:
                                                     if self.sixteenc_level > 0:
@@ -4547,7 +4549,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 else:
                                                     current_directory = os.path.split(current_directory)[0]
                                             else:
-                                                current_directory = f"{current_directory}/{file_list[selected_item_number]}"
+                                                current_directory = f"{current_directory}/{file_list[self.selected_item_number]}"
                                                 if current_directory[-1] == "/":
                                                     current_directory = current_directory[:-1]
                                             # get file list
@@ -4576,16 +4578,17 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 file_list.append(dirname)
                                             file_list += sorted(matched_files)
                                             # reset ui
-                                            selected_item_number = 0
+                                            self.selected_item_number = 0
                                             search_string = ""
                                         elif self.appState.sixteenc_browsing:
+                                            self.notify("Double Clicked on 16c item")
                                             search_string = ""
                                             # Clicked a year or pack name in 16c, so navigate in.
                                             if self.sixteenc_levels[self.sixteenc_level] == "root":
                                                 # Enter into a year
                                                 #if file_list[current_line_number] != '../':
                                                 try:
-                                                    self.appState.sixteenc_year = file_list[selected_item_number]
+                                                    self.appState.sixteenc_year = file_list[self.selected_item_number]
                                                 except:
                                                     pdb.set_trace()
                                                 sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
@@ -4597,15 +4600,15 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 full_file_list = file_list
                                                 search_files_list = file_list
                                                 self.sixteenc_level += 1    # from "root" to "year"
-                                                selected_item_number = 0
+                                                self.selected_item_number = 0
                                                 top_line = 0
                                                 c = None
                                             elif self.sixteenc_levels[self.sixteenc_level] == "year":
-                                                if file_list[selected_item_number] == '../':
+                                                if file_list[self.selected_item_number] == '../':
                                                     # Navigate back down into root
                                                     self.sixteenc_level = 0    # from "year" to "root"
-                                                    selected_item_number = 0
-                                                    #selected_item_number = 0
+                                                    self.selected_item_number = 0
+                                                    #self.selected_item_number = 0
                                                     self.appState.sixteenc_year = None
                                                     sixteenc_packs = None
                                                     #folders = ['../'] + self.sixteenc_years
@@ -4616,7 +4619,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     top_line = 0
                                                     c = None
                                     else:   # clicked a file, try to load it
-                                        full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                                        full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                                         self.cursorOn()
                                         return full_path, "local"
                     if mouseLine == realmaxY - 4:    # on the button bar
@@ -4658,7 +4661,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             file_list.append(dirname)
                         file_list += sorted(matched_files)
                         # reset ui
-                        selected_item_number = 0
+                        self.selected_item_number = 0
                         search_string = ""
                         full_file_list = file_list
 
@@ -4677,16 +4680,16 @@ class UserInterface():  # Separate view (curses) from this controller
                     # scroll up
                     # if the item isn't at the top of teh screen, move it up
                     current_section = 0
-                    if selected_item_number > top_line:
-                        selected_item_number -= 1
+                    if self.selected_item_number > top_line:
+                        self.selected_item_number -= 1
                     elif top_line > 0:
                         top_line -= 1
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
                     # scroll down 
                     current_section = 0
-                    if selected_item_number < len(file_list) - 1:
-                        selected_item_number += 1
-                        if selected_item_number == len(file_list) - top_line:
+                    if self.selected_item_number < len(file_list) - 1:
+                        self.selected_item_number += 1
+                        if self.selected_item_number == len(file_list) - top_line:
                             top_line += 1
                 
             elif sections[current_section] == "showall":  # show all files checkbox
@@ -4725,7 +4728,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         file_list.append(dirname)
                     file_list += sorted(matched_files)
                     # reset ui
-                    selected_item_number = 0
+                    self.selected_item_number = 0
                     search_string = ""
                     full_file_list = file_list
                 elif c in [27]:     # esc
@@ -4760,7 +4763,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.sixteenc_browsing:
                         # Just turned on sixteenc browsing
                         self.sixteenc_level = 0
-                        selected_item_number = 0
+                        self.selected_item_number = 0
 
                         # If there's no 16c cache, make a new API object and cache the years
                         if self.sixteenc_api == None:
@@ -4800,7 +4803,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                     break
                         file_list += sorted(matched_files)
                         # reset ui
-                        selected_item_number = 0
+                        self.selected_item_number = 0
                         search_string = ""
                         full_file_list = file_list
 
@@ -4853,46 +4856,46 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 elif c == curses.KEY_UP:
                     # move cursor up
-                    if selected_item_number > 0:
-                        if selected_item_number == top_line and top_line != 0:
+                    if self.selected_item_number > 0:
+                        if self.selected_item_number == top_line and top_line != 0:
                             top_line -= 1
-                        selected_item_number -= 1
+                        self.selected_item_number -= 1
                     pass
                 elif c == curses.KEY_DOWN:
-                    if selected_item_number < len(file_list) - 1:
+                    if self.selected_item_number < len(file_list) - 1:
                         # move cursor down
-                        selected_item_number += 1
+                        self.selected_item_number += 1
                         # if we're at the bottom of the screen...
-                        if selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
+                        if self.selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
                             top_line += 1
                 elif c in [339, curses.KEY_PPAGE]:  # page up
-                    if selected_item_number - top_line > 0:  # first go to the top of the page
-                        selected_item_number = top_line
+                    if self.selected_item_number - top_line > 0:  # first go to the top of the page
+                        self.selected_item_number = top_line
                     else:   # if already there, go up a full page
-                        selected_item_number -= page_size
+                        self.selected_item_number -= page_size
                         top_line -= page_size 
                     # correct any overflow
-                    if selected_item_number < 0:
-                        selected_item_number = 0
+                    if self.selected_item_number < 0:
+                        self.selected_item_number = 0
                     if top_line < 0:
                         top_line = 0
                 elif c in [338, curses.KEY_NPAGE]:  # page down
-                    if selected_item_number - top_line < page_size - 1: # first go to bottom of the page
-                        selected_item_number = page_size + top_line - 1
+                    if self.selected_item_number - top_line < page_size - 1: # first go to bottom of the page
+                        self.selected_item_number = page_size + top_line - 1
                     else:   # if already there, go down afull page
-                        selected_item_number += page_size
+                        self.selected_item_number += page_size
                         top_line += page_size
                     # correct any overflow
-                    if selected_item_number >= len(file_list):
-                        selected_item_number = len(file_list) - 1
+                    if self.selected_item_number >= len(file_list):
+                        self.selected_item_number = len(file_list) - 1
                     if top_line >= len(file_list):
                         top_line = len(file_list) - page_size
                 elif c in [339, curses.KEY_HOME]:  # 339 = home
-                    selected_item_number = 0
+                    self.selected_item_number = 0
                     top_line = 0
                 elif c in [338, curses.KEY_END]:   # 338 = end
-                    selected_item_number = len(file_list) - 1
-                    top_line = selected_item_number - page_size + 1
+                    self.selected_item_number = len(file_list) - 1
+                    top_line = self.selected_item_number - page_size + 1
                     if top_line < 0:    # for small file lists
                         top_line = 0
                 elif c in [13, curses.KEY_ENTER]:
@@ -4903,7 +4906,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             # Enter into a year
                             #if file_list[current_line_number] != '../':
                             try:
-                                self.appState.sixteenc_year = file_list[selected_item_number]
+                                self.appState.sixteenc_year = file_list[self.selected_item_number]
                             except:
                                 pdb.set_trace()
                             sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
@@ -4915,7 +4918,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             full_file_list = file_list
                             search_files_list = file_list
                             self.sixteenc_level += 1    # from "root" to "year"
-                            selected_item_number = 0
+                            self.selected_item_number = 0
                             top_line = 0
                             search_string = ""
                             # run caching thread to update file_id.diz's for the selected year
@@ -4924,11 +4927,11 @@ class UserInterface():  # Separate view (curses) from this controller
                             #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "year":
-                            if file_list[selected_item_number] == '../':
+                            if file_list[self.selected_item_number] == '../':
                                 # Navigate back down into root
                                 self.sixteenc_level = 0    # from "year" to "root"
-                                selected_item_number = 0
-                                #selected_item_number = 0
+                                self.selected_item_number = 0
+                                #self.selected_item_number = 0
                                 self.appState.sixteenc_year = None
                                 sixteenc_packs = None
                                 #folders = ['../'] + self.sixteenc_years
@@ -4941,12 +4944,12 @@ class UserInterface():  # Separate view (curses) from this controller
                                 c = None
                             else:
                                 # Navigate from year into the pack
-                                self.appState.sixteenc_pack = file_list[selected_item_number]
+                                self.appState.sixteenc_pack = file_list[self.selected_item_number]
                                 try:
                                     sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
                                 except:
                                     pdb.set_trace()
-                                selected_item_number = 0
+                                self.selected_item_number = 0
                                 folders = ['../']
                                 file_list = folders
                                 file_list += sixteenc_files
@@ -4960,9 +4963,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                 search_string = ""
                             c = None
                         elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                            if file_list[selected_item_number] == '../':
+                            if file_list[self.selected_item_number] == '../':
                                 # Navigating back down from pack into year
-                                selected_item_number = 0
+                                self.selected_item_number = 0
                                 sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
                                 try:
                                     folders = ['../'] + sixteenc_packs
@@ -4976,7 +4979,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 search_string = ""
                             else:
                                 # Picked a file, so download and load it :)
-                                filename = file_list[selected_item_number]
+                                filename = file_list[self.selected_item_number]
                                 #pdb.set_trace()
                                 url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
                                 self.cursorOn()
@@ -4984,9 +4987,9 @@ class UserInterface():  # Separate view (curses) from this controller
                             c = None
 
 
-                    elif file_list[selected_item_number] in folders:
+                    elif file_list[self.selected_item_number] in folders:
                         # change directories
-                        if file_list[selected_item_number] == "../":
+                        if file_list[self.selected_item_number] == "../":
                             # "cd .."
                             if self.appState.sixteenc_browsing:
                                 # Navigate "up" in 16c land...
@@ -4995,7 +4998,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                 current_directory = os.path.split(current_directory)[0]
                         else:
                             if not self.appState.sixteenc_browsing:
-                                current_directory = f"{current_directory}/{file_list[selected_item_number]}"
+                                current_directory = f"{current_directory}/{file_list[self.selected_item_number]}"
                                 if current_directory[-1] == "/":
                                     current_directory = current_directory[:-1]
                         # get file list
@@ -5037,7 +5040,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         file_list += sorted(matched_files)
                         # reset ui
                         top_line = 0
-                        selected_item_number = 0
+                        self.selected_item_number = 0
                         search_string = ""
                         full_file_list = file_list
 
@@ -5045,7 +5048,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         # return the selected file
                         self.stdscr.clear()
                         prompting = False
-                        full_path = f"{current_directory}/{file_list[selected_item_number]}"
+                        full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                         self.appState.workingLoadDirectory = current_directory
                         self.cursorOn()
                         return full_path, "local"
@@ -5080,12 +5083,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 else: # add to search string
                     search_string += chr(c)
-                    selected_item_number = 0
+                    self.selected_item_number = 0
                     current_line_number = 0
                     top_line = 0
                     for filename in file_list:  # search list for search_string
                         if filename not in folders and filename.startswith(search_string):
-                            #selected_item_number = file_list.index(filename)
+                            #self.selected_item_number = file_list.index(filename)
                             break   # stop at the first match
 
             self.stdscr.clear()
