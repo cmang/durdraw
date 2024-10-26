@@ -12,6 +12,7 @@ import pathlib
 from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
+from durdraw.durdraw_version import DUR_VER
 import durdraw.help
 import durdraw.neofetcher as neofetcher
 
@@ -27,7 +28,6 @@ class ArgumentChecker:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
 def main(fetch_args=None):
-    DUR_VER = '0.28.1-BETA'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = 'Durdraw'

@@ -28,6 +28,7 @@ def main(fetch_args=None):
                     nargs='+')
     parserColorModeMutex.add_argument("--256color", help="Try 256 color mode", action="store_true", dest='hicolor')
     parserColorModeMutex.add_argument("--16color", help="Try 16 color mode", action="store_true", dest='locolor')
+    parser.add_argument("--cp437", help="Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8. (Requires CP437 capable terminal and font) (beta)", action="store_true")
     parser.add_argument("-b", "--blackbg", help="Use a black background color instead of terminal default", action="store_true")
     parser.add_argument("--wrap", help="Number of columns to wrap lines at when loading ASCII and ANSI files (default 80)", nargs=1, type=int)
     parser.add_argument("--nomouse", help="Disable mouse support",
@@ -66,6 +67,10 @@ def main(fetch_args=None):
     if args.locolor:
         app.colorMode = "16"
     #durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
+
+    if args.cp437:
+        app.charEncoding = 'cp437'
+
     if args.blackbg:
         app.blackbg = False
     else: app.blackbg = True

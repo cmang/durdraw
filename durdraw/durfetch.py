@@ -8,7 +8,7 @@ import random
 
 import durdraw.main as durdraw_main
 import durdraw.neofetcher as neofetcher
-
+from durdraw.durdraw_version import DUR_VER
 
 def all_durf_files():
     return all_internal_durf_files()
@@ -81,12 +81,16 @@ def main():
     parser_fake_os_mutex = parser.add_mutually_exclusive_group()
     parser_fake_os_mutex.add_argument("--linux", help="Show a Linux animation", action="store_true")
     parser_fake_os_mutex.add_argument("--bsd", help="Show a BSD animation", action="store_true")
+    parser.add_argument("-V", "--version", help="Show Version information and quit", action="store_true")
     #parser.add_argument("-l", nargs="?", default="list")
     args = parser.parse_args()
     neofetch_data = neofetcher.run()
     #print(args.filename, args.list, args.l, neofetch_data)
     #if args.filename == None:   # no file name passed, so pick an appropriate one.
     faked = None
+    if args.version:
+        print(DUR_VER)
+        exit(0)
     if args.linux:
         faked = "linux"
     if args.bsd:
