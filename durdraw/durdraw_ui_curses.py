@@ -4194,8 +4194,9 @@ class UserInterface():  # Separate view (curses) from this controller
         progress_string = message
         progress_column = self.appState.realmaxX - len(progress_string)   # anchor right
         progress_line = self.appState.realmaxY  # bottom
-        self.addstr(progress_line, progress_column, progress_string, curses.color_pair(self.appState.theme['menuItemColor']))
-        self.stdscr.refresh()
+        #self.addstr(progress_line, progress_column, progress_string, curses.color_pair(self.appState.theme['menuItemColor']))
+        #self.notify(progress_string, wait_time=0)
+        #self.stdscr.refresh()
 
     def sixteenc_update_diz_cache(self, year):
         """ cache file_id.diz files for the packs in a given year.
@@ -4204,7 +4205,7 @@ class UserInterface():  # Separate view (curses) from this controller
         """
 
         # print status update
-        self.thread_update_user("Downloading previews... 2")
+        #self.thread_update_user("Downloading previews... 2")
 
         url = None
         file_data = None
@@ -4406,7 +4407,11 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.A_REVERSE)
                     else:
                         if file_list[current_line_number] in folders:
-                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
+                            if file_list[current_line_number] in self.appState.sixteenc_dizcache and self.appState.sixteenc_browsing:
+                                # file_id has been downloaded, so draw in bold
+                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD)
+                            else:
+                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
                         else:
                             if show_modtime and self.appState.sixteenc_browsing == False:
                                 full_path = f"{current_directory}/{file_list[current_line_number]}"
