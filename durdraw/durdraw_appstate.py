@@ -59,6 +59,7 @@ class AppState():
         self.durview_running = False
 
         self.play_queue = []    # List of files to switch between with 'n' and 'p' in Durview and/or play mode
+        self.play_queue_position = None
 
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)

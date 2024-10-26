@@ -1565,9 +1565,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.showHelp()
                     c = None
                 elif c == 113:                 # alt-q - quit
-                    self.safeQuit()
-                    self.stdscr.nodelay(1)
-                    c = None
+                    if self.appState.durview_running:
+                        self.stopPlaying()
+                        self.appState.editorRunning = False
+                        return
+                    else:
+                        self.safeQuit()
+                        self.stdscr.nodelay(1)
+                        c = None
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
@@ -1626,6 +1631,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None 
             elif c != -1:   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
+                #if self.appState.durview_running:   # Extra UI for DurView
+                #    if c in [ord('e')]:     # e - open file in editor
+                #        self.openEditorFromDurview()
+                #        c = None
                 if self.appState.playOnlyMode:  # UI for Play-only mode
                     mouseState = False
                     if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
@@ -2565,7 +2574,7 @@ class UserInterface():  # Separate view (curses) from this controller
         sumbitch_len = 25
 
         curses.noecho()
-        while 1:    # Real "main loop" - get user input, aka "edit mode"
+        while self.appState.editorRunning:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
             self.drawStatusBar()
@@ -2593,8 +2602,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.save()
                     c = None
                 elif c == 113:                 # alt-q - quit
-                    self.safeQuit()
-                    c = None
+                    if self.appState.durview_running:
+                        self.appState.editorRunning = False
+                        c = None
+                        #return
+                    else:
+                        self.safeQuit()
                 elif c in [104, 63]:                # alt-h - help
                     self.showHelp()
                     c = None
@@ -4305,7 +4318,6 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
 
-
         if not self.appState.sixteenc_browsing:
             for dirname in folders:
                 file_list.append(dirname)
@@ -4710,13 +4722,15 @@ class UserInterface():  # Separate view (curses) from this controller
                     else:
                         masks = default_masks
 
+
+
                     # update file list
                     matched_files = []
                     file_list = []
                     full_file_list = []
                     if self.appState.sixteenc_browsing: 
-                        search_file_list = []
-                        pass
+                        if self.sixteenc_levels[self.sixteenc_level] == "pack":
+                            search_files_list = sixteenc_files
                     else:
                         search_files_list = os.listdir(current_directory)
                     for file in search_files_list:
@@ -4789,13 +4803,14 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
 
 
-                    else:   # update with files, not 16c
+                    #else:   # update with files, not 16c
 
                         # update file list
                         matched_files = []
                         file_list = []
                         full_file_list = []
-                        search_files_list = os.listdir(current_directory)
+                        if not self.appState.sixteenc_browsing:
+                            search_files_list = os.listdir(current_directory)
                         for file in search_files_list:
                             for mask in masks:
                                 if fnmatch.fnmatch(file.lower(), mask.lower()):
@@ -6961,6 +6976,28 @@ Can use ESC or META instead of ALT
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
         pass
+
+    def openEditorFromDurview(self):
+        # get ready to open editor
+        self.appState.playOnlyMode = False
+        #self.appState.topLine = 0
+        self.appState.firstCol = 0
+        self.xy = [self.appState.topLine, 1]
+        self.statusBar.show()
+        self.appState.drawBorders = True
+        self.cursorOn()
+        #self.stdscr.clear()
+        self.stopPlaying()
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.statusBar.setCursorModeMove()
+        self.hardRefresh()
+
+        # open editor
+        self.mainLoop()
+
+        # get back to viewer
+        self.statusBar.hide()
+        self.appState.drawBorders = True
 
     def runDurView(self):
         """ Launch the UI for the DurView app """
