@@ -330,6 +330,7 @@ class DrawCharPickerHandler:
         self.window = window
 
     def pickChar(self):
+        self.window.nodelay(0) # wait for input when calling getch
         maxLines, maxCol = self.window.getmaxyx()
         #pdb.set_trace()
         self.window.addstr(maxLines - 3, 0, "Enter a character to use for drawing: ")
@@ -387,6 +388,8 @@ class DrawCharPickerHandler:
         #self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
         self.caller.caller.drawCharPickerButton.set_label(self.caller.appState.drawChar)
         self.window.addstr(maxLines - 3, 0, "                                          ")
+        if self.caller.caller.caller.playing:
+            self.window.nodelay(1) # don't wait for input when calling getch
         self.caller.caller.caller.refresh()
 
 class ColorPickerHandler:
