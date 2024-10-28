@@ -1691,6 +1691,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.scroll_viewer_left()
                     elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
                         self.scroll_viewer_right()
+                    elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
+                        self.xy[1]
+                    elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
+                        self.xy[1] = self.mov.sizeX
                     if c in [61, 43]: # = and + - fps up
                         self.increaseFPS()
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -3597,9 +3601,10 @@ class UserInterface():  # Separate view (curses) from this controller
             time.sleep(0.01)
 
     def killAllHumans(self):    # actually, kill all threads.
-        for thread in threading.enumerate():
-            if thread.is_alive():
-                thread.set()
+        #for thread in threading.enumerate():
+        #    if thread.is_alive():
+        #        thread.set()
+        self.appState.pool_executor.shutdown(wait=True, cancel_futures=True)
 
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -3641,11 +3646,13 @@ class UserInterface():  # Separate view (curses) from this controller
         curses.noecho()
 
     def verySafeQuit(self): # non-interactive part.. close out curses screen and exit.
-        #self.killAllHumans()
         curses.nocbreak()
         self.stdscr.keypad(0)
         curses.echo()
         curses.endwin()
+        #print("Waiting for threads to die...")
+        self.killAllHumans()
+        #print("Done.")
         exit(0)
 
     def promptPrint(self, promptText):
@@ -4231,8 +4238,8 @@ class UserInterface():  # Separate view (curses) from this controller
 
         # Launch concurrent threads for downloading diz files in parallel
         max_threads = 10
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            res = executor.map(self.sixteenc_cache_diz_for_pack, packs)
+        with ThreadPoolExecutor(max_workers=max_threads) as self.appState.pool_executor:
+            res = self.appState.pool_executor.map(self.sixteenc_cache_diz_for_pack, packs, timeout=15)
             #for r in res:
             #    print(r.status_code)
 

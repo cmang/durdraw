@@ -32,6 +32,7 @@ class AppState():
         self.bg_download_executor = None
         # String containnig updates from threads to tell users about
         self.thread_update_string = None 
+        self.pool_executor = None
 
         # User friendly defeaults
         self.quickStart = False
