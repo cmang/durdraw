@@ -20,12 +20,11 @@ def main(fetch_args=None):
 
     # Get command-line arguments
     parser = argparse.ArgumentParser()
-    #parserStartScreenMutex = parser.add_mutually_exclusive_group()
-    parserFilenameMutex = parser.add_mutually_exclusive_group()
     parserColorModeMutex = parser.add_mutually_exclusive_group()
-    parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
-    parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur, .ANS or .ASC file or files, then exit",
-                    nargs='+')
+    #parserFilenameMutex.add_argument("filename", nargs='?', help=".dur or ascii file to load")
+    #parserFilenameMutex.add_argument("-p", "--play", help="Just play .dur, .ANS or .ASC file or files, then exit",
+                    #nargs='+')
+    parser.add_argument("filename", help=".ANS, .ASC or .dur file(s) to view", nargs='*')
     parserColorModeMutex.add_argument("--256color", help="Try 256 color mode", action="store_true", dest='hicolor')
     parserColorModeMutex.add_argument("--16color", help="Try 16 color mode", action="store_true", dest='locolor')
     parser.add_argument("--cp437", help="Display extended characters on the screen using Code Page 437 (IBM-PC/MS-DOS) encoding instead of Utf-8. (Requires CP437 capable terminal and font) (beta)", action="store_true")
@@ -66,14 +65,13 @@ def main(fetch_args=None):
         app.colorMode = "256"
     if args.locolor:
         app.colorMode = "16"
-    #durhelp_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp.dur")
-
     if args.cp437:
         app.charEncoding = 'cp437'
 
     if args.blackbg:
         app.blackbg = False
-    else: app.blackbg = True
+    else:
+        app.blackbg = True
 
     # load configuration file
     if app.loadConfigFile():
@@ -106,7 +104,7 @@ def main(fetch_args=None):
     app.durhelp256_fullpath = durhelp256_fullpath
     app.durhelp16_fullpath = durhelp16_fullpath
 
-    if args.play:
+    if args.filename:
         app.playOnlyMode = True
         app.editorRunning = False
 
@@ -118,27 +116,8 @@ def main(fetch_args=None):
     if app.blackbg:
         ui.enableTransBackground()
     if args.filename:
-        ui.loadFromFile(args.filename, 'dur')
-    if args.play:
-        # Just play files and exit
-        app.drawBorders = False
-        if args.times:
-            app.playNumberOfTimes = args.times[0]
-        for movie in args.play:
-            ui.stdscr.clear()
-            ui.loadFromFile(movie, 'dur')
-            if app.fetchMode:
-                ui.replace_neofetch_keys()
-            ui.startPlaying()
-        if args.delayexit:
-            time.sleep(args.delayexit[0])
-        ui.verySafeQuit()
-
-    #ui.refresh()
-    #ui.mainLoop()
-    #ui.openFilePicker()
+        app.play_queue = args.filename
     while app.durview_running:
-        #ui.openFromMenu()
         ui.runDurView()
     ui.verySafeQuit()
 

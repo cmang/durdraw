@@ -274,7 +274,7 @@ class UserInterface():  # Separate view (curses) from this controller
         #curses.use_default_colors()
         self.enableTransBackground()
 
-    def enableTrueCGAColors(self):
+    def enableTrueVGAColors(self):
         curses.use_default_colors()
         # red
         intense = 1000  # hex FF
@@ -1691,10 +1691,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.scroll_viewer_left()
                     elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
                         self.scroll_viewer_right()
-                    elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
-                        self.xy[1]
-                    elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
-                        self.xy[1] = self.mov.sizeX
+                    elif c in [ord('v')]:      # v - enable VGA colors
+                        self.enableTrueVGAColors()
+                    #elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
+                    #    self.xy[1]
+                    #elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
+                    #    self.xy[1] = self.mov.sizeX
                     if c in [61, 43]: # = and + - fps up
                         self.increaseFPS()
                         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -3604,7 +3606,9 @@ class UserInterface():  # Separate view (curses) from this controller
         #for thread in threading.enumerate():
         #    if thread.is_alive():
         #        thread.set()
-        self.appState.pool_executor.shutdown(wait=True, cancel_futures=True)
+        if self.appState.pool_executor != None:
+            # Preview Exeutor thread dispatch running. Kill em
+            self.appState.pool_executor.shutdown(wait=True, cancel_futures=True)
 
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -7032,6 +7036,12 @@ Can use ESC or META instead of ALT
         """ Launch the UI for the DurView app """
         # While there are files to read from the openFilePicker(), put them into view mode
         #
+        #if self.appState.curOpenFileName != "":
+        #    # We already opened a file from the command-line, so play it.
+        #    self.enterViewMode()
+        for movie in self.appState.play_queue:
+            self.loadFromFile(movie, 'dur')
+            self.enterViewMode()
         while self.appState.durview_running:
             #file = self.openFilePicker()
             opened = self.openFromMenu()
