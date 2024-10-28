@@ -212,6 +212,14 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     #    caller.notify(f"Guessed width: {width}, height: {height}")
     #width = min(width, maxWidth)
     height = max(height, 25)
+
+    if width > 350:
+        # I think something is probably wrong. Bad width and/or height.
+        width = 80
+    if height > 2000:
+        height = 500
+        #print(f"Bad height or width. Width: {width}, height: {height}")
+        #pdb.set_trace()
     new_frame = durmovie.Frame(width, height + 1)
     #if appState.debug:
     #    caller.notify(f"debug: maxWidth = {maxWidth}")
