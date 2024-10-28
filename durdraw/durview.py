@@ -116,7 +116,12 @@ def main(fetch_args=None):
     if app.blackbg:
         ui.enableTransBackground()
     if args.filename:
-        app.play_queue = args.filename
+        if os.path.isdir(args.filename[0]):
+            # If the first paramater is a directory, treat that as the starting folder.
+            app.workingLoadDirectory = args.filename[0]
+            app.sixteenc_browsing = False
+        else:   # Otherwise, add all the files to the play queue.
+            app.play_queue = args.filename
     while app.durview_running:
         ui.runDurView()
     ui.verySafeQuit()
