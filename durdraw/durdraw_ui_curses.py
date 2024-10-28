@@ -4598,7 +4598,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                             self.selected_item_number = 0
                                             search_string = ""
                                         elif self.appState.sixteenc_browsing:
-                                            self.notify("Double Clicked on 16c item")
+                                            #self.notify("Double Clicked on 16c item")
                                             search_string = ""
                                             # Clicked a year or pack name in 16c, so navigate in.
                                             if self.sixteenc_levels[self.sixteenc_level] == "root":
@@ -4620,6 +4620,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 self.selected_item_number = 0
                                                 top_line = 0
                                                 c = None
+
                                             elif self.sixteenc_levels[self.sixteenc_level] == "year":
                                                 if file_list[self.selected_item_number] == '../':
                                                     # Navigate back down into root
@@ -4635,10 +4636,44 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     search_files_list = file_list
                                                     top_line = 0
                                                     c = None
+                                                else:    
+                                                    # Navigate from year into the pack
+                                                    self.appState.sixteenc_pack = file_list[self.selected_item_number]
+                                                    try:
+                                                        sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
+                                                    except:
+                                                        pdb.set_trace()
+                                                    self.selected_item_number = 0
+                                                    folders = ['../']
+                                                    file_list = folders
+                                                    file_list += sixteenc_files
+                                                    full_file_list = file_list
+                                                    search_files_list = file_list
+                                                    #for dirname in folders:
+                                                    #    file_list.append(dirname)
+                                                    file_list = sorted(file_list)
+                                                    self.sixteenc_level += 1    # from "year" to "pack"
+                                                    top_line = 0
+                                                    search_string = ""
+                                            # Because 16c files are being added to the directory list, for some reason:
+                                            elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                                                # Picked a file, so download and load it 
+                                                filename = file_list[self.selected_item_number]
+                                                url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
+                                                self.cursorOn()
+                                                return url, "remote"
+
                                     else:   # clicked a file, try to load it
-                                        full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
-                                        self.cursorOn()
-                                        return full_path, "local"
+                                        if self.appState.sixteenc_browsing:
+                                            # Picked a file, so download and load it 
+                                            filename = file_list[self.selected_item_number]
+                                            url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
+                                            self.cursorOn()
+                                            return url, "remote"
+                                        else:
+                                            full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
+                                            self.cursorOn()
+                                            return full_path, "local"
                     if mouseLine == realmaxY - 4:    # on the button bar
                         if mouseCol in range(showall_column,showall_column+3):  # clicked [X] All
                             if mask_all:
