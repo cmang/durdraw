@@ -2,6 +2,7 @@ from copy import deepcopy
 from durdraw.durdraw_options import Options
 import json
 import pdb
+import re
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -285,12 +286,23 @@ class Movie():
             for line in frame.content:
                 line_str = ''.join(line)
                 if search_str in line_str:
-                    if len(search_str) < len(replace_str):
-                        line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
+                    # do regexp way, to keep justification
+                    match = re.search(f"{search_str}\\s*", line_str)
+                    if match:
+                        # Calculate the exact width to replace
+                        width = match.end() - match.start()
+                        # Trim or pad replace_str to fit in the calculated width
+                        replace_with = replace_str[:width].ljust(width)
+                        # Substitute in the line
+                        line_str = line_str[:match.start()] + replace_with + line_str[match.end():]
+
                     else:
-                        line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
-                    #caller.notify(f"found {search_str} in line:")
-                    #caller.notify(f"{line_str}")
+                        # if that fails, do old way
+                        if len(search_str) < len(replace_str):
+                            #line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
+                            line_str = line_str.replace(search_str, replace_str)
+                        else:
+                            line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
                     # inject modified line back into frame
                     line = list(line_str)
                     frame.content[line_num] = line
