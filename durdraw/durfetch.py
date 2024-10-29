@@ -101,7 +101,10 @@ def main():
             print(f"Error: Could not find an animation by that name at {filename[0]}")
             exit(1)
     elif args.filename == []:   # no file name passed, so pick an appropriate one.
-        filename = [get_internal_durf_path() + "/" + auto_load_file(neofetch_data, rand=args.rand, fake_os=faked)]
+        if args.rand:   # don't prefix path, cuz all_dur_files() already did it
+            filename = [auto_load_file(neofetch_data, rand=args.rand, fake_os=faked)]
+        else:
+            filename = [get_internal_durf_path() + "/" + auto_load_file(neofetch_data, fake_os=faked)]
     else:
         filename = args.filename
     #print(filename)
