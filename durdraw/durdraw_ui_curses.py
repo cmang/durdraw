@@ -966,8 +966,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.debug = not self.appState.debug
 
     def toggleWideWrapping(self):
-        if self.appState.wrapWidth < 120:
-            self.appState.wrapWidth = 120
+        #if self.appState.wrapWidth < 120:
+        if self.appState.wrapWidth == 80:
+            self.appState.wrapWidth = 900
         else:
             self.appState.wrapWidth = 80
         self.notify(f"Line wrapping for loading ANSIs set to: {self.appState.wrapWidth}")
@@ -1352,6 +1353,27 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.topLine = oldTopLine
         self.appState.firstCol = oldFirstCol
         self.appState.drawBorders = True
+
+
+    def showDurViewHelp(self):
+        helpLines = [
+                "Up, k, mouse wheel - Scroll up",
+                "Down, j, mouse wheel - Scroll down",
+                "Left, h - Scroll left",
+                "Right, l - Scroll right",
+                "PgUp, u - Scroll up one page",
+                "PgDown, d - Scroll down one page",
+                "Home - Scroll to top",
+                "End - Scroll to bottom",
+                "+ - Increase animation speed",
+                "- - Decrease animation speed",
+                "i - Show file information",
+                "v - Set VGA Terminal Colors",
+                "Enter - Back to file list, or next in queue",
+                "Esc - Back to file list",
+                "?, F1 - Help",
+                "q - Exit Viewer"
+            ]
 
     def showViewerHelp(self):
         """ Show the help screen for the player/viewer mode """
@@ -4387,7 +4409,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     full_file_list = file_list
 
             # Set search matching
-            filtered_list = [item for item in full_file_list if search_string.lower() in item.lower()]
+            #filtered_list = [item for item in full_file_list if search_string.lower() in item.lower()]
             if search_string != '':
                 file_list = [item for item in full_file_list if search_string.lower() in item.lower()]
                 if len(file_list) == 0:
@@ -7040,7 +7062,7 @@ Can use ESC or META instead of ALT
         #    # We already opened a file from the command-line, so play it.
         #    self.enterViewMode()
         for movie in self.appState.play_queue:
-            self.loadFromFile(movie, 'dur')
+            self.loadFromFile(movie, 'dur') # this loads ansi files, too. win
             self.enterViewMode()
         while self.appState.durview_running:
             #file = self.openFilePicker()
