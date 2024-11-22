@@ -34,31 +34,29 @@ You can install from your OS repositories, or follow the instructions below to i
 
 If you just want to run it without instalilng, scroll down to the next section.
 
-1: Download and extract, or use git to download:
+1. Download and extract, or use git to download:
 
-```shell
-git clone https://github.com/cmang/durdraw.git
-cd durdraw
-```
+    ```shell
+    git clone https://github.com/cmang/durdraw.git
+    cd durdraw
+    ```
 
-2: Install or upgrade using pip:
+2. Install or upgrade using pip:
 
-```shell
-pip install --upgrade .
-```
+    ```shell
+    pip install --upgrade .
+    ```
+    Or run the installer:
 
-Or run the installer:
+    ```shell
+    python3 setup.py install
+    ```
 
-```shell
-python3 setup.py install
-```
+3. Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
 
-3: Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
-
-```shell
-./installconf.sh
-```
-
+    ```shell
+    ./installconf.sh
+    ```
 
 You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
 
