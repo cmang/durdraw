@@ -59,7 +59,7 @@ You can install durdraw via several methods:
 
 After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
 
-_If you just want to run it without installing, scroll down to the next section._
+_If you just want to run it without installing, see [RUNNING WITHOUT INSTALLING](#running-without-installing)_
 
 ### Via OS Repositories
 
