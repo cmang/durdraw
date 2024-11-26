@@ -28,11 +28,12 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
     - [Via OS Repositories](#via-os-repositories)
     - [Via Source Repository](#via-source-repository)
     - [Via pip](#via-pip)
-  - [Running Without Installing](#running-without-installing)
+    - [Running Without Installing](#running-without-installing)
   - [Gallery](#gallery)
-  - [Command Line Usage](#command-line-usage)
-  - [Interactive Usage/Editing](#interactive-usageediting)
-  - [Configuration](#configuration)
+  - [Usage](#usage)
+    - [Command Line](#command-line)
+    - [Interactive Usage/Editing](#interactive-usageediting)
+    - [Configuration](#configuration)
   - [Durfetch](#durfetch)
   - [FAQ](#faq)
   - [Links, Media \& Thanks](#links-media--thanks)
@@ -116,7 +117,7 @@ python3 -m pip install 'git+https://github.com/cmang/durdraw@0.28.0'
 python3 -m pip install 'git+https://github.com/cmang/durdraw@dev'
 ```
 
-## Running Without Installing
+### Running Without Installing
 
 You can run Durdraw with:
 
@@ -145,7 +146,9 @@ To look at some included example animations:
 ![cm-doge](https://user-images.githubusercontent.com/261501/210064365-e9303bee-7842-4068-b356-cd314341098b.gif)
 ![bsd-color-new](https://user-images.githubusercontent.com/261501/210064354-5c1c2adc-06a3-43c5-8e21-30b1a81db315.gif)
 
-## Command Line Usage
+## Usage
+
+### Command Line
 
 You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
 
@@ -203,7 +206,7 @@ options:
 
 </pre>
 
-## Interactive Usage/Editing
+### Interactive Usage/Editing
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 
@@ -297,7 +300,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
     Paint (P). You can now use the mouse to paint with your custom brush.
 ```
 
-## Configuration
+### Configuration
 
 You can create a custom startup file where you can set a theme and other options.
 
