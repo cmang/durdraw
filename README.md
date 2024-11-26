@@ -24,12 +24,12 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 - [Durdraw](#durdraw)
   - [OVERVIEW](#overview)
   - [REQUIREMENTS](#requirements)
+    - [OPTIONAL REQUIREMENTS](#optional-requirements)
   - [INSTALLATION](#installation)
     - [Via OS Repositories](#via-os-repositories)
     - [Via Source Repository](#via-source-repository)
     - [Via pip](#via-pip)
   - [RUNNING WITHOUT INSTALLING](#running-without-installing)
-  - [OPTIONAL INSTALLATION](#optional-installation)
   - [GALLERY](#gallery)
   - [COMMAND LINE USAGE](#command-line-usage)
   - [INTERACTIVE USAGE/EDITING](#interactive-usageediting)
@@ -48,6 +48,17 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 * Python 3 (3.10+ recommended)
 * Linux, macOS, or other Unix-like System
+
+### OPTIONAL REQUIREMENTS
+
+1. `ansilove`
+
+    For PNG and animated GIF export, please install `ansilove` (https://ansilove.org/) and make sure it is is in your path.   
+    _PNG and GIF export only works in 16-color mode for now, and only with CP437 compatible charcters._
+
+3. `neofetch`
+
+    For [DURFETCH](#durfetch) support, please install `neofetch` and place it in your path.
 
 ## INSTALLATION
 
@@ -119,12 +130,6 @@ To look at some included example animations:
 ```shell
 ./start-durdraw -p examples/*.dur
 ```
-
-## OPTIONAL INSTALLATION
-
-For PNG and animated GIF export, please install Ansilove (https://ansilove.org/) and make sure it is is in your path. PNG and GIF export only work in 16-color mode for now, and only with CP437 compatible charcters. You also need the PIL python module.
-
-For Durfetch support, please install Neofetch and place it in your path.
 
 ## GALLERY
 
