@@ -34,31 +34,29 @@ You can install from your OS repositories, or follow the instructions below to i
 
 If you just want to run it without instalilng, scroll down to the next section.
 
-1: Download and extract, or use git to download:
+1. Download and extract, or use git to download:
 
-```
-   git clone https://github.com/cmang/durdraw.git  
-   cd durdraw 
-```
+    ```shell
+    git clone https://github.com/cmang/durdraw.git
+    cd durdraw
+    ```
 
-2: Install or upgrade using pip:
+2. Install or upgrade using pip:
 
-```
+    ```shell
     pip install --upgrade .
-```
+    ```
+    Or run the installer:
 
-Or run the installer:
-
-```
+    ```shell
     python3 setup.py install
-```
+    ```
 
-3: Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
+3. Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
 
-```
+    ```shell
     ./installconf.sh
-```
-
+    ```
 
 You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
 
@@ -66,14 +64,14 @@ You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw
 
 You can run Durdraw with:
 
-```
-    ./start-durdraw
+```shell
+./start-durdraw
 ```
 
 To look at some included example animations:
 
-```
-    ./start-durdraw -p examples/*.dur
+```shell
+./start-durdraw -p examples/*.dur
 ```
 
 ## OPTIONAL INSTALLATION
@@ -101,15 +99,15 @@ For Durfetch support, please install Neofetch and place it in your path.
 
 You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
 
-```
-    $ durdraw -p filename.dur
-    $ durdraw -p file1.dur file2.dur file3.dur ...
+```shell
+durdraw -p filename.dur
+durdraw -p file1.dur file2.dur file3.dur ...
 ```
 
 Or view a downloaded ANSI artpack with:
 
-```
-    $ durdraw -p *.DIZ *.ASC *.ANS
+```shell
+durdraw -p *.DIZ *.ASC *.ANS
 ```
 
 Other command-line options:
@@ -255,8 +253,8 @@ You can create a custom startup file where you can set a theme and other options
 
 If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
 
-```
-    ./installconf.sh
+```shell
+./installconf.sh
 ```
 
 This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
