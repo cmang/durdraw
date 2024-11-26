@@ -21,6 +21,29 @@ color output, and other interesting features.
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
+- [Durdraw](#durdraw)
+  - [OVERVIEW](#overview)
+  - [REQUIREMENTS](#requirements)
+  - [INSTALLATION](#installation)
+    - [Via OS Repositories](#via-os-repositories)
+    - [Via Source Repository](#via-source-repository)
+    - [Via pip](#via-pip)
+  - [RUNNING WITHOUT INSTALLING](#running-without-installing)
+  - [OPTIONAL INSTALLATION](#optional-installation)
+  - [GALLERY](#gallery)
+  - [COMMAND LINE USAGE](#command-line-usage)
+  - [INTERACTIVE USAGE/EDITING](#interactive-usageediting)
+  - [CONFIGURATION](#configuration)
+  - [DURFETCH](#durfetch)
+  - [FAQ](#faq)
+  - [LINKS, MEDIA AND THANKS](#links-media-and-thanks)
+  - [SUPPORT](#support)
+  - [COMMUNITY](#community)
+  - [CREDITS](#credits)
+  - [LEGAL](#legal)
+
+---
+
 ## REQUIREMENTS
 
 * Python 3 (3.10+ recommended)
