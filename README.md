@@ -21,26 +21,17 @@ color output, and other interesting features.
 Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
-- [Durdraw](#durdraw)
-  - [Overview](#overview)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-    - [Via OS Repositories](#via-os-repositories)
-    - [Via Source Repository](#via-source-repository)
-    - [Via pip](#via-pip)
-    - [Running Without Installing](#running-without-installing)
-  - [Gallery](#gallery)
-  - [Usage](#usage)
-    - [Command Line](#command-line)
-    - [Interactive Usage/Editing](#interactive-usageediting)
-    - [Configuration](#configuration)
-  - [Durfetch](#durfetch)
-  - [FAQ](#faq)
-  - [Links, Media \& Thanks](#links-media--thanks)
-  - [Support](#support)
-  - [Community](#community)
-  - [Credits](#credits)
-  - [Legal](#legal)
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Gallery](#gallery)
+- [Usage](#usage)
+  - [Command Line](#command-line)
+  - [Interactive Usage/Editing](#interactive-usageediting)
+  - [Configuration](#configuration)
+- [Durfetch](#durfetch)
+- [FAQ](#faq)
+- [Other](#other)
 
 ---
 
@@ -492,7 +483,15 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
   - [x] Disable menu shortcut key (F10 by default)
   - [x] Disable help window shortcut key (F1 by default)
 
-## Links, Media & Thanks
+## Other
+
+- [Links, Media \& Thanks](#links-media--thanks)
+- [Support](#support)
+- [Community](#community)
+- [Credits](#credits)
+- [Legal](#legal)
+
+### Links, Media & Thanks
 
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
@@ -512,7 +511,7 @@ Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://hara
 
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
-## Support
+### Support
 
 Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
 
@@ -530,7 +529,7 @@ Other ways to support Durdraw include reporting bugs, providing feedback, and co
 
 If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
 
-## Community
+### Community
 
 There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/cmang/durdraw/discussions
 
@@ -538,7 +537,7 @@ We also have a Discord server for Durdraw users. Join us: https://discord.gg/9Tr
 
 If you are feeling really old school, you can try the #durdraw IRC channel on irc.libera.chat.
 
-## Credits
+### Credits
 
 Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
@@ -548,7 +547,7 @@ Development: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA, HK
 
-## Legal
+### Legal
 
 Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
