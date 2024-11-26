@@ -426,9 +426,9 @@ unixbox
 
 Here are some durfetch examples:
 
-![tux-fetch-colors](https://github.com/user-attachments/assets/4010d18a-1b79-4594-a9cd-17234584f3c8)
-
-![unixy3](https://github.com/user-attachments/assets/812514d4-0216-4f41-8384-84563fa664b7)
+| | |
+|-|-|
+| ![tux-fetch-colors](https://github.com/user-attachments/assets/4010d18a-1b79-4594-a9cd-17234584f3c8) | ![unixy3](https://github.com/user-attachments/assets/812514d4-0216-4f41-8384-84563fa664b7) |
 
 ## FAQ
 
