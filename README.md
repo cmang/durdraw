@@ -10,7 +10,7 @@ Durdraw
 ![durdraw-0 28-demo](https://github.com/user-attachments/assets/3bdb0c46-7f21-4514-9b48-ac00ca62e68e)
 
 
-## OVERVIEW
+## Overview
 
 Durdraw is an ASCII, Unicode and ANSI art editor for UNIX-like systems (Linux,
 macOS, etc). It runs in modern Utf-8 terminals and supports frame-based
@@ -22,34 +22,34 @@ Durdraw is heavily inspired by classic ANSI editing software for MS-DOS and
 Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 - [Durdraw](#durdraw)
-  - [OVERVIEW](#overview)
-  - [REQUIREMENTS](#requirements)
-    - [OPTIONAL REQUIREMENTS](#optional-requirements)
-  - [INSTALLATION](#installation)
+  - [Overview](#overview)
+  - [Requirements](#requirements)
+    - [Optional Requirements](#optional-requirements)
+  - [Installation](#installation)
     - [Via OS Repositories](#via-os-repositories)
     - [Via Source Repository](#via-source-repository)
     - [Via pip](#via-pip)
-  - [RUNNING WITHOUT INSTALLING](#running-without-installing)
-  - [GALLERY](#gallery)
-  - [COMMAND LINE USAGE](#command-line-usage)
-  - [INTERACTIVE USAGE/EDITING](#interactive-usageediting)
-  - [CONFIGURATION](#configuration)
-  - [DURFETCH](#durfetch)
+  - [Running Without Installing](#running-without-installing)
+  - [Gallery](#gallery)
+  - [Command Line Usage](#command-line-usage)
+  - [Interactive Usage/Editing](#interactive-usageediting)
+  - [Configuration](#configuration)
+  - [Durfetch](#durfetch)
   - [FAQ](#faq)
-  - [LINKS, MEDIA AND THANKS](#links-media-and-thanks)
-  - [SUPPORT](#support)
-  - [COMMUNITY](#community)
-  - [CREDITS](#credits)
-  - [LEGAL](#legal)
+  - [Links, Media \& Thanks](#links-media--thanks)
+  - [Support](#support)
+  - [Community](#community)
+  - [Credits](#credits)
+  - [Legal](#legal)
 
 ---
 
-## REQUIREMENTS
+## Requirements
 
 * Python 3 (3.10+ recommended)
 * Linux, macOS, or other Unix-like System
 
-### OPTIONAL REQUIREMENTS
+### Optional Requirements
 
 1. `ansilove`
 
@@ -58,9 +58,9 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 3. `neofetch`
 
-    For [DURFETCH](#durfetch) support, please install `neofetch` and place it in your path.
+    For [Durfetch](#durfetch) support, please install `neofetch` and place it in your path.
 
-## INSTALLATION
+## Installation
 
 You can install durdraw via several methods:
 
@@ -68,9 +68,9 @@ You can install durdraw via several methods:
 - [Via Source Repository](#via-source-repository)
 - [Via pip](#via-pip)
 
-After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
+After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for [command-line options](#command-line-usage).
 
-_If you just want to run it without installing, see [RUNNING WITHOUT INSTALLING](#running-without-installing)_
+_If you just want to run it without installing, see [Running Without Installing](#running-without-installing)_
 
 ### Via OS Repositories
 
@@ -117,7 +117,7 @@ python3 -m pip install 'git+https://github.com/cmang/durdraw@0.28.0'
 python3 -m pip install 'git+https://github.com/cmang/durdraw@dev'
 ```
 
-## RUNNING WITHOUT INSTALLING
+## Running Without Installing
 
 You can run Durdraw with:
 
@@ -131,7 +131,7 @@ To look at some included example animations:
 ./start-durdraw -p examples/*.dur
 ```
 
-## GALLERY
+## Gallery
 
 [![Watch the Tutorial Part 1](https://github.com/cmang/durdraw/assets/261501/ca33c81b-0559-4fc7-a49b-a11768938d3d)](https://youtu.be/vWczO0Vd_54)
 
@@ -146,7 +146,7 @@ To look at some included example animations:
 ![cm-doge](https://user-images.githubusercontent.com/261501/210064365-e9303bee-7842-4068-b356-cd314341098b.gif)
 ![bsd-color-new](https://user-images.githubusercontent.com/261501/210064354-5c1c2adc-06a3-43c5-8e21-30b1a81db315.gif)
 
-## COMMAND LINE USAGE
+## Command Line Usage
 
 You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
 
@@ -204,7 +204,7 @@ options:
 
 </pre>
 
-## INTERACTIVE USAGE/EDITING
+## Interactive Usage/Editing
 
 Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
 
@@ -298,7 +298,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
     Paint (P). You can now use the mouse to paint with your custom brush.
 ```
 
-## CONFIGURATION
+## Configuration
 
 You can create a custom startup file where you can set a theme and other options.
 
@@ -397,7 +397,7 @@ menuTitleColor: the color of menu titles
 menuBorderColor: the color of the border around menus
 ```
 
-## DURFETCH
+## Durfetch
 
 Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch. You can also use built-in example animations.
 
@@ -489,7 +489,7 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
   - [x] Disable menu shortcut key (F10 by default)
   - [x] Disable help window shortcut key (F1 by default)
 
-## LINKS, MEDIA AND THANKS
+## Links, Media & Thanks
 
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
@@ -509,7 +509,7 @@ Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://hara
 
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
-## SUPPORT 
+## Support
 
 Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
 
@@ -527,7 +527,7 @@ Other ways to support Durdraw include reporting bugs, providing feedback, and co
 
 If you need assistance or have questions about Durdraw, feel free to reach out to us on GitHub. We're happy to help!
 
-## COMMUNITY
+## Community
 
 There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/cmang/durdraw/discussions
 
@@ -535,7 +535,7 @@ We also have a Discord server for Durdraw users. Join us: https://discord.gg/9Tr
 
 If you are feeling really old school, you can try the #durdraw IRC channel on irc.libera.chat.
 
-## CREDITS
+## Credits
 
 Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
@@ -545,7 +545,7 @@ Development: https://github.com/cmang/durdraw
 
 ANSI and ASCII artists: cmang, H7, LDA, HK
 
-## LEGAL
+## Legal
 
 Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
