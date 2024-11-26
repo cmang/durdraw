@@ -24,7 +24,6 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 - [Durdraw](#durdraw)
   - [Overview](#overview)
   - [Requirements](#requirements)
-    - [Optional Requirements](#optional-requirements)
   - [Installation](#installation)
     - [Via OS Repositories](#via-os-repositories)
     - [Via Source Repository](#via-source-repository)
@@ -49,14 +48,14 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 * Python 3 (3.10+ recommended)
 * Linux, macOS, or other Unix-like System
 
-### Optional Requirements
+**Optional Requirements**
 
 1. `ansilove`
 
     For PNG and animated GIF export, please install `ansilove` (https://ansilove.org/) and make sure it is is in your path.   
     _PNG and GIF export only works in 16-color mode for now, and only with CP437 compatible charcters._
 
-3. `neofetch`
+2. `neofetch`
 
     For [Durfetch](#durfetch) support, please install `neofetch` and place it in your path.
 
