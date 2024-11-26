@@ -54,7 +54,7 @@ _If you just want to run it without installing, scroll down to the next section.
 2. Install or upgrade using pip:
 
     ```shell
-    pip install --upgrade .
+    python3 -m pip install --upgrade .
     ```
     Or run the installer:
 
@@ -74,13 +74,13 @@ Alternatively, you can install the pip package pip directly (_Please note that t
 
 ```shell
 # install `master` branch version:
-pip install 'git+https://github.com/cmang/durdraw'
+python3 -m pip install 'git+https://github.com/cmang/durdraw'
 
 # install specific version:
-pip install 'git+https://github.com/cmang/durdraw@0.28.0'
+python3 -m pip install 'git+https://github.com/cmang/durdraw@0.28.0'
 
 # install `dev` branch version:
-pip install 'git+https://github.com/cmang/durdraw@dev'
+python3 -m pip install 'git+https://github.com/cmang/durdraw@dev'
 ```
 
 ## RUNNING WITHOUT INSTALLING
