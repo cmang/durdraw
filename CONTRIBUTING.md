@@ -12,5 +12,6 @@ That's awesome that you want to help! I thank you. The guidelines are pretty loo
 
 * If you want to contribute ANSI or ASCII Art, that's great! Please post it in the Discussions on Github and give consent if you are OK with it being used (in the program, website, Readme file, youtube videos, etc).
 
+* There is a wish list for desired features here: https://github.com/cmang/durdraw/wiki/Wish-List
+  
 * Reviews, feedback, tutorials, demonstrations, etc. are also welcome. Post any art you created with Durdraw in the Discussions, because we would love to see them!
- 
