@@ -28,11 +28,21 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 ## INSTALLATION
 
-You can install from your OS repositories, or follow the instructions below to install from source:
+You can install durdraw via several methods:
+
+- [Via OS Repositories](#via-os-repositories)
+- [Via Source Repository](#via-source-repository)
+- [Via pip](#via-pip)
+
+After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
+
+_If you just want to run it without installing, scroll down to the next section._
+
+### Via OS Repositories
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/durdraw.svg)](https://repology.org/project/durdraw/versions)
 
-If you just want to run it without instalilng, scroll down to the next section.
+### Via Source Repository
 
 1. Download and extract, or use git to download:
 
@@ -58,7 +68,20 @@ If you just want to run it without instalilng, scroll down to the next section.
     ./installconf.sh
     ```
 
-You should now be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for command-line options.
+### Via pip
+
+Alternatively, you can install the pip package pip directly (_Please note that this installation method does not include everything, i.e. the example dur files under `examples/`_, or the entrypoint scripts in the section below)
+
+```shell
+# install `master` branch version:
+pip install 'git+https://github.com/cmang/durdraw'
+
+# install specific version:
+pip install 'git+https://github.com/cmang/durdraw@0.28.0'
+
+# install `dev` branch version:
+pip install 'git+https://github.com/cmang/durdraw@dev'
+```
 
 ## RUNNING WITHOUT INSTALLING
 
