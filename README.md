@@ -298,7 +298,7 @@ If you did not already do so during installation, you can install a sample confi
 
 Here is an example durdraw.ini file, showing the available options:
 
-```toml
+```ini
 ; Durdraw 0.28.0 Configuration File
 
 [Main]
@@ -330,7 +330,7 @@ You can also load a custom theme file using the --theme command-line argument an
 
 Here is an example 16-color theme:
 
-```toml
+```ini
 [Theme-16]
 name: 'Purple Drank'
 mainColor: 6
@@ -343,7 +343,7 @@ promptColor: 4
 
 and a 256-color theme:
 
-```toml
+```ini
 [Theme-256]
 name: 'Muted Form'
 mainColor: 104
@@ -396,7 +396,7 @@ Keys will only be replaced if there is enough room in the art for the replacemen
 
 The following values can be used in your art and automatically interpreted by Durfetch:
 
-```
+```yaml
 {OS}
 {Host}
 {Kernel}
@@ -416,7 +416,7 @@ The following values can be used in your art and automatically interpreted by Du
 
 The durfetch executable takes the following command-line paramaters:
 
-```
+```shell
 usage: durfetch [-h] [-r | -l LOAD] [--linux | --bsd] [filename ...]
 
 An animated fetcher. A front-end for Durdraw and Neofetch integration.
