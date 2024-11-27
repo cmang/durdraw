@@ -328,7 +328,13 @@ The option 'theme-16' sets the path to the theme file used in 16-color mode, and
 
 You can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
 
-Here is an example 16-color theme:
+<table>
+  <tr>
+    <td>16-color theme</td>
+    <td>256-color theme</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">
 
 ```ini
 [Theme-16]
@@ -341,7 +347,8 @@ notificationColor: 4
 promptColor: 4
 ```
 
-and a 256-color theme:
+  </td>
+  <td style="vertical-align: top;">
 
 ```ini
 [Theme-256]
@@ -357,9 +364,13 @@ menuTitleColor: 159
 menuBorderColor: 24
 ```
 
-The colors and theme options are as follows:
+  </td>
+</tr>
+</table>
 
-colors for 16-color mode:
+#### Colour Options
+
+> (_for 16-color mode - color codes numbers for 256-color mode can be found in Durdraw's 256-color selector._)
 
 | code | color   |
 |------|---------|
@@ -372,19 +383,19 @@ colors for 16-color mode:
 | 7    | yellow  |
 | 8    | white   |
 
-color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
+#### Theme Options
 
-```yaml
-mainColor: the color of most text
-clickColor: the color of buttons (clickable items)
-clickHighlightColor: the color the button changes to for a moment when clicked
-borderColor: the color of the border around a drawing
-notificationColor: the color of notification messages
-promptColor: the color of user prompt messages
-menuItemColor: the color of menu items
-menuTitleColor: the color of menu titles
-menuBorderColor: the color of the border around menus
-```
+| theme option        | description |
+|---------------------|-------------|
+| mainColor           | the color of most text |
+| clickColor          | the color of buttons (clickable items) |
+| clickHighlightColor | the color the button changes to for a moment when clicked |
+| borderColor         | the color of the border around a drawing |
+| notificationColor   | the color of notification messages |
+| promptColor         | the color of user prompt messages |
+| menuItemColor       | the color of menu items |
+| menuTitleColor      | the color of menu titles |
+| menuBorderColor     | the color of the border around menus |
 
 ## Durfetch
 
