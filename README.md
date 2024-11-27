@@ -159,8 +159,7 @@ durdraw -p *.DIZ *.ASC *.ANS
 
 Other command-line options:
 
-<pre>
-
+```
 usage: durdraw [-h] [-p PLAY [PLAY ...]] [-d DELAYEXIT] [-x TIMES] [--256color | --16color] [-b] [-W WIDTH] [-H HEIGHT] [-m]
                      [--wrap WRAP] [--nomouse] [--cursor CURSOR] [--notheme] [--theme THEME] [--cp437] [--export-ansi] [-u UNDOSIZE]
                      [--fetch] [-V]
@@ -197,8 +196,7 @@ options:
                         Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.
   --fetch               Replace fetch strings with Neofetch output
   -V, --version         Show version number and exit
-
-</pre>
+```
 
 ### Interactive Usage/Editing
 
@@ -300,7 +298,7 @@ If you did not already do so during installation, you can install a sample confi
 
 Here is an example durdraw.ini file, showing the available options:
 
-<pre>
+```toml
 ; Durdraw 0.28.0 Configuration File
 
 [Main]
@@ -324,7 +322,7 @@ Here is an example durdraw.ini file, showing the available options:
 [Theme]
 theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
-</pre>
+```
 
 The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
 
@@ -332,7 +330,7 @@ You can also load a custom theme file using the --theme command-line argument an
 
 Here is an example 16-color theme:
 
-<pre>
+```toml
 [Theme-16]
 name: 'Purple Drank'
 mainColor: 6
@@ -341,11 +339,11 @@ borderColor: 6
 clickHighlightColor: 5
 notificationColor: 4
 promptColor: 4
-</pre>
+```
 
 and a 256-color theme:
 
-<pre>
+```toml
 [Theme-256]
 name: 'Muted Form'
 mainColor: 104
@@ -357,7 +355,7 @@ promptColor: 189
 menuItemColor: 189
 menuTitleColor: 159
 menuBorderColor: 24
-</pre>
+```
 
 The colors and theme options are as follows:
 
@@ -373,7 +371,7 @@ colors for 16-color mode:
 
 color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
 
-```
+```yaml
 mainColor: the color of most text
 clickColor: the color of buttons (clickable items)
 clickHighlightColor: the color the button changes to for a moment when clicked
