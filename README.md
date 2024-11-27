@@ -92,6 +92,8 @@ _If you just want to run it without installing, see [Running Without Installing]
     ```shell
     ./installconf.sh
     ```
+    This will place durdraw.ini into `~/.durdraw/` and the themes into `~/.durdraw/themes/`.
+
 
 ### Via pip
 
@@ -294,13 +296,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 
 You can create a custom startup file where you can set a theme and other options.
 
-If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
-
-```shell
-./installconf.sh
-```
-
-This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
+If you did not already do so during installation, you can install a sample configuration (_See step 3 under[Installation via Source Repository](#via-source-repository)_)
 
 Here is an example durdraw.ini file, showing the available options:
 
