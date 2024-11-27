@@ -45,15 +45,15 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 1. `ansilove`
 
     For PNG and animated GIF export, please install `ansilove` (https://ansilove.org/) and make sure it is is in your path.   
-    _PNG and GIF export only works in 16-color mode for now, and only with CP437 compatible charcters._
+    _PNG and GIF export only works in 16-color mode for now, and only with CP437 compatible characters._
 
 2. `neofetch`
 
-    For [Durfetch](#durfetch) support, please install `neofetch` and place it in your path.
+    For [durfetch](#durfetch) support, please install `neofetch` and place it in your path.
 
 ## Installation
 
-You can install durdraw via several methods:
+You can install `durdraw` via several methods:
 
 - [Via OS Repositories](#via-os-repositories)
 - [Via Source Repository](#via-source-repository)
@@ -87,11 +87,13 @@ _If you just want to run it without installing, see [Running Without Installing]
     python3 setup.py install
     ```
 
-3. Optionally, install some themes and a sample configuration file for your local user into ~/.durdraw/:
+3. Optionally, install some themes and a sample configuration file for your local user into `~/.durdraw/`:
 
     ```shell
     ./installconf.sh
     ```
+    This will place durdraw.ini into `~/.durdraw/` and the themes into `~/.durdraw/themes/`.
+
 
 ### Via pip
 
@@ -142,7 +144,7 @@ To look at some included example animations:
 
 ### Command Line
 
-You can play a .dur file or series of .dur (or .ANS or .ASC) files with:
+You can play a `.dur` file or series of `.dur` (or `.ANS` or `.ASC`) files with:
 
 ```shell
 durdraw -p filename.dur
@@ -157,8 +159,7 @@ durdraw -p *.DIZ *.ASC *.ANS
 
 Other command-line options:
 
-<pre>
-
+```
 usage: durdraw [-h] [-p PLAY [PLAY ...]] [-d DELAYEXIT] [-x TIMES] [--256color | --16color] [-b] [-W WIDTH] [-H HEIGHT] [-m]
                      [--wrap WRAP] [--nomouse] [--cursor CURSOR] [--notheme] [--theme THEME] [--cp437] [--export-ansi] [-u UNDOSIZE]
                      [--fetch] [-V]
@@ -195,16 +196,13 @@ options:
                         Set the number of undo history states - default is 100. More requires more RAM, less saves RAM.
   --fetch               Replace fetch strings with Neofetch output
   -V, --version         Show version number and exit
-
-</pre>
+```
 
 ### Interactive Usage/Editing
 
-Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
-
-You can click highlighted areas of the screen.
-
-You can use the "Esc" (or "Meta") key to access keyboar shortcuts and commands:
+- Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
+- You can click highlighted areas of the screen.
+- You can use the "Esc" (or "Meta") key to access keyboard shortcuts and commands:
 
 ```
    ____________.       _________   __________ _________  _____          _______
@@ -294,19 +292,17 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 
 ### Configuration
 
+- [Example Themes](#example-themes)
+- [Colour Options](#colour-options)
+- [Theme Options](#theme-options)
+
 You can create a custom startup file where you can set a theme and other options.
 
-If you did not already do so during installation, you can install a sample configuration and some themes into ~/.durdraw/ with the command:
+> If you did not already do so during installation, you can install a sample configuration (_See step 3 under[Installation via Source Repository](#via-source-repository)_)
 
-```shell
-./installconf.sh
-```
+Here is an example `durdraw.ini` file, showing the available options:
 
-This will place durdraw.ini into ~/.durdraw/ and the themes into ~/.durdraw/themes/.
-
-Here is an example durdraw.ini file, showing the available options:
-
-<pre>
+```ini
 ; Durdraw 0.28.0 Configuration File
 
 [Main]
@@ -314,10 +310,10 @@ Here is an example durdraw.ini file, showing the available options:
 ; color-mode sets the color mode to start in. Available options: 16, 256
 ;color-mode: 16
 
-; disable-mouse disablse the mouse.
+; disable-mouse disables the mouse.
 ;disable-mouse: True
 
-; max-canvas atuomatically sets the canvas size to the terminal window size at startup.
+; max-canvas automatically sets the canvas size to the terminal window size at startup.
 ;max-canvas: True
 
 ; Cursor mode requests a cursor type from the terminal. Available options: block, underscore, pipe
@@ -330,15 +326,23 @@ Here is an example durdraw.ini file, showing the available options:
 [Theme]
 theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
-</pre>
+```
 
-The option 'theme-16' sets the path to the theme file used in 16-color mode, and 'theme-256' sets the theme file used for 256-color mode. 
+The option `'theme-16'` sets the path to the theme file used in 16-color mode, and `'theme-256'` sets the theme file used for 256-color mode.
 
-You can also load a custom theme file using the --theme command-line argument and passing it the path to a theme file, or disable themes entirely with the --notheme command line option.
+You can also load a custom theme file using the `--theme` command-line argument and passing it the path to a theme file, or disable themes entirely with the `--notheme` command line option.
 
-Here is an example 16-color theme:
+#### Example Themes
 
-<pre>
+<table>
+  <tr>
+    <td>16-color theme</td>
+    <td>256-color theme</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">
+
+```ini
 [Theme-16]
 name: 'Purple Drank'
 mainColor: 6
@@ -347,11 +351,12 @@ borderColor: 6
 clickHighlightColor: 5
 notificationColor: 4
 promptColor: 4
-</pre>
+```
 
-and a 256-color theme:
+  </td>
+  <td style="vertical-align: top;">
 
-<pre>
+```ini
 [Theme-256]
 name: 'Muted Form'
 mainColor: 104
@@ -363,45 +368,52 @@ promptColor: 189
 menuItemColor: 189
 menuTitleColor: 159
 menuBorderColor: 24
-</pre>
-
-The colors and theme options are as follows:
-
-colors for 16-color mode:
-1 black
-2 blue
-3 green
-4 cyan
-5 red
-6 magenta
-7 yellow
-8 white
-
-color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
-
 ```
-mainColor: the color of most text
-clickColor: the color of buttons (clickable items)
-clickHighlightColor: the color the button changes to for a moment when clicked
-borderColor: the color of the border around a drawing
-notificationColor: the color of notification messages
-promptColor: the color of user prompt messages
-menuItemColor: the color of menu items
-menuTitleColor: the color of menu titles
-menuBorderColor: the color of the border around menus
-```
+
+  </td>
+</tr>
+</table>
+
+#### Colour Options
+
+> (_for 16-color mode - color codes numbers for 256-color mode can be found in Durdraw's 256-color selector._)
+
+| code | color   |
+|------|---------|
+| 1    | black   |
+| 2    | blue    |
+| 3    | green   |
+| 4    | cyan    |
+| 5    | red     |
+| 6    | magenta |
+| 7    | yellow  |
+| 8    | white   |
+
+#### Theme Options
+
+| theme option        | description |
+|---------------------|-------------|
+| mainColor           | the color of most text |
+| clickColor          | the color of buttons (clickable items) |
+| clickHighlightColor | the color the button changes to for a moment when clicked |
+| borderColor         | the color of the border around a drawing |
+| notificationColor   | the color of notification messages |
+| promptColor         | the color of user prompt messages |
+| menuItemColor       | the color of menu items |
+| menuTitleColor      | the color of menu titles |
+| menuBorderColor     | the color of the border around menus |
 
 ## Durfetch
 
-Durfetch is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your .DUR files which durfetch will replace with values from Neofetch. You can also use built-in example animations.
+`durfetch` is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your `.dur` files which `durfetch` will replace with values from Neofetch. You can also use built-in example animations.
 
-Note that this feature is in beta, and is far from perfect, but it can be fun to play with. If anyone wants to improve durfetch, please feel free.
+Note that this feature is in beta, and is far from perfect, but it can be fun to play with. If anyone wants to improve `durfetch`, please feel free.
 
 Keys will only be replaced if there is enough room in the art for the replacement value.
 
-The following values can be used in your art and automatically interpreted by Durfetch:
+The following values can be used in your art and automatically interpreted by `durfetch`:
 
-```
+```yaml
 {OS}
 {Host}
 {Kernel}
@@ -419,15 +431,15 @@ The following values can be used in your art and automatically interpreted by Du
 {Memory}
 ```
 
-The durfetch executable takes the following command-line paramaters:
+The `durfetch` executable takes the following command-line parameters:
 
-```
+```shell
 usage: durfetch [-h] [-r | -l LOAD] [--linux | --bsd] [filename ...]
 
 An animated fetcher. A front-end for Durdraw and Neofetch integration.
 
 positional arguments:
-  filename              .durf ASCII and ANSI art file or files to use
+  filename              .dur ASCII and ANSI art file or files to use
 
 options:
   -h, --help            show this help message and exit
@@ -445,7 +457,7 @@ linux-tux
 unixbox
 ```
 
-Here are some durfetch examples:
+Here are some `durfetch` examples:
 
 | | |
 |-|-|
@@ -463,7 +475,7 @@ A: Yes, but traditional ANSI animation does not provide any control over timing,
 A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL), and in Docker using the provided Dockerfile. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, Atari ST, etc?
-A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See durformat.md for more details on the .dur file format.
+A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See `durformat.md` for more details on the `.dur` file format.
 
 #### Q: Does Durdraw support IBM-PC ANSI art?
 A: Yes! IBM-PC ANSI art popular in the "ANSI Art Scene" uses Code Page 437 character encoding, which usually needs to be translated to work with modern terminals. When Durdraw encounters these files, it will convert them to Unicode and carry on. When you save ANSI files, it will ask if you want to use CP437 or Utf-8 encoding.
@@ -495,19 +507,13 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
 
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
-Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
-
-Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
-
-Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
-
-Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
-
-Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
-
-LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
-
-Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
+- Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
+- Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
+- Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+- Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
+- Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
+- LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+- Harald Markus Wirth (hmw) has made a Web `.dur` Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
 
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
@@ -519,11 +525,9 @@ Contributions help cover essential costs like development time, domain registrat
 
 You can contribute to this project using any of these platforms:
 
-Paypal - https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6
-
-Buymeacoffee - https://buymeacoffee.com/samfoster
-
-Patreon - https://patreon.com/SamFoster
+- [Paypal](https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6)
+- [Buymeacoffee](https://buymeacoffee.com/samfoster)
+- [Patreon](https://patreon.com/SamFoster)
 
 Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for information and guidelines.
 
@@ -541,11 +545,10 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 
 Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
-Home page: http://durdraw.org
+- Home page: http://durdraw.org
+- Development: https://github.com/cmang/durdraw
 
-Development: https://github.com/cmang/durdraw
-
-ANSI and ASCII artists: cmang, H7, LDA, HK
+ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
 
 ### Legal
 
