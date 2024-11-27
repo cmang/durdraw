@@ -360,14 +360,17 @@ menuBorderColor: 24
 The colors and theme options are as follows:
 
 colors for 16-color mode:
-1 black
-2 blue
-3 green
-4 cyan
-5 red
-6 magenta
-7 yellow
-8 white
+
+| code | color   |
+|------|---------|
+| 1    | black   |
+| 2    | blue    |
+| 3    | green   |
+| 4    | cyan    |
+| 5    | red     |
+| 6    | magenta |
+| 7    | yellow  |
+| 8    | white   |
 
 color codes numbers for 256-color mode can be found in Durdraw's 256-color selector.
 
