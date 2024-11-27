@@ -200,11 +200,9 @@ options:
 
 ### Interactive Usage/Editing
 
-Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
-
-You can click highlighted areas of the screen.
-
-You can use the "Esc" (or "Meta") key to access keyboar shortcuts and commands:
+- Use the arrow keys (or mouse) and other keys to edit, much like a text editor.
+- You can click highlighted areas of the screen.
+- You can use the "Esc" (or "Meta") key to access keyboar shortcuts and commands:
 
 ```
    ____________.       _________   __________ _________  _____          _______
@@ -495,19 +493,13 @@ A: You can use ESC-1 through ESC-0 as a replacement for F1-F10. Some terminals w
 
 Special thanks to the following individuals and organizations for featuring Durdraw in their content:
 
-Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
-
-Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
-
-Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
-
-Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
-
-Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
-
-LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
-
-Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
+- Linux Magazine - https://www.linux-magazine.com/Issues/2024/281
+- Linux Voice Magazine - https://archive.org/details/LinuxVoice/Linux-Voice-Issue-015/page/n71/mode/2up
+- Bryan Lunduke at The Lunduke Journal - https://lunduke.locals.com/post/5327347/durdraw-like-thedraw-but-linux
+- Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
+- Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
+- LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+- Harald Markus Wirth (hmw) has made a Web .Dur Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
 
 If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
 
@@ -519,11 +511,9 @@ Contributions help cover essential costs like development time, domain registrat
 
 You can contribute to this project using any of these platforms:
 
-Paypal - https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6
-
-Buymeacoffee - https://buymeacoffee.com/samfoster
-
-Patreon - https://patreon.com/SamFoster
+- [Paypal](https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6)
+- [Buymeacoffee](https://buymeacoffee.com/samfoster)
+- [Patreon](https://patreon.com/SamFoster)
 
 Other ways to support Durdraw include reporting bugs, providing feedback, and contributing code. Please refer to the CONTRIBUTING.md file for information and guidelines.
 
@@ -541,11 +531,10 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 
 Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
 
-Home page: http://durdraw.org
+- Home page: http://durdraw.org
+- Development: https://github.com/cmang/durdraw
 
-Development: https://github.com/cmang/durdraw
-
-ANSI and ASCII artists: cmang, H7, LDA, HK
+ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
 
 ### Legal
 
