@@ -1,0 +1,830 @@
+Timer unit: 1e-09 s
+
+Total time: 1.77115 s
+File: /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py
+Function: addstr at line 674
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   674                                               @line_profiler.profile
+   675                                               def addstr(self, y, x, string, attr=None): # addstr(y, x, str[, attr]) and addstr(str[, attr])
+   676                                                   """ Wraps ncurses addstr in a try;except, prevents addstr from
+   677                                                       crashing cureses if it fails """
+   678    930088  305282686.0    328.2     17.2          if not attr:
+   679        10      11800.0   1180.0      0.0              try:
+   680        10     120770.0  12077.0      0.0                  self.stdscr.addstr(y, x, string.encode(self.appState.charEncoding, 'replace'))
+   681                                                           #if self.appState.charEncoding == 'utf-8':
+   682                                                           #    self.stdscr.addstr(y, x, string.encode('utf-8'))
+   683                                                           #else:
+   684                                                           #    self.stdscr.addstr(y, x, string)
+   685         1       1098.0   1098.0      0.0              except UnicodeEncodeError:
+   686                                                           # Replace non-ascii characters with ' '
+   687                                                           string = string.encode('ascii', 'replace').decode('ascii').replace('?', ' ')
+   688                                                           self.stdscr.addstr(y, x, string) 
+   689         1       1262.0   1262.0      0.0              except curses.error:
+   690         1       5086.0   5086.0      0.0                  self.testWindowSize()
+   691                                                   else:
+   692    930078  310342875.0    333.7     17.5              try:
+   693    930078 1138486237.0   1224.1     64.3                  self.stdscr.addstr(y, x, string.encode(self.appState.charEncoding, 'replace'), attr)
+   694                                                           #if self.appState.charEncoding == 'utf-8':
+   695                                                           #    self.stdscr.addstr(y, x, strng.encode('utf-8'), attr)
+   696                                                           #else:
+   697                                                           #    self.stdscr.addstr(y, x, string, attr)
+   698      1000    2576500.0   2576.5      0.1              except UnicodeEncodeError:
+   699                                                           string = string.encode('ascii', 'replace').decode('ascii').replace('?', ' ')
+   700                                                           self.stdscr.addstr(y, x, string, attr)
+   701      1000    1492073.0   1492.1      0.1              except curses.error:
+   702      1000   12827628.0  12827.6      0.7                  self.testWindowSize()
+
+Total time: 12.6562 s
+File: /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py
+Function: refresh at line 6294
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+  6294                                               @line_profiler.profile
+  6295                                               def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False, topLine=None):          # rename to redraw()?
+  6296                                                   """Refresh the screen"""
+  6297      1000    1732137.0   1732.1      0.0          if topLine == None:
+  6298      1000    1004632.0   1004.6      0.0              topLine = self.appState.topLine
+  6299      1000    1050206.0   1050.2      0.0          if self.appState.playingHelpScreen_2:
+  6300                                                       mov = self.appState.helpMov_2
+  6301      1000    1046831.0   1046.8      0.0          elif self.appState.playingHelpScreen:
+  6302                                                       mov = self.appState.helpMov
+  6303                                                   else:
+  6304      1000     856570.0    856.6      0.0              if mov == None:
+  6305      1000     743212.0    743.2      0.0                  mov = self.mov
+  6306                                                   # Figure out the last line to draw
+  6307      1000    1089147.0   1089.1      0.0          lastLineToDraw = topLine + self.appState.realmaxY - 2 # right above the status line
+  6308      1000     856374.0    856.4      0.0          if self.appState.playOnlyMode:
+  6309      1000     682035.0    682.0      0.0              lastLineToDraw += 2
+  6310      1000    1246703.0   1246.7      0.0          if lastLineToDraw > mov.sizeY:
+  6311                                                       lastLineToDraw = mov.sizeY
+  6312      1000     522802.0    522.8      0.0          screenLineNum = 0
+  6313      1000     662324.0    662.3      0.0          firstCol = self.appState.firstCol
+  6314      1000    4685758.0   4685.8      0.0          lastCol = min(mov.sizeX, self.appState.realmaxX + firstCol)
+  6315                                                   # Draw each character
+  6316     16000   11132724.0    695.8      0.1          for linenum in range(topLine, lastLineToDraw):
+  6317     15000    8159054.0    543.9      0.1              line = mov.currentFrame.content[linenum]
+  6318    945000  445922946.0    471.9      3.5              for colnum in range(firstCol, lastCol):
+  6319    930000  416500450.0    447.8      3.3                  charColor = mov.currentFrame.newColorMap[linenum][colnum]
+  6320    930000  420306939.0    451.9      3.3                  charContent = str(line[colnum])
+  6321    930000  433541730.0    466.2      3.4                  if self.appState.cursorMode == "Paint" and not self.playing and not self.appState.playingHelpScreen:
+  6322                                                               if self.appState.brush != None:
+  6323                                                                   # draw brush preview
+  6324                                                                   # If we're drawing within the brush area:
+  6325                                                                   if linenum in range(self.appState.mouse_line + topLine, self.appState.mouse_line + self.appState.brush.sizeX + topLine):
+  6326                                                                       if colnum in range(self.appState.mouse_col + self.appState.firstCol, self.appState.mouse_col + self.appState.brush.sizeY + self.appState.firstCol):
+  6327                                                                           #brush_line = linenum - self.appState.mouse_line
+  6328                                                                           brush_line = linenum - self.appState.mouse_line - topLine
+  6329                                                                           brush_col = colnum - self.appState.mouse_col - self.appState.firstCol
+  6330                                                                           try:
+  6331                                                                               brushChar = self.appState.brush.content[brush_col][brush_line]
+  6332                                                                           except IndexError:
+  6333                                                                               # This should really never happen now.
+  6334                                                                               self.notify(f"Index error: bcol: {brush_col}, bline: {brush_line}, col: {colnum}, line: {linenum}, mcol: {self.appState.mouse_col}, {self.appState.mouse_line}", pause=False)
+  6335                                                                               brushChar = ' '
+  6336                                                                           # invisible background for brushes
+  6337                                                                           if brushChar == ' ':
+  6338                                                                               pass
+  6339                                                                           else:
+  6340                                                                               # It's a character that we should draw as a brush preview
+  6341                                                                               if self.appState.renderMouseCursor:
+  6342                                                                                   charContent = brushChar
+  6343                                                                                   charColor = self.appState.brush.newColorMap[brush_col][brush_line]
+  6344    930000  457790295.0    492.2      3.6                  if linenum == self.appState.mouse_line + topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
+  6345      1000    1087875.0   1087.9      0.0                      if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
+  6346                                                                   if self.appState.renderMouseCursor:
+  6347                                                                       charContent = self.appState.drawChar
+  6348                                                                       charColor = [self.colorfg, self.colorbg]
+  6349    930000  331679633.0    356.6      2.6                  try:
+  6350                                                               # set ncurss color pair
+  6351    930000  555986276.0    597.8      4.4                      cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
+  6352                                                           except: # Or if we can't, fail to the terminal's default color
+  6353                                                               cursesColorPair = 0
+  6354    930000  304832716.0    327.8      2.4                  injecting = False
+  6355    930000  412687585.0    443.8      3.3                  if self.appState.can_inject and self.appState.colorMode == "256":
+  6356                                                               injecting = True
+  6357    930000  489767921.0    526.6      3.9                  if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
+  6358                                                               self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+  6359    930000  491966139.0    529.0      3.9                  elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
+  6360                                                               # Let's try injecting!
+  6361                                                               if injecting:
+  6362                                                                   moveCode = f"\x1b[{screenLineNum + 1};{colnum - self.appState.firstCol + 1}H"
+  6363                                                                   colorCode = self.ansi.getColorCode256(charColor[0],charColor[1])
+  6364                                                                   sys.stdout.write(moveCode)
+  6365                                                                   sys.stdout.write(colorCode)
+  6366                                                                   sys.stdout.write(charContent)
+  6367                                                                   pass
+  6368                                                                   #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
+  6369                                                               else:
+  6370                                                                   self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+  6371                                                           # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
+  6372                                                           # then print with defualt charaacters instead. This should prevent the cursor from
+  6373                                                           # disappearing, as well as let you preview "invisible" text under the cursor.
+  6374    930000  420208856.0    451.8      3.3                  elif not self.appState.playOnlyMode and colnum + 1 == self.xy[1] and linenum == self.xy[0]:    # under the cursor
+  6375                                                               if self.appState.colorMode == "16":
+  6376                                                                   visible_color_pair = self.ansi.colorPairMap[(self.appState.defaultFgColor, self.appState.defaultBgColor)] 
+  6377                                                                   #self.addstr(screenLineNum, colnum, "X", visible_color_pair)
+  6378                                                                   # black on black
+  6379                                                                   if charColor[0] == 1 and charColor[1] == 0 or \
+  6380                                                                     charColor[0] == 1 and charColor[1] == 8:
+  6381                                                                       # make it show
+  6382                                                                       self.addstr(screenLineNum, colnum, charContent, visible_color_pair)
+  6383                                                                   # not black on black
+  6384                                                                   else:   # 16 color Normal character, under the cursor. No funny business. Print to the screen
+  6385                                                                       self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+  6386                                                               else:   # 256 color Normal character, under the cursor. No funny business. Print to the screen
+  6387                                                                   self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+  6388                                                           else:   # Normal character. No funny business. Print to the screen
+  6389                                                               #injecting = True
+  6390    930000  388481905.0    417.7      3.1                      if injecting and charColor[1] != 0:
+  6391                                                                   #self.stdscr.move(screenLineNum, colnum - self.appState.firstCol)
+  6392                                                                   #self.stdscr.refresh()
+  6393                                                                   moveCode = f"\x1b[{screenLineNum + 1};{colnum - self.appState.firstCol + 1}H"
+  6394                                                                   colorCode = self.ansi.getColorCode256(charColor[0],charColor[1])
+  6395                                                                   #sys.stdout.write(f"\x1b[38:5:{charColor[0]}m")   # FG
+  6396                                                                   sys.stdout.write(moveCode)
+  6397                                                                   sys.stdout.write(colorCode)
+  6398                                                                   #sys.stdout.write(f"\x1b[48:5:{charColor[1]}m")   # BG
+  6399                                                                   sys.stdout.write(charContent)
+  6400                                                                   #time.sleep(0.001)
+  6401                                                                   #self.stdscr.refresh()
+  6402                                                                   #self.notify("Injected", wait_time=40)
+  6403                                                                   #sys.stdout.write("\x1b[48:5:46m")
+  6404                                                                   #sys.stdout.write("\x1b[38:5:19m")
+  6405                                                                   #self.addstr(screenLineNum, colnum - self.appState.firstCol, f"{charContent}")
+  6406                                                                   pass
+  6407                                                                   #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
+  6408                                                               else:
+  6409    930000 6998076788.0   7524.8     55.3                          self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
+  6410                                                       # draw border on right edge of line
+  6411     15000    9147183.0    609.8      0.1              if not preview and self.appState.drawBorders and screenLineNum + topLine < self.mov.sizeY:
+  6412                                                           self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+  6413     15000    5736594.0    382.4      0.0              screenLineNum += 1
+  6414                                                   # draw bottom border
+  6415                                                   #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
+  6416      1000    1163728.0   1163.7      0.0          if not preview and self.appState.drawBorders and screenLineNum + topLine == self.mov.sizeY:
+  6417                                                       if screenLineNum < self.statusBarLineNum:
+  6418                                                           borderWidth = min(mov.sizeX, self.realmaxX)
+  6419                                                           self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
+  6420                                                           self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+  6421      1000     696290.0    696.3      0.0          screenLineNum += 1
+  6422                                                   #spaceMultiplier = mov.sizeX + 1
+  6423      1000     553736.0    553.7      0.0          spaceMultiplier = self.realmaxY
+  6424      1000    1289693.0   1289.7      0.0          for x in range(screenLineNum, self.realmaxY - 2):
+  6425                                                       self.addstr(x, 0, " " * spaceMultiplier)
+  6426      1000     537433.0    537.4      0.0          if not preview:
+  6427      1000   24206967.0  24207.0      0.2              curses.panel.update_panels()
+  6428      1000     872515.0    872.5      0.0          if self.appState.playingHelpScreen:
+  6429                                                       self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
+  6430      1000    7694849.0   7694.8      0.1          if refreshScreen:
+  6431                                                       self.stdscr.refresh()
+
+Total time: 23.3678 s
+File: /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py
+Function: startPlaying at line 1406
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+  1406                                               @line_profiler.profile
+  1407                                               def startPlaying(self, mov=None, opts=None):
+  1408                                                   """ Start playing the animation - start a "game" style loop, make FPS
+  1409                                                       by drawing if current time == greater than a delta plus the time
+  1410                                                       the last frame was drawn.
+  1411                                                   """
+  1412         1       2401.0   2401.0      0.0          tempMovie = None
+  1413         1        325.0    325.0      0.0          tempOpts = None
+  1414         1        611.0    611.0      0.0          if mov != None: # playing a movie other than the main or help file
+  1415                                                       tempMovie = self.mov
+  1416                                                       self.mov = mov
+  1417         1        366.0    366.0      0.0          if opts != None:
+  1418                                                       tempOpts = self.opts
+  1419                                                       self.opts = opts
+  1420                                           
+  1421         1       1017.0   1017.0      0.0          self.commandMode = False
+  1422         1        488.0    488.0      0.0          oldTopLine = self.appState.topLine
+  1423         1        407.0    407.0      0.0          oldFirstCol = self.appState.firstCol
+  1424         1        651.0    651.0      0.0          cursorMode = self.appState.cursorMode
+  1425         1       1302.0   1302.0      0.0          if not self.statusBar.toolButton.hidden:
+  1426                                                       self.statusBar.toolButton.draw()
+  1427                                                       self.statusBar.toolButton.hide()
+  1428         1        692.0    692.0      0.0          if not self.statusBar.animButton.hidden:
+  1429                                                       self.statusBar.animButton.draw()
+  1430                                                       self.statusBar.animButton.hide()
+  1431         1     124390.0 124390.0      0.0          self.drawStatusBar()
+  1432         1       3581.0   3581.0      0.0          self.stdscr.nodelay(1) # do not wait for input when calling getch
+  1433         1       2848.0   2848.0      0.0          last_time = time.time()
+  1434                                                   #self.statusBar.drawCharPickerButton.hide()
+  1435         1        570.0    570.0      0.0          if self.appState.playOnlyMode:
+  1436         1      15178.0  15178.0      0.0              self.statusBar.colorPicker.hide()
+  1437                                                       #self.statusBar.colorPicker_bg_16.hide()
+  1438         1        936.0    936.0      0.0              self.appState.sideBarShowing = False
+  1439         1      22746.0  22746.0      0.0              self.statusBar.hide()
+  1440         1      28768.0  28768.0      0.0              self.cursorOff()
+  1441         1      38777.0  38777.0      0.0              self.setWindowTitle(self.appState.curOpenFileName)
+  1442         1        855.0    855.0      0.0          self.playing = True
+  1443         1        936.0    936.0      0.0          self.metaKey = 0
+  1444         1        570.0    570.0      0.0          if self.appState.playOnlyMode: 
+  1445         1        488.0    488.0      0.0              self.appState.drawBorders = False
+  1446         1        489.0    489.0      0.0          if not self.appState.playOnlyMode:
+  1447                                                       # mode, show extra stuff.
+  1448                                                       self.drawStatusBar()
+  1449         1        284.0    284.0      0.0          playedTimes = 1
+  1450         1        855.0    855.0      0.0          new_time = time.time()
+  1451                                                   # see how many milliseconds we have to sleep for
+  1452                                                   # then divide by 1000.0 since time.sleep() uses seconds
+  1453         1       1912.0   1912.0      0.0          sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1454         1       3825.0   3825.0      0.0          self.mov.gotoFrame(self.appState.playbackRange[0])
+  1455         1       1180.0   1180.0      0.0          mouseX, mouseY = 0, 0
+  1456                                                   # while self.playing:
+  1457      1001    5716152.0   5710.4      0.0          for i in range(1000):
+  1458      2000  211903650.0 105951.8      0.9              with open('log.txt', 'a') as f:
+  1459      1000   42574976.0  42575.0      0.2                  print(f'{datetime.now()} drawing frame {self.mov.currentFrameNumber}, loop {i}/1000', file=f)
+  1460                                                       # catch keyboard input - to change framerate or stop pnlaying animation
+  1461                                                       # get keyboard input, returns -1 if none available
+  1462      1000   15538078.0  15538.1      0.1              self.move(self.xy[0], self.xy[1])
+  1463                                                       # Here refreshScreen=False because we will self.stdscr.refresh() below, after drawing the status bar (to avoid flicker)
+  1464      1000        2e+10    2e+07     77.1              self.refresh(refreshScreen=False)
+  1465      1000    1232540.0   1232.5      0.0              if self.appState.viewModeShowInfo: 
+  1466                                                           self.showFileInformation()
+  1467      1000    1191811.0   1191.8      0.0              if not self.appState.playOnlyMode:
+  1468                                                           self.drawStatusBar()
+  1469                                                           self.move(self.xy[0], self.xy[1] - 1)   # reposition cursor
+  1470      1000   17095297.0  17095.3      0.1              c = self.stdscr.getch()
+  1471                                           
+  1472                                                       # handle resize
+  1473      1000     641701.0    641.7      0.0              resized = False
+  1474      1000     944044.0    944.0      0.0              realmaxY,realmaxX = self.realstdscr.getmaxyx()
+  1475      1000     937283.0    937.3      0.0              if self.appState.realmaxY != realmaxY:
+  1476                                                           resized = True
+  1477                                                           self.appState.realmaxY = realmaxY
+  1478      1000     901129.0    901.1      0.0              if self.appState.realmaxX != realmaxX:
+  1479                                                           resized = True
+  1480                                                           self.appState.realmaxX = realmaxX
+  1481      1000     992238.0    992.2      0.0              if resized:
+  1482                                                           pass
+  1483                                                           #self.notify("Debug: resized")
+  1484                                                           #self.appState.topLine = 0
+  1485                                                           #self.appState.firstCol = 0
+  1486                                           
+  1487                                                       #debugstring = f"self.appState.realmaxY: {self.appState.realmaxY}, self.appState.realmaxX: {self.appState.realmaxX}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
+  1488                                                       #self.addstr(self.statusBarLineNum - 1, 0, debugstring)
+  1489      1000   21542642.0  21542.6      0.1              self.stdscr.refresh()
+  1490                                           
+  1491      1000    1072684.0   1072.7      0.0              if c == 27:
+  1492                                                           if self.appState.durview_running and self.appState.playOnlyMode:
+  1493                                                               # This block captures Esc before the "UI for Play Only mode"
+  1494                                                               # part below, so I'm putting this here.
+  1495                                                               self.playing = False
+  1496                                                               self.appState.topLine = 0
+  1497                                                               return True
+  1498                                                           self.metaKey = 1
+  1499                                                           self.pressingButton = False
+  1500                                                           if self.pushingToClip:
+  1501                                                               self.pushingToClip = False
+  1502                                                           self.disableMouseReporting()
+  1503                                                           self.commandMode = True
+  1504                                                           c = self.stdscr.getch() # normal esc
+  1505                                                           # Clear out any canvas state as needed for command mode. For example...
+  1506                                                           # If we think the mouse button is pressed.. stop thinking that.
+  1507                                                           # In other words, un-stick the mouse button in case it's stuck:
+  1508      1000    1202332.0   1202.3      0.0              if self.metaKey == 1 and not self.appState.playOnlyMode and c != curses.ERR:   # esc
+  1509                                                           self.pressingButton = False
+  1510                                                           #if cursorMode != "Draw" and cursorMode != "Paint":
+  1511                                                           #    print('\033[?1003l') # disable mouse reporting
+  1512                                                           #    self.hardRefresh()
+  1513                                                           #    curses.mousemask(1)
+  1514                                                           #    curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+  1515                                                           if self.pushingToClip:
+  1516                                                               self.pushingToClip = False
+  1517                                                           if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
+  1518                                                           if c in [61, 43]: # esc-= and esc-+ - fps up
+  1519                                                               self.increaseFPS()
+  1520                                                               sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1521                                                           elif c in [45]: # esc-- (alt minus) - fps down
+  1522                                                               self.decreaseFPS()
+  1523                                                               sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1524                                                           elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color (in 16)
+  1525                                                               if self.appState.colorMode == "16":
+  1526                                                                   self.prevBgColor()
+  1527                                                               elif self.appState.colorMode == "256":
+  1528                                                                   self.prevFgColor()
+  1529                                                                   #self.statusBar.colorPicker.handler.move_down_256()
+  1530                                                               c = None 
+  1531                                                           elif c in [102, curses.KEY_RIGHT]:     # alt-right - next bg color
+  1532                                                               if self.appState.colorMode == "16":
+  1533                                                                   self.nextBgColor()
+  1534                                                               elif self.appState.colorMode == "256":
+  1535                                                                   self.nextFgColor()
+  1536                                                                   #self.statusBar.colorPicker.handler.move_down_256()
+  1537                                                               c = None 
+  1538                                                           elif c in [curses.KEY_DOWN, "\x1b\x1b\x5b\x42"]:      # alt-down - prev fg color
+  1539                                                               if self.appState.colorMode == "16":
+  1540                                                                   self.prevFgColor()
+  1541                                                               elif self.appState.colorMode == "256":
+  1542                                                                   self.statusBar.colorPicker.handler.move_down_256()
+  1543                                                               c = None 
+  1544                                                           elif c == curses.KEY_UP:     # alt-up - next fg color
+  1545                                                               if self.appState.colorMode == "16":
+  1546                                                                   self.nextFgColor()
+  1547                                                               elif self.appState.colorMode == "256":
+  1548                                                                   self.statusBar.colorPicker.handler.move_up_256()
+  1549                                                               c = None 
+  1550                                                           elif c == 91 or c == 339:   # alt-[ previous character set. apparently this doesn't work
+  1551                                                               self.prevCharSet() # during playback, c == -1, so 339 is alt-pgup, as a backup
+  1552                                                           elif c == 93 or c == 338:   # alt-] (93) or aplt-pagdown next character set
+  1553                                                               self.nextCharSet()
+  1554                                                           elif c == 83:       # alt-S - pick a character set
+  1555                                                               self.showCharSetPicker()
+  1556                                                               self.stdscr.nodelay(1) # do not wait for input when calling getch
+  1557                                                           elif c == 46:       # alt-. - insert column
+  1558                                                               self.addCol(frange=self.appState.playbackRange)
+  1559                                                           elif c == 44:      # alt-, - erase/pop current column
+  1560                                                               self.delCol(frange=self.appState.playbackRange)
+  1561                                                           elif c == 47:      # alt-/ - insert line
+  1562                                                               self.addLine(frange=self.appState.playbackRange)
+  1563                                                           elif c == 39:        # alt-' - erase line
+  1564                                                               self.delLine(frange=self.appState.playbackRange)
+  1565                                                           elif c == 105:      # alt-i - File/Canvas Information
+  1566                                                               self.clickedInfoButton()
+  1567                                                           elif c == 109 or c == 102:    # alt-m or alt-f - load menu
+  1568                                                               #self.statusBar.menuButton.on_click() 
+  1569                                                               self.commandMode = False
+  1570                                                               self.openMenu("File")
+  1571                                                           elif c == 99:     # alt-c - color picker
+  1572                                                               self.commandMode = False
+  1573                                                               #if self.appState.colorMode == "256":
+  1574                                                               #    self.statusBar.colorPickerButton.on_click()
+  1575                                                               #self.statusBar.colorPickerButton.on_click()
+  1576                                                               self.selectColorPicker()
+  1577                                                           elif c == ord(' '):     # alt-space - insert drawing character
+  1578                                                               drawChar = self.appState.drawChar
+  1579                                                               x_param = self.xy[1]
+  1580                                                               y_param = self.xy[0]
+  1581                                                               self.insertChar(ord(drawChar), fg=self.colorfg, bg=self.colorbg, x=x_param, y=y_param, moveCursor=True, pushUndo=True, frange=self.appState.playbackRange)
+  1582                                                           elif c == 122:  # alt-z = undo
+  1583                                                               self.clickedUndo()
+  1584                                                           elif c == 114:  # alt-r = redo
+  1585                                                               self.clickedRedo()
+  1586                                                           elif c == 82:   # alt-R = set playback range
+  1587                                                               self.getPlaybackRange()
+  1588                                                           elif c in [112]: # alt-p - stop playing
+  1589                                                               self.stopPlaying()
+  1590                                                           elif c == 111:                # alt-o - open
+  1591                                                               self.stopPlaying()
+  1592                                                               self.openFromMenu()     # as if we clicked menu->open
+  1593                                                           elif c in [104, 63]:                # alt-h - help
+  1594                                                               self.showHelp()
+  1595                                                               c = None
+  1596                                                           elif c == 113:                 # alt-q - quit
+  1597                                                               if self.appState.durview_running:
+  1598                                                                   self.stopPlaying()
+  1599                                                                   self.appState.editorRunning = False
+  1600                                                                   return
+  1601                                                               else:
+  1602                                                                   self.safeQuit()
+  1603                                                                   self.stdscr.nodelay(1)
+  1604                                                                   c = None
+  1605                                                           elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
+  1606                                                               self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
+  1607                                                                       frange=self.appState.playbackRange)
+  1608                                                               c = None
+  1609                                                               self.hardRefresh()
+  1610                                                           elif c in [ord('2')]:    # esc-2 copy of F2 - insert extended character
+  1611                                                               self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
+  1612                                                                       frange=self.appState.playbackRange)
+  1613                                                               c = None
+  1614                                                               self.hardRefresh()
+  1615                                                           elif c in [ord('3')]:    # F3 - insert extended character
+  1616                                                               self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
+  1617                                                                       frange=self.appState.playbackRange)
+  1618                                                               c = None
+  1619                                                               self.hardRefresh()
+  1620                                                           elif c in [ord('4')]:    # F4 - insert extended character
+  1621                                                               self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
+  1622                                                                       frange=self.appState.playbackRange)
+  1623                                                               c = None
+  1624                                                               self.hardRefresh()
+  1625                                                           elif c in [ord('5')]:    # F5 - insert extended character
+  1626                                                               self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
+  1627                                                                       frange=self.appState.playbackRange)
+  1628                                                               c = None
+  1629                                                               self.hardRefresh()
+  1630                                                           elif c in [ord('6')]:    # F6 - insert extended character
+  1631                                                               self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
+  1632                                                                       frange=self.appState.playbackRange)
+  1633                                                               c = None
+  1634                                                               self.hardRefresh()
+  1635                                                           elif c in [ord('7')]:    # F7 - insert extended character
+  1636                                                               self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
+  1637                                                                       frange=self.appState.playbackRange)
+  1638                                                               c = None
+  1639                                                               self.hardRefresh()
+  1640                                                           elif c in [ord('8')]:    # F8 - insert extended character
+  1641                                                               self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
+  1642                                                                       frange=self.appState.playbackRange)
+  1643                                                               c = None
+  1644                                                               self.hardRefresh()
+  1645                                                           elif c in [ord('9')]:    # F9 - insert extended character
+  1646                                                               self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
+  1647                                                                       frange=self.appState.playbackRange)
+  1648                                                               c = None
+  1649                                                               self.hardRefresh()
+  1650                                                           elif c in [ord('0')]:    # F10 - insert extended character
+  1651                                                               self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
+  1652                                                                       frange=self.appState.playbackRange)
+  1653                                                               c = None
+  1654                                                               self.hardRefresh()
+  1655                                                           else:
+  1656                                                               if self.appState.debug:
+  1657                                                                   self.notify("keystroke: %d" % c) # alt-unknown
+  1658                                                           self.commandMode = 0
+  1659                                                           self.metaKey = 0
+  1660                                                           c = None 
+  1661      1000    1012572.0   1012.6      0.0              elif c != -1:   # -1 means no keys are pressed.
+  1662                                                           # up or down to change framerate, otherwise stop playing
+  1663                                                           #if self.appState.durview_running:   # Extra UI for DurView
+  1664                                                           #    if c in [ord('e')]:     # e - open file in editor
+  1665                                                           #        self.openEditorFromDurview()
+  1666                                                           #        c = None
+  1667                                                           if self.appState.playOnlyMode:  # UI for Play-only mode
+  1668                                                               mouseState = False
+  1669                                                               if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
+  1670                                                                   try:
+  1671                                                                       _, mouseX, mouseY, _, mouseState = curses.getmouse()
+  1672                                                                   except:
+  1673                                                                       pass
+  1674                                                                   realmaxY,realmaxX = self.realstdscr.getmaxyx()
+  1675                                           
+  1676                                                                   if mouseState == curses.BUTTON1_CLICKED:
+  1677                                                                       pass
+  1678                                                                       #self.showFileInformation()
+  1679                                           
+  1680                                                                   elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+  1681                                                                   # It's as if we'd pressed enter to exit the viewer mode.
+  1682                                                                       self.playing = False
+  1683                                                                       self.appState.topLine = 0
+  1684                                           
+  1685                                                                   if not self.appState.hasMouseScroll:
+  1686                                                                       curses.BUTTON5_PRESSED = 0
+  1687                                                                       curses.BUTTON4_PRESSED = 0
+  1688                                                                   try:
+  1689                                                                       curses.BUTTON5_PRESSED
+  1690                                                                   except:
+  1691                                                                       curses.BUTTON5_PRESSED = 0
+  1692                                                                   try:
+  1693                                                                       curses.BUTTON4_PRESSED
+  1694                                                                   except:
+  1695                                                                       curses.BUTTON4_PRESSED = 0
+  1696                                                                   if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+  1697                                                                       if self.appState.topLine > 0:
+  1698                                                                           self.appState.topLine = self.appState.topLine - 1
+  1699                                                                   elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+  1700                                                                       if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+  1701                                                                           self.appState.topLine += 1
+  1702                                           
+  1703                                                               elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+  1704                                                                   self.appState.topLine = self.appState.topLine - self.realmaxY + 3
+  1705                                                                   if self.appState.topLine < 0:
+  1706                                                                       self.appState.topLine = 0
+  1707                                                               elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+  1708                                                                   if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
+  1709                                                                       self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+  1710                                                                       if self.appState.topLine > self.mov.sizeY - self.realmaxY:
+  1711                                                                           self.appState.topLine = self.mov.sizeY - self.realmaxY 
+  1712                                                                           # prevent a ghost image on any blank lines at the bottom:
+  1713                                                                           #self.stdscr.clear()
+  1714                                                                           #self.refresh()
+  1715                                                               elif c in [339, curses.KEY_HOME]:  # 339 = home
+  1716                                                                   self.appState.topLine = 0
+  1717                                                               elif c in [338, curses.KEY_END]:   # 338 = end
+  1718                                                                   self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+  1719                                                               elif c in [curses.KEY_LEFT, ord('h')]:      # left - scroll left
+  1720                                                                   self.scroll_viewer_left()
+  1721                                                               elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
+  1722                                                                   self.scroll_viewer_right()
+  1723                                                               elif c in [ord('v')]:      # v - enable VGA colors
+  1724                                                                   self.enableTrueVGAColors()
+  1725                                                               #elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
+  1726                                                               #    self.xy[1]
+  1727                                                               #elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
+  1728                                                               #    self.xy[1] = self.mov.sizeX
+  1729                                                               if c in [61, 43]: # = and + - fps up
+  1730                                                                   self.increaseFPS()
+  1731                                                                   sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1732                                                               elif c in [45]: # - (minus) - fps down
+  1733                                                                   self.decreaseFPS()
+  1734                                                                   sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1735                                           
+  1736                                                               if c in [ord('q'), ord('Q')]:
+  1737                                                                   self.playing = False
+  1738                                                                   self.appState.topLine = 0
+  1739                                                                   if not self.appState.editorRunning:
+  1740                                                                       self.verySafeQuit()
+  1741                                           
+  1742                                                               elif c in [27, 10, 13, curses.KEY_ENTER]:   # 27 = esc, 10 = LF, 13 = CR
+  1743                                                                   self.playing = False
+  1744                                                                   self.appState.topLine = 0
+  1745                                           
+  1746                                                               elif c in [ord('?')]:
+  1747                                                                   self.showViewerHelp()
+  1748                                           
+  1749                                                               elif c in [ord('i'), ord('I')]:
+  1750                                                                   # toggle showing info. True/false swap:
+  1751                                                                   self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
+  1752                                                                   self.stdscr.clear()
+  1753                                                                   self.refresh()
+  1754                                           
+  1755                                                                   #self.showFileInformation()
+  1756                                           
+  1757                                                               elif c in [curses.KEY_DOWN, ord('j')]:
+  1758                                                                   if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+  1759                                                                       self.appState.topLine += 1
+  1760                                                               elif c in [curses.KEY_UP, ord('k')]:
+  1761                                                                   if self.appState.topLine > 0:
+  1762                                                                       self.appState.topLine = self.appState.topLine - 1
+  1763                                                               elif c == 12:               # ctrl-l - harder refresh
+  1764                                                                   self.stdscr.clear()
+  1765                                                                   self.hardRefresh()
+  1766                                                                   c = None
+  1767                                                           else:
+  1768                                                               if c == curses.KEY_MOUSE: # Remember, we are playing here
+  1769                                                                   try:
+  1770                                                                       _, mouseX, mouseY, _, mouseState = curses.getmouse()
+  1771                                                                   except:
+  1772                                                                       pass
+  1773                                                                   realmaxY,realmaxX = self.realstdscr.getmaxyx()
+  1774                                                                   # enable mouse tracking only when the button is pressed
+  1775                                                                   if mouseState == curses.BUTTON1_CLICKED:
+  1776                                                                       if self.pressingButton:
+  1777                                                                           self.pressingButton = False
+  1778                                                                           if cursorMode != "Draw" and cursorMode != "Paint":
+  1779                                                                               print('\033[?1003l') # disable mouse reporting
+  1780                                                                               self.hardRefresh()
+  1781                                                                               curses.mousemask(1)
+  1782                                                                               curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+  1783                                                                           if self.pushingToClip:
+  1784                                                                               self.pushingToClip = False
+  1785                                           
+  1786                                                                   if not self.appState.hasMouseScroll:
+  1787                                                                       curses.BUTTON5_PRESSED = 0
+  1788                                                                       curses.BUTTON4_PRESSED = 0
+  1789                                                                   try:
+  1790                                                                       curses.BUTTON5_PRESSED
+  1791                                                                   except:
+  1792                                                                       curses.BUTTON5_PRESSED = 0
+  1793                                                                   try:
+  1794                                                                       curses.BUTTON4_PRESSED
+  1795                                                                   except:
+  1796                                                                       curses.BUTTON4_PRESSED = 0
+  1797                                                                   if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+  1798                                                                       self.move_cursor_up()
+  1799                                                                   elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+  1800                                                                       self.move_cursor_down()
+  1801                                                                       
+  1802                                                                   if mouseState & curses.BUTTON1_PRESSED:
+  1803                                                                       #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX: # in edit area
+  1804                                                                       if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+  1805                                                                           and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+  1806                                                                           if not self.pressingButton:
+  1807                                                                               self.pressingButton = True
+  1808                                                                               print('\033[?1003h') # enable mouse tracking with the XTERM APIP
+  1809                                                                               self.hardRefresh()
+  1810                                                                       else:
+  1811                                                                           self.pressingButton = False
+  1812                                                                           if cursorMode != "Draw" and cursorMode != "Paint":
+  1813                                                                               print('\033[?1003l') # disable mouse reporting
+  1814                                                                               self.hardRefresh()
+  1815                                                                               curses.mousemask(1)
+  1816                                                                               curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+  1817                                                                           if self.pushingToClip:
+  1818                                                                               self.pushingToClip = False
+  1819                                                                   else:
+  1820                                                                       if self.pressingButton:
+  1821                                                                           self.pressingButton = False
+  1822                                                                           if self.pushingToClip:
+  1823                                                                               self.pushingToClip = False
+  1824                                                                           #if self.appState.cursorMode != "Draw":
+  1825                                                                           print('\033[?1003l') # disable mouse reporting
+  1826                                                                           self.hardRefresh()
+  1827                                                                           curses.mousemask(1)
+  1828                                                                           curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+  1829                                                                   if self.pressingButton or mouseState == curses.BUTTON1_CLICKED:    # self.playing == True
+  1830                                                                       self.gui.got_click("Click", mouseX, mouseY)
+  1831                                                                       if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
+  1832                                                                           and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
+  1833                                                                           # we clicked in edit area, so move the cursor
+  1834                                                                           self.xy[1] = mouseX + 1 # set cursor position
+  1835                                                                           self.xy[0] = mouseY + self.appState.topLine
+  1836                                                                       elif mouseX < realmaxX and mouseY in [self.statusBarLineNum, self.statusBarLineNum+1]:   # we clicked on the status bar while playing.
+  1837                                                                           if mouseY == self.statusBarLineNum: # clicked upper bar
+  1838                                                                               offset = 6  # making room for the menu bar
+  1839                                                                               tOffset = realmaxX - (realmaxX - self.transportOffset) + 6
+  1840                                                                               if not self.appState.narrowWindow:
+  1841                                                                                   if mouseX in [tOffset, tOffset + 1]:  # clicked pause button
+  1842                                                                                       self.clickHighlight(tOffset, "||")
+  1843                                                                                       self.stopPlaying()
+  1844                                                                                   elif mouseX == 12 + offset:    # clicked FPS down
+  1845                                                                                       self.clickHighlight(12 + offset, "<")
+  1846                                                                                       self.decreaseFPS()
+  1847                                                                                       sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1848                                                                                   elif mouseX == 16 + offset:    # clicked FPS up
+  1849                                                                                       self.clickHighlight(16 + offset, ">")
+  1850                                                                                       self.increaseFPS()
+  1851                                                                                       sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+  1852                                                                           elif mouseY == self.statusBarLineNum+1:    # clicked bottom bar
+  1853                                                                               if not self.appState.narrowWindow:
+  1854                                                                                   if mouseX in range(4,20): 
+  1855                                                                                       fg = mouseX - 3  
+  1856                                                                                       self.setFgColor(fg)
+  1857                                                                                   elif mouseX in range(25,33):    
+  1858                                                                                       bg = mouseX - 24
+  1859                                                                                       self.setBgColor(bg)
+  1860                                                                                   elif mouseX == self.chMap_offset + len(self.chMapString):  # clicked next character set
+  1861                                                                                       self.clickHighlight(self.chMap_offset + len(self.chMapString), ">", bar='bottom')
+  1862                                                                                       self.nextCharSet()
+  1863                                                                                   elif mouseX == self.chMap_offset - 1:  # clicked previous character set
+  1864                                                                                       self.clickHighlight(self.chMap_offset - 1, "<", bar='bottom')
+  1865                                                                                       self.prevCharSet()
+  1866                                                                               if self.appState.debug:
+  1867                                                                                   self.notify("bottom bar. " + str([mouseX, mouseY]))
+  1868                                                                           elif self.appState.debug:
+  1869                                                                               self.notify("clicked. " + str([mouseX, mouseY]))
+  1870                                           
+  1871                                                               elif c == curses.KEY_LEFT:      # left - move cursor right a character
+  1872                                                                   self.move_cursor_left()
+  1873                                                               elif c == curses.KEY_RIGHT:     # right - move cursor right
+  1874                                                                   self.move_cursor_right()
+  1875                                                               elif c == curses.KEY_UP:    # up - move cursor up
+  1876                                                                   self.move_cursor_up()
+  1877                                                               elif c == curses.KEY_DOWN:  # down - move curosr down
+  1878                                                                   self.move_cursor_down()
+  1879                                                               elif c in [339, curses.KEY_PPAGE]:  # page up
+  1880                                                                   self.move_cursor_pgup()
+  1881                                                               elif c in [338, curses.KEY_NPAGE]:  # page down
+  1882                                                                   self.move_cursor_pgdown()
+  1883                                                               elif c in [339, curses.KEY_HOME]:  # 339 = home
+  1884                                                                   self.xy[1] = 1
+  1885                                                               elif c in [338, curses.KEY_END]:   # 338 = end
+  1886                                                                   self.xy[1] = self.mov.sizeX
+  1887                                                               elif c in [10, 13, curses.KEY_ENTER]:               # enter (10 if we
+  1888                                                                   self.move_cursor_enter()
+  1889                                                                   # don't do curses.nonl())
+  1890                                                               elif c in [263, 127]:              # backspace
+  1891                                                                   self.backspace()
+  1892                                                               elif c in [9, 353]:     # 9 = tab, 353 = shift-tab
+  1893                                                                   #if self.appState.colorMode == "256":
+  1894                                                                   #    self.statusBar.colorPickerButton.on_click()
+  1895                                                                   self.statusBar.colorPickerButton.on_click()
+  1896                                                               elif c in [330]:              # delete
+  1897                                                                   self.deleteKeyPop(frange=self.appState.playbackRange)
+  1898                                                               elif c in [383]:              # shift-delete - delete from opposite direction
+  1899                                                                   self.reverseDelete(frange=self.appState.playbackRange)
+  1900                                                               elif c in [1, curses.KEY_HOME]:     # ctrl-a or home
+  1901                                                                   self.xy[1] = 1
+  1902                                                               elif c in [5, curses.KEY_END]:      # ctrl-e or end
+  1903                                                                   self.xy[1] = self.mov.sizeX
+  1904                                                               elif c in [curses.KEY_F1]:    # F1 - insert extended character
+  1905                                                                   self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
+  1906                                                                           frange=self.appState.playbackRange)
+  1907                                                                   c = None
+  1908                                                               elif c in [curses.KEY_F2]:    # F2 - insert extended character
+  1909                                                                   self.insertChar(self.chMap['f2'], fg=self.colorfg, bg=self.colorbg,
+  1910                                                                           frange=self.appState.playbackRange)
+  1911                                                                   c = None
+  1912                                                               elif c in [curses.KEY_F3]:    # F3 - insert extended character
+  1913                                                                   self.insertChar(self.chMap['f3'], fg=self.colorfg, bg=self.colorbg,
+  1914                                                                           frange=self.appState.playbackRange)
+  1915                                                                   c = None
+  1916                                                               elif c in [curses.KEY_F4]:    # F4 - insert extended character
+  1917                                                                   self.insertChar(self.chMap['f4'], fg=self.colorfg, bg=self.colorbg,
+  1918                                                                           frange=self.appState.playbackRange)
+  1919                                                                   c = None
+  1920                                                               elif c in [curses.KEY_F5]:    # F5 - insert extended character
+  1921                                                                   self.insertChar(self.chMap['f5'], fg=self.colorfg, bg=self.colorbg,
+  1922                                                                           frange=self.appState.playbackRange)
+  1923                                                                   c = None
+  1924                                                               elif c in [curses.KEY_F6]:    # F6 - insert extended character
+  1925                                                                   self.insertChar(self.chMap['f6'], fg=self.colorfg, bg=self.colorbg,
+  1926                                                                           frange=self.appState.playbackRange)
+  1927                                                                   c = None
+  1928                                                               elif c in [curses.KEY_F7]:    # F7 - insert extended character
+  1929                                                                   self.insertChar(self.chMap['f7'], fg=self.colorfg, bg=self.colorbg,
+  1930                                                                           frange=self.appState.playbackRange)
+  1931                                                                   c = None
+  1932                                                               elif c in [curses.KEY_F8]:    # F8 - insert extended character
+  1933                                                                   self.insertChar(self.chMap['f8'], fg=self.colorfg, bg=self.colorbg,
+  1934                                                                           frange=self.appState.playbackRange)
+  1935                                                                   c = None
+  1936                                                               elif c in [curses.KEY_F9]:    # F9 - insert extended character
+  1937                                                                   self.insertChar(self.chMap['f9'], fg=self.colorfg, bg=self.colorbg,
+  1938                                                                           frange=self.appState.playbackRange)
+  1939                                                                   c = None
+  1940                                                               elif c in [curses.KEY_F10]:    # F10 - insert extended character
+  1941                                                                   self.insertChar(self.chMap['f10'], fg=self.colorfg, bg=self.colorbg,
+  1942                                                                           frange=self.appState.playbackRange)
+  1943                                                                   c = None
+  1944                                                               elif c != None and c <= 128 and c >= 32:      # normal printable character
+  1945                                                                   self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
+  1946                                           
+  1947      1000    4628629.0   4628.6      0.0              new_time = time.time()
+  1948      1000     687596.0    687.6      0.0              frame_delay = self.mov.currentFrame.delay
+  1949      1000     697959.0    698.0      0.0              if frame_delay > 0:
+  1950       790     568320.0    719.4      0.0                  realDelayTime = frame_delay
+  1951                                                       else:
+  1952       210     120637.0    574.5      0.0                  realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
+  1953      1000    2727939.0   2727.9      0.0              if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+  1954        36      20995.0    583.2      0.0                  last_time = new_time
+  1955                                                           # draw animation
+  1956        36      47440.0   1317.8      0.0                  if not self.appState.playOnlyMode:
+  1957                                                               if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
+  1958                                                                   self.mov.gotoFrame(self.appState.playbackRange[0])
+  1959                                                               else:
+  1960                                                                   self.mov.nextFrame()
+  1961                                                           else:
+  1962        36     295246.0   8201.3      0.0                      self.mov.nextFrame()
+  1963        36      24987.0    694.1      0.0                  if not self.appState.playOnlyMode: # if we're not in play-only
+  1964                                                               # mode, show extra stuff.
+  1965                                                               self.drawStatusBar()
+  1966                                                           else:
+  1967        36      36949.0   1026.4      0.0                      if self.appState.playNumberOfTimes > 0:   # if we're playing x times
+  1968                                                                   if self.mov.currentFrameNumber == self.mov.frameCount:
+  1969                                                                       # and on the last frame
+  1970                                                                       if playedTimes < self.appState.playNumberOfTimes:
+  1971                                                                           playedTimes += 1
+  1972                                                                       else:   # we've played the desired number of times.
+  1973                                                                           self.playing = False
+  1974                                                           #self.refresh()
+  1975       964 5011259393.0    5e+06     21.4              else: time.sleep(0.005) # to keep from sucking up cpu
+  1976                                           
+  1977                                           
+  1978         1       1627.0   1627.0      0.0          if tempMovie != None:   # Need to switch back to main movie
+  1979                                                       self.mov = tempMovie
+  1980         1        732.0    732.0      0.0          if tempOpts != None:
+  1981                                                       self.opts = tempOpts
+  1982                                           
+  1983         1       2970.0   2970.0      0.0          self.appState.topLine = oldTopLine
+  1984         1       1343.0   1343.0      0.0          self.appState.firstCol = oldFirstCol
+  1985         1       3987.0   3987.0      0.0          self.stdscr.nodelay(0) # back to wait for input when calling getch
+  1986         1      59448.0  59448.0      0.0          self.cursorOn()
+
+Total time: 23.4015 s
+File: /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py
+Function: enterViewMode at line 3455
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+  3455                                               @line_profiler.profile
+  3456                                               def enterViewMode(self, mov=None, opts=None):
+  3457         1      38249.0  38249.0      0.0          self.statusBar.hide()
+  3458         1       9806.0   9806.0      0.0          self.stdscr.clear()
+  3459         1        651.0    651.0      0.0          old_xy = self.xy
+  3460         1       1098.0   1098.0      0.0          old_top_line = self.appState.topLine
+  3461         1        651.0    651.0      0.0          old_first_col = self.appState.firstCol
+  3462         1        773.0    773.0      0.0          self.appState.topLine = 0
+  3463         1        935.0    935.0      0.0          oldDrawBorders = self.appState.drawBorders  # to turn back on when done
+  3464         1        733.0    733.0      0.0          self.appState.playOnlyMode = True
+  3465         1        2e+10    2e+10    100.0          self.startPlaying(mov=mov, opts=opts)
+  3466                                           
+  3467                                                   # Return to normal when done
+  3468         1       1425.0   1425.0      0.0          self.appState.playOnlyMode = False
+  3469         1        976.0    976.0      0.0          self.appState.topLine = old_top_line
+  3470         1        529.0    529.0      0.0          self.appState.firstCol = old_first_col
+  3471         1       1221.0   1221.0      0.0          self.xy = old_xy
+  3472         1     171549.0 171549.0      0.0          self.statusBar.show()
+  3473         1        855.0    855.0      0.0          self.appState.drawBorders = oldDrawBorders
+  3474         1       1994.0   1994.0      0.0          self.cursorOn()
+  3475         1       5412.0   5412.0      0.0          self.stdscr.clear()
+
+Total time: 45.4151 s
+File: /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py
+Function: runDurView at line 7066
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+  7066                                               @line_profiler.profile
+  7067                                               def runDurView(self):
+  7068                                                   """ Launch the UI for the DurView app """
+  7069                                                   # While there are files to read from the openFilePicker(), put them into view mode
+  7070                                                   #
+  7071                                                   #if self.appState.curOpenFileName != "":
+  7072                                                   #    # We already opened a file from the command-line, so play it.
+  7073                                                   #    self.enterViewMode()
+  7074         2       4232.0   2116.0      0.0          for movie in self.appState.play_queue:
+  7075         1   54882487.0    5e+07      0.1              self.loadFromFile(movie, 'dur') # this loads ansi files, too. win
+  7076         1        2e+10    2e+10     51.5              self.enterViewMode()
+  7077         2       4314.0   2157.0      0.0          while self.appState.durview_running:
+  7078                                                       #file = self.openFilePicker()
+  7079         1        2e+10    2e+10     48.4              opened = self.openFromMenu()
+  7080         1       1220.0   1220.0      0.0              if opened == False:
+  7081                                                           # User exited file picker with esc, so exit DurView
+  7082         1       3174.0   3174.0      0.0                  self.appState.durview_running = False
+  7083                                                       else:
+  7084                                                           self.enterViewMode()
+
+  1.77 seconds - /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py:674 - addstr
+ 12.66 seconds - /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py:6294 - refresh
+ 23.37 seconds - /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py:1406 - startPlaying
+ 23.40 seconds - /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py:3455 - enterViewMode
+ 45.42 seconds - /data/data/com.termux/files/home/storage/dev/durdraw/durdraw/durdraw_ui_curses.py:7066 - runDurView
