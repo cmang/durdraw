@@ -1944,35 +1944,39 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c != None and c <= 128 and c >= 32:      # normal printable character
                         self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
 
-            new_time = time.time()
-            frame_delay = self.mov.currentFrame.delay
-            if frame_delay > 0:
-                realDelayTime = frame_delay
-            else:
-                realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
-            if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
-                last_time = new_time
-                # draw animation
-                if not self.appState.playOnlyMode:
-                    if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
-                        self.mov.gotoFrame(self.appState.playbackRange[0])
-                    else:
-                        self.mov.nextFrame()
+            while True:
+                new_time = time.time()
+                frame_delay = self.mov.currentFrame.delay
+                if frame_delay > 0:
+                    realDelayTime = frame_delay
+                else:
+                    realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
+                if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+                    break
+                else:
+                    time.sleep(0.005) # to keep from sucking up cpu
+
+            last_time = new_time
+            # draw animation
+            shouldDelay = False
+            if not self.appState.playOnlyMode:
+                if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
+                    self.mov.gotoFrame(self.appState.playbackRange[0])
                 else:
                     self.mov.nextFrame()
-                if not self.appState.playOnlyMode: # if we're not in play-only
-                    # mode, show extra stuff.
-                    self.drawStatusBar()
-                else:
-                    if self.appState.playNumberOfTimes > 0:   # if we're playing x times
-                        if self.mov.currentFrameNumber == self.mov.frameCount:
-                            # and on the last frame
-                            if playedTimes < self.appState.playNumberOfTimes:
-                                playedTimes += 1
-                            else:   # we've played the desired number of times.
-                                self.playing = False
-                #self.refresh()
-            else: time.sleep(0.005) # to keep from sucking up cpu
+            else:
+                self.mov.nextFrame()
+            if not self.appState.playOnlyMode: # if we're not in play-only
+                # mode, show extra stuff.
+                self.drawStatusBar()
+            else:
+                if self.appState.playNumberOfTimes > 0:   # if we're playing x times
+                    if self.mov.currentFrameNumber == self.mov.frameCount:
+                        # and on the last frame
+                        if playedTimes < self.appState.playNumberOfTimes:
+                            playedTimes += 1
+                        else:   # we've played the desired number of times.
+                            self.playing = False
 
 
         if tempMovie != None:   # Need to switch back to main movie
