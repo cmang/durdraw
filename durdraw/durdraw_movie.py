@@ -3,6 +3,7 @@ from durdraw.durdraw_options import Options
 import json
 import pdb
 import re
+import functools
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -215,6 +216,20 @@ class Movie():
             return True
         else:
             return False
+
+    @functools.cache
+    def currentFrameDiffCoords(self, firstFrame=False):
+        'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
+        if firstFrame:
+            return [[True for x in range(0, self.sizeX)] for y in range(0, self.sizeY)]
+
+        changedPixels = []
+        for y in range(0, self.sizeY):
+            changedPixels.append([])
+            for x in range(0, self.sizeX):
+                changedPixels[y].append(self.currentFrame.content[y][x] != self.frames[self.currentFrameNumber-2].content[y][x])
+        return changedPixels
+
 
     def growCanvasWidth(self, growth):
         self.sizeX += growth

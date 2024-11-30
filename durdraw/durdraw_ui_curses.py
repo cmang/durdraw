@@ -156,6 +156,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.drawCharPickerButton.label = self.appState.drawChar
 
         self.statusBarLineNum = self.realmaxY - 2
+        self.firstFrame = True
 
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
@@ -1956,6 +1957,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 else:
                     time.sleep(0.005) # to keep from sucking up cpu
 
+            self.firstFrame = False
             last_time = new_time
             # draw animation
             shouldDelay = False
@@ -6316,10 +6318,16 @@ Can use ESC or META instead of ALT
         screenLineNum = 0
         firstCol = self.appState.firstCol
         lastCol = min(mov.sizeX, self.appState.realmaxX + firstCol)
+
+        diffCoords = self.mov.currentFrameDiffCoords(firstFrame=self.firstFrame)
+
         # Draw each character
         for linenum in range(topLine, lastLineToDraw):
             line = mov.currentFrame.content[linenum]
             for colnum in range(firstCol, lastCol):
+                # skip drawing this coordinate if it hasn't changed since the previous frame
+                if not diffCoords[linenum][colnum]:
+                    continue
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])
                 if self.appState.cursorMode == "Paint" and not self.playing and not self.appState.playingHelpScreen:
