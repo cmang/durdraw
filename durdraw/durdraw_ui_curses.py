@@ -1953,7 +1953,6 @@ class UserInterface():  # Separate view (curses) from this controller
             self.firstFrame = False
             last_time = new_time
             # draw animation
-            shouldDelay = False
             if not self.appState.playOnlyMode:
                 if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
                     self.mov.gotoFrame(self.appState.playbackRange[0])
