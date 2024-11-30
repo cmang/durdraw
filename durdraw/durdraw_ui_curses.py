@@ -20,10 +20,8 @@ import textwrap
 import threading
 import time
 import urllib
-from datetime import datetime
 
 from concurrent.futures import ThreadPoolExecutor
-import line_profiler
 
 #from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_options import Options
@@ -671,7 +669,6 @@ class UserInterface():  # Separate view (curses) from this controller
         except curses.error:
             pass    # .. if terminal supports it.
 
-    @line_profiler.profile
     def addstr(self, y, x, string, attr=None): # addstr(y, x, str[, attr]) and addstr(str[, attr])
         """ Wraps ncurses addstr in a try;except, prevents addstr from
             crashing cureses if it fails """
@@ -1403,7 +1400,6 @@ class UserInterface():  # Separate view (curses) from this controller
             dur_key = '{' + key + '}'
             self.mov.search_and_replace(self, dur_key, self.appState.fetchData[key])
 
-    @line_profiler.profile
     def startPlaying(self, mov=None, opts=None):
         """ Start playing the animation - start a "game" style loop, make FPS
             by drawing if current time == greater than a delta plus the time
@@ -1453,10 +1449,7 @@ class UserInterface():  # Separate view (curses) from this controller
         sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         self.mov.gotoFrame(self.appState.playbackRange[0])
         mouseX, mouseY = 0, 0
-        # while self.playing:
-        for i in range(1000):
-            with open('log.txt', 'a') as f:
-                print(f'{datetime.now()} drawing frame {self.mov.currentFrameNumber}, loop {i}/1000', file=f)
+        while self.playing:
             # catch keyboard input - to change framerate or stop pnlaying animation
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
@@ -3456,7 +3449,6 @@ class UserInterface():  # Separate view (curses) from this controller
             #self.notify("Shifted frames to the right.")
         self.refresh()
 
-    @line_profiler.profile
     def enterViewMode(self, mov=None, opts=None):
         self.statusBar.hide()
         self.stdscr.clear()
@@ -6295,7 +6287,6 @@ Can use ESC or META instead of ALT
         if refreshScreen:
             self.stdscr.refresh()
 
-    @line_profiler.profile
     def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False, topLine=None):          # rename to redraw()?
         """Refresh the screen"""
         if topLine == None:
@@ -7067,7 +7058,6 @@ Can use ESC or META instead of ALT
         self.statusBar.hide()
         self.appState.drawBorders = True
 
-    @line_profiler.profile
     def runDurView(self):
         """ Launch the UI for the DurView app """
         # While there are files to read from the openFilePicker(), put them into view mode
