@@ -31,12 +31,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             # ie we have redo states, remove all items after undoList[undoIndex]
             self.undoList = self.undoList[0:self.undoIndex]  # trim list
             # then add the new state to the end of the queue.
-
-            # create a temporary file to store the pickled movie object
-            f = tempfile.TemporaryFile()
-            pickle.dump(self.ui.mov, f)
-            f.seek(0)
-            self.undoList.append(f)
+            self._append_state(self.ui.mov)
 
             # last item added == at the end of the list, so..
             self.undoIndex = len(self.undoList) # point index to last item
@@ -55,8 +50,9 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.push()
                 self.undoIndex -= 1
             self.undoIndex -= 1
-            self.ui.mov = pickle.load(self.undoList[self.undoIndex]) # set UI movie state
-            self.undoList[self.undoIndex].seek(0)
+
+            self.ui.mov = self._read_state(self.undoIndex) # read & set UI movie state
+
             return True # succeeded
 
         def redo(self):
@@ -64,8 +60,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.undoIndex += 1 # go to next redo state
                 self.modifications += 1
 
-                self.ui.mov = pickle.load(self.undoList[self.undoIndex]) # set UI movie state
-                self.undoList[self.undoIndex].seek(0)
+                self.ui.mov = self._read_state(self.undoIndex) # read & set UI movie state
 
                 if self.appState.modified == False:
                     self.appState.modified = True
@@ -75,4 +70,18 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             """ Defines the max number of undo states we will save """
             self.historySize = historySize
 
+        def _append_state(self, obj):
+            '''Stores undo state by pickling it into a temporary file, which is kept open
+            and appended to the state buffer'''
+            f = tempfile.TemporaryFile()
+            pickle.dump(self.ui.mov, f)
+            f.seek(0)
+            self.undoList.append(f)
+
+        def _read_state(self, idx):
+            '''Reads a state from the undo buffer by unpickling it from the temporary file at position idx.
+            Rewinds the file to the beginning for future reads before returning the object'''
+            obj = pickle.load(self.undoList[idx])
+            self.undoList[idx].seek(0)
+            return obj
 
