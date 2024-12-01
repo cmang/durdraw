@@ -6309,14 +6309,15 @@ Can use ESC or META instead of ALT
         firstCol = self.appState.firstCol
         lastCol = min(mov.sizeX, self.appState.realmaxX + firstCol)
 
-        diffCoords = self.mov.currentFrameDiffCoords(firstFrame=self.firstFrame)
+        diffCoords = self.mov.currentFrameDiffCoords()
 
         # Draw each character
         for linenum in range(topLine, lastLineToDraw):
             line = mov.currentFrame.content[linenum]
             for colnum in range(firstCol, lastCol):
                 # skip drawing this coordinate if it hasn't changed since the previous frame
-                if not diffCoords[linenum][colnum]:
+                # or if it's the first frame which we always draw
+                if not self.firstFrame and not diffCoords[linenum][colnum]:
                     continue
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
                 charContent = str(line[colnum])

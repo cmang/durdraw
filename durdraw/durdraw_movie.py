@@ -227,11 +227,8 @@ class Movie():
         else:
             return False
 
-    def currentFrameDiffCoords(self, firstFrame=False):
+    def currentFrameDiffCoords(self):
         'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
-        if firstFrame:
-            return [[True]*self.sizeX]*self.sizeY
-
         return self.currentFrame.diff(self.frames[self.currentFrameNumber - 2])
 
 
