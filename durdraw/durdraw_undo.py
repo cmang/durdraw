@@ -56,13 +56,17 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.undoIndex -= 1
             self.undoIndex -= 1
             self.ui.mov = pickle.load(self.undoList[self.undoIndex]) # set UI movie state
+            self.undoList[self.undoIndex].seek(0)
             return True # succeeded
 
         def redo(self):
             if self.undoIndex < (len(self.undoList) -1): # we can redo
                 self.undoIndex += 1 # go to next redo state
                 self.modifications += 1
-                self.ui.mov = self.undoList[self.undoIndex]
+
+                self.ui.mov = pickle.load(self.undoList[self.undoIndex]) # set UI movie state
+                self.undoList[self.undoIndex].seek(0)
+
                 if self.appState.modified == False:
                     self.appState.modified = True
             else:
