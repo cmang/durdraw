@@ -4,6 +4,8 @@ That's awesome that you want to help! I thank you. The guidelines are pretty loo
 
 * The main thing is, work in the "dev" branch instead of the "master" branch. The changes made to the Dev branch are eventually merged into Master for release.
 
+* Durdraw should always be able to run using the Python standard library, without any dependencies, even if some features are unavailable. That level of portability is important to me, and I think is part of its appeal. I am only willing to break it if there is a very good reason. You can still use a dependency if it is used in a way that does not prevevent Durdraw from running when the dependency is unavailable, but prefer the standard library, please.
+
 * If you implement a new feature that changes any behavior, unless it's really cool and makes a lot of sense, try to make it optional. For example, through a command-line option or runtime toggle. 
 
 * If you want to help "clean up" the code to make it more legible or modular, that's great. But, I request that you let me see some of the style changes you are proposing before you dump a giant patch of changes. I don't want major changes in a style I don't enjoy.
