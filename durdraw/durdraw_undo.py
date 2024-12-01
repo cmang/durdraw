@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+import pickle
 
 class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         # when to switch to another saved movie state.
@@ -29,9 +29,10 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             # ie we have redo states, remove all items after undoList[undoIndex]
             self.undoList = self.undoList[0:self.undoIndex]  # trim list
             # then add the new state to the end of the queue.
-            self.undoList.append(deepcopy(self.ui.mov))
+            self.undoList.append(pickle.dumps(self.ui.mov))
             # last item added == at the end of the list, so..
             self.undoIndex = len(self.undoList) # point index to last item
+
         def undo(self):
             if self.modifications > 1:
                 self.modifications = self.modifications - 1
@@ -46,8 +47,9 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.push()
                 self.undoIndex -= 1
             self.undoIndex -= 1
-            self.ui.mov = self.undoList[self.undoIndex] # set UI movie state
+            self.ui.mov = pickle.loads(self.undoList[self.undoIndex]) # set UI movie state
             return True # succeeded
+
         def redo(self):
             if self.undoIndex < (len(self.undoList) -1): # we can redo
                 self.undoIndex += 1 # go to next redo state
