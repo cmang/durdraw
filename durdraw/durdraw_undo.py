@@ -1,4 +1,5 @@
 import pickle
+import tempfile
 
 class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         # when to switch to another saved movie state.
@@ -14,6 +15,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             self.appState = appState
             # AppState values passed to setHistorySize() below.
             self.push() # push initial state
+
         def push(self): # maybe should be called pushState or saveState?
             """ Take current movie, add to the end of a list of movie
                 objects - ie, push current state onto the undo stack. """
@@ -29,7 +31,13 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             # ie we have redo states, remove all items after undoList[undoIndex]
             self.undoList = self.undoList[0:self.undoIndex]  # trim list
             # then add the new state to the end of the queue.
-            self.undoList.append(pickle.dumps(self.ui.mov))
+
+            # create a temporary file to store the pickled movie object
+            f = tempfile.TemporaryFile()
+            pickle.dump(self.ui.mov, f)
+            f.seek(0)
+            self.undoList.append(f)
+
             # last item added == at the end of the list, so..
             self.undoIndex = len(self.undoList) # point index to last item
 
@@ -47,7 +55,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 self.push()
                 self.undoIndex -= 1
             self.undoIndex -= 1
-            self.ui.mov = pickle.loads(self.undoList[self.undoIndex]) # set UI movie state
+            self.ui.mov = pickle.load(self.undoList[self.undoIndex]) # set UI movie state
             return True # succeeded
 
         def redo(self):
