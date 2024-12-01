@@ -129,6 +129,16 @@ class Frame():
         """ Builds a list of lists """
         return [[[fg,0] * self.sizeY] * self.sizeX]
 
+    @functools.cache
+    def diff(self, otherFrame):
+        'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
+        changedPixels = []
+        for y in range(0, self.sizeY):
+            changedPixels.append([])
+            for x in range(0, self.sizeX):
+                changedPixels[y].append(self.content[y][x] != otherFrame.content[y][x])
+        return changedPixels
+
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
     def __init__(self, opts):
@@ -217,18 +227,12 @@ class Movie():
         else:
             return False
 
-    @functools.cache
     def currentFrameDiffCoords(self, firstFrame=False):
         'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
         if firstFrame:
-            return [[True for x in range(0, self.sizeX)] for y in range(0, self.sizeY)]
+            return [[True]*self.sizeX]*self.sizeY
 
-        changedPixels = []
-        for y in range(0, self.sizeY):
-            changedPixels.append([])
-            for x in range(0, self.sizeX):
-                changedPixels[y].append(self.currentFrame.content[y][x] != self.frames[self.currentFrameNumber-2].content[y][x])
-        return changedPixels
+        return self.currentFrame.diff(self.frames[self.currentFrameNumber - 2])
 
 
     def growCanvasWidth(self, growth):
