@@ -463,6 +463,20 @@ Here are some `durfetch` examples:
 |-|-|
 | ![tux-fetch-colors](https://github.com/user-attachments/assets/4010d18a-1b79-4594-a9cd-17234584f3c8) | ![unixy3](https://github.com/user-attachments/assets/812514d4-0216-4f41-8384-84563fa664b7) |
 
+## Experimental Features
+
+To enable an external feature, use an ENV var listed below in front of a `durdraw` command, e.g.
+
+```shell
+ENABLE_UNDO_TEMPFILES=1 durdraw animation.dur
+```
+
+The following list of features are experimental and may not work as expected:
+
+```shell
+ENABLE_UNDO_TEMPFILES=1 # store undo history using python the `tmpfile` lib instead of memory
+```
+
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
