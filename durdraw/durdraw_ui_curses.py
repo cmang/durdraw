@@ -1401,6 +1401,112 @@ class UserInterface():  # Separate view (curses) from this controller
             dur_key = '{' + key + '}'
             self.mov.search_and_replace(self, dur_key, self.appState.fetchData[key])
 
+    def handlePlayOnlyModeInput(self, c):
+        mouseState = False
+        if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
+            try:
+                _, mouseX, mouseY, _, mouseState = curses.getmouse()
+            except:
+                pass
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+
+            if mouseState == curses.BUTTON1_CLICKED:
+                pass
+                #self.showFileInformation()
+
+            elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+            # It's as if we'd pressed enter to exit the viewer mode.
+                self.playing = False
+                self.appState.topLine = 0
+
+            if not self.appState.hasMouseScroll:
+                curses.BUTTON5_PRESSED = 0
+                curses.BUTTON4_PRESSED = 0
+            try:
+                curses.BUTTON5_PRESSED
+            except:
+                curses.BUTTON5_PRESSED = 0
+            try:
+                curses.BUTTON4_PRESSED
+            except:
+                curses.BUTTON4_PRESSED = 0
+            if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                if self.appState.topLine > 0:
+                    self.appState.topLine = self.appState.topLine - 1
+            elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+                    self.appState.topLine += 1
+
+        elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+            self.appState.topLine = self.appState.topLine - self.realmaxY + 3
+            if self.appState.topLine < 0:
+                self.appState.topLine = 0
+        elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+            if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
+                self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+                if self.appState.topLine > self.mov.sizeY - self.realmaxY:
+                    self.appState.topLine = self.mov.sizeY - self.realmaxY 
+                    # prevent a ghost image on any blank lines at the bottom:
+                    #self.stdscr.clear()
+                    #self.refresh()
+        elif c in [339, curses.KEY_HOME]:  # 339 = home
+            self.appState.topLine = 0
+        elif c in [338, curses.KEY_END]:   # 338 = end
+            self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+        elif c in [curses.KEY_LEFT, ord('h')]:      # left - scroll left
+            self.scroll_viewer_left()
+        elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
+            self.scroll_viewer_right()
+        elif c in [ord('v')]:      # v - enable VGA colors
+            self.enableTrueVGAColors()
+        #elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
+        #    self.xy[1]
+        #elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
+        #    self.xy[1] = self.mov.sizeX
+        if c in [61, 43]: # = and + - fps up
+            self.increaseFPS()
+            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+        elif c in [45]: # - (minus) - fps down
+            self.decreaseFPS()
+            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+
+        if c in [ord('q'), ord('Q')]:
+            self.playing = False
+            self.appState.topLine = 0
+            if not self.appState.editorRunning:
+                self.verySafeQuit()
+
+        elif c in [27, 10, 13, curses.KEY_ENTER]:   # 27 = esc, 10 = LF, 13 = CR
+            self.playing = False
+            self.appState.topLine = 0
+
+        elif c in [ord('?')]:
+            self.showViewerHelp()
+
+        elif c in [ord('i'), ord('I')]:
+            # toggle showing info. True/false swap:
+            self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
+
+            if self.appState.viewModeShowInfo:
+                self.showFileInformation()
+            else:
+                self.stdscr.clear()
+                self.hardRefresh()
+            self.refresh()
+
+            #self.showFileInformation()
+
+        elif c in [curses.KEY_DOWN, ord('j')]:
+            if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+                self.appState.topLine += 1
+        elif c in [curses.KEY_UP, ord('k')]:
+            if self.appState.topLine > 0:
+                self.appState.topLine = self.appState.topLine - 1
+        elif c == 12:               # ctrl-l - harder refresh
+            self.stdscr.clear()
+            self.hardRefresh()
+            c = None
+
     def startPlaying(self, mov=None, opts=None):
         """ Start playing the animation - start a "game" style loop, make FPS
             by drawing if current time == greater than a delta plus the time
@@ -1496,6 +1602,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.disableMouseReporting()
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
+
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
@@ -1659,105 +1766,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 #        self.openEditorFromDurview()
                 #        c = None
                 if self.appState.playOnlyMode:  # UI for Play-only mode
-                    mouseState = False
-                    if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
-                        try:
-                            _, mouseX, mouseY, _, mouseState = curses.getmouse()
-                        except:
-                            pass
-                        realmaxY,realmaxX = self.realstdscr.getmaxyx()
-
-                        if mouseState == curses.BUTTON1_CLICKED:
-                            pass
-                            #self.showFileInformation()
-
-                        elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                        # It's as if we'd pressed enter to exit the viewer mode.
-                            self.playing = False
-                            self.appState.topLine = 0
-
-                        if not self.appState.hasMouseScroll:
-                            curses.BUTTON5_PRESSED = 0
-                            curses.BUTTON4_PRESSED = 0
-                        try:
-                            curses.BUTTON5_PRESSED
-                        except:
-                            curses.BUTTON5_PRESSED = 0
-                        try:
-                            curses.BUTTON4_PRESSED
-                        except:
-                            curses.BUTTON4_PRESSED = 0
-                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                            if self.appState.topLine > 0:
-                                self.appState.topLine = self.appState.topLine - 1
-                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                            if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
-                                self.appState.topLine += 1
-
-                    elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
-                        self.appState.topLine = self.appState.topLine - self.realmaxY + 3
-                        if self.appState.topLine < 0:
-                            self.appState.topLine = 0
-                    elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
-                        if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
-                            self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
-                            if self.appState.topLine > self.mov.sizeY - self.realmaxY:
-                                self.appState.topLine = self.mov.sizeY - self.realmaxY 
-                                # prevent a ghost image on any blank lines at the bottom:
-                                #self.stdscr.clear()
-                                #self.refresh()
-                    elif c in [339, curses.KEY_HOME]:  # 339 = home
-                        self.appState.topLine = 0
-                    elif c in [338, curses.KEY_END]:   # 338 = end
-                        self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
-                    elif c in [curses.KEY_LEFT, ord('h')]:      # left - scroll left
-                        self.scroll_viewer_left()
-                    elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
-                        self.scroll_viewer_right()
-                    elif c in [ord('v')]:      # v - enable VGA colors
-                        self.enableTrueVGAColors()
-                    #elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
-                    #    self.xy[1]
-                    #elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
-                    #    self.xy[1] = self.mov.sizeX
-                    if c in [61, 43]: # = and + - fps up
-                        self.increaseFPS()
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                    elif c in [45]: # - (minus) - fps down
-                        self.decreaseFPS()
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-
-                    if c in [ord('q'), ord('Q')]:
-                        self.playing = False
-                        self.appState.topLine = 0
-                        if not self.appState.editorRunning:
-                            self.verySafeQuit()
-
-                    elif c in [27, 10, 13, curses.KEY_ENTER]:   # 27 = esc, 10 = LF, 13 = CR
-                        self.playing = False
-                        self.appState.topLine = 0
-
-                    elif c in [ord('?')]:
-                        self.showViewerHelp()
-
-                    elif c in [ord('i'), ord('I')]:
-                        # toggle showing info. True/false swap:
-                        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
-                        self.stdscr.clear()
-                        self.refresh()
-
-                        #self.showFileInformation()
-
-                    elif c in [curses.KEY_DOWN, ord('j')]:
-                        if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
-                            self.appState.topLine += 1
-                    elif c in [curses.KEY_UP, ord('k')]:
-                        if self.appState.topLine > 0:
-                            self.appState.topLine = self.appState.topLine - 1
-                    elif c == 12:               # ctrl-l - harder refresh
-                        self.stdscr.clear()
-                        self.hardRefresh()
-                        c = None
+                    self.handlePlayOnlyModeInput(c)
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
@@ -1938,39 +1947,46 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c != None and c <= 128 and c >= 32:      # normal printable character
                         self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
 
+            shouldDraw = False
             while True:
+                if self.appState.playOnlyMode:
+                    self.handlePlayOnlyModeInput(self.stdscr.getch())
+
                 new_time = time.time()
                 frame_delay = self.mov.currentFrame.delay
                 if frame_delay > 0:
                     realDelayTime = frame_delay
                 else:
                     realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
-                if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
-                    break
-                else:
-                    time.sleep(0.005) # to keep from sucking up cpu
+                time.sleep(0.04) # to keep from sucking up cpu
 
-            self.firstFrame = False
-            last_time = new_time
-            # draw animation
-            if not self.appState.playOnlyMode:
-                if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
-                    self.mov.gotoFrame(self.appState.playbackRange[0])
+                if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+                    shouldDraw = True
+                    break
+                if not self.appState.playOnlyMode:
+                    break
+
+            if shouldDraw:
+                last_time = new_time
+                # draw animation
+                if not self.appState.playOnlyMode:
+                    if self.mov.currentFrameNumber == self.appState.playbackRange[1]:
+                        self.mov.gotoFrame(self.appState.playbackRange[0])
+                    else:
+                        self.mov.nextFrame()
                 else:
                     self.mov.nextFrame()
-            else:
-                self.mov.nextFrame()
-            if not self.appState.playOnlyMode: # if we're not in play-only
-                # mode, show extra stuff.
-                self.drawStatusBar()
-            else:
-                if self.appState.playNumberOfTimes > 0:   # if we're playing x times
-                    if self.mov.currentFrameNumber == self.mov.frameCount:
-                        # and on the last frame
-                        if playedTimes < self.appState.playNumberOfTimes:
-                            playedTimes += 1
-                        else:   # we've played the desired number of times.
-                            self.playing = False
+                if not self.appState.playOnlyMode: # if we're not in play-only
+                    # mode, show extra stuff.
+                    self.drawStatusBar()
+                else:
+                    if self.appState.playNumberOfTimes > 0:   # if we're playing x times
+                        if self.mov.currentFrameNumber == self.mov.frameCount:
+                            # and on the last frame
+                            if playedTimes < self.appState.playNumberOfTimes:
+                                playedTimes += 1
+                            else:   # we've played the desired number of times.
+                                self.playing = False
 
 
         if tempMovie != None:   # Need to switch back to main movie
