@@ -134,7 +134,7 @@ class Frame():
         return self.content[y][x] != otherFrame.content[y][x] or self.newColorMap[y][x] != otherFrame.newColorMap[y][x]
 
     def diff(self, otherFrame, refresh=False):
-        'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
+        'Compares two frames, yields the coordinates of differing pixels'
         for y in range(0, self.sizeY):
             for x in range(0, self.sizeX):
                 if refresh or self.pixelDiff(otherFrame, x, y):
@@ -230,7 +230,7 @@ class Movie():
             return False
 
     def currentFrameDiffCoords(self, refresh=False):
-        'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
+        'Compares two frames, returns the coordinates of differing pixels'
         return set(self.currentFrame.diff(self.frames[self.currentFrameNumber - 2], refresh))
 
     def growCanvasWidth(self, growth):
