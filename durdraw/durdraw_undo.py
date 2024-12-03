@@ -1,3 +1,4 @@
+import os
 import pickle
 import tempfile
 
@@ -73,15 +74,21 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         def _append_state(self, obj):
             '''Stores undo state by pickling it into a temporary file, which is kept open
             and appended to the state buffer'''
-            f = tempfile.TemporaryFile()
-            pickle.dump(obj, f)
-            f.seek(0)
-            self.undoList.append(f)
+            if os.environ.get('ENABLE_UNDO_TEMPFILES', '0') == '1':
+                f = tempfile.TemporaryFile()
+                pickle.dump(obj, f)
+                f.seek(0)
+                self.undoList.append(f)
+            else:
+                self.undoList.append(pickle.dumps(obj))
 
         def _read_state(self, idx):
             '''Reads a state from the undo buffer by unpickling it from the temporary file at position idx.
             Rewinds the file to the beginning for future reads before returning the object'''
-            obj = pickle.load(self.undoList[idx])
-            self.undoList[idx].seek(0)
-            return obj
+            if os.environ.get('ENABLE_UNDO_TEMPFILES', '0') == '1':
+                obj = pickle.load(self.undoList[idx])
+                self.undoList[idx].seek(0)
+                return obj
+            else:
+                return pickle.loads(self.undoList[idx])
 
