@@ -6325,18 +6325,17 @@ Can use ESC or META instead of ALT
         firstCol = self.appState.firstCol
         lastCol = min(mov.sizeX, self.appState.realmaxX + firstCol)
 
-        diffCoords = self.mov.currentFrameDiffCoords()
+        diffCoords = mov.currentFrameDiffCoords(self.firstFrame)
 
         # Draw each character
         for linenum in range(topLine, lastLineToDraw):
-            line = mov.currentFrame.content[linenum]
             for colnum in range(firstCol, lastCol):
                 # skip drawing this coordinate if it hasn't changed since the previous frame
                 # or if it's the first frame which we always draw
-                if not self.firstFrame and not diffCoords[linenum][colnum]:
+                if not self.firstFrame and (colnum, linenum) not in diffCoords:
                     continue
                 charColor = mov.currentFrame.newColorMap[linenum][colnum]
-                charContent = str(line[colnum])
+                charContent = str(mov.currentFrame.content[linenum][colnum])
                 if self.appState.cursorMode == "Paint" and not self.playing and not self.appState.playingHelpScreen:
                     if self.appState.brush != None:
                         # draw brush preview
@@ -6430,6 +6429,7 @@ Can use ESC or META instead of ALT
             if not preview and self.appState.drawBorders and screenLineNum + topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
+        self.firstFrame = False
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
         if not preview and self.appState.drawBorders and screenLineNum + topLine == self.mov.sizeY:

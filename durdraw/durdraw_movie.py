@@ -3,7 +3,7 @@ from durdraw.durdraw_options import Options
 import json
 import pdb
 import re
-import functools
+
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -127,17 +127,19 @@ class Frame():
 
     def initColorMap(self, fg=7, bg=0):
         """ Builds a list of lists """
-        return [[[fg,0] * self.sizeY] * self.sizeX]
+        return [[[fg, 0] * self.sizeY] * self.sizeX]
 
-    @functools.cache
-    def diff(self, otherFrame):
+    def pixelDiff(self, otherFrame, x, y):
+        """ Compares a single pixel on two frames, returns True if they differ """
+        return self.content[y][x] != otherFrame.content[y][x] or self.newColorMap[y][x] != otherFrame.newColorMap[y][x]
+
+    def diff(self, otherFrame, refresh=False):
         'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
-        changedPixels = []
         for y in range(0, self.sizeY):
-            changedPixels.append([])
             for x in range(0, self.sizeX):
-                changedPixels[y].append(self.content[y][x] != otherFrame.content[y][x])
-        return changedPixels
+                if refresh or self.pixelDiff(otherFrame, x, y):
+                    yield x, y
+
 
 class Movie():
     """ Contains an array of Frames, options to add, remove, copy them """
@@ -227,10 +229,9 @@ class Movie():
         else:
             return False
 
-    def currentFrameDiffCoords(self):
+    def currentFrameDiffCoords(self, refresh=False):
         'Compares two frames, returns a matrix of booleans where True indicates a pixel change'
-        return self.currentFrame.diff(self.frames[self.currentFrameNumber - 2])
-
+        return set(self.currentFrame.diff(self.frames[self.currentFrameNumber - 2], refresh))
 
     def growCanvasWidth(self, growth):
         self.sizeX += growth
