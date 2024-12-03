@@ -74,7 +74,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             '''Stores undo state by pickling it into a temporary file, which is kept open
             and appended to the state buffer'''
             f = tempfile.TemporaryFile()
-            pickle.dump(self.ui.mov, f)
+            pickle.dump(obj, f)
             f.seek(0)
             self.undoList.append(f)
 
