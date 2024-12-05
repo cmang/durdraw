@@ -562,7 +562,7 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 
 Durdraw is possible thanks to the following people:
 
-- Sam Foster <samfoster@gmail.com> - Creator, Primary developer
+- Sam Foster - Creator, Primary developer
 - Tom McKeesick - Performnace Enhancements, documentation Formatting
 - Alex Myczko - man page, Debian packaging
 - sigurdo - Cursor shapes, command-line ANSI export
