@@ -560,7 +560,7 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 - Home page: http://durdraw.org
 - Development: https://github.com/cmang/durdraw
 
-Durdraw is possible thanks to the following people:
+Durdraw is what it is thanks to the following people:
 
 - Sam Foster - Creator, Primary developer
 - Tom McKeesick - Performnace Enhancements, documentation Formatting
