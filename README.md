@@ -533,11 +533,11 @@ If you write, podcast, vlog, or create content about Durdraw, or if you simply e
 
 ### Support
 
-Your support means a lot to Durdraw! As a free and open-source project, your donations fuel my motivation to keep improving this software. Thank you for considering a contribution to help sustain and enhance this project.
+Thank you for considering a contribution to help sustain and enhance this project.
 
-Contributions help cover essential costs like development time, domain registration, and web hosting.
+Financial contributions help cover essential costs like development time, domain registration, and web hosting.
 
-You can contribute to this project using any of these platforms:
+You can donate to this project using any of these platforms:
 
 - [Paypal](https://www.paypal.com/donate/?hosted_button_id=VTPZPFMDLY4X6)
 - [Buymeacoffee](https://buymeacoffee.com/samfoster)
@@ -557,12 +557,22 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 
 ### Credits
 
-Developer: Sam Foster <samfoster@gmail.com>. For a full list of contributors, see the github page below.
-
 - Home page: http://durdraw.org
 - Development: https://github.com/cmang/durdraw
 
-ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
+Durdraw is possible thanks to the following people:
+
+- Sam Foster <samfoster@gmail.com> - Creator, Primary developer
+- Tom McKeesick - Performnace Enhancements, documentation Formatting
+- Alex Myczko - man page, Debian packaging
+- sigurdo - Cursor shapes, command-line ANSI export
+- yumpyy - Dockerfile
+- Zhenrong Wang - Documentation updates
+- Frederick Cambus - Documentation update
+- eyooooo - Filename conventions, useful feedback
+- HK - Beta testing, useful feedback
+
+- ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
 
 ### Legal
 
