@@ -41,6 +41,7 @@ import durdraw.durdraw_charsets as durchar
 import durdraw.plugins.reverse_movie as reverse_plugin # transform_movie
 import durdraw.plugins.repeat_movie as repeat_plugin # transform_movie
 import durdraw.plugins.bounce_movie as bounce_plugin # transform_movie
+import durdraw.log as log
 
 
 class UserInterface():  # Separate view (curses) from this controller
@@ -49,6 +50,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def __init__(self, app):
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
+        self.log = log.getLogger('ui_curses', level=logging.INFO)
+        self.log.info('UserInterface created')
         self.initCursorMode()
         self.clipBoard = None   # frame object
         self.charMapNumber = 0
