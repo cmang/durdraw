@@ -72,6 +72,7 @@ class LogFormatter(logging.Formatter):
         record.msg = json.dumps(
             {
                 'timestamp': datetime.now().astimezone().isoformat(),
+                'name':      record.name,
                 'msg':       record.msg,
                 'data':      {
                     **({'args': args} if args else {}),
