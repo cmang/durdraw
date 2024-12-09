@@ -5,14 +5,8 @@ A module to create loggers with custom handlers and a custom formatter.
 
 usage examples to initialise a logger:
     ```python
-    # 1. initialise logger to stderr:
-    logger = getLogger('my_logger', level=logging.DEBUG, print_stream=sys.stderr)
-
-    # 2. initialise logger to file:
+    # initialise logger to file:
     logger = getLogger('my_logger', level=logging.DEBUG, filename='my_log.log')
-
-    # 3. initialise logger to both stderr and file:
-    logger = getLogger('my_logger', level=logging.DEBUG, print_stream=sys.stderr, filename='my_log.log')
     ```
 
 usage examples to log messages:
@@ -35,7 +29,9 @@ import json
 import logging
 import sys
 
-LOG_ROOT_NAME = 'root'
+LOG_ROOT_NAME = 'durdraw'
+DEFAULT_LOG_FILEPATH = '/tmp/durdraw.log'
+
 
 def _json_default(obj: object) -> str:
     'Default JSON serializer, supports most main class types'
@@ -129,15 +125,11 @@ class Logger:
     '''
     name: str
     level: int = logging.CRITICAL
-    print_stream: io.TextIOBase = field(default=None)
-    filename: str = field(default=None)
+    filename: str = DEFAULT_LOG_FILEPATH
     handlers: list[logging.Handler] = field(init=False, default_factory=list)
 
-    def __post_init__(self, filename: str = None):
-        if self.print_stream:
-            self.handlers.append(logging.StreamHandler(self.print_stream))
-        if self.filename:
-            self.handlers.append(logging.FileHandler(self.filename))
+    def __post_init__(self):
+        self.handlers.append(logging.FileHandler(self.filename))
 
     def getLogger(self) -> logging.Logger:
         return _getLogger(self.name, self.level, handlers=self.handlers)
@@ -147,7 +139,7 @@ class Logger:
         return self.getLogger()
 
 
-def getLogger(name: str, level: int = logging.CRITICAL, print_stream: io.TextIOBase = None, filename: str = None) -> logging.Logger:
+def getLogger(name: str, level: int = logging.CRITICAL, filename: str = DEFAULT_LOG_FILEPATH) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
     - if `print_stream` is provided, the logger will output logs to it.
@@ -155,10 +147,4 @@ def getLogger(name: str, level: int = logging.CRITICAL, print_stream: io.TextIOB
     - if both are provided, the logger will output logs to both.
     - if neither are provided, the logger will not output any logs.
     '''
-    handlers = []
-    if print_stream:
-        handlers.append(logging.StreamHandler(print_stream))
-    if filename:
-        handlers.append(logging.FileHandler(filename))
-
-    return _getLogger(name, level, handlers)
+    return _getLogger(name, level, [logging.FileHandler(filename)])
