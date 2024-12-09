@@ -326,6 +326,13 @@ Here is an example `durdraw.ini` file, showing the available options:
 [Theme]
 theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+
+[Logging]
+; filepath is the path to the log file. Default is ./durdraw.log
+;filepath: ./durdraw.log
+
+; level sets the logging level. Available options: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default is WARNING
+;level: WARNING
 ```
 
 The option `'theme-16'` sets the path to the theme file used in 16-color mode, and `'theme-256'` sets the theme file used for 256-color mode.

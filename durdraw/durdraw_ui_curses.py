@@ -50,7 +50,7 @@ class UserInterface():  # Separate view (curses) from this controller
     def __init__(self, app):
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
-        self.log = log.getLogger('ui_curses', level=log.INFO)
+        self.log = self.appState.getLogger('ui_curses')
         self.log.info('UserInterface created')
         self.initCursorMode()
         self.clipBoard = None   # frame object

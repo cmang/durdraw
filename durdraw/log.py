@@ -6,20 +6,19 @@ A module to create loggers with custom handlers and a custom formatter.
 usage examples to initialise a logger:
     ```python
     # initialise logger to file:
-    logger = getLogger('my_logger', level=logging.DEBUG, filename='my_log.log')
+    logger = getLogger('my_logger', level=logging.DEBUG, filepath='./my_log.log')
     ```
 
 usage examples to log messages:
+1. log a basic info message by passing a string:
     ```python
     logger.info('This is a basic info message')
     # {"timestamp": "2024-12-09T15:05:43.904417", "msg": "This is a basic info message", "data": {}}
-
+    ```
+2. log a message with additional data by passing a dictionary as the second argument:
+    ```python
     logger.info('This is an info message', {'key': 'value'})
     # {"timestamp": "2024-12-09T15:05:43.904600", "msg": "This is an info message", "data": {"key": "value"}}
-
-    logger.debug('This is a debug message', 'arg1', 'arg2', {'key': 'value'})
-    # {"timestamp": "2024-12-09T15:05:43.904749", "msg": "This is a debug message", "data": {"args": ["arg1", "arg2"], "key": "value"}}
-    ```
 '''
 
 from dataclasses import asdict, dataclass, is_dataclass, field
@@ -28,16 +27,29 @@ import io
 import json
 import logging
 import sys
+from typing import TypeAlias, Literal
+from types import MappingProxyType
+
+CRITICAL: int = logging.CRITICAL
+ERROR:    int = logging.ERROR
+WARNING:  int = logging.WARNING
+INFO:     int = logging.INFO
+DEBUG:    int = logging.DEBUG
+
+LOG_LEVEL_NAME: TypeAlias = Literal['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+LOG_LEVEL_VALUE: TypeAlias = Literal[CRITICAL, ERROR, WARNING, INFO, DEBUG]
+
+LOG_LEVEL: MappingProxyType[LOG_LEVEL_NAME, LOG_LEVEL_VALUE] = MappingProxyType({
+    'CRITICAL': CRITICAL,
+    'ERROR':    ERROR,
+    'WARNING':  WARNING,
+    'INFO':     INFO,
+    'DEBUG':    DEBUG,
+})
 
 LOG_ROOT_NAME = 'durdraw'
-DEFAULT_LOG_FILEPATH = '/tmp/durdraw.log'
-
-# log levels
-CRITICAL = logging.CRITICAL
-ERROR = logging.ERROR
-WARNING = logging.WARNING
-INFO = logging.INFO
-DEBUG = logging.DEBUG
+DEFAULT_LOG_FILEPATH = './durdraw.log'
+DEFAULT_LOG_LEVEL = 'WARNING'
 
 def _json_default(obj: object) -> str:
     'Default JSON serializer, supports most main class types'
@@ -57,31 +69,20 @@ class LogFormatter(logging.Formatter):
     def format(self, record) -> str:
         'Formats the log message as JSON.'
 
-        args, kwargs = None, {}
-        if isinstance(record.args, tuple):
-            if len(record.args) == 1:
-                args = record.args
-            elif len(record.args) > 1:
-                if isinstance(record.args[-1], dict):
-                    args, kwargs = record.args[:-1], record.args[-1]
-                else:
-                    args = record.args
-        elif isinstance(record.args, dict):
+        kwargs = {}
+        if isinstance(record.args, dict):
             kwargs = record.args
 
         record.msg = json.dumps(
             {
                 'timestamp': datetime.now().astimezone().isoformat(),
+                'level':     record.levelname,
                 'name':      record.name,
                 'msg':       record.msg,
-                'data':      {
-                    **({'args': args} if args else {}),
-                    **(kwargs if kwargs else {}),
-                }
+                'data':      kwargs,
             },
             default=_json_default,
         )
-        record.args = ()
         return super().format(record)
 
 
@@ -94,23 +95,8 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list[logging.
     '''
 
     # create the logger
-    logger = logging.getLogger(LOG_ROOT_NAME)
-    logger.setLevel(level)
-    # close/remove any existing handlers
-    while logger.handlers:
-        for handler in logger.handlers:
-            handler.close()
-            logger.removeHandler(handler)
-
-    # create the logger
     logger = logging.getLogger(f'{LOG_ROOT_NAME}.{name}')
     logger.setLevel(level)
-
-    # close/remove any existing handlers
-    while logger.handlers:
-        for handler in logger.handlers:
-            handler.close()
-            logger.removeHandler(handler)
 
     # add the new handlers
     for handler in handlers:
@@ -128,15 +114,15 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list[logging.
 class Logger:
     '''
     A class to create a logger with custom handlers and a custom formatter.
-    Logger(name, level, handlers, print_stream, filename)
+    Logger(name, level, handlers, print_stream, filepath)
     '''
     name: str
     level: int = logging.CRITICAL
-    filename: str = DEFAULT_LOG_FILEPATH
+    filepath: str = DEFAULT_LOG_FILEPATH
     handlers: list[logging.Handler] = field(init=False, default_factory=list)
 
     def __post_init__(self):
-        self.handlers.append(logging.FileHandler(self.filename))
+        self.handlers.append(logging.FileHandler(self.filepath))
 
     def getLogger(self) -> logging.Logger:
         return _getLogger(self.name, self.level, handlers=self.handlers)
@@ -146,12 +132,18 @@ class Logger:
         return self.getLogger()
 
 
-def getLogger(name: str, level: int = logging.CRITICAL, filename: str = DEFAULT_LOG_FILEPATH) -> logging.Logger:
+def getLogger(name: str, level: LOG_LEVEL_NAME = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
-    - if `print_stream` is provided, the logger will output logs to it.
-    - if `filename` is provided, the logger will output logs to it.
-    - if both are provided, the logger will output logs to both.
-    - if neither are provided, the logger will not output any logs.
+    - disable the logger by setting the level to logging.CRITICAL
+    - the default log level is 'WARNING'
+    - the default log file is './durdraw.log'
+
+    This logger will only create an output file if there is a call to write a log message that matches the log level.
     '''
-    return _getLogger(name, level, [logging.FileHandler(filename)])
+    return _getLogger(
+        name,
+        level=LOG_LEVEL[level],
+        handlers=[logging.FileHandler(filepath, mode='a', delay=True)]
+    )
+

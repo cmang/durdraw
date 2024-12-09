@@ -11,6 +11,7 @@ from sys import version_info
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
 import durdraw.durdraw_sauce as dursauce
+import durdraw.log as log
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
@@ -180,6 +181,10 @@ class AppState():
             'menuBorderColor': 7,
             }
         self.theme = self.theme_16
+        self.log_level = 'WARNING'
+        self.log_filepath = './durdraw.log'
+        self.logger = log.getLogger('appstate')
+
 
     def maximize_canvas(self):
         term_size = os.get_terminal_size()
@@ -227,6 +232,14 @@ class AppState():
 
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
+
+    def setLogger(self, level: str = log.DEFAULT_LOG_LEVEL, filepath: str = log.DEFAULT_LOG_FILEPATH):
+        self.log_level = level
+        self.log_filepath = filepath
+        self.logger = log.getLogger('appstate', level=self.log_level, filepath=self.log_filepath)
+
+    def getLogger(self, name: str):
+        return log.getLogger(name, level=self.log_level, filepath=self.log_filepath)
 
     def loadThemeList(self):
         """ Look for theme files in internal durdraw directory """
