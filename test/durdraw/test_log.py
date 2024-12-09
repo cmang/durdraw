@@ -84,3 +84,28 @@ class TestLog:
             'data': {},
         }
 
+    def test_log_no_emit(self):
+        if os.path.exists('test_log.log'):
+            os.remove('test_log.log')
+
+        logger = log.getLogger('test_log', level='CRITICAL', filepath='test_log.log', override=True)
+        logger.info('Hello, world!')
+
+        # the file should not exist, as the level is set to CRITICAL
+        assert not os.path.exists('test_log.log')
+
+        # the file should be created, as the level is set to CRITICAL
+        logger.critical('Hello, world!')
+        assert os.path.exists('test_log.log')
+
+        with open('test_log.log', 'r') as file:
+            result = json.loads(file.read())
+            del result['timestamp']
+        os.remove('test_log.log')
+
+        assert result == {
+            'msg': 'Hello, world!',
+            'level': 'CRITICAL',
+            'name': 'durdraw.test_log',
+            'data': {},
+        }
