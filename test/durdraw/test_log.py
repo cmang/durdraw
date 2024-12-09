@@ -10,7 +10,7 @@ class TestLog:
     def test_log_complete_format(self):
         fake_stream = io.StringIO()
 
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
 
         before = time.time()
         logger.info("Hello, world!")
@@ -29,7 +29,7 @@ class TestLog:
 
     def test_log_timestamp_timezone(self):
         fake_stream = io.StringIO()
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
         logger.info("Hello, world!")
 
         result = datetime.fromisoformat(json.loads(fake_stream.getvalue())["timestamp"])
@@ -39,7 +39,7 @@ class TestLog:
 
     def test_log_no_args(self):
         fake_stream = io.StringIO()
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
         logger.info("Hello, world!")
 
         result = json.loads(fake_stream.getvalue())
@@ -49,7 +49,7 @@ class TestLog:
 
     def test_log_args(self):
         fake_stream = io.StringIO()
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
         logger.info("Hello, world!", 1, 2, 3)
 
         result = json.loads(fake_stream.getvalue())
@@ -59,7 +59,7 @@ class TestLog:
 
     def test_log_kwargs(self):
         fake_stream = io.StringIO()
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
         logger.info("Hello, world!", {"key1": "value1", "key2": "value2"})
 
         result = json.loads(fake_stream.getvalue())
@@ -69,7 +69,7 @@ class TestLog:
 
     def test_log_args_kwargs(self):
         fake_stream = io.StringIO()
-        logger = log._getLogger("test_log", level=logging.INFO, handlers=[logging.StreamHandler(fake_stream)])
+        logger = log._getLogger("test_log", level=log.INFO, handlers=[logging.StreamHandler(fake_stream)])
         logger.info("Hello, world!", 1, 2, 3, {"key1": "value1", "key2": "value2"})
 
         result = json.loads(fake_stream.getvalue())
@@ -80,7 +80,7 @@ class TestLog:
     def test_log_to_file(self):
         if os.path.exists("test_log.log"):
             os.remove("test_log.log")
-        logger = log.getLogger("test_log", level=logging.INFO, filename="test_log.log")
+        logger = log.getLogger("test_log", level=log.INFO, filename="test_log.log")
         logger.info("Hello, world!")
 
         assert os.path.exists("test_log.log")

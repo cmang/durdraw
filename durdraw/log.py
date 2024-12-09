@@ -32,6 +32,12 @@ import sys
 LOG_ROOT_NAME = 'durdraw'
 DEFAULT_LOG_FILEPATH = '/tmp/durdraw.log'
 
+# log levels
+CRITICAL = logging.CRITICAL
+ERROR = logging.ERROR
+WARNING = logging.WARNING
+INFO = logging.INFO
+DEBUG = logging.DEBUG
 
 def _json_default(obj: object) -> str:
     'Default JSON serializer, supports most main class types'
