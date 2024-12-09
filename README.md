@@ -477,6 +477,22 @@ The following list of features are experimental and may not work as expected:
 ENABLE_UNDO_TEMPFILES=1 # store undo history using python the `tmpfile` lib instead of memory
 ```
 
+## Development
+
+### Testing
+
+To run the test, you need to have `pytest` installed. You can install it with:
+
+```shell
+python3 -m pip install pytest
+```
+
+Then you can run the tests with:
+
+```shell
+pytest -vv test/
+```
+
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
