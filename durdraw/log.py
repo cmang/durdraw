@@ -60,13 +60,16 @@ class LogFormatter(logging.Formatter):
             if len(record.args) == 1:
                 args = record.args
             elif len(record.args) > 1:
-                *args, kwargs = record.args
+                if isinstance(record.args[-1], dict):
+                    args, kwargs = record.args[:-1], record.args[-1]
+                else:
+                    args = record.args
         elif isinstance(record.args, dict):
             kwargs = record.args
 
         record.msg = json.dumps(
             {
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now().astimezone().isoformat(),
                 'msg':       record.msg,
                 'data':      {
                     **({'args': args} if args else {}),
