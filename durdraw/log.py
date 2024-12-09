@@ -51,6 +51,11 @@ LOG_ROOT_NAME = 'durdraw'
 DEFAULT_LOG_FILEPATH = './durdraw.log'
 DEFAULT_LOG_LEVEL = 'WARNING'
 
+CURRENT_LOG_LEVEL = DEFAULT_LOG_LEVEL
+CURRENT_LOG_FILEPATH = DEFAULT_LOG_FILEPATH
+LOGGER_INITIALISED = False
+
+
 def _json_default(obj: object) -> str:
     'Default JSON serializer, supports most main class types'
     if isinstance(obj, str):       return obj
@@ -132,7 +137,7 @@ class Logger:
         return self.getLogger()
 
 
-def getLogger(name: str, level: LOG_LEVEL_NAME = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH) -> logging.Logger:
+def getLogger(name: str, level: LOG_LEVEL_NAME = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH, override: bool = False) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
     - disable the logger by setting the level to logging.CRITICAL
@@ -141,9 +146,19 @@ def getLogger(name: str, level: LOG_LEVEL_NAME = DEFAULT_LOG_LEVEL, filepath: st
 
     This logger will only create an output file if there is a call to write a log message that matches the log level.
     '''
+    global CURRENT_LOG_LEVEL
+    global CURRENT_LOG_FILEPATH
+    global LOGGER_INITIALISED
+
+    if not LOGGER_INITIALISED or override:
+        # create a root logger
+        LOGGER_INITIALISED = True
+        CURRENT_LOG_LEVEL = level
+        CURRENT_LOG_FILEPATH = filepath
+
     return _getLogger(
         name,
-        level=LOG_LEVEL[level],
-        handlers=[logging.FileHandler(filepath, mode='a', delay=True)]
+        level=LOG_LEVEL[CURRENT_LOG_LEVEL],
+        handlers=[logging.FileHandler(CURRENT_LOG_FILEPATH, mode='a', delay=True)]
     )
 

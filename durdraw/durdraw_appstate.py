@@ -236,7 +236,7 @@ class AppState():
     def setLogger(self, level: str = log.DEFAULT_LOG_LEVEL, filepath: str = log.DEFAULT_LOG_FILEPATH):
         self.log_level = level
         self.log_filepath = filepath
-        self.logger = log.getLogger('appstate', level=self.log_level, filepath=self.log_filepath)
+        self.logger = log.getLogger('appstate', level=self.log_level, filepath=self.log_filepath, override=True)
 
     def getLogger(self, name: str):
         return log.getLogger(name, level=self.log_level, filepath=self.log_filepath)

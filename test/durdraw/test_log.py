@@ -67,7 +67,7 @@ class TestLog:
         if os.path.exists('test_log.log'):
             os.remove('test_log.log')
 
-        logger = log.getLogger('test_log', level='INFO', filepath='test_log.log')
+        logger = log.getLogger('test_log', level='INFO', filepath='test_log.log', override=True)
         logger.info('Hello, world!')
 
         assert os.path.exists('test_log.log')
