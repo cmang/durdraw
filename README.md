@@ -571,7 +571,6 @@ Durdraw is what it is thanks to the following people:
 - Frederick Cambus - Documentation update
 - eyooooo - Filename conventions, useful feedback
 - David Hubbard-Knox - Beta testing, useful feedback
-
 - ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
 
 ### Legal
