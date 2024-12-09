@@ -4,6 +4,7 @@ from datetime import datetime
 import io
 import json
 import logging
+import os
 
 class TestLog:
     def test_log_complete_format(self):
@@ -76,3 +77,48 @@ class TestLog:
 
         assert result == {'msg': 'Hello, world!', 'data': {'args': [1, 2, 3], 'key1': 'value1', 'key2': 'value2'}}
 
+    def test_log_to_file(self):
+        if os.path.exists("test_log.log"):
+            os.remove("test_log.log")
+        logger = log.getLogger("test_log", level=logging.INFO, filename="test_log.log")
+        logger.info("Hello, world!")
+
+        assert os.path.exists("test_log.log")
+
+        with open("test_log.log", "r") as file:
+            result = json.loads(file.read())
+            del result["timestamp"]
+        os.remove("test_log.log")
+
+        assert result == {'msg': 'Hello, world!', 'data': {}}
+
+    def test_log_to_stderr(self):
+        fake_stream = io.StringIO()
+        logger = log.getLogger("test_log", level=logging.INFO, print_stream=fake_stream)
+        logger.info("Hello, world!")
+
+        result = json.loads(fake_stream.getvalue())
+        del result["timestamp"]
+
+        assert result == {'msg': 'Hello, world!', 'data': {}}
+
+    def test_log_to_stderr_and_file(self):
+        if os.path.exists("test_log.log"):
+            os.remove("test_log.log")
+        fake_stream = io.StringIO()
+        logger = log.getLogger("test_log", level=logging.INFO, print_stream=fake_stream, filename="test_log.log")
+        logger.info("Hello, world!")
+
+        assert os.path.exists("test_log.log")
+
+        with open("test_log.log", "r") as file:
+            result = json.loads(file.read())
+            del result["timestamp"]
+        os.remove("test_log.log")
+
+        assert result == {'msg': 'Hello, world!', 'data': {}}
+
+        result = json.loads(fake_stream.getvalue())
+        del result["timestamp"]
+
+        assert result == {'msg': 'Hello, world!', 'data': {}}
