@@ -563,8 +563,8 @@ If you are feeling really old school, you can try the #durdraw IRC channel on ir
 Durdraw is what it is thanks to the following people:
 
 - Sam Foster - Creator, primary developer
-- Tom McKeesick - Performnace Enhancements, documentation formatting
-- Alex Myczko - man page, Debian packaging
+- Tom McKeesick - Performnace enhancements, documentation formatting
+- Alex Myczko - Man page, Debian ambassador
 - sigurdo - Cursor shapes, command-line ANSI export
 - yumpyy - Dockerfile
 - Zhenrong Wang - Documentation updates
