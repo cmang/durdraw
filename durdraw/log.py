@@ -127,7 +127,7 @@ class Logger:
     name: str
     level: int = logging.CRITICAL
     filepath: str = DEFAULT_LOG_FILEPATH
-    handlers: list[logging.Handler] = field(init=False, default_factory=list)
+    handlers: list = field(init=False, default_factory=list)
 
     def __post_init__(self):
         self.handlers.append(logging.FileHandler(self.filepath))
