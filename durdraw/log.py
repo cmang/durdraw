@@ -27,8 +27,6 @@ import io
 import json
 import logging
 import sys
-from typing import TypeAlias, Literal
-from types import MappingProxyType
 
 CRITICAL: int = logging.CRITICAL
 ERROR:    int = logging.ERROR
@@ -36,16 +34,13 @@ WARNING:  int = logging.WARNING
 INFO:     int = logging.INFO
 DEBUG:    int = logging.DEBUG
 
-LOG_LEVEL_NAME: TypeAlias = Literal['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-LOG_LEVEL_VALUE: TypeAlias = Literal[CRITICAL, ERROR, WARNING, INFO, DEBUG]
-
-LOG_LEVEL: MappingProxyType[LOG_LEVEL_NAME, LOG_LEVEL_VALUE] = MappingProxyType({
+LOG_LEVEL = {
     'CRITICAL': CRITICAL,
     'ERROR':    ERROR,
     'WARNING':  WARNING,
     'INFO':     INFO,
     'DEBUG':    DEBUG,
-})
+}
 
 LOG_ROOT_NAME = 'durdraw'
 DEFAULT_LOG_FILEPATH = './durdraw.log'
@@ -137,7 +132,7 @@ class Logger:
         return self.getLogger()
 
 
-def getLogger(name: str, level: LOG_LEVEL_NAME = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH, override: bool = False) -> logging.Logger:
+def getLogger(name: str, level: str = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH, override: bool = False) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
     - disable the logger by setting the level to logging.CRITICAL
