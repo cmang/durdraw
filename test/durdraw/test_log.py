@@ -1,10 +1,11 @@
 import durdraw.log as log
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import json
 import logging
 import os
+import time
 
 def init_test_logger(**kwargs):
     fake_stream = io.StringIO()
@@ -37,7 +38,7 @@ class TestLog:
         assert log_record == expected
         assert before <= result.timestamp() <= after
 
-    def test_log_timestamp_timezone(self):
+    def test_log_timestamp_timezone_default_utc(self):
         logger, fake_stream = init_test_logger()
         logger.info('Hello, world!')
         log_record = json.loads(fake_stream.getvalue())['timestamp']
@@ -45,7 +46,24 @@ class TestLog:
         result = datetime.strptime(
             log_record, '%Y-%m-%dT%H:%M:%S.%f%z',
         )
+        assert result.utcoffset() == timedelta(0)
+
+    def test_log_timestamp_timezone_local(self):
+        # need to check that the code is actually producing local timezone
+        # set the timezone temporarily in case someone is running the tests while in UTC
+        os.environ['TZ'] = 'America/Boise'
+        time.tzset()
+
+        logger, fake_stream = init_test_logger(local_tz=True)
+        logger.info('Hello, world!')
+        log_record = json.loads(fake_stream.getvalue())['timestamp']
+
+        result = datetime.strptime(
+            log_record, '%Y-%m-%dT%H:%M:%S.%f%z',
+        )
         assert result.utcoffset() is not None
+        # this should be timedelta(days=-1, seconds=64800) during non-DST
+        assert result.utcoffset() != timedelta(0)
 
     def test_log_no_args(self):
         logger, fake_stream = init_test_logger()
