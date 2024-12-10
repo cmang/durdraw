@@ -247,7 +247,7 @@ class AppState():
         )
 
     def getLogger(self, name: str):
-        return log.getLogger(name, level=self.log_level, filepath=self.log_filepath)
+        return log.getLogger(name, level=self.log_level, filepath=self.log_filepath, local_tz=self.log_local_tz)
 
     def loadThemeList(self):
         """ Look for theme files in internal durdraw directory """
