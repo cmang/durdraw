@@ -46,6 +46,7 @@ DEFAULT_LOG_LEVEL = 'WARNING'
 
 CURRENT_LOG_LEVEL = DEFAULT_LOG_LEVEL
 CURRENT_LOG_FILEPATH = DEFAULT_LOG_FILEPATH
+CURRENT_LOG_TZ = timezone.utc
 LOGGER_INITIALISED = False
 
 
@@ -156,17 +157,22 @@ def getLogger(
     global CURRENT_LOG_LEVEL
     global CURRENT_LOG_FILEPATH
     global LOGGER_INITIALISED
+    global CURRENT_LOG_TZ
 
     if not LOGGER_INITIALISED or override:
         # create a root logger
         LOGGER_INITIALISED = True
         CURRENT_LOG_LEVEL = level
         CURRENT_LOG_FILEPATH = filepath
+        if local_tz:
+            CURRENT_LOG_TZ = datetime.now().astimezone().tzinfo
+        else:
+            CURRENT_LOG_TZ = timezone.utc
 
     return _getLogger(
         name,
         level=LOG_LEVEL[CURRENT_LOG_LEVEL],
         handlers=[logging.FileHandler(CURRENT_LOG_FILEPATH, mode='a', delay=True)],
-        local_tz=local_tz,
+        local_tz=CURRENT_LOG_TZ,
     )
 

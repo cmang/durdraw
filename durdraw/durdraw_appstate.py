@@ -183,7 +183,7 @@ class AppState():
         self.theme = self.theme_16
         self.log_level = 'WARNING'
         self.log_filepath = './durdraw.log'
-        self.log_use_local_tz = False
+        self.log_local_tz = False
         self.logger = log.getLogger('appstate')
 
 
@@ -234,16 +234,16 @@ class AppState():
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
 
-    def setLogger(self, level=log.DEFAULT_LOG_LEVEL, filepath=log.DEFAULT_LOG_FILEPATH, use_local_tz=False):
+    def setLogger(self, level=log.DEFAULT_LOG_LEVEL, filepath=log.DEFAULT_LOG_FILEPATH, local_tz=False):
         self.log_level = level
         self.log_filepath = filepath
-        self.log_use_local_tz = use_local_tz
+        self.log_local_tz = local_tz
         self.logger = log.getLogger(
             'appstate',
             level=self.log_level,
             filepath=self.log_filepath,
             override=True,
-            local_tz=self.log_use_local_tz,
+            local_tz=self.log_local_tz,
         )
 
     def getLogger(self, name: str):
