@@ -333,6 +333,9 @@ theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 
 ; level sets the logging level. Available options: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default is WARNING
 ;level: WARNING
+
+; local_tz indicates if the computer's local timezone should be used when logging instead of UTC
+;local_tz: False
 ```
 
 The option `'theme-16'` sets the path to the theme file used in 16-color mode, and `'theme-256'` sets the theme file used for 256-color mode.

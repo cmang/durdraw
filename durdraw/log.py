@@ -23,10 +23,8 @@ usage examples to log messages:
 
 from dataclasses import asdict, dataclass, is_dataclass, field
 from datetime import datetime, timezone
-import io
 import json
 import logging
-import sys
 
 CRITICAL: int = logging.CRITICAL
 ERROR:    int = logging.ERROR
@@ -140,7 +138,13 @@ class Logger:
         return self.getLogger()
 
 
-def getLogger(name: str, level: str = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT_LOG_FILEPATH, override: bool = False) -> logging.Logger:
+def getLogger(
+    name: str,
+    level: str = DEFAULT_LOG_LEVEL,
+    filepath: str = DEFAULT_LOG_FILEPATH,
+    override: bool = False,
+    local_tz: bool = False,
+) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
     - disable the logger by setting the level to logging.CRITICAL
@@ -162,6 +166,7 @@ def getLogger(name: str, level: str = DEFAULT_LOG_LEVEL, filepath: str = DEFAULT
     return _getLogger(
         name,
         level=LOG_LEVEL[CURRENT_LOG_LEVEL],
-        handlers=[logging.FileHandler(CURRENT_LOG_FILEPATH, mode='a', delay=True)]
+        handlers=[logging.FileHandler(CURRENT_LOG_FILEPATH, mode='a', delay=True)],
+        local_tz=local_tz,
     )
 
