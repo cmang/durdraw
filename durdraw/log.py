@@ -22,7 +22,7 @@ usage examples to log messages:
 '''
 
 from dataclasses import asdict, dataclass, is_dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import io
 import json
 import logging
@@ -65,6 +65,9 @@ def _json_default(obj: object) -> str:
 
 class LogFormatter(logging.Formatter):
     'Custom log formatter that formats log messages as JSON, aka "Structured Logging".'
+    def __init__(self, tz: timezone = timezone.utc, *args, **kwargs):
+        self.tz = tz
+        super().__init__(*args, **kwargs)
 
     def format(self, record) -> str:
         'Formats the log message as JSON.'
@@ -75,7 +78,7 @@ class LogFormatter(logging.Formatter):
 
         record.msg = json.dumps(
             {
-                'timestamp': datetime.now().astimezone().isoformat(),
+                'timestamp': datetime.now().astimezone(self.tz).isoformat(),
                 'level':     record.levelname,
                 'name':      record.name,
                 'msg':       record.msg,
@@ -86,7 +89,7 @@ class LogFormatter(logging.Formatter):
         return super().format(record)
 
 
-def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list[logging.Handler] = []) -> logging.Logger:
+def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list = [], local_tz: bool = False) -> logging.Logger:
     '''
     Creates a logger with the given name, level, and handlers.
     - If no handlers are provided, the logger will not output any logs.
@@ -104,8 +107,13 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list[logging.
         logger.addHandler(handler)
 
     if logger.handlers:
+        if local_tz:
+            tz = datetime.now().astimezone().tzinfo
+        else:
+            tz = timezone.utc
+
         # only set the first handler to use the custom formatter
-        logger.handlers[0].setFormatter(LogFormatter())
+        logger.handlers[0].setFormatter(LogFormatter(tz=tz))
 
     return logger
 

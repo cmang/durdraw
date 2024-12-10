@@ -25,25 +25,27 @@ class TestLog:
         logger.info('Hello, world!')
         after = time.time()
 
-        result = fake_stream.getvalue()
-        log_record = json.loads(result)
+        log_record = json.loads(fake_stream.getvalue())
 
-        timestamp = datetime.fromisoformat(log_record['timestamp']).timestamp()
+        result = datetime.strptime(
+            log_record['timestamp'], '%Y-%m-%dT%H:%M:%S.%f%z',
+        )
         del log_record['timestamp']
 
         expected = {'msg': 'Hello, world!', 'level': 'INFO', 'name': 'durdraw.test_log', 'data': {}}
 
         assert log_record == expected
-        assert before <= timestamp <= after
+        assert before <= result.timestamp() <= after
 
     def test_log_timestamp_timezone(self):
         logger, fake_stream = init_test_logger()
         logger.info('Hello, world!')
+        log_record = json.loads(fake_stream.getvalue())['timestamp']
 
-        result = datetime.fromisoformat(json.loads(fake_stream.getvalue())['timestamp'])
-
+        result = datetime.strptime(
+            log_record, '%Y-%m-%dT%H:%M:%S.%f%z',
+        )
         assert result.utcoffset() is not None
-        assert result.utcoffset().seconds == time.localtime().tm_gmtoff
 
     def test_log_no_args(self):
         logger, fake_stream = init_test_logger()

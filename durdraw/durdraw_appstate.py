@@ -183,6 +183,7 @@ class AppState():
         self.theme = self.theme_16
         self.log_level = 'WARNING'
         self.log_filepath = './durdraw.log'
+        self.log_use_local_tz = False
         self.logger = log.getLogger('appstate')
 
 
