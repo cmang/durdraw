@@ -234,10 +234,11 @@ class AppState():
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
 
-    def setLogger(self, level: str = log.DEFAULT_LOG_LEVEL, filepath: str = log.DEFAULT_LOG_FILEPATH):
+    def setLogger(self, level: str = log.DEFAULT_LOG_LEVEL, filepath: str = log.DEFAULT_LOG_FILEPATH, use_local_tz: bool = False):
         self.log_level = level
         self.log_filepath = filepath
-        self.logger = log.getLogger('appstate', level=self.log_level, filepath=self.log_filepath, override=True)
+        self.log_use_local_tz = use_local_tz
+        self.logger = log.getLogger('appstate', level=self.log_level, filepath=self.log_filepath, override=True, local_tz=self.log_use_local_tz)
 
     def getLogger(self, name: str):
         return log.getLogger(name, level=self.log_level, filepath=self.log_filepath)
