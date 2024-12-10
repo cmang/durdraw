@@ -326,6 +326,16 @@ Here is an example `durdraw.ini` file, showing the available options:
 [Theme]
 theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
 theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+
+[Logging]
+; filepath is the path to the log file. Default is ./durdraw.log
+;filepath: ./durdraw.log
+
+; level sets the logging level. Available options: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default is WARNING
+;level: WARNING
+
+; local-tz indicates if the computer's local timezone should be used when logging instead of UTC
+;local-tz: False
 ```
 
 The option `'theme-16'` sets the path to the theme file used in 16-color mode, and `'theme-256'` sets the theme file used for 256-color mode.
@@ -475,6 +485,22 @@ The following list of features are experimental and may not work as expected:
 
 ```shell
 ENABLE_UNDO_TEMPFILES=1 # store undo history using python the `tmpfile` lib instead of memory
+```
+
+## Development
+
+### Testing
+
+To run the test, you need to have `pytest` installed. You can install it with:
+
+```shell
+python3 -m pip install pytest
+```
+
+Then you can run the tests with:
+
+```shell
+pytest -vv test/
 ```
 
 ## FAQ
