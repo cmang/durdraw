@@ -1,3 +1,4 @@
+from collections import deque
 import os
 import pickle
 import tempfile
@@ -99,4 +100,38 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 return obj
             else:
                 return pickle.loads(self.undoList[idx])
+
+
+class UndoRegister:
+    __slots__ = ['undoBuf', 'redoBuf']
+
+    def __init__(self, initial_state=None):
+        self.undoBuf, self.redoBuf = deque(), deque()
+        if initial_state:
+            self.undoBuf.append(initial_state)
+
+    def push(self, el):
+        if self.redoBuf:
+            self.redoBuf.clear()
+        self.undoBuf.append(el)
+
+    def undo(self):
+        if len(self.undoBuf) <= 1:
+            return None
+        self.redoBuf.appendleft(self.undoBuf.pop())
+        return self.redoBuf[0]
+
+    def redo(self):
+        if not self.redoBuf:
+            return None
+        self.undoBuf.append(self.redoBuf.popleft())
+        return self.undoBuf[-1]
+
+    @property
+    def state(self):
+        return self.undoBuf[-1]
+
+    @property
+    def buffers(self):
+        return self.undoBuf, self.redoBuf
 
