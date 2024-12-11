@@ -87,3 +87,17 @@
 
 
 - Any changes to pixel/frame undo register should reflect in the movie-level undo register.
+
+## Implementation
+
+There are many scattered usages of the undo state machine. There are many actions that affect the state of pixels,
+frames and the movie, and each of these callers are the ones that also directly adjust the undo state.
+
+This makes changes difficult as there are many use cases to contend with that seem different on the surface, but in
+reality are mostly modifying chars/colours
+
+Each existing action should be routed (where appropriate) through the Frame/Movie classes. These classes are best placed
+to recognise when state has changed and correspondingly update the undo state.
+
+This also allows easier implementation of pixel/frame/movie-level undo/redos
+
