@@ -98,24 +98,21 @@ reality are mostly modifying chars/colours
 
 Each existing action should be routed (where appropriate) through the Frame/Movie classes. These classes are best placed
 to recognise when state has changed and correspondingly update the undo state. In addition to the existing Frame/Movie classes, it would be
- handy to introduce something like a Pixel class that could keep track of its ownstate too. I'm unsure how this would interact with things like the existing colour map #TODO investigate.
-
-This move would allow easier implementation of pixel/frame/movie-level undo/redos.
+ handy to introduce something like a Pixel class that could keep track of its own state, and the main undo list could just consist of references to the individual pixel & index of the change inside that pixel. I'm unsure how this would interact with things like the existing colour map #TODO investigate.
 
 Ideally, functionally:
 
-- Any changes to pixel/frame undo register should reflect in the movie-level undo register.
+- All pixel state should be updated correctly from undo/redo actions
 - State other than pixel char/colour changes should be considered for undo/redo
   - cursor position
   - selected area
   - durations/other metadata
-- All state should be updated correctly from undo/redo actions, at any and all levels (pixel/frame/movie/action)
-- All state changes of a certain level should propagate correctly and immediately to all other levels
-- The user should be able to switch between any undo/redo level at any time, and apply any direction of undo/redo
 - Goes without saying
   - This should all be _fast_, which I'm pretty confident will be the case (#TODO some basic proof and big Os).
   - This should be _efficient_, leaving room for very large projects and scaling/extending in future.
   - This should all be _small_, as any speed increase at the cost of memory will not really be a victory.
+
+<iframe src="https://link.excalidraw.com/readonly/svgZcqp0b4R5EClbbkdh" width="100%" height="100%" style="border: none;"></iframe>
 
 ## Considerations & Challenges
 
