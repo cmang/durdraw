@@ -112,7 +112,7 @@ Ideally, functionally:
   - This should be _efficient_, leaving room for very large projects and scaling/extending in future.
   - This should all be _small_, as any speed increase at the cost of memory will not really be a victory.
 
-<iframe src="https://link.excalidraw.com/readonly/svgZcqp0b4R5EClbbkdh" width="100%" height="100%" style="border: none;"></iframe>
+![durdraw_undo](https://github.com/user-attachments/assets/43791948-e6d5-4ab8-bb9e-85a1e62f987c)
 
 ## Considerations & Challenges
 
