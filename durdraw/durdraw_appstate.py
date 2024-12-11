@@ -63,7 +63,9 @@ class AppState():
         self.play_queue = []    # List of files to switch between with 'n' and 'p' in Durview and/or play mode
         self.play_queue_position = None
 
+        # Other durdraw runtime stuff
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
+        self.sleep_time = 0     # Use this as a delay for playback mode, dictated in ui_curses.py from FPS
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True

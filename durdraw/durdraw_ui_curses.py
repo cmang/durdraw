@@ -1184,10 +1184,10 @@ class UserInterface():  # Separate view (curses) from this controller
         new_time = time.time()
         helpMov = self.appState.helpMov
         #if page == 1:
-        #    sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #    self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         #elif page == 2:
-        #    sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
-        sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #    self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
+        self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
@@ -1262,7 +1262,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if frame_delay > 0:
                 realDelayTime = frame_delay
             else:
-                realDelayTime = sleep_time
+                realDelayTime = self.appState.sleep_time
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
@@ -1308,9 +1308,9 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             helpMov = self.appState.helpMov
         if page == 1:
-            sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         elif page == 2:
-            sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
@@ -1335,7 +1335,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if frame_delay > 0:
                 realDelayTime = frame_delay
             else:
-                realDelayTime = sleep_time
+                realDelayTime = self.appState.sleep_time
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
@@ -1467,10 +1467,10 @@ class UserInterface():  # Separate view (curses) from this controller
         #    self.xy[1] = self.mov.sizeX
         if c in [61, 43]: # = and + - fps up
             self.increaseFPS()
-            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         elif c in [45]: # - (minus) - fps down
             self.decreaseFPS()
-            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
 
         if c in [ord('q'), ord('Q')]:
             self.playing = False
@@ -1555,7 +1555,7 @@ class UserInterface():  # Separate view (curses) from this controller
         new_time = time.time()
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
-        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+        self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         self.mov.gotoFrame(self.appState.playbackRange[0])
         mouseX, mouseY = 0, 0
         while self.playing:
@@ -1620,10 +1620,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
-                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
-                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color (in 16)
                     if self.appState.colorMode == "16":
                         self.prevBgColor()
@@ -1849,11 +1849,11 @@ class UserInterface():  # Separate view (curses) from this controller
                                         elif mouseX == 12 + offset:    # clicked FPS down
                                             self.clickHighlight(12 + offset, "<")
                                             self.decreaseFPS()
-                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                                         elif mouseX == 16 + offset:    # clicked FPS up
                                             self.clickHighlight(16 + offset, ">")
                                             self.increaseFPS()
-                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                                 elif mouseY == self.statusBarLineNum+1:    # clicked bottom bar
                                     if not self.appState.narrowWindow:
                                         if mouseX in range(4,20): 
@@ -1959,7 +1959,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if frame_delay > 0:
                     realDelayTime = frame_delay
                 else:
-                    realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
+                    realDelayTime = self.appState.sleep_time  # self.appState.sleep_time == (1000.0 / self.opts.framerate) / 1000.0
                 time.sleep(0.04) # to keep from sucking up cpu
 
                 if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
@@ -6175,8 +6175,8 @@ class UserInterface():  # Separate view (curses) from this controller
         # open all the pngs so we can save them to gif
         from PIL import Image
         pngImages = [Image.open(fn) for fn in tmpPngNames]
-        sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
-        self.pngsToGif(filename, pngImages, sleep_time)
+        self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
+        self.pngsToGif(filename, pngImages, self.appState.sleep_time)
         for rmFile in tmpPngNames:
             os.remove(rmFile)
         return True
