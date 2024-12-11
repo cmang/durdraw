@@ -131,12 +131,15 @@ class TestLog:
         }
 
     def test_multiple_loggers(self):
+        '''Test that child loggers with different names don't produce duplicate logs'''
+
         if os.path.exists('test_log.log'):
             os.remove('test_log.log')
 
         logger1 = log.getLogger('test_log', level='INFO', filepath='test_log.log', override=True)
-        logger1.info('Hello, world!')
         logger2 = log.getLogger('test_log2', level='INFO', filepath='test_log.log', override=False)
+
+        logger1.info('Hello, world!')
         logger2.info('Hello, world!')
 
         with open('test_log.log', 'r') as file:
@@ -160,15 +163,17 @@ class TestLog:
             },
         ]
 
-
     def test_reuse_loggers(self):
+        '''Test that child loggers with the same name don't produce duplicate logs'''
+
         if os.path.exists('test_log.log'):
             os.remove('test_log.log')
 
         logger1 = log.getLogger('test_log', level='INFO', filepath='test_log.log', override=True)
         logger2 = log.getLogger('test_log', level='INFO', filepath='test_log.log', override=False)
-        logger2.info('Hello, world!')
+
         logger1.info('Hello, world!')
+        logger2.info('Hello, world!')
 
         with open('test_log.log', 'r') as file:
             results = list(map(json.loads, file))
