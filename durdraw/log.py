@@ -100,6 +100,9 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list = [], lo
     logger = logging.getLogger(f'{LOG_ROOT_NAME}.{name}')
     logger.setLevel(level)
 
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     # add the new handlers
     for handler in handlers:
         handler.setLevel(level)
