@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
+'''
+usage ./matchfunc.py PATTERN OFNAME
+e.g. ./matchfunc.py 'push()' push.json
+'''
 
 import json
 import os
+import sys
 
 def matchInFile(pattern, filepath):
     matches = []
@@ -19,7 +24,7 @@ def matchInFile(pattern, filepath):
 
 def matchInRepo(dirname, pattern):
     matches = {}
-    for dirpath, dirnames, filenames in os.walk(dirname):
+    for dirpath, _, filenames in os.walk(dirname):
         for f in filenames:
             if not f.endswith('.py'):
                 continue
@@ -29,9 +34,11 @@ def matchInRepo(dirname, pattern):
                 matches[path] = fileMatches
     return matches
 
-matches = matchInRepo('durdraw', 'push()')
+pattern, ofname = sys.argv[1:]
 
-with open('matches.json', 'w') as ostream:
+matches = matchInRepo('durdraw', pattern)
+
+with open(ofname, 'w') as ostream:
     for f, ms in matches.items():
         for m in ms:
             print(json.dumps({'file': f, 'matches': m}), file=ostream)

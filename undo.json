@@ -1,0 +1,3 @@
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1126, "line": "def moveCurrentFrame(self):"}, "match": {"idx": 1152, "line": "self.undo.undo()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 2584, "line": "def clickedUndo(self):"}, "match": {"idx": 2585, "line": "self.undo.undo()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6804, "line": "self.undo.undo()"}}}
