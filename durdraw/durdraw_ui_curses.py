@@ -1960,7 +1960,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     realDelayTime = frame_delay
                 else:
                     realDelayTime = self.appState.sleep_time  # self.appState.sleep_time == (1000.0 / self.opts.framerate) / 1000.0
-                time.sleep(0.04) # to keep from sucking up cpu
+                time.sleep(0.009) # to keep from sucking up cpu
 
                 if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                     shouldDraw = True
