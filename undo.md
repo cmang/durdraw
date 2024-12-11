@@ -1,5 +1,10 @@
 # Undo Register
 
+- [Undo Register](#undo-register)
+  - [Undo usages](#undo-usages)
+    - [Summarised](#summarised)
+
+
 ## Undo usages
 
 | undo method | file | Line | Function |
@@ -45,3 +50,24 @@
 `undo()` | durdraw/durdraw_ui_curses.py | 2584 | `def clickedUndo(self):` |
 `undo()` | durdraw/durdraw_ui_curses.py | 6582 | `def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was` |
 `redo()` | durdraw/durdraw_ui_curses.py | 2592 | `def clickedRedo(self):` |
+
+### Summarised
+
+✅ == involves pixel changes
+❓ == unsure
+
+- columns ✅
+  - deleting/adding columns ✅
+- chars/colours ✅
+  - inserting chars/colours ✅
+  - replacing colours ✅
+- backspace
+- segment ❓
+  - flipping/deleting/filling/colouring ✅
+- clear canvas ✅
+- frame ✅
+  - moving/cloning/appending/deleting ✅
+- lines ✅
+  - deleting/adding lines ✅
+- transform ❓
+  - bounce/repeat/reverse ❓
