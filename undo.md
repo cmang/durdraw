@@ -71,3 +71,19 @@
   - deleting/adding lines ✅
 - transform ❓
   - bounce/repeat/reverse ❓
+
+
+## Feature List
+
+1. pixel-level undo/redo
+    - Allow undo/redo to be applied against individual pixels rather than cycling through the undo stack across all frames
+2. frame-level undo/redo
+    - Allow undo/redo to be applied against a specific frame rather than cycling through the undo stack across all frames
+3. movie-level undo/redo
+    - Allow undo/redo at a global/movie level
+4. (?) action/state-level undo/redo
+    - Allow undo/redo for actions that are not pixel/char/colour changes
+    - e.g. cursor position, selected area, durations/other metadata
+
+
+- Any changes to pixel/frame undo register should reflect in the movie-level undo register.
