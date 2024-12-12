@@ -4,6 +4,7 @@ import durdraw.log as log
 import json
 import pdb
 import re
+from durdraw.durdraw_undo import UndoRegister
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -145,6 +146,8 @@ class Movie():
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+        self.undo_register = UndoRegister()
 
         self.log = log.getLogger('movie')
         self.log.info('movie initialized', {'sizeX': self.sizeX, 'sizeY': self.sizeY})

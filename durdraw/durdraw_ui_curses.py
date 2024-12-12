@@ -830,6 +830,9 @@ class UserInterface():  # Separate view (curses) from this controller
             moveCursor = True
         if y == None:
             y = self.xy[0]
+
+        self.mov.undo_register.push((self.mov.currentFrameNumber-1, y, c, fg, bg))
+
         if frange: # frame range
             for fn in range(frange[0] - 1, frange[1]):
                 try:
@@ -2584,6 +2587,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def clickedUndo(self):
         self.undo.undo()
+        self.mov.undo_register.undo()
     
         if self.appState.playbackRange[1] > self.mov.frameCount:
             #self.appState.playbackRange = (start, stop)
@@ -2592,6 +2596,8 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def clickedRedo(self):
         self.undo.redo()
+        self.mov.undo_register.redo()
+
         if self.appState.playbackRange[1] > self.mov.frameCount:
             self.setPlaybackRange(1, self.mov.frameCount)
         self.hardRefresh()
