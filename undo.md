@@ -3,6 +3,9 @@
 - [Undo Register](#undo-register)
   - [Undo usages](#undo-usages)
     - [Summarised](#summarised)
+  - [Feature List](#feature-list)
+  - [Implementation](#implementation)
+  - [Considerations \& Challenges](#considerations--challenges)
 
 
 ## Undo usages
@@ -118,3 +121,19 @@ Ideally, functionally:
 
 - For operations like "flipping", this will require storing many pixel changes
   - will need to ensure that nothing is missed, and that the operation is not slow
+
+## POC
+
+```json
+{"timestamp":"2024-12-12T19:39:38.509133+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:38.827779+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 115, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:39.521499+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 115, 7, 0), (0, 0, 100, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:40.639585+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"undo","data":{"undoBuf":"deque([(0, 0, 115, 7, 0)])","redoBuf":"deque([(0, 0, 115, 7, 0)])"}}
+{"timestamp":"2024-12-12T19:39:44.620562+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:44.641024+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:44.646262+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:44.659840+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:44.709905+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0), (0, 0, 100, 7, 0)])","redoBuf":"deque([])"}}
+{"timestamp":"2024-12-12T19:39:44.763499+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0), (0, 0, 100, 7, 0), (0, 0, 104, 7, 0)])","redoBuf":"deque([])"}}
+```
+
