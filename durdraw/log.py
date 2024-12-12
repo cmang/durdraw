@@ -21,7 +21,7 @@ usage examples to log messages:
     # {"timestamp": "2024-12-09T15:05:43.904600", "msg": "This is an info message", "data": {"key": "value"}}
 '''
 
-from dataclasses import asdict, dataclass, is_dataclass, field
+from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 import json
 import logging
@@ -100,6 +100,9 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list = [], lo
     logger = logging.getLogger(f'{LOG_ROOT_NAME}.{name}')
     logger.setLevel(level)
 
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
     # add the new handlers
     for handler in handlers:
         handler.setLevel(level)
@@ -115,28 +118,6 @@ def _getLogger(name: str, level: int = logging.CRITICAL, handlers: list = [], lo
         logger.handlers[0].setFormatter(LogFormatter(tz=tz))
 
     return logger
-
-
-@dataclass
-class Logger:
-    '''
-    A class to create a logger with custom handlers and a custom formatter.
-    Logger(name, level, handlers, print_stream, filepath)
-    '''
-    name: str
-    level: int = logging.CRITICAL
-    filepath: str = DEFAULT_LOG_FILEPATH
-    handlers: list = field(init=False, default_factory=list)
-
-    def __post_init__(self):
-        self.handlers.append(logging.FileHandler(self.filepath))
-
-    def getLogger(self) -> logging.Logger:
-        return _getLogger(self.name, self.level, handlers=self.handlers)
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self.getLogger()
 
 
 def getLogger(
