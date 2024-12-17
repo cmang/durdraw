@@ -6065,7 +6065,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if not frame.content[lineNum][colNum] in [' ', '']:
                         return colNum + 1  # we found a non-empty character
                 except Exception as E:
-                    pdb.set_trace()
+                    return colNum - 1
         #pdb.set_trace()
         return 1 # blank frame, only save the first line.
 
