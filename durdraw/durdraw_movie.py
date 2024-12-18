@@ -184,6 +184,7 @@ class Movie():
     def setChar(self, frame_n, x, y, c, fg, bg):
         self.log.debug('setChar', {'frame': frame_n, 'x': x, 'y': y, 'c': c, 'fg': fg, 'bg': bg})
         self.frames[frame_n].content[y][x] = c
+        self.frames[frame_n].newColorMap[y][x] = [fg, bg]
 
     def addFrame(self, frame):
         """ takes a Frame object, adds it into the movie """
