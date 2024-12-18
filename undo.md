@@ -80,16 +80,22 @@
 
 1. pixel-level undo/redo
     - Allow undo/redo to be applied against individual pixels rather than cycling through the undo stack across all frames
-2. frame-level undo/redo
-    - Allow undo/redo to be applied against a specific frame rather than cycling through the undo stack across all frames
-3. movie-level undo/redo
-    - Allow undo/redo at a global/movie level
-4. (?) action/state-level undo/redo
+2. (?) action/state-level undo/redo
     - Allow undo/redo for actions that are not pixel/char/colour changes
     - e.g. cursor position, selected area, durations/other metadata
+3. Multi-pixel operations
+    - Ensure that multi-pixel operations (e.g. flipping, colour fill) are correctly undone/redone
 
 
-- Any changes to pixel/frame undo register should reflect in the movie-level undo register.
+- All pixel/other state should be updated correctly from undo/redo actions
+  - cursor position
+  - pixel char/colour
+  - selected area
+  - durations/other metadata
+- Goes without saying
+  - This should all be _fast_, which I'm pretty confident will be the case (#TODO some basic proof and big Os).
+  - This should be _efficient_, leaving room for very large projects and scaling/extending in future.
+  - This should all be _small_, as any speed increase at the cost of memory will not really be a victory.
 
 ## Implementation
 
@@ -102,18 +108,6 @@ reality are mostly modifying chars/colours
 Each existing action should be routed (where appropriate) through the Frame/Movie classes. These classes are best placed
 to recognise when state has changed and correspondingly update the undo state. In addition to the existing Frame/Movie classes, it would be
  handy to introduce something like a Pixel class that could keep track of its own state, and the main undo list could just consist of references to the individual pixel & index of the change inside that pixel. I'm unsure how this would interact with things like the existing colour map #TODO investigate.
-
-Ideally, functionally:
-
-- All pixel state should be updated correctly from undo/redo actions
-- State other than pixel char/colour changes should be considered for undo/redo
-  - cursor position
-  - selected area
-  - durations/other metadata
-- Goes without saying
-  - This should all be _fast_, which I'm pretty confident will be the case (#TODO some basic proof and big Os).
-  - This should be _efficient_, leaving room for very large projects and scaling/extending in future.
-  - This should all be _small_, as any speed increase at the cost of memory will not really be a victory.
 
 ![durdraw_undo](https://github.com/user-attachments/assets/43791948-e6d5-4ab8-bb9e-85a1e62f987c)
 
@@ -137,3 +131,9 @@ Ideally, functionally:
 {"timestamp":"2024-12-12T19:39:44.763499+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0), (0, 0, 100, 7, 0), (0, 0, 104, 7, 0)])","redoBuf":"deque([])"}}
 ```
 
+## Questions
+
+- Why is the colour map stored separately to the content?
+- What is the largest file (frames * width * height) that should be supported?
+- It's possible to save the undo buffer in the event of a crash, and restore it on next launch. Is this a feature that would be useful?
+ - Have I missed any major operations or functionality?
