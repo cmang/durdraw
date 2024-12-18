@@ -831,7 +831,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if y == None:
             y = self.xy[0]
 
-        self.mov.undo_register.push((self.mov.currentFrameNumber-1, y, c, fg, bg))
+        # TODO: UNDO - integrate this new system in place of the existing one.
+        self.mov.insertChar(self.mov.currentFrameNumber-1, x, y, c, fg, bg)
 
         if frange: # frame range
             for fn in range(frange[0] - 1, frange[1]):
@@ -2586,8 +2587,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
 
     def clickedUndo(self):
-        self.undo.undo()
-        self.mov.undo_register.undo()
+        # self.undo.undo()
+        # TODO: UNDO - integrate this new system in place of the existing one.
+        self.mov.undo()
     
         if self.appState.playbackRange[1] > self.mov.frameCount:
             #self.appState.playbackRange = (start, stop)
@@ -2595,8 +2597,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.hardRefresh()
 
     def clickedRedo(self):
-        self.undo.redo()
-        self.mov.undo_register.redo()
+        # self.undo.redo()
+        # TODO: UNDO - integrate this new system in place of the existing one.
+        self.mov.redo()
 
         if self.appState.playbackRange[1] > self.mov.frameCount:
             self.setPlaybackRange(1, self.mov.frameCount)

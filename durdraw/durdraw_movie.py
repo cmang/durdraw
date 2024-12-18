@@ -152,6 +152,39 @@ class Movie():
         self.log = log.getLogger('movie')
         self.log.info('movie initialized', {'sizeX': self.sizeX, 'sizeY': self.sizeY})
 
+    def insertChar(self, frame_n, x, y, c, fg, bg):
+        current_char = self.frames[frame_n].content[y][x]
+        current_fg, current_bg = self.frames[frame_n].newColorMap[y][x]
+
+        self.undo_register.push(
+            (
+                self.setChar,
+                (frame_n, x, y, c, fg, bg),
+                (frame_n, x, y, current_char, current_fg, current_bg),
+            )
+        )
+        self.frames[frame_n].content[y][x] = c
+
+    def undo(self):
+        if not self.undo_register.can_undo:
+            self.log.debug('undo', {'msg': 'nothing to undo'})
+            return
+        fn, current_state, prev_state = self.undo_register.undo()
+        self.log.debug('undo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
+        fn(*prev_state)
+
+    def redo(self):
+        if not self.undo_register.can_redo:
+            self.log.debug('redo', {'msg': 'nothing to redo'})
+            return
+        fn, current_state, prev_state = self.undo_register.redo()
+        self.log.debug('redo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
+        fn(*current_state)
+
+    def setChar(self, frame_n, x, y, c, fg, bg):
+        self.log.debug('setChar', {'frame': frame_n, 'x': x, 'y': y, 'c': c, 'fg': fg, 'bg': bg})
+        self.frames[frame_n].content[y][x] = c
+
     def addFrame(self, frame):
         """ takes a Frame object, adds it into the movie """
         self.frames.append(frame)

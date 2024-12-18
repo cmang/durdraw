@@ -132,6 +132,14 @@ class UndoRegister:
         return self.undoBuf[-1]
 
     @property
+    def can_undo(self):
+        return len(self.undoBuf) > 1
+
+    @property
+    def can_redo(self):
+        return bool(self.redoBuf)
+
+    @property
     def state(self):
         return self.undoBuf[-1]
 
