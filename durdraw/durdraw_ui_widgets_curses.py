@@ -345,7 +345,7 @@ class DrawCharPickerHandler:
                 prompting = False
             elif c in [curses.KEY_F2]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f2'])
-                prompting = False
+                PROMPting = False
             elif c in [curses.KEY_F3]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f3'])
                 prompting = False
@@ -751,7 +751,7 @@ class ColorPickerHandler:
                 color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
-                elf.colorPicker.caller.drawStatusBar()
+                self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
                 #color = 255
                 color = self.totalColors
