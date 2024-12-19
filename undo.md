@@ -5,6 +5,7 @@
     - [Summarised](#summarised)
   - [Feature List](#feature-list)
   - [Implementation](#implementation)
+    - [Performance Details](#performance-details)
   - [Considerations \& Challenges](#considerations--challenges)
   - [Opportunities](#opportunities)
   - [POC](#poc)
@@ -103,6 +104,32 @@ and the main undo list could just consist of references to the individual pixel 
 ![image](https://github.com/user-attachments/assets/eea5445d-292f-42c5-9327-85da1e0560c1)
 
 [diagram](https://link.excalidraw.com/readonly/svgZcqp0b4R5EClbbkdh)
+
+### Performance Details
+
+Initially, I've come up with an implementation that utilises the `deque` data structure from the `collections` module. This is a double-ended queue that allows for fast appends and pops from either end. This is ideal for the undo/redo system, as we only need to deal with items that are on the *very end* of the buffers.
+
+`deque` is actually ~`O(1)` for appends and pops from either end, which I can demonstrate in ipython:
+
+```python
+In [1]: from collections import deque
+
+In [2]: def undo(u, r, n):
+   ...:     for _ in range(n):
+   ...:         r.appendleft(u.pop())
+   ...:         u.append(r.popleft())
+   ...:
+
+In [3]: a, b = deque(range(10)), deque()
+
+In [4]: %timeit undo(a, b, 10)
+# 416 ns ± 0.332 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+
+In [5]: a, b = deque(range(100_000)), deque(range(100_000))
+
+In [6]: %timeit undo(a, b, 10)
+# 416 ns ± 1.15 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+```
 
 ## Considerations & Challenges
 
