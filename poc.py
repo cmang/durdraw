@@ -50,6 +50,10 @@ class UndoRegister:
 
 @line_profiler.profile
 def move_cursor(stdscr, x, y, c):
+    '''
+    Moves the cursor in the terminal window, based on the arrow key pressed.
+    Doesn't allow the cursor to go out of the window boundaries, will wrap around.
+    '''
     if   c == curses.KEY_LEFT:  stdscr.move(y,                        max(x-1, 0))
     elif c == curses.KEY_RIGHT: stdscr.move(y,                        min(x+1, curses.COLS-1))
     elif c == curses.KEY_DOWN:  stdscr.move(min(y+1, curses.LINES-1), x)
@@ -57,6 +61,12 @@ def move_cursor(stdscr, x, y, c):
 
 @line_profiler.profile
 def undo_char(stdscr, undo_register):
+    '''
+    Performs an undo operation:
+    - pop the last undo operation from the undo register
+    - restore the previous state for the pixel at the x,y coordinates
+    - move the cursor to those x,y coordinates
+    '''
     if undo_register.can_undo:
         x, y, prev_char, _next_char = undo_register.undo()
         stdscr.addch(y, x, prev_char)
@@ -64,12 +74,22 @@ def undo_char(stdscr, undo_register):
 
 @line_profiler.profile
 def redo_char(stdscr, undo_register):
+    '''
+    Performs a redo operation (reverses an undo operation):
+    - pop the last redo operation from the undo register
+    - restore the next state for the pixel at the x,y coordinates
+    - move the cursor to those x,y coordinates
+    '''
     if undo_register.can_redo:
         x, y, _prev_char, next_char = undo_register.redo()
         stdscr.addch(y, x, next_char)
 
 @line_profiler.profile
 def insert_char(stdscr, undo_register, x, y, c):
+    '''
+    Inserts a character at the current cursor position, and
+    pushes this action to the undo register, with the previous and current pixel states
+    '''
     prev_char = stdscr.inch(y, x)
     stdscr.addch(c)
     undo_register.push((x, y, prev_char, c))
@@ -78,20 +98,29 @@ ARROW_KEYS = set([curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_DOWN, curses.KEY
 
 @line_profiler.profile
 def process_input(stdscr, undo_register, x, y, c):
+    '''
+    Processes the input character, and performs the corresponding action.
+    - moves the cursor if an arrow key is pressed
+    - performs undo/redo if 'u' or 'r' is pressed
+    - inserts a character if any other key is pressed
+    '''
     # LOG.debug('processing input', {'key': c, 'x': x, 'y': y})
     # start_time = time.time()
 
-    if   c == ord('q'):     return
-    elif c == ord('u'):     undo_char(stdscr, undo_register)
-    elif c == ord('r'):     redo_char(stdscr, undo_register)
-    elif c in ARROW_KEYS:   move_cursor(stdscr, x, y, c)
-    elif c < 256:           insert_char(stdscr, undo_register, x, y, c)
-    else:                   LOG.debug('unhandled key', {'key': c})
+    if   c in ARROW_KEYS: move_cursor(stdscr, x, y, c)
+    elif c == ord('u'):   undo_char(stdscr, undo_register)
+    elif c == ord('r'):   redo_char(stdscr, undo_register)
+    elif c < 256:         insert_char(stdscr, undo_register, x, y, c)
+    else:                 LOG.debug('unhandled key', {'key': c})
 
     # LOG.debug('processed input', {'key': c, 'x': x, 'y': y, 'elapsed': (time.time()-start_time)*10**6, 'unit': 'us'})
 
 @line_profiler.profile
 def get_input(stdscr, undo_register):
+    '''
+    Main loop to get character (keyboard) input from the user, and process it.
+    Instantly quits if "q" is pressed
+    '''
     while True:
         (y, x), c = stdscr.getyx(), stdscr.getch()
         if c == ord('q'):
@@ -99,15 +128,19 @@ def get_input(stdscr, undo_register):
         process_input(stdscr, undo_register, x, y, c)
 
 def pad(stdscr):
-    # print a simple help message
+    '''
+    Main function to initialize the terminal window, and start the main loop.
+    - prints a simple help message
+    - moves the cursor to the center of the window
+    - starts the main loop
+    '''
     help_lines = ['type any key!', 'use arrow keys to navigate', 'u/r to undo/redo', 'q to quit']
     for i, line in enumerate(help_lines):
         stdscr.addstr(i, 0, line, curses.A_REVERSE)
-    # move the cursor to the center to start
+
     stdscr.move((curses.LINES-1)//2, (curses.COLS-1)//2)
     stdscr.refresh()
 
-    # start the main loop
     get_input(stdscr, UndoRegister())
 
 curses.wrapper(pad)
