@@ -120,7 +120,10 @@ These are ideas that are not part of this proposal, but could be explored in fut
 I wrote a [POC script](./poc.py) to test the undo/redo functionality. It's an oversimplified version of durdraw, with the proposed undo system bolted on.   
 You can essentially type out a bunch of stuff and use the arrow keys, and then press (and hold!) 'u/r' to undo/redo.
 
-Here are some logs from the very rough POC implementation in durdraw
+- There is line profiling attached to almost every function, you can run with `LINE_PROFILE=1 ./poc.py` to see where time is being spent.
+- You can also enable debug logs by uncommenting them and setting the log level to `'DEBUG'`
+
+On another note, here are some logs from the very rough POC implementation in durdraw
 
 ```json
 {"timestamp":"2024-12-12T19:39:38.509133+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0)])","redoBuf":"deque([])"}}
