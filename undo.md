@@ -140,7 +140,7 @@ to recognise when state has changed and correspondingly update the undo state. I
 
 - [ ] Changing pixels
   - [ ] Insert Color
-  - [ ] Insert Char
+  - [x] Insert Char
   - [ ] Backspace
   - [ ] Delete Key Pop
   - [ ] Reverse Delete
@@ -173,13 +173,13 @@ to recognise when state has changed and correspondingly update the undo state. I
   - [ ] Paste From Clipboard
   - [ ] Copy Segment To All Frames
   - [ ] Flip Segment Vertical
-  - [ ] Flip Segment Horizontal
+  - [x] Flip Segment Horizontal
   - [ ] Delete Segment
   - [ ] Fill Segment
   - [ ] Color Segment
 - [ ] Undo/Redo
-  - [ ] Clicked Undo
-  - [ ] Clicked Redo
+  - [x] Clicked Undo
+  - [x] Clicked Redo
 
 ## Questions
 
