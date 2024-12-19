@@ -823,8 +823,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
     def insertChar(self, c, fg=1, bg=0, frange=None, x=None, y=None, moveCursor = False, pushUndo=True):
         """ insert character at current location, move cursor to the right (unless at the edge of canvas) """
-        if pushUndo:    # push onto the clipboard stack
-            self.undo.push()
+        # TODO: UNDO - remove the old undo system when the new one is working.
+        # if pushUndo:    # push onto the clipboard stack
+        #     self.undo.push()
         if x == None:
             x = self.xy[1]
             moveCursor = True
@@ -832,7 +833,18 @@ class UserInterface():  # Separate view (curses) from this controller
             y = self.xy[0]
 
         # TODO: UNDO - integrate this new system in place of the existing one.
-        self.mov.insertChar(self.mov.currentFrameNumber-1, x, y, c, fg, bg)
+        if frange:
+            self.mov.insertChar(
+                (fn, x-1, y, c, fg, bg) for fn in range(frange[0]-1, frange[1])
+            )
+        else:
+            self.mov.insertChar(
+                ((self.mov.currentFrameNumber-1, x-1, y, c, fg, bg),)
+            )
+        if x < self.mov.sizeX and moveCursor:
+            self.move_cursor_right()
+
+        return
 
         if frange: # frame range
             for fn in range(frange[0] - 1, frange[1]):
@@ -6898,31 +6910,44 @@ Can use ESC or META instead of ALT
         width = len(clipBuffer.content)
         #height = len(clipBuffer.content[0]) - 1
         height = len(clipBuffer.content[0])
-        for lineNum in range(0, height):
-            for colNum in range(0, width):
-                charColumn = startPoint[1] + colNum
-                charLine = startPoint[0] + lineNum
-                character = ord(clipBuffer.content[colNum][lineNum])    
-                cursesColorPair = clipBuffer.newColorMap[colNum][lineNum]
-                charFg = cursesColorPair[0]
-                charBg = cursesColorPair[1]
-                if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
-                    if not frange:
-                        if transparent:
-                            if chr(character) == ' ' and charBg == 0:
-                                pass
-                            else:
-                                self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
-                        else:
-                            self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
-                    else:
-                        if transparent:
-                            if chr(character) == ' ' and charBg == 0:
-                                pass
-                            else:
-                                self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
-                        else:
-                            self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+        from itertools import product
+
+        states = []
+        for x,y in product(range(0, len(clipBuffer.content[0])), range(0, len(clipBuffer.content))):
+            state = (
+                self.mov.currentFrameNumber-1,
+                x + startPoint[1],
+                y + startPoint[0],
+                clipBuffer.content[y][x],
+                *clipBuffer.newColorMap[y][x]
+            )
+            states.append(state)
+        self.mov.insertChar(states)
+        return
+        #     for colNum in range(0, width):
+        #         charColumn = startPoint[1] + colNum
+        #         charLine = startPoint[0] + lineNum
+        #         character = ord(clipBuffer.content[colNum][lineNum])    
+        #         cursesColorPair = clipBuffer.newColorMap[colNum][lineNum]
+        #         charFg = cursesColorPair[0]
+        #         charBg = cursesColorPair[1]
+        #         if charColumn < self.mov.sizeX + 1 and charLine < self.mov.sizeY:
+        #             if not frange:
+        #                 if transparent:
+        #                     if chr(character) == ' ' and charBg == 0:
+        #                         pass
+        #                     else:
+        #                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+        #                 else:
+        #                     self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False)
+        #             else:
+        #                 if transparent:
+        #                     if chr(character) == ' ' and charBg == 0:
+        #                         pass
+        #                     else:
+        #                         self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
+        #                 else:
+        #                     self.insertChar(character, fg=charFg, bg=charBg, x=charColumn, y=charLine, pushUndo=False, frange=frange)
 
     def copySegmentToClipboard(self, startPoint, height, width):
         """ startPoint is [line, column] """

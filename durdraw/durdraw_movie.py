@@ -152,34 +152,43 @@ class Movie():
         self.log = log.getLogger('movie')
         self.log.info('movie initialized', {'sizeX': self.sizeX, 'sizeY': self.sizeY})
 
-    def insertChar(self, frame_n, x, y, c, fg, bg):
-        current_char = self.frames[frame_n].content[y][x]
-        current_fg, current_bg = self.frames[frame_n].newColorMap[y][x]
+    def insertChar(self, states: List[PixelState]):
+        operations = []
 
-        self.undo_register.push(
-            (
-                self.setChar,
-                (frame_n, x, y, c, fg, bg),
-                (frame_n, x, y, current_char, current_fg, current_bg),
+        for frame_n, x, y, c, fg, bg in states:
+            # save the current state of the pixel
+            current_char = self.frames[frame_n].content[y][x]
+            current_fg, current_bg = self.frames[frame_n].newColorMap[y][x]
+
+            # gather the group of operations
+            operations.append(
+                (
+                    self.setChar,
+                    (frame_n, x, y, c, fg, bg),
+                    (frame_n, x, y, current_char, current_fg, current_bg),
+                )
             )
-        )
-        self.frames[frame_n].content[y][x] = c
+            # now apply the new state to each pixel/frame
+            self.setChar(frame_n, x, y, c, fg, bg)
+
+        # push the group of operations to the undo register
+        self.undo_register.push(operations)
 
     def undo(self):
         if not self.undo_register.can_undo:
             self.log.debug('undo', {'msg': 'nothing to undo'})
             return
-        fn, current_state, prev_state = self.undo_register.undo()
-        self.log.debug('undo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
-        fn(*prev_state)
+        for fn, current_state, prev_state in self.undo_register.undo():
+            self.log.debug('undo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
+            fn(*prev_state)
 
     def redo(self):
         if not self.undo_register.can_redo:
             self.log.debug('redo', {'msg': 'nothing to redo'})
             return
-        fn, current_state, prev_state = self.undo_register.redo()
-        self.log.debug('redo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
-        fn(*current_state)
+        for fn, current_state, prev_state in self.undo_register.redo():
+            self.log.debug('redo', {'fn': fn, 'current_state': current_state, 'prev_state': prev_state})
+            fn(*current_state)
 
     def setChar(self, frame_n, x, y, c, fg, bg):
         self.log.debug('setChar', {'frame': frame_n, 'x': x, 'y': y, 'c': c, 'fg': fg, 'bg': bg})
