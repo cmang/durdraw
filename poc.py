@@ -3,6 +3,7 @@
 from collections import deque
 import curses
 from curses import wrapper
+import time
 
 #python3 -m pip install git+https://github.com/tmck-code/pp
 from pp import log
@@ -21,25 +22,25 @@ class UndoRegister:
         if self.redoBuf:
             self.redoBuf.clear()
         self.undoBuf.append(el)
-        LOG.debug('push', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+        # LOG.debug('push', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
 
     def undo(self):
         if not self.can_undo:
             return None
         self.redoBuf.appendleft(self.undoBuf.pop())
-        LOG.debug('undo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+        # LOG.debug('undo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
         return self.redoBuf[0]
 
     def redo(self):
         if not self.can_redo:
             return None
         self.undoBuf.append(self.redoBuf.popleft())
-        LOG.debug('redo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+        # LOG.debug('redo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
         return self.undoBuf[-1]
 
     @property
     def can_undo(self):
-        return bool(self.undoBuf)
+        return len(self.undoBuf) > 0
 
     @property
     def can_redo(self):
@@ -68,24 +69,22 @@ def undo_char(stdscr, undo_register):
     if undo_register.can_undo:
         (x, y), (prev_char, next_char) = undo_register.undo()
         stdscr.addch(y, x, prev_char)
-        stdscr.refresh()
         stdscr.move(y, x)
 
 def redo_char(stdscr, undo_register):
     if undo_register.can_redo:
         (x, y), (prev_char, next_char) = undo_register.redo()
         stdscr.addch(y, x, next_char)
-        stdscr.refresh()
 
 def insert_char(stdscr, undo_register, x, y, c):
-    (y, x), prev_char = stdscr.getyx(), stdscr.inch(y, x)
+    prev_char = stdscr.inch(y, x)
     stdscr.addch(c)
     undo_register.push(((x, y), (prev_char, c)))
-    stdscr.refresh()
 
 def get_input(stdscr, undo_register):
-    # curses.echo()
     while True:
+        LOG.debug('get_input')
+        start_time = time.time()
         (y, x), c = stdscr.getyx(), stdscr.getch()
 
         if c == ord('q'):
@@ -100,6 +99,10 @@ def get_input(stdscr, undo_register):
             insert_char(stdscr, undo_register, x, y, c)
         else:
             LOG.debug('unhandled key', {'key': c})
+
+        end_time = time.time()
+        elapsed = round(end_time-start_time, 3)
+        LOG.debug('processed input', {'key': c, 'elapsed': elapsed})
 
 def pad(stdscr):
     help_lines = [
