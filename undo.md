@@ -112,7 +112,7 @@ Each existing action should be routed (where appropriate) through the Frame/Movi
 to recognise when state has changed and correspondingly update the undo state. In addition to the existing Frame/Movie classes, it would be
  handy to introduce something like a Pixel class that could keep track of its own state, and the main undo list could just consist of references to the individual pixel & index of the change inside that pixel. I'm unsure how this would interact with things like the existing colour map #TODO investigate.
 
-![Durdraw Undo](https://github.com/user-attachments/assets/e79d9834-edc4-4d51-bc05-f52930db4971)
+![image](https://github.com/user-attachments/assets/eea5445d-292f-42c5-9327-85da1e0560c1)
 
 [diagram](https://link.excalidraw.com/readonly/svgZcqp0b4R5EClbbkdh)
 
