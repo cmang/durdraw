@@ -6,9 +6,11 @@
   - [Feature List](#feature-list)
   - [Implementation](#implementation)
   - [Considerations \& Challenges](#considerations--challenges)
+  - [Opportunities](#opportunities)
   - [POC](#poc)
   - [Progress/Operation Support](#progressoperation-support)
   - [Questions](#questions)
+  - [Proposal](#proposal)
 
 
 ## Undo usages
@@ -59,36 +61,19 @@
 
 ### Summarised
 
-✅ == involves pixel changes
-❓ == unsure
-
-- columns ✅
-  - deleting/adding columns ✅
-- chars/colours ✅
-  - inserting chars/colours ✅
-  - replacing colours ✅
-- backspace
-- segment ❓
-  - flipping/deleting/filling/colouring ✅
-- clear canvas ✅
-- frame ✅
-  - moving/cloning/appending/deleting ✅
-- lines ✅
-  - deleting/adding lines ✅
-- transform ❓
-  - bounce/repeat/reverse ❓
-
-
 ## Feature List
 
 1. pixel-level undo/redo
-    - Allow undo/redo to be applied against individual pixels rather than cycling through the undo stack across all frames
+   - Should be able to store and update pixel states, e.g. chars and colours
 2. (?) action/state-level undo/redo
     - Allow undo/redo for actions that are not pixel/char/colour changes
     - e.g. cursor position, selected area, durations/other metadata
-3. Multi-pixel operations
-    - Ensure that multi-pixel operations (e.g. flipping, colour fill) are correctly undone/redone
+    - some of these may be stored in tandem with other changes, e.g. a pixel change and a cursor move
+3. Multi-pixel (or multi-anything) operations
+    - Ensure that multi-pixel operations (e.g. flipping, colour fill) are correctly undone/redone all at once.
+    - This will probably take the form of storing `n` pixel changes in each undo/redo action
 
+*Misc requirements:*
 
 - All pixel/other state should be updated correctly from undo/redo actions
   - cursor position
@@ -109,8 +94,11 @@ This makes changes difficult as there are many use cases to contend with that se
 reality are mostly modifying chars/colours
 
 Each existing action should be routed (where appropriate) through the Frame/Movie classes. These classes are best placed
-to recognise when state has changed and correspondingly update the undo state. In addition to the existing Frame/Movie classes, it would be
- handy to introduce something like a Pixel class that could keep track of its own state, and the main undo list could just consist of references to the individual pixel & index of the change inside that pixel. I'm unsure how this would interact with things like the existing colour map #TODO investigate.
+to recognise when state has changed and correspondingly update the undo state.
+
+~~In addition to the existing Frame/Movie classes, it could be handy to introduce something like a Pixel class that could keep track of its own state,
+and the main undo list could just consist of references to the individual pixel & index of the change inside that pixel. I'm unsure how this would interact with things like the existing colour map #TODO investigate.~~   
+*^ I am now thinking that, at this stage, this change to Frames/pixels is not neccessary to be able to implement the new undo system, and it risks changing too much at once (e.g. the underlying way that chars and colours are set in durdraw via the content and colour map)*
 
 ![image](https://github.com/user-attachments/assets/eea5445d-292f-42c5-9327-85da1e0560c1)
 
@@ -121,7 +109,18 @@ to recognise when state has changed and correspondingly update the undo state. I
 - For operations like "flipping", this will require storing many pixel changes
   - will need to ensure that nothing is missed, and that the operation is not slow
 
+## Opportunities
+
+These are ideas that are not part of this proposal, but could be explored in future.
+
+- It would be possible to serialize the undo/redo buffers to a local file in the event of a crash, and restore the state on next launch ala vim.
+
 ## POC
+
+I wrote a [POC script](./poc.py) to test the undo/redo functionality. It's an oversimplified version of durdraw, with the proposed undo system bolted on.   
+You can essentially type out a bunch of stuff and use the arrow keys, and then press (and hold!) 'u/r' to undo/redo.
+
+Here are some logs from the very rough POC implementation in durdraw
 
 ```json
 {"timestamp":"2024-12-12T19:39:38.509133+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0)])","redoBuf":"deque([])"}}
@@ -137,6 +136,8 @@ to recognise when state has changed and correspondingly update the undo state. I
 ```
 
 ## Progress/Operation Support
+
+*These are all the operations that need to be supported by the undo system.*
 
 - [ ] Changing pixels
   - [ ] Insert Color
@@ -183,7 +184,21 @@ to recognise when state has changed and correspondingly update the undo state. I
 
 ## Questions
 
-- Why is the colour map stored separately to the content?
+- Clarify: Why is the colour map stored separately to the content? I don't want to miss anything due to lack of understanding.
 - What is the largest file (frames * width * height) that should be supported?
-- It's possible to save the undo buffer in the event of a crash, and restore it on next launch. Is this a feature that would be useful?
- - Have I missed any major operations or functionality?
+- Have I missed any major operations or functionality?
+
+## Proposal
+
+I've now done enough digging and poking that I'm ready to sketch out a rough proposal for review/confirmation before I start getting really stuck in. This will require quite a few LOC to be changed, so I definitely want to make sure I'm on the right track before I start and avoid any horrific oversights.
+
+1. Introduce the new undo "registry" (exact name pending?)
+2. Move a lot (all/most?) of the "pixel manipulation" functions from `durdraw_ui_curses` to the `Frame` and `Movie` classes in `durdraw_movie`.
+     1. When doing this, take the opportunity to add tests for as many operations as I have the energy for.
+     2. This has the benefit of reducing the LOC in ui_curses which will benefit our squishy human brains.
+3. Implement [all operations listed above](#progressoperation-support) in the new undo system.
+
+> *Exact implementation still pending! e.g.*
+> - *Do I store tuples containing the actual function, or a string value that can be used with a mapping dict to get that function? What are the implications and performance considerations of each?*
+> - *Do I use ChainMap or similar instead of a deque for the undo/redo buffers?*
+> *These are pretty low-level considerations that I haven't set in stone yet, but the overall plan and interface is becoming clearer.*
