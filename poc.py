@@ -9,6 +9,7 @@ import line_profiler
 #python3 -m pip install git+https://github.com/tmck-code/pp
 from pp import log
 
+# NOTE: set this to DEBUG to see the debug logs
 LOG = log.getLogger('poc', filename='poc.log', level='INFO')
 
 class UndoRegister:
@@ -110,10 +111,13 @@ def process_input(stdscr, undo_register, x, y, c):
     if   c in ARROW_KEYS: move_cursor(stdscr, x, y, c)
     elif c == ord('u'):   undo_char(stdscr, undo_register)
     elif c == ord('r'):   redo_char(stdscr, undo_register)
+    elif c == ord('U'):   [undo_char(stdscr, undo_register) for _ in range(10)]
+    elif c == ord('R'):   [redo_char(stdscr, undo_register) for _ in range(10)]
     elif c < 256:         insert_char(stdscr, undo_register, x, y, c)
     else:                 LOG.debug('unhandled key', {'key': c})
 
-    # LOG.debug('processed input', {'key': c, 'x': x, 'y': y, 'elapsed': (time.time()-start_time)*10**6, 'unit': 'us'})
+    # end_time = time.time()
+    # LOG.debug('processed input', {'key': c, 'x': x, 'y': y, 'elapsed': (end_time-start_time)*10**6, 'unit': 'us'})
 
 @line_profiler.profile
 def get_input(stdscr, undo_register):
@@ -134,7 +138,7 @@ def pad(stdscr):
     - moves the cursor to the center of the window
     - starts the main loop
     '''
-    help_lines = ['type any key!', 'use arrow keys to navigate', 'u/r to undo/redo', 'q to quit']
+    help_lines = ['type any key!', 'use arrow keys to navigate', 'u/r to undo/redo', 'q to quit', 'U/R for MEGA 10x undo/redo!']
     for i, line in enumerate(help_lines):
         stdscr.addstr(i, 0, line, curses.A_REVERSE)
 
