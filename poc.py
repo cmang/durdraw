@@ -5,6 +5,8 @@ import curses
 from curses import wrapper
 import time
 
+import line_profiler
+
 #python3 -m pip install git+https://github.com/tmck-code/pp
 from pp import log
 
@@ -18,12 +20,14 @@ class UndoRegister:
         if initial_state:
             self.undoBuf.append(initial_state)
 
+    @line_profiler.profile
     def push(self, el):
         if self.redoBuf:
             self.redoBuf.clear()
         self.undoBuf.append(el)
         # LOG.debug('push', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
 
+    @line_profiler.profile
     def undo(self):
         if not self.can_undo:
             return None
@@ -31,6 +35,7 @@ class UndoRegister:
         # LOG.debug('undo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
         return self.redoBuf[0]
 
+    @line_profiler.profile
     def redo(self):
         if not self.can_redo:
             return None
@@ -54,6 +59,7 @@ class UndoRegister:
     def buffers(self):
         return self.undoBuf, self.redoBuf
 
+@line_profiler.profile
 def move_cursor(stdscr, x, y, c):
     match c:
         case curses.KEY_LEFT:
@@ -65,22 +71,26 @@ def move_cursor(stdscr, x, y, c):
         case curses.KEY_UP:
             stdscr.move(max(y-1, 0), x)
 
+@line_profiler.profile
 def undo_char(stdscr, undo_register):
     if undo_register.can_undo:
         (x, y), (prev_char, next_char) = undo_register.undo()
         stdscr.addch(y, x, prev_char)
         stdscr.move(y, x)
 
+@line_profiler.profile
 def redo_char(stdscr, undo_register):
     if undo_register.can_redo:
         (x, y), (prev_char, next_char) = undo_register.redo()
         stdscr.addch(y, x, next_char)
 
+@line_profiler.profile
 def insert_char(stdscr, undo_register, x, y, c):
     prev_char = stdscr.inch(y, x)
     stdscr.addch(c)
     undo_register.push(((x, y), (prev_char, c)))
 
+@line_profiler.profile
 def get_input(stdscr, undo_register):
     while True:
         LOG.debug('get_input')
