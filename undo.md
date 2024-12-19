@@ -6,6 +6,9 @@
   - [Feature List](#feature-list)
   - [Implementation](#implementation)
   - [Considerations \& Challenges](#considerations--challenges)
+  - [POC](#poc)
+  - [Progress/Operation Support](#progressoperation-support)
+  - [Questions](#questions)
 
 
 ## Undo usages
@@ -130,6 +133,51 @@ to recognise when state has changed and correspondingly update the undo state. I
 {"timestamp":"2024-12-12T19:39:44.709905+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0), (0, 0, 100, 7, 0)])","redoBuf":"deque([])"}}
 {"timestamp":"2024-12-12T19:39:44.763499+11:00","level":"DEBUG","name":"durdraw.undo_register","msg":"push","data":{"undoBuf":"deque([(0, 0, 115, 7, 0), (0, 0, 107, 7, 0), (0, 0, 106, 7, 0), (0, 0, 115, 7, 0), (0, 0, 97, 7, 0), (0, 0, 100, 7, 0), (0, 0, 104, 7, 0)])","redoBuf":"deque([])"}}
 ```
+
+## Progress/Operation Support
+
+- [ ] Changing pixels
+  - [ ] Insert Color
+  - [ ] Insert Char
+  - [ ] Backspace
+  - [ ] Delete Key Pop
+  - [ ] Reverse Delete
+  - [ ] Replace Color Under Cursor
+- [ ] Frame/Animation
+  - [ ] Transform Bounce
+  - [ ] Transform Repeat
+  - [ ] Transform Reverse
+  - [ ] Move Current Frame
+  - [ ] Clone To New Frame
+  - [ ] Append Empty Frame
+  - [ ] Delete Current Frame Prompt
+- [ ] Movie/High-level
+  - [ ] Get Delay Value
+  - [ ] Apply Neofetch Keys
+  - [ ] Load From File
+  - [ ] Clear Canvas
+- [ ] Adding/Removing columns & lines
+  - [ ] Add Column To Canvas
+  - [ ] Delete Column From Canvas
+  - [ ] Add Line To Canvas
+  - [ ] Delete Line From Canvas
+  - [ ] Add Column
+  - [ ] Delete Column
+  - [ ] Delete Line
+  - [ ] Add Line
+- [ ] Box selections
+  - [ ] Start Selecting
+  - [ ] Ask How To Paste
+  - [ ] Paste From Clipboard
+  - [ ] Copy Segment To All Frames
+  - [ ] Flip Segment Vertical
+  - [ ] Flip Segment Horizontal
+  - [ ] Delete Segment
+  - [ ] Fill Segment
+  - [ ] Color Segment
+- [ ] Undo/Redo
+  - [ ] Clicked Undo
+  - [ ] Clicked Redo
 
 ## Questions
 
