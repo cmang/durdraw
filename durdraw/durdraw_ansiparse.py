@@ -213,11 +213,11 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     #width = min(width, maxWidth)
     height = max(height, 25)
 
-    if appState.wrapWidth == 80 and width > 350:
+    if appState.wrapWidth == 80 and width > 750:
         # I think something is probably wrong. Bad width and/or height.
         # But, allow --wrap to override this check.
         width = 80
-    if height > 2500:
+    if height > 8500:
         height = 1000
         #print(f"Bad height or width. Width: {width}, height: {height}")
         #pdb.set_trace()
