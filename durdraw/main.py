@@ -267,7 +267,7 @@ def main(fetch_args=None):
         ui.verySafeQuit()
     if args.export_ansi:
         # Export ansi and exit
-        ui.saveAnsiFile(os.path.splitext(args.filename)[0] + ".ansi")
+        ui.saveAnsiFile(os.path.splitext(args.filename)[0] + ".ansi", encoding=app.charEncoding)
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()
