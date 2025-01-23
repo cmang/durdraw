@@ -6616,7 +6616,13 @@ Can use ESC or META instead of ALT
                 for colnum in range(firstColNum - 1, lastColNum):
                     #if colnum == self.mov.sizeX - 1:   # prevent overflow on last line
                     #    colnum -= 1
-                    charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                    try:
+                        charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                    except Exception as E:
+                        self.notify(f"Exception E: {E}")
+                        linenum = linenum - 1
+                        charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                        #pdb.set_trace()
                     try: # set ncurss color pair
                         cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                     except: # Or if we can't, fail to the terminal's default color
