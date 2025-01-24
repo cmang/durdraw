@@ -25,7 +25,7 @@ import durdraw.durdraw_sauce as dursauce
 import durdraw.plugins.convert_charset as durchar
 import durdraw.log as log
 
-LOGGER = log.getLogger('ansiparse')
+LOGGER = log.getLogger('ansiparse', level='DEBUG', override=True)
 
 def ansi_color_to_durcolor(ansiColor):
     colorName = ansi_color_to_durcolor_table[ansiColor]
