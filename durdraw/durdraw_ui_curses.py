@@ -5914,7 +5914,7 @@ class UserInterface():  # Separate view (curses) from this controller
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
-        string = ''
+        string = []
         if not lastLineNum: # if we weren't told what lastLineNum is...
             # find it (last line we should save)
             lastLineNum = self.findFrameLastLine(self.mov.currentFrame)
@@ -5927,8 +5927,8 @@ class UserInterface():  # Separate view (curses) from this controller
             firstLineNum = 0    # also don't crop leading blank lines. rude
         error_encoding = False
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
-            if lineNum % 10_000 == 0:
-                self.log.debug('writing ansi', {'lineNum': lineNum, 'total': lastLineNum, 'pct': round((lineNum/lastLineNum)*100, 2)})
+            if lineNum % 1000 == 0:
+                self.log.debug('writing ansi', {'lineNum': lineNum, 'total': lastLineNum, 'pct': round((lineNum/lastLineNum)*100, 2), 'colorMode': self.appState.colorMode})
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.newColorMap[lineNum][colNum]
@@ -5962,15 +5962,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     break
                 # If we don't have extended ncurses 6 color pairs,
                 # we don't have background colors.. so write the background as black/0
-                string = string + colorCode + char
+                string.append(colorCode + char)
             if ircColors:
-                string = string + '\n'
+                string.append('\n')
             else:
-                #string = string + '\r\n'
-                string = string + '\n'
+                string.append('\n')
         if not error_encoding:
             try:
-                f.write(string)
+                f.write(''.join(string))
                 saved = True
             except UnicodeEncodeError as encodeError:
                 self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
@@ -5978,11 +5977,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 saved = False
                 #f.close()
                 #return False
-        if ircColors:
-            string2 = string + '\n'
-        else:
-            f.write('\033[0m') # color attributes off
-            string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        f.write('\033[0m') # color attributes off
         f.close()
         #return True
         return saved
