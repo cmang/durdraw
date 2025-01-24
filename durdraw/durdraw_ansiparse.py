@@ -73,6 +73,12 @@ color_name_to_durcolor_table = {
     'White': 00
 }
 
+def find_next_alpha(text, i):
+    for j in count(i):
+        if text[j].isalpha():
+            return j
+    return None
+
 
 def get_width_and_height_of_ansi_blob(text, width=80):
     i = 0   # index into the file blob
@@ -84,11 +90,7 @@ def get_width_and_height_of_ansi_blob(text, width=80):
             LOGGER.debug('scanning', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[
-            match = None
-            for j in count(i+1):
-                if text[j].isalpha():
-                    match = j
-                    break
+            match = find_next_alpha(text, i+1)
             if not match:
                 i += 1 # move on to next byte
                 continue
@@ -256,11 +258,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             LOGGER.debug('parsing', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
-            match = None
-            for j in count(i+1):
-                if text[j].isalpha():
-                    match = j
-                    break
+            match = find_next_alpha(text, i+1)
             if not match:
                 i += 1 # move on to next byte
                 continue
