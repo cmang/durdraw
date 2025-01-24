@@ -9,20 +9,23 @@
 # A code looks like this: ^[1;32m for bold color 32. ^[0m for reset.
 # ^[0;4;3;42m for reset (0), underline (4), italic (3), background color (42).
 # We have a state machine that has attributes. Color, bold, underline, italic, etc.
-# 
-# References: 
+#
+# References:
 # Escape code bible: https://en.wikipedia.org/wiki/ANSI_escape_code
 # ANSI Sauce (metadata) spec: https://www.acid.org/info/sauce/sauce.htm
 
 
 import sys
 import struct
-import re
+from itertools import count
 import pdb
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_sauce as dursauce
 import durdraw.plugins.convert_charset as durchar
+import durdraw.log as log
+
+LOGGER = log.getLogger('ansiparse', level='DEBUG', override=True)
 
 def ansi_color_to_durcolor(ansiColor):
     colorName = ansi_color_to_durcolor_table[ansiColor]
@@ -70,6 +73,12 @@ color_name_to_durcolor_table = {
     'White': 00
 }
 
+def find_next_alpha(text, i):
+    for j in count(i):
+        if text[j].isalpha():
+            return j
+    return None
+
 
 def get_width_and_height_of_ansi_blob(text, width=80):
     i = 0   # index into the file blob
@@ -77,10 +86,15 @@ def get_width_and_height_of_ansi_blob(text, width=80):
     line_num = 0
     max_col = 0
     while i < len(text):
+        if i % 10_000 == 0:
+            LOGGER.debug('scanning', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[
-            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
-            end_index = match.start() + i   # where the code ends
+            match = find_next_alpha(text, i+1)
+            if not match:
+                i += 1 # move on to next byte
+                continue
+            end_index = match   # where the code ends
             if text[end_index] == 'A':      # Move the cursor up X spaces
                 escape_sequence = text[i + 2:end_index]
                 if len(escape_sequence) == 0:
@@ -232,18 +246,23 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     max_col = 0
     default_fg_color = appState.defaultFgColor
     default_bg_color = appState.defaultBgColor
-    fg_color = default_fg_color 
-    bg_color = default_bg_color 
+    fg_color = default_fg_color
+    bg_color = default_bg_color
     bold = False
     saved_col_num = 0
     saved_line_num = 0
     saved_byte_location = 0
     parse_error = False
     while i < len(text):
+        if i % 10_000 == 0:
+            LOGGER.debug('parsing', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
-            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
-            end_index = match.start() + i   # where the code ends
+            match = find_next_alpha(text, i+1)
+            if not match:
+                i += 1 # move on to next byte
+                continue
+            end_index = match   # where the code ends
             if text[end_index] == 'm':      # Color/SGR control code
                 escape_sequence = text[i + 2:end_index]
                 escape_codes = escape_sequence.split(';')

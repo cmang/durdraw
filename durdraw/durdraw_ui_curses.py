@@ -5927,6 +5927,8 @@ class UserInterface():  # Separate view (curses) from this controller
             firstLineNum = 0    # also don't crop leading blank lines. rude
         error_encoding = False
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
+            if lineNum % 10_000 == 0:
+                self.log.debug('writing ansi', {'lineNum': lineNum, 'total': lastLineNum, 'pct': round((lineNum/lastLineNum)*100, 2)})
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.newColorMap[lineNum][colNum]
