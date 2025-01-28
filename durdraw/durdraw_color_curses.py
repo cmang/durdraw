@@ -276,13 +276,12 @@ class AnsiArtStuff():
             5:"43", 6:"42", 7:"41", 8:"40", 0:"40"
         }
 
+    @lru_cache(maxsize=1024)
     def getColorCode24k(r, g, b):
         """ r, g and b must be numbers between 0-255 """
-        code = '\033[38;2;'
-        code += str(r) + ';' + str(g) + ';' + str(b)
-        code += 'm'
-        return code
+        return f'\033[38;2;{r};{g};{b}m'
 
+    @lru_cache(maxsize=1024)
     def getColorCodeIrc(self, fg, bg):
         """ Return a string containing the IRC color code to color the next
         character, for given fg/bg """
@@ -301,6 +300,7 @@ class AnsiArtStuff():
 
         return f'\x03{fg:02d},{bg:02d}'
 
+    @lru_cache(maxsize=1024)
     def getColorCode256(self, fg, bg):
         """ Return a string containing 256-color mode ANSI escape code for
         given fg/bg """
