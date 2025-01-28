@@ -311,7 +311,7 @@ class AnsiArtStuff():
     @lru_cache(maxsize=1024)
     def getColorCode(self, fg, bg):
         """ returns a string containing ANSI escape code for given fg/bg  """
-        return f'\033[38;5;{self.escapeFgMap[fg]};48;5;{self.escapeBgMap[bg]}m'
+        return f'\033[{self.escapeFgMap[fg]};{self.escapeBgMap[bg]}m'
 
     def codePage437(self):
         pass
