@@ -5927,8 +5927,11 @@ class UserInterface():  # Separate view (curses) from this controller
             firstLineNum = 0    # also don't crop leading blank lines. rude
         error_encoding = False
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
-            if lineNum % 1000 == 0:
-                self.log.debug('writing ansi', {'lineNum': lineNum, 'total': lastLineNum, 'pct': round((lineNum/lastLineNum)*100, 2), 'colorMode': self.appState.colorMode})
+            if lineNum % 1000 == 0 or lineNum == lastLineNum-1:
+                self.log.debug(
+                    'writing ansi',
+                    {'lineNum': lineNum+1, 'total': lastLineNum, 'pct': round(((lineNum+1)/lastLineNum)*100, 2), 'colorMode': self.appState.colorMode}
+                )
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.newColorMap[lineNum][colNum]
