@@ -1,6 +1,7 @@
 import curses
 import time
 import pdb
+from functools import lru_cache
 
 legacy_256_to_256 = {   # used when loading an old 256 color file in 256 color mode
     #0: 7, # white
@@ -275,13 +276,12 @@ class AnsiArtStuff():
             5:"43", 6:"42", 7:"41", 8:"40", 0:"40"
         }
 
+    @lru_cache(maxsize=1024)
     def getColorCode24k(r, g, b):
         """ r, g and b must be numbers between 0-255 """
-        code = '\033[38;2;'
-        code += str(r) + ';' + str(g) + ';' + str(b)
-        code += 'm'
-        return code
+        return f'\033[38;2;{r};{g};{b}m'
 
+    @lru_cache(maxsize=1024)
     def getColorCodeIrc(self, fg, bg):
         """ Return a string containing the IRC color code to color the next
         character, for given fg/bg """
@@ -298,39 +298,20 @@ class AnsiArtStuff():
         #    fg = color_256_to_mirc_16[fg]
         #    bg = color_256_to_mirc_16[bg]
 
-        bg = 1
+        return f'\x03{fg:02d},{bg:02d}'
 
-        # build the code
-        code = '\x03'
-        #code = code + str(fg)
-        code = code + f'{fg:02d}'
-        code = code + ','
-        #code = code + str(bg)
-        code = code + f'{bg:02d}'
-        # code = code + '\x03'
-        return code
-
+    @lru_cache(maxsize=1024)
     def getColorCode256(self, fg, bg):
         """ Return a string containing 256-color mode ANSI escape code for
         given fg/bg """
         if fg <= 16 and fg > 0:
             fg = color_256_to_ansi_16[fg]
-        code = '\033[38;5;'    # begin escape sequence
-        code = code + str(fg)
-        code = code + ';'
-        code = code + '48;5;'
-        code = code + str(bg)
-        #code = code + str('0')
-        code = code + 'm'
-        return code
+        return f'\033[38;5;{fg};48;5;{bg}m'
 
+    @lru_cache(maxsize=1024)
     def getColorCode(self, fg, bg):
         """ returns a string containing ANSI escape code for given fg/bg  """
-        escape = '\033['    # begin escape sequence
-        escape = escape + self.escapeFgMap[fg] + ';'  # set fg color
-        escape = escape + self.escapeBgMap[bg]  # set bg color
-        escape = escape + "m"   # m = set graphics mode command
-        return escape
+        return f'\033[{self.escapeFgMap[fg]};{self.escapeBgMap[bg]}m'
 
     def codePage437(self):
         pass

@@ -86,8 +86,8 @@ def get_width_and_height_of_ansi_blob(text, width=80):
     line_num = 0
     max_col = 0
     while i < len(text):
-        if i % 10_000 == 0:
-            LOGGER.debug('scanning', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
+        if i % 10_000 == 0 or i+1 == len(text):
+            LOGGER.debug('scanning', {'i': i+1, 'total': len(text), 'pct': round((i+1)/len(text)*100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[
             match = find_next_alpha(text, i+1)
@@ -254,8 +254,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     saved_byte_location = 0
     parse_error = False
     while i < len(text):
-        if i % 10_000 == 0:
-            LOGGER.debug('parsing', {'i': i, 'total': len(text), 'pct': round(i / len(text) * 100, 2)})
+        if i % 10_000 == 0 or i+1 == len(text):
+            LOGGER.debug('parsing', {'i': i+1, 'total': len(text), 'pct': round((i+1)/len(text)*100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
             match = find_next_alpha(text, i+1)
