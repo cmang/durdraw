@@ -23,6 +23,7 @@ usage examples to log messages:
 
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
+from functools import wraps
 import json
 import logging
 
@@ -157,3 +158,23 @@ def getLogger(
         local_tz=CURRENT_LOG_TZ,
     )
 
+def log_on_crash(func):
+    '''
+    This is a decorator that can be used to log any exceptions that occur in a function.
+    This is mainly intended to wrap around the main() functions/entrypoints to durdraw,
+    so that any exceptions that occur can be logged to a file for debugging or support.
+    '''
+    logger = getLogger('crash', level='ERROR')
+    @wraps(func)
+    def inner(*args, **kwargs):
+        # run the function, return the result, and log any exceptions
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.exception(
+                'durview crashed',
+                {'class': e.__class__.__name__, 'message': str(e)},
+                exc_info=True,
+            )
+            raise e
+    return inner

@@ -6,6 +6,7 @@ import os
 import pathlib
 import random
 
+from durdraw import log
 import durdraw.main as durdraw_main
 import durdraw.neofetcher as neofetcher
 from durdraw.durdraw_version import DUR_VER
@@ -66,6 +67,7 @@ def auto_load_file(neofetch_data, rand=False, fake_os=None):
         files = ['linux-fire.durf', 'linux-tux.durf']
     return random.choice(files)
 
+@log.log_on_crash
 def main():
 
     epilog_text = make_epilog()
