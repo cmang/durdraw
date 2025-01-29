@@ -4516,19 +4516,23 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.selected_item_number > len(file_list) - 1:
                 self.selected_item_number = 0
 
+            self.log.debug('selected item number', {'selected_item_number': self.selected_item_number, 'n_files': len(file_list)})
+
             #if not self.appState.sixteenc_browsing:
             #    try:
             #        filename = file_list[self.selected_item_number]
             #    except:
             #        pdb.set_trace()
-            filename = file_list[self.selected_item_number]
+            filename = None
+            if len(file_list) > 0:
+                filename = file_list[self.selected_item_number]
 
-            if self.appState.sixteenc_browsing:
+            if self.appState.sixteenc_browsing or filename is None:
                 full_path = ''
             else:
                 full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                 
-            if filename not in folders:
+            if filename not in folders and filename is not None :
                 # read sauce, if available
                 #file_sauce = dursauce.SauceParser(full_path)
                 file_sauce = dursauce.SauceParser()
@@ -4550,7 +4554,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 #sauce_width = file_sauce.width
                 #sauce_height = file_sauce.height
 
-            if self.appState.sixteenc_browsing:
+            if self.appState.sixteenc_browsing or filename is None:
                 file_size = None
                 file_modtime_string = ""
             else:
