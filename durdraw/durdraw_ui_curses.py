@@ -4292,6 +4292,24 @@ class UserInterface():  # Separate view (curses) from this controller
             #for r in res:
             #    print(r.status_code)
 
+    def findLocalFiles(self, current_directory, folders, masks):
+        # update file list
+        self.log.debug('finding local files!!!', {'current_directory': current_directory, 'folders': folders, 'masks': masks})
+        file_list, matched_files = [], []
+        if self.appState.sixteenc_browsing:
+            search_files_list = []
+        else:
+            search_files_list = os.listdir(current_directory)
+        for file in search_files_list:
+            for mask in masks:
+                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                    matched_files.append(file)
+                    break
+        for dirname in folders:
+            file_list.append(dirname)
+        file_list += sorted(matched_files)
+        self.log.debug('repopulated file list', {'file_list': file_list})
+        return file_list
 
     def openFilePicker(self):
         """ Draw UI for selecting a file to load, return the filename """
@@ -4516,19 +4534,23 @@ class UserInterface():  # Separate view (curses) from this controller
             if self.selected_item_number > len(file_list) - 1:
                 self.selected_item_number = 0
 
+            self.log.debug('selected item number', {'selected_item_number': self.selected_item_number, 'n_files': len(file_list)})
+
             #if not self.appState.sixteenc_browsing:
             #    try:
             #        filename = file_list[self.selected_item_number]
             #    except:
             #        pdb.set_trace()
-            filename = file_list[self.selected_item_number]
+            filename = None
+            if len(file_list) > 0:
+                filename = file_list[self.selected_item_number]
 
-            if self.appState.sixteenc_browsing:
+            if self.appState.sixteenc_browsing or filename is None:
                 full_path = ''
             else:
                 full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                 
-            if filename not in folders:
+            if filename not in folders and filename is not None :
                 # read sauce, if available
                 #file_sauce = dursauce.SauceParser(full_path)
                 file_sauce = dursauce.SauceParser()
@@ -4550,7 +4572,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 #sauce_width = file_sauce.width
                 #sauce_height = file_sauce.height
 
-            if self.appState.sixteenc_browsing:
+            if self.appState.sixteenc_browsing or filename is None:
                 file_size = None
                 file_modtime_string = ""
             else:
@@ -4751,27 +4773,12 @@ class UserInterface():  # Separate view (curses) from this controller
                                 folders = new_folders
 
 
-
-                        # update file list
-                        matched_files = []
-                        file_list = []
-                        full_file_list = []
-                        if self.appState.sixteenc_browsing:
-                            search_files_list = []
-                        else:
-                            search_files_list = os.listdir(current_directory)
-                        for file in search_files_list:
-                            for mask in masks:
-                                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                    matched_files.append(file)
-                                    break
-                        for dirname in folders:
-                            file_list.append(dirname)
-                        file_list += sorted(matched_files)
+                        file_list = self.findLocalFiles(current_directory, folders, masks)
                         # reset ui
                         self.selected_item_number = 0
                         search_string = ""
                         full_file_list = file_list
+                        self.log.debug('repopulated file list', {'file_list': file_list})
 
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
@@ -4899,24 +4906,12 @@ class UserInterface():  # Separate view (curses) from this controller
                             pass
 
 
-                    #else:   # update with files, not 16c
+                    else:   # update with files, not 16c
 
                         # update file list
                         matched_files = []
                         file_list = []
                         full_file_list = []
-                        if not self.appState.sixteenc_browsing:
-                            search_files_list = os.listdir(current_directory)
-                        for file in search_files_list:
-                            for mask in masks:
-                                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                    matched_files.append(file)
-                                    break
-                        file_list += sorted(matched_files)
-                        # reset ui
-                        self.selected_item_number = 0
-                        search_string = ""
-                        full_file_list = file_list
 
                         folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                         # remove leading paths
@@ -4924,10 +4919,16 @@ class UserInterface():  # Separate view (curses) from this controller
                         for path_string in folders:
                             new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
                         folders = new_folders
-                        for dirname in folders:
-                            file_list.append(dirname)
 
-                        file_list = folders
+                        matched_files = self.findLocalFiles(current_directory, folders, masks)
+                        self.log.debug('found', {'matched_files': matched_files, 'folders': folders, 'current_directory': current_directory, 'masks': masks})
+                        file_list += matched_files
+                        # reset ui
+                        self.selected_item_number = 0
+                        search_string = ""
+                        full_file_list = file_list
+
+                         # file_list = folders
                         full_file_list = file_list
                         search_files_list = file_list
 
