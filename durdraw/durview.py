@@ -9,11 +9,13 @@ import sys
 import time
 import pathlib
 
+from durdraw import log
 from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
 import durdraw.help
 
+@log.log_on_crash
 def main(fetch_args=None):
     DURVIEW_VER = "0.1.0"
     DUR_FILE_VER = 7

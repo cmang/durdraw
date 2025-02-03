@@ -9,6 +9,7 @@ import sys
 import time
 import pathlib
 
+from durdraw import log
 from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
@@ -27,6 +28,7 @@ class ArgumentChecker:
         else:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
+@log.log_on_crash
 def main(fetch_args=None):
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
@@ -274,5 +276,3 @@ def main(fetch_args=None):
 
 if __name__ == "__main__":
     main()
-
-
