@@ -454,7 +454,7 @@ class ColorPickerHandler:
         self.panel.top()
         #self.move(0,self.x - 6)
         self.panel.show()
-        #oldColor = self.colorPicker.caller.colorfg
+        #oldFgColor = self.colorPicker.caller.colorfg
         #color = self.colorPicker.caller.colorfg
         #if self.appState.colorPickerSelected:
         #    prompting = True
@@ -676,7 +676,8 @@ class ColorPickerHandler:
         self.panel.top()
         #self.move(0,self.x - 6)
         self.panel.show()
-        oldColor = self.colorPicker.caller.colorfg
+        oldFgColor = self.colorPicker.caller.colorfg
+        oldBgColor = self.colorPicker.caller.colorbg
         color = self.colorPicker.caller.colorfg
         if self.appState.colorPickerSelected:
             prompting = True
@@ -753,7 +754,7 @@ class ColorPickerHandler:
                 self.updateFgPicker()
                 self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
-                #color = 255
+                #COLOr = 255
                 color = self.totalColors
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
@@ -764,7 +765,8 @@ class ColorPickerHandler:
                     self.hide()
                 prompting = False
                 if c == 27: # esc, cancel
-                    self.colorPicker.caller.colorfg = oldColor
+                    self.colorPicker.caller.setFgColor(oldFgColor)
+                    self.colorPicker.caller.setBgColor(oldBgColor)
                 self.appState.colorPickerSelected = False
                 c = None
                 self.updateFgPicker()
@@ -825,7 +827,8 @@ class ColorPickerHandler:
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
                     self.hideBorder()
-                    self.colorPicker.caller.setFgColor(oldColor)
+                    self.colorPicker.caller.setFgColor(oldFgColor)
+                    self.colorPicker.caller.setBgColor(oldBgColor)
                     self.updateFgPicker()
                     if not self.appState.sideBarShowing:
                         self.hide()
