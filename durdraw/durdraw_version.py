@@ -1,2 +1,2 @@
-DUR_VER = "0.28.1-BETA"
+DUR_VER = "0.29.0-BETA"
 version = DUR_VER
