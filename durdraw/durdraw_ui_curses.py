@@ -1967,6 +1967,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     break
                 if not self.appState.playOnlyMode:
                     break
+                if not self.playing:
+                    break
 
             if shouldDraw:
                 last_time = new_time
