@@ -295,6 +295,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 - [Example Themes](#example-themes)
 - [Colour Options](#colour-options)
 - [Theme Options](#theme-options)
+- [Custom Character Sets](#charset-options)
 
 You can create a custom startup file where you can set a theme and other options.
 
@@ -412,6 +413,45 @@ menuBorderColor: 24
 | menuItemColor       | the color of menu items |
 | menuTitleColor      | the color of menu titles |
 | menuBorderColor     | the color of the border around menus |
+
+#### Custom Character Sets
+
+You can create custom character set files and place them in the ~/.durdraw/charsets folder. Durdraw will automatically scan for these files and include them in the list of character sets (esc-S).
+
+An example character set file is provided in example-charset.ini:
+
+```ini
+; Custom character set
+; 🭨 🭩 🭪 🭫 🭬🭭🭮 🭯 🮚 🮛 🮜 🮝 🮞 🮟 ◤ ◥ ◢ ◣
+
+[Character Set]
+name: Cool Characters
+encoding: utf-8
+
+[block 1]
+f1: 🭨
+f2: 🭩
+f3: 🭪
+f4: 🭫
+f5: 🭬
+f6: 🭭
+f7: 🭮
+f8: 🭯
+f9: 🮚
+f10: 🮛
+
+[block 2]
+f1: 🮜
+f2: 🮝
+f3: 🮞
+f4: 🮟
+f5: ◤
+f6: ◥
+f7: ◢
+f8: ◣
+f9:
+f10:
+```
 
 ## Durfetch
 
