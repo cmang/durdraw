@@ -3932,6 +3932,7 @@ class UserInterface():  # Separate view (curses) from this controller
         # Turn on keyboard buffer waiting here, if necessary..
         self.stdscr.nodelay(0)
         self.stdscr.clear()
+        self.cursorOff()
         while prompting:
             # draw list of files from top of the window to bottom
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
@@ -4144,6 +4145,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     prompting = False
                     if self.playing:
                         self.stdscr.nodelay(1)
+                    self.cursorOn()
                     return False
             elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
                 if search_string != "":
@@ -4240,6 +4242,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif search_string in blockname.lower():
                         selected_item_number = block_list.index(blockname)
                         break   # stop at the first match
+        self.cursorOn()
 
     def sixteenc_update_diz_cache_start_thread(self, year):
         #if self.diz_caching_thread == None:
