@@ -158,6 +158,9 @@ class UserInterface():  # Separate view (curses) from this controller
 
         self.statusBarLineNum = self.realmaxY - 2
 
+        durchar.scan_charmap_folders(self.appState)
+        #self.loadCharsetFile("~/src/durdraw/coolset.ini")
+
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
         self.appState.loadThemeFromConfig('Theme-256')
@@ -2083,6 +2086,18 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.drawChar = self.appState.UTF8_BLOCK
         self.refreshCharMap()
 
+    def loadCharsetFile(self, file_path: str):
+        fullCharMap = durchar.load_charmap_file(file_path, self.appState)
+        if not fullCharMap:
+            self.notify(f"Error loading charmap file: {file_path}")
+            return False
+
+        self.fullCharMap = fullCharMap
+        self.charMapNumber = 0
+        self.chMap = self.fullCharMap[self.charMapNumber]
+        self.refreshCharMap()
+        
+
     def setCharacterSet(self, set_name):
         """ Set a Durdraw character set (not a Unicode block name) """
         self.appState.characterSet = set_name
@@ -2136,9 +2151,13 @@ class UserInterface():  # Separate view (curses) from this controller
             except: # If character can't encode, eg: in cp437 mode, make it blank
                 keyChar = ' '
             self.chMapString += f"{keyString}{keyChar}" 
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
-                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        try:
+            self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+                    (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
+                    self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        except Exception as E:
+            print(f"Exception: {E}")
+            pdb.set_trace()
         #self.chMapString = self.chMapStringncoding=self.appState.charEncoding)
 
     def clearStatusLine(self):
@@ -3896,7 +3915,7 @@ class UserInterface():  # Separate view (curses) from this controller
         
 
     def showCharSetPicker(self):
-        set_list = ["Durdraw Default"]
+        set_list = self.appState.userCharSets + ["Durdraw Default"]
         block_list = self.appState.unicodeBlockList.copy()
 
         for set_name in set_list:
@@ -3913,7 +3932,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.nodelay(0)
         self.stdscr.clear()
         while prompting:
-            # draw list of files from top of the window to bottomk
+            # draw list of files from top of the window to bottom
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             page_size = realmaxY - 4
             current_line_number = 0
@@ -4003,7 +4022,24 @@ class UserInterface():  # Separate view (curses) from this controller
             errorLoadingBlock = False
             if block_list[selected_item_number] in set_list:    # not a unicode block
                 errorLoadingBlock = False
-                self.addstr(realmaxY - 1, 0, f"Character set: {block_list[selected_item_number]}")
+                name = block_list[selected_item_number]
+                self.addstr(realmaxY - 1, 0, f"Character set: {name}")
+                if name != "Durdraw Default":
+                    # Load charater map and draw preview
+                    previewCharMap = durchar.load_charmap_file(self.appState.userCharSetFiles[name], self.appState)
+                    previewChars = "Preview: "
+                    maxChars = 100
+                    totalChars = 0
+                    for miniMap in previewCharMap:  # for all characters in this block...
+                        for key in miniMap:
+                            if totalChars <= maxChars:  # If we're within range,
+                                previewChars += chr(miniMap[key])   # add to the preview string
+                            totalChars += 1 
+                    try:
+                        self.addstr(realmaxY - 4, 0, previewChars)
+                        errorLoadingBlock = False
+                    except Exception as E:
+                        errorLoadingBlock = True
             else:
                 previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
                 self.addstr(realmaxY - 1, 0, f"Unicode block: {block_list[selected_item_number]}")
@@ -4078,10 +4114,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 elif block_list[selected_item_number] in set_list:
                     # Durdraw character set selected. Set it
-                    self.setCharacterSet(block_list[selected_item_number])
-                    #self.appState.characterSet = block_list[selected_item_number]
+                    name = block_list[selected_item_number]
                     self.charMapNumber = 0
-                    self.initCharSet()
+                    if name in self.appState.userCharSets:
+                        self.loadCharsetFile(self.appState.userCharSetFiles[name])
+                    else:   # Not a custom file. Probably DurDraw Default.
+                        self.setCharacterSet(block_list[selected_item_number])
+                        #self.appState.characterSet = block_list[selected_item_number]
+                        self.initCharSet()
                     self.stdscr.clear()
                     prompting = False
                 else:

@@ -86,6 +86,8 @@ class AppState():
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
+        self.userCharSets = []
+        self.userCharSetFiles = {}
         self.characterSet = "Durdraw Default"
         self.showCharSetButton = False
         self.workingLoadDirectory = None
@@ -260,9 +262,9 @@ class AppState():
         #user_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
         #self.user_theme_file_list = glob.glob(f"{user_theme_path}/*.dtheme.ini")
         # Turn lists into an index of Theme name, Theme type, and Path to 
-        available_themes = []   # populate with a list of dicts containing name=, path=, type=
+        theme_files = []   # populate with a list of dicts containing name=, path=, type=
         for filename in self.internal_theme_file_list:
-            pass
+            theme_files += filename
 
     def loadConfigFile(self):
         # Load configuration filea
