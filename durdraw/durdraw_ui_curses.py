@@ -4168,13 +4168,21 @@ class UserInterface():  # Separate view (curses) from this controller
                             if mouseCol < len(block_list[top_line+mouseLine]): # clicked within item width
                                 selected_item_number = top_line+mouseLine
                                 if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                    if block_list[selected_item_number] in set_list:    # clicked set, not block
-                                        # holy fuck this is deep
-                                        self.appState.characterSet = block_list[selected_item_number]
+
+                                    if block_list[selected_item_number] in set_list:
+                                        # Durdraw character set selected. Set it
+                                        name = block_list[selected_item_number]
                                         self.charMapNumber = 0
-                                        self.initCharSet()
+                                        if name in self.appState.userCharSets:
+                                            self.loadCharsetFile(self.appState.userCharSetFiles[name])
+                                        else:   # Not a custom file. Probably DurDraw Default.
+                                            self.setCharacterSet(block_list[selected_item_number])
+                                            #self.appState.characterSet = block_list[selected_item_number]
+                                            self.initCharSet()
                                         self.stdscr.clear()
                                         prompting = False
+
+
                                     else:   # clicked a unicode block
                                         self.appState.characterSet = "Unicode Block"
                                         self.charMapNumber = 0
