@@ -99,7 +99,8 @@ def get_unicode_blocks_list():
 
 def scan_charmap_folders(appState):
     """ Scans ~/.durdraw/charmap and $durdraw/config """
-    charmap_dirs = ["~/.durdraw/charsets"]
+    internal_charsets_path = pathlib.Path(__file__).parent.joinpath("charsets")
+    charmap_dirs = ["~/.durdraw/charsets", internal_charsets_path]
     for directory in charmap_dirs:
         directory = os.path.expanduser(directory)
         if os.path.isdir(directory) and os.access(directory, os.R_OK):
