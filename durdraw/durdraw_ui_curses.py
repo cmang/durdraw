@@ -160,6 +160,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         durchar.scan_charmap_folders(self.appState)
         #self.loadCharsetFile("~/src/durdraw/coolset.ini")
+        self.setCharacterSet("Durdraw Default")
 
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
@@ -2087,7 +2088,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.refreshCharMap()
 
     def loadCharsetFile(self, file_path: str):
-        fullCharMap = durchar.load_charmap_file(file_path, self.appState)
+        fullCharMap = durchar.load_charmap_file(file_path, self.appState, setting=True)
         if not fullCharMap:
             self.notify(f"Error loading charmap file: {file_path}")
             return False

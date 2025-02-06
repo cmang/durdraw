@@ -109,8 +109,8 @@ def scan_charmap_folders(appState):
                     load_charmap_file(file_path, appState)
 
 
-def load_charmap_file(file_path: str, appState):
-    """ returns a fullCharMap """
+def load_charmap_file(file_path: str, appState, setting=False):
+    """ returns a fullCharMap. setting=True if switching to the character set """
     # Open file from path with configparser
     file_path = os.path.expanduser(file_path)
     configFileLocations = [file_path]
@@ -170,8 +170,9 @@ def load_charmap_file(file_path: str, appState):
         # If the name isn't already taken, add it to the appState character set list.
         if name not in appState.userCharSets:
             appState.userCharSets.append(name)
-            appState.characterSet = name
             appState.userCharSetFiles.update({name: file_path})
+        if setting:
+            appState.characterSet = name
         return charMap
 
 
