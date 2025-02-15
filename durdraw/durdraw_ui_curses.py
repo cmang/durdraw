@@ -6114,8 +6114,8 @@ class UserInterface():  # Separate view (curses) from this controller
         # start at the last column, work back until we find a character.
         #for colNum in reversed(list(range(0, frame.sizeX))):
         #    for lineNum in reversed(list(range(0, frame.sizeY))):
-        for colNum in reversed(range(0, frame.sizeX)):
-            for lineNum in reversed(range(0, frame.sizeY)):
+        for colNum in reversed(range(0, self.mov.sizeX)):
+            for lineNum in reversed(range(0, self.mov.sizeY)):
                 try:
                     if not frame.content[lineNum][colNum] in [' ', '']:
                         return colNum + 1  # we found a non-empty character
@@ -6128,8 +6128,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the first non-blank column, return
             that # (aka, first used column of the frame) """
         # start at the first column, work forward until we find a character.
-        for colNum in range(0, frame.sizeX):
-            for lineNum in range(0, frame.sizeY):
+        for colNum in range(0, self.mov.sizeX):
+            for lineNum in range(0, self.mov.sizeY):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum  # we found a non-empty character
         return 1 # blank frame, only save the first line.
