@@ -164,7 +164,6 @@ def load_charmap_file(file_path: str, appState, setting=False):
             scanning = False
 
     if len(charMap) == 0:
-        pdb.set_trace()
         return False
     else:
         # Loaded, so add to appState.
@@ -178,9 +177,5 @@ def load_charmap_file(file_path: str, appState, setting=False):
 
 
 if __name__ == "__main__":
-    #charMap = load_unicode_block("Chess Symbols")
-    #charMap = load_unicode_block("Symbols for Legacy Computing")
-    #charMap = load_unicode_block("Emoticons")
-    #print(str(charMap))
     unicodeBlocksList = get_unicode_blocks_list()
     print(str(unicodeBlocksList))
