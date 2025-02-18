@@ -2,7 +2,6 @@
 # main() entry point
 
 import argparse
-import configparser
 import curses
 import os
 import sys
