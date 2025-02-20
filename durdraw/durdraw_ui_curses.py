@@ -5230,7 +5230,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     # unicode Latin Small Letter L with Bar.
                     pass
                 else: # add to search string
-                    search_string += chr(c)
+                    try:
+                        search_string += chr(c)
+                    except ValueError:  # unprintable characters inserted by terminal when resizing,
+                        # so don't add to search string.
+                        pass
                     self.selected_item_number = 0
                     current_line_number = 0
                     top_line = 0
