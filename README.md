@@ -81,11 +81,6 @@ _If you just want to run it without installing, see [Running Without Installing]
     ```shell
     python3 -m pip install --upgrade .
     ```
-    Or run the installer:
-
-    ```shell
-    python3 setup.py install
-    ```
 
 3. Optionally, install some themes and a sample configuration file for your local user into `~/.durdraw/`:
 
