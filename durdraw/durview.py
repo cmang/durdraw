@@ -13,11 +13,11 @@ from durdraw import log
 from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
+from durdraw.durdraw_version import DUR_VER
 import durdraw.help
 
 @log.log_on_crash
 def main(fetch_args=None):
-    DURVIEW_VER = "0.1.0"
     DUR_FILE_VER = 7
 
     # Get command-line arguments
@@ -42,12 +42,12 @@ def main(fetch_args=None):
     args = parser.parse_args(fetch_args)
 
     if args.version:
-        print(DURVIEW_VER)
+        print(DUR_VER)
         exit(0)
 
     # Initialize application
     app = AppState()    # to store run-time preferences from CLI, environment stuff, etc.
-    app.setDurVer(DURVIEW_VER)
+    app.setDurVer(DUR_VER)
     app.setDurFileVer(DUR_FILE_VER)
     app.showStartupScreen=False
     app.quickStart = True
