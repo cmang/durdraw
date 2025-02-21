@@ -1,0 +1,66 @@
+[build-system]
+#requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=61.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "durdraw"
+description = "Versatile ASCII and ANSI Art terminal text editor"
+readme = "README.md"
+#license = "BSD-3-Clause"
+#license-files = [
+#    "LICENSE",
+#]
+version = "0.29.0-BETA"
+classifiers = [
+        'Environment :: Console :: Curses',
+        'Topic :: Artistic Software',
+        'Topic :: Text Editors',
+        'Topic :: Terminals',
+        'License :: OSI Approved :: ISC License (ISCL)',
+        'Intended Audience :: End Users/Desktop',
+        'Natural Language :: English',
+        'Operating System :: POSIX',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Utilities'
+]
+authors = [
+  {name = "Sam Foster", email = "samfoster@gmail.com"},
+  {name = "Durdraw Contributors"},
+]
+requires-python = ">=3.11"
+dependencies = [
+    "windows-curses; platform_system == 'Windows'",
+]
+
+[project.urls]
+Homepage = "https://durdraw.org"
+Documentation = "https://github.com/cmang/durdraw/blob/master/README.md"
+Source = "https://github.com/cmang/durdraw"
+#Changelog = "https://github.com/cmang/durdraw/releases"
+
+
+[project.optional-dependencies]
+gif-export=["Pillow>=9.0.0"]
+
+[project.scripts]
+durdraw = "durdraw.main:main"
+durfetch = "durdraw.durfetch:main"
+durview = "durdraw.durview:main"
+
+[tool.setuptools]
+packages = ["durdraw"]
+
+[tool.setuptools.package-data]
+durdraw = [
+    "help/*",
+    "charsets/*",
+    "themes/*",
+    "plugins/*",
+    "neofetch/*",
+    "durf/*",
+]
+
