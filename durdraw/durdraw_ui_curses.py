@@ -4525,6 +4525,16 @@ class UserInterface():  # Separate view (curses) from this controller
                 file_column_number = 20
             if self.selected_item_number > top_line + page_size-1 or self.selected_item_number < top_line: # item is off the screen
                 top_line = self.selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            # remove any files we can't open
+            if not self.appState.sixteenc_browsing:
+                for filename in file_list:
+                    full_path = f"{current_directory}/{filename}"
+                    try:
+                        file_modtime_string = durfile.get_file_mod_date_time(full_path)
+                    except FileNotFoundError:   # Probably a dead symlink.
+                        # Access problems. Remove from list.
+                        file_list = [item for item in file_list if filename not in item]
+
             for filename in file_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
                     if  self.selected_item_number == current_line_number and sections[current_section] == "main":    # if file is selected
