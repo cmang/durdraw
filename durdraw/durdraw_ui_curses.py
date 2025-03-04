@@ -3387,10 +3387,11 @@ class UserInterface():  # Separate view (curses) from this controller
         #if self.appState.colorMode == "256":
         self.appState.colorPickerSelected = True
         #self.statusBar.colorPicker.handler.showColorPicker()
-        self.statusBar.colorPicker.showFgPicker(message=message)
+        color = self.statusBar.colorPicker.showFgPicker(message=message)
         #if self.appState.colorMode == "16":
         #    self.statusBar.colorPicker_bg_16.showFgPicker()
         self.appState.colorPickerSelected = False
+        return color
 
     def replaceColorUnderCursor(self):
         self.commandMode = False
@@ -3412,8 +3413,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.refresh()
         # Use color picker to pick new destination color (pair)
         #self.selectColorPicker(message=printMessage)
-        self.selectColorPicker()
+        picker_color = self.selectColorPicker()    # picker_color is False if user hits Esc in color picker.
         self.clearStatusLine()
+        if picker_color == False:
+            self.notify("Replace color canceled.")
+            return False
         new_fg = self.colorfg
         new_bg = self.colorbg
         newCharColor = [new_fg, new_bg]
@@ -4819,7 +4823,11 @@ class UserInterface():  # Separate view (curses) from this controller
                             folders =  ["../"]
                             #folders += glob.glob("*/", root_dir=current_directory)
                             if not self.appState.sixteenc_browsing: 
-                                folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                if mask_all:
+                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                        sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                else:
+                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                                 # remove leading paths
                                 new_folders = []
                                 for path_string in folders:
@@ -4967,7 +4975,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         file_list = []
                         full_file_list = []
 
-                        folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        if mask_all:
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        else:
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        
                         # remove leading paths
                         new_folders = []
                         for path_string in folders:
@@ -5155,8 +5168,12 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.appState.sixteenc_browsing:
                             pass
                         else:
-                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                        # remove leading paths
+                            if mask_all:
+                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                    sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                            else:
+                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                            # remove leading paths
                         if not self.appState.sixteenc_browsing:
                             new_folders = []
                             for path_string in folders:

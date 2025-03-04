@@ -635,7 +635,7 @@ class ColorPickerHandler:
 
     def showFgPicker(self, message=None):
         #self.colorPicker.caller.notify(f"showFgPicker")
-        self.showColorPicker(type="fg", message=message)
+        return self.showColorPicker(type="fg", message=message)
 
     def move_up_256(self):
         if self.colorMode == "256":
@@ -764,16 +764,17 @@ class ColorPickerHandler:
                 if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
-                if c == 27: # esc, cancel
-                    self.colorPicker.caller.setFgColor(oldFgColor)
-                    self.colorPicker.caller.setBgColor(oldBgColor)
                 self.appState.colorPickerSelected = False
-                c = None
                 self.updateFgPicker()
                 self.hideBorder()
                 #self.colorPicker.caller.notify(f"{c=}, {prompting=}")
                 if not self.colorPicker.caller.playing:    # caller.caller is the main UI thing
                     self.window.nodelay(0)  # wait
+                if c == 27: # esc, cancel
+                    self.colorPicker.caller.setFgColor(oldFgColor)
+                    self.colorPicker.caller.setBgColor(oldBgColor)
+                    return False
+                c = None
                 #return color
             elif c == curses.KEY_MOUSE:
                 try:
