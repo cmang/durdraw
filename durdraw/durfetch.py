@@ -86,7 +86,14 @@ def main():
     parser.add_argument("-V", "--version", help="Show Version information and quit", action="store_true")
     #parser.add_argument("-l", nargs="?", default="list")
     args = parser.parse_args()
-    neofetch_data = neofetcher.run()
+    use_fetcher = "neofetch"
+    if neofetcher.fetcher_available(name=use_fetcher):
+        print("Pulling data from neofetch.")
+        neofetch_data = neofetcher.run()
+        print("done.")
+    else:
+        print(f"Error: Durfetch requires {use_fetcher}. Please make sure \"{use_fetcher}\" is installed and in the PATH.")
+        exit(1)
     #print(args.filename, args.list, args.l, neofetch_data)
     #if args.filename == None:   # no file name passed, so pick an appropriate one.
     faked = None
