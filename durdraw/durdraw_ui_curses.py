@@ -4562,17 +4562,18 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
                 current_line_number += 1
 
-            if mask_all:
-                if sections[current_section] == "showall":
-                    self.addstr(realmaxY - 4, showall_column, f"[X]", curses.A_REVERSE)
+            if self.appState.sixteenc_browsing == False:
+                if mask_all:
+                    if sections[current_section] == "showall":
+                        self.addstr(realmaxY - 4, showall_column, f"[X]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, showall_column, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
                 else:
-                    self.addstr(realmaxY - 4, showall_column, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
-            else:
-                if sections[current_section] == "showall":
-                    self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.A_REVERSE)
-                else:
-                    self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
-            self.addstr(realmaxY - 4, showall_column + 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
+                    if sections[current_section] == "showall":
+                        self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+                self.addstr(realmaxY - 4, showall_column + 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
 
             if self.appState.sixteenc_available:
                 if self.appState.sixteenc_browsing:
@@ -4822,12 +4823,13 @@ class UserInterface():  # Separate view (curses) from this controller
                                             return full_path, "local"
                     if mouseLine == realmaxY - 4:    # on the button bar
                         if mouseCol in range(showall_column,showall_column+3):  # clicked [X] All
-                            if mask_all:
-                                mask_all = False
-                                masks = default_masks
-                            else:
-                                mask_all = True
-                                masks = ['*.*']
+                            if self.appState.sixteenc_browsing == False:
+                                if mask_all:
+                                    mask_all = False
+                                    masks = default_masks
+                                else:
+                                    mask_all = True
+                                    masks = ['*.*']
                         elif self.appState.sixteenc_available and mouseCol in range(sixteen_column,sixteen_column+3):  # clicked [X] 16c
                             self.appState.sixteenc_browsing = not self.appState.sixteenc_browsing
                             folders =  ["../"]
@@ -4845,6 +4847,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                 folders = new_folders
 
 
+                        matched_files = []
+                        file_list = []
                         file_list = self.findLocalFiles(current_directory, folders, masks)
                         # reset ui
                         self.selected_item_number = 0
@@ -4903,6 +4907,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     matched_files = []
                     file_list = []
                     full_file_list = []
+                    search_files_list = []
                     if self.appState.sixteenc_browsing: 
                         if self.sixteenc_levels[self.sixteenc_level] == "pack":
                             search_files_list = sixteenc_files
@@ -4920,6 +4925,8 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.selected_item_number = 0
                     search_string = ""
                     full_file_list = file_list
+                elif c in [ord('|')]:     # debug
+                    pdb.set_trace()
                 elif c in [27]:     # esc
                     prompting = False
                 c = None
@@ -5022,6 +5029,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 elif c in [9]:  # 9 == tab key
                     current_section += 1
+                    if self.appState.sixteenc_browsing: # skip hidden Show All button in 16c mode
+                        if sections[current_section] == "showall":
+                            current_section += 1
                     if current_section > len(sections) - 1: # If we've tabbed through all sections,
                         current_section = 0     # circle back to 0 (main file selector)
 
