@@ -77,6 +77,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.realmaxX = realmaxX
         self.statusBarLineNum = realmaxY - 2
         self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
+        self.window = self.stdscr
         if self.appState.charEncoding == 'cp437':
             self.stdscr.encoding = 'cp437'
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
@@ -1372,20 +1373,46 @@ class UserInterface():  # Separate view (curses) from this controller
                 "PgDown, d - Scroll down one page",
                 "Home - Scroll to top",
                 "End - Scroll to bottom",
-                "+ - Increase animation speed",
+                "+, = - Increase animation speed",
                 "- - Decrease animation speed",
                 "i - Show file information",
                 "v - Set VGA Terminal Colors",
-                "Enter - Back to file list, or next in queue",
-                "Esc - Back to file list",
-                "?, F1 - Help",
+                "Enter, Esc - Back to file list",
+                "?, h, F1 - Help",
                 "q - Exit Viewer"
             ]
+        popup = self.popupNotification(pop_items = helpLines)
+
+    def popupNotification(self, pop_items = ["Just a notification."]):
+        width = len(max(pop_items, key=len))
+        height = len(pop_items)
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        topLine = realmaxY - height
+        self.clearStatusLine()
+        #self.notify(f"topLine: {topLine}, realmaxY: {realmaxY}, height: {height}, width: {width}", pause=True)
+        # draw top border
+        for col in range(0, width + 1):
+            self.addstr(topLine - 1, col, ".", curses.color_pair(self.appState.theme['borderColor']))
+        self.addstr(topLine - 1, col + 1, " ", curses.color_pair(self.appState.theme['borderColor']))
+        for line in range(0, height):
+            self.addstr(topLine + line, 0, " " * width, curses.color_pair(self.appState.theme['menuItemColor']))
+            self.addstr(topLine + line, 0, pop_items[line], curses.color_pair(self.appState.theme['menuItemColor']))
+            self.addstr(topLine + line, width, ": ", curses.color_pair(self.appState.theme['borderColor']))
+        self.stdscr.refresh()
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        c = self.stdscr.getch()
+        self.stdscr.nodelay(1) # do not wait for input when calling getch
+        self.clearStatusLine()
+
+    def justPass(self):
+        """ Dummy callback for menu item repurposing """
+        pass
 
     def showViewerHelp(self):
         """ Show the help screen for the player/viewer mode """
-        helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
-        self.notify(helpString, pause=True)
+        #helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
+        #self.notify(helpString, pause=True)
+        self.showDurViewHelp()
         self.cursorOff()
 
     def apply_neofetch_keys(self):
@@ -1486,7 +1513,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.playing = False
             self.appState.topLine = 0
 
-        elif c in [ord('?')]:
+        elif c in [ord('?'), ord('h')]:
             self.showViewerHelp()
 
         elif c in [ord('i'), ord('I')]:
