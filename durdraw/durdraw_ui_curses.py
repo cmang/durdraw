@@ -6953,6 +6953,10 @@ Can use ESC or META instead of ALT
         else:
             self.stdscr.nodelay(0)
 
+    def pasteFromMenu(self):
+        if self.clipBoard:  # If there is something in the clipboard
+            self.askHowToPaste()
+
     def askHowToPaste(self):
         self.clearStatusBar()
         if self.mov.hasMultipleFrames():

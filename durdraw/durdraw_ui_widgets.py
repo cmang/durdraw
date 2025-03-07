@@ -469,6 +469,8 @@ class StatusBar():
         mainMenu.add_item("Save", caller.save, "s", shortcut="esc-s")
         mainMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
         mainMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
+        mainMenu.add_item("Mark/Select", caller.startSelecting, "k", shortcut="esc-K")
+        mainMenu.add_item("Paste", caller.pasteFromMenu, "p", shortcut="esc-v")
         #mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
