@@ -3752,6 +3752,13 @@ class UserInterface():  # Separate view (curses) from this controller
         response = self.statusBar.settingsMenu.showHide()
         self.statusBar.mainMenu.handler.panel.hide()
 
+    def openEditMenu(self):
+        """ Show the Edit menu """
+        self.statusBar.mainMenu.handler.panel.show()
+        response = self.statusBar.editMenu.showHide()
+        self.statusBar.mainMenu.handler.panel.hide()
+
+
     def openDrawCharPicker(self):
         self.stdscr.nodelay(0)
         #if self.appState.debug: self.notify(f"Loading character picker.")
