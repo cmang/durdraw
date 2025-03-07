@@ -1388,7 +1388,6 @@ class UserInterface():  # Separate view (curses) from this controller
         height = len(pop_items)
         realmaxY,realmaxX = self.realstdscr.getmaxyx()
         topLine = realmaxY - height
-        self.clearStatusLine()
         #self.notify(f"topLine: {topLine}, realmaxY: {realmaxY}, height: {height}, width: {width}", pause=True)
         # draw top border
         for col in range(0, width + 1):
