@@ -219,8 +219,8 @@ options:
   : esc-right - prev fg color        :   : esc-d - delete frame             :
   : esc-up - change color up         :   : esc-D - set frame delay          :
   : esc-down - change color down     :   : esc-+/esc-- - faster/slower      :
-  : esc-/ - insert line              :   : esc-R - set playback/edit range  :
-  : esc-' - delete line              :   : esc-g - go to frame #            :
+  : esc-' - insert line              :   : esc-R - set playback/edit range  :
+  : esc-; - delete line              :   : esc-g - go to frame #            :
   : esc-. - insert column            :   : esc-M - move frame               :
   : esc-, - delete column            :   : esc-{ - shift frames left        :
   : esc-] - next character group     :   : esc-} - shift frames right       :
