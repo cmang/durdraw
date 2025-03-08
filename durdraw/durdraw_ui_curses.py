@@ -6609,8 +6609,8 @@ Can use ESC or META instead of ALT
         fg = self.appState.defaultFgColor
         bg = self.appState.defaultBgColor
         for frameNum in range(0, len(self.mov.frames)):
-            self.mov.frames[frameNum].content.insert(self.xy[0] + 1, list(' ' * self.mov.sizeX))
-            self.mov.frames[frameNum].newColorMap.insert(self.xy[0] + 1, [[fg,bg]] * self.mov.sizeX)
+            self.mov.frames[frameNum].content.insert(self.xy[0], list(' ' * self.mov.sizeX))
+            self.mov.frames[frameNum].newColorMap.insert(self.xy[0], [[fg,bg]] * self.mov.sizeX)
             self.mov.frames[frameNum].sizeY += 1
         self.mov.sizeY += 1
         #self.mov.currentFrame.sizeY += 1
