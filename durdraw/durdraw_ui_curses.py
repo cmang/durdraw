@@ -6561,6 +6561,8 @@ Can use ESC or META instead of ALT
                 borderWidth = min(mov.sizeX, self.realmaxX)
                 self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum + 1, 0, " " * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum + 1, mov.sizeX, "  ", curses.color_pair(self.appState.theme['borderColor']))
         screenLineNum += 1
         #spaceMultiplier = mov.sizeX + 1
         spaceMultiplier = self.realmaxY
