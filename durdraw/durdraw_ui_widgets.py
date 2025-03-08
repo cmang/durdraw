@@ -422,11 +422,11 @@ class StatusBar():
 
         # Settings menu
         #settingsMenuColumn = mainMenu.handler.width # Try to place to the right of the main menu
-        settingsMenuColumn = 24 # Try to place to the right of the main menu
+        settingsMenuColumn = 22 # Try to place to the right of the main menu
         settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
-        settingsMenu.add_item("VGA Colors", caller.enableTrueCGAColors, "v")
+        settingsMenu.add_item("VGA Colors", caller.enableTrueVGAColors, "v")
         settingsMenu.add_item("ZX Spectrum Colors", caller.enableTrueSpeccyColors, "z")
         settingsMenu.add_item("C64 Colors", caller.enableTrueC64Colors, "c")
         #settingsMenu.add_item("Deafult Colors", caller.resetColorsToDefault, "d")
@@ -459,6 +459,23 @@ class StatusBar():
         transformMenu.is_submenu = True
         self.transformMenu = transformMenu
 
+        # Make the Edit menu
+        editMenuColumn = 22 # Try to place to the right of the main menu
+        editMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
+        editMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
+        editMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
+        editMenu.add_item("Mark/Select", caller.startSelecting, "k", shortcut="esc-K")
+        editMenu.add_item("Paste", caller.pasteFromMenu, "p", shortcut="esc-v")
+        editMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
+        editMenu.add_item("Insert Line", caller.addLine, "i", shortcut="esc-'")
+        editMenu.add_item("Delete Line", caller.delLine, "d", shortcut="esc-;")
+        editMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
+        editMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
+        editMenu.is_submenu = True
+        editMenu.set_x(self.x - 1)
+        editMenu.set_y(editMenuColumn)
+        self.editMenu = editMenu
+
         # main menu items 
         self.menuButton = None
         # Create a menu list item, add menu items to it
@@ -467,18 +484,14 @@ class StatusBar():
         mainMenu.add_item("New/Clear", caller.clearCanvasPrompt, "n", shortcut="esc-C")
         mainMenu.add_item("Open", caller.openFromMenu, "o", shortcut="esc-o")
         mainMenu.add_item("Save", caller.save, "s", shortcut="esc-s")
-        mainMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
-        mainMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
         #mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
-        mainMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         #mainMenu.add_item("Transform", caller.showTransformer, "a", has_submenu=True)
         mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
-        mainMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
-        mainMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
+        mainMenu.add_item("Edit", caller.openEditMenu, "e", has_submenu=True)
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
         mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
         mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")

@@ -38,13 +38,17 @@ class SauceParser():
         self.sauce_blob = None
         self.sauce_found = False
 
+
     def parse_file(self, filename):
         try:
             with open(filename, 'rb') as file:
                 file_blob = file.read()
         except Exception as E:
             return False
+        self.parse_blob(file_blob)
+        #return self.parse_blob(file_blob)  # Nothing to return..
 
+    def parse_blob(self, file_blob):     # Blob is, like. Bytes or something
         sauce_blob = file_blob[-128:]
         self.sauce_blob = sauce_blob
         #print(sauce_blob)

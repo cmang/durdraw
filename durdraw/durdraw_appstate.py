@@ -11,6 +11,7 @@ from sys import version_info
 from durdraw.durdraw_options import Options
 import durdraw.durdraw_file as durfile
 import durdraw.durdraw_sauce as dursauce
+import durdraw.log as log
 
 class AppState():
     """ run-time app state, separate from movie options (Options()) """
@@ -26,6 +27,14 @@ class AppState():
         self.PIL = None
         self.check_dependencies()
 
+        #threading
+        self.stop_event = threading.Event()
+        self.bg_download_thread = None
+        self.bg_download_executor = None
+        # String containnig updates from threads to tell users about
+        self.thread_update_string = None 
+        self.pool_executor = None
+
         # User friendly defeaults
         self.quickStart = False
         self.mental = False # Mental mode - enable experimental options/features
@@ -38,7 +47,25 @@ class AppState():
         self.fileColorMode = None
         self.maxColors = 256
         self.iceColors = False
+
+        # 16c stuff 
+        self.sixteenc_available = True # Enabled if 16colo.rs browsing is available
+        self.sixteenc_browsing = False   # Enabled if we are currently browsing 16c
+        self.sixteenc_dizcache = {} # {"packname": dizdata} 
+        self.sixteenc_cached_years = [] # [1996, etc]
+        self.sixteenc_api = None
+        self.sixteenc_year = None
+        self.sixteenc_pack = None
+
+        # Durview stuff
+        self.durview_running = False
+
+        self.play_queue = []    # List of files to switch between with 'n' and 'p' in Durview and/or play mode
+        self.play_queue_position = None
+
+        # Other durdraw runtime stuff
         self.can_inject = False # Allow injecting color codes to override ncurses colors (for BG 256 colors)
+        self.sleep_time = 0     # Use this as a delay for playback mode, dictated in ui_curses.py from FPS
         self.showBgColorPicker = False # until BG colors work in 256 color mode. (ncurses 5 color pair limits)
         self.scrollColors = False   # When true, scroll wheel in canvas changes color instead of moving cursor
         self.editorRunning = True
@@ -59,6 +86,8 @@ class AppState():
         self.colorPickerSelected = False    # true when the user hits esc-c
         self.charEncoding = 'utf-8' # or cp437, aka ibm-pc
         self.unicodeBlockList = []
+        self.userCharSets = []
+        self.userCharSetFiles = {}
         self.characterSet = "Durdraw Default"
         self.showCharSetButton = False
         self.workingLoadDirectory = None
@@ -156,6 +185,11 @@ class AppState():
             'menuBorderColor': 7,
             }
         self.theme = self.theme_16
+        self.log_level = 'WARNING'
+        self.log_filepath = './durdraw.log'
+        self.log_local_tz = False
+        self.logger = log.getLogger('appstate')
+
 
     def maximize_canvas(self):
         term_size = os.get_terminal_size()
@@ -204,6 +238,21 @@ class AppState():
     def setDebug(self, isEnabled: bool):
         self.debug = isEnabled
 
+    def setLogger(self, level=log.DEFAULT_LOG_LEVEL, filepath=log.DEFAULT_LOG_FILEPATH, local_tz=False):
+        self.log_level = level
+        self.log_filepath = filepath
+        self.log_local_tz = local_tz
+        self.logger = log.getLogger(
+            'appstate',
+            level=self.log_level,
+            filepath=self.log_filepath,
+            override=True,
+            local_tz=self.log_local_tz,
+        )
+
+    def getLogger(self, name: str):
+        return log.getLogger(name, level=self.log_level, filepath=self.log_filepath, local_tz=self.log_local_tz)
+
     def loadThemeList(self):
         """ Look for theme files in internal durdraw directory """
         # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
@@ -213,9 +262,9 @@ class AppState():
         #user_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
         #self.user_theme_file_list = glob.glob(f"{user_theme_path}/*.dtheme.ini")
         # Turn lists into an index of Theme name, Theme type, and Path to 
-        available_themes = []   # populate with a list of dicts containing name=, path=, type=
+        theme_files = []   # populate with a list of dicts containing name=, path=, type=
         for filename in self.internal_theme_file_list:
-            pass
+            theme_files += filename
 
     def loadConfigFile(self):
         # Load configuration filea
@@ -383,4 +432,6 @@ class AppState():
         #    self.hasHelpFile = False
         #    self.helpMov = None
         #    return False
+
+
 

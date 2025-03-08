@@ -15,13 +15,20 @@ import pickle
 import shutil
 import sys
 import subprocess
+import tempfile
+import textwrap
+import threading
 import time
+import urllib
+
+from concurrent.futures import ThreadPoolExecutor
 
 #from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_options import Options
 from durdraw.durdraw_color_curses import AnsiArtStuff
 from durdraw.durdraw_movie import Movie
 from durdraw.durdraw_undo import UndoManager
+from durdraw.durdraw_sixteencolors import SixteenColorsAPI
 import durdraw.durdraw_file as durfile
 from durdraw.durdraw_ui_widgets import StatusBar
 import durdraw.durdraw_gui_manager as durgui
@@ -34,6 +41,8 @@ import durdraw.durdraw_charsets as durchar
 import durdraw.plugins.reverse_movie as reverse_plugin # transform_movie
 import durdraw.plugins.repeat_movie as repeat_plugin # transform_movie
 import durdraw.plugins.bounce_movie as bounce_plugin # transform_movie
+import durdraw.log as log
+
 
 class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
@@ -41,6 +50,8 @@ class UserInterface():  # Separate view (curses) from this controller
     def __init__(self, app):
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
+        self.log = self.appState.getLogger('ui_curses')
+        self.log.info('UserInterface created')
         self.initCursorMode()
         self.clipBoard = None   # frame object
         self.charMapNumber = 0
@@ -51,6 +62,13 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.unicodeBlockList = durchar.get_unicode_blocks_list()
         self.initCharSet()  # sometimes later options can store a char set to init - utf-8, cp437, etc.
         os.environ.setdefault('ESCDELAY', '10')
+        self.appState.sixteenc_year = None
+        self.appState.sixteenc_pack = None
+        self.sixteenc_levels = ["root", "year", "pack"]  # hierarchy to replace directory hierarchy
+        self.sixteenc_level = 0 # 0 = "root"
+        self.sixteenc_years = None # [] A list of all the years
+        self.selected_item_number = 0
+        self.diz_caching_thread = None
         # initialize screen and draw the 'canvas'
         locale.setlocale(locale.LC_ALL, '')    # set your locale
         self.realstdscr = curses.initscr()
@@ -59,6 +77,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.realmaxX = realmaxX
         self.statusBarLineNum = realmaxY - 2
         self.stdscr = curses.newwin(realmaxY, realmaxX, 0, 0)   # Curses window
+        self.window = self.stdscr
         if self.appState.charEncoding == 'cp437':
             self.stdscr.encoding = 'cp437'
         self.panel = curses.panel.new_panel(self.stdscr)    # Panel for drawing, to sit below menus
@@ -139,6 +158,10 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.drawCharPickerButton.label = self.appState.drawChar
 
         self.statusBarLineNum = self.realmaxY - 2
+
+        durchar.scan_charmap_folders(self.appState)
+        #self.loadCharsetFile("~/src/durdraw/coolset.ini")
+        self.setCharacterSet("Durdraw Default")
 
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
@@ -259,7 +282,7 @@ class UserInterface():  # Separate view (curses) from this controller
         #curses.use_default_colors()
         self.enableTransBackground()
 
-    def enableTrueCGAColors(self):
+    def enableTrueVGAColors(self):
         curses.use_default_colors()
         # red
         intense = 1000  # hex FF
@@ -882,6 +905,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.sauce = dursauce.SauceParser()    # empty sauce
             self.appState.curOpenFileName = None
             self.move_cursor_topleft()
+            self.stdscr.clear()
             self.hardRefresh()
 
     def searchForStringPrompt(self):
@@ -950,8 +974,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.debug = not self.appState.debug
 
     def toggleWideWrapping(self):
-        if self.appState.wrapWidth < 120:
-            self.appState.wrapWidth = 120
+        #if self.appState.wrapWidth < 120:
+        if self.appState.wrapWidth == 80:
+            self.appState.wrapWidth = 900
         else:
             self.appState.wrapWidth = 80
         self.notify(f"Line wrapping for loading ANSIs set to: {self.appState.wrapWidth}")
@@ -965,6 +990,12 @@ class UserInterface():  # Separate view (curses) from this controller
         self.init_16_colors_misc()
 
     def showFileInformation(self, notify = False):
+        fileInfoColumn = self.mov.sizeX + 2
+        # wrap info lines
+        # textwrap.wrap(text, width=70, **kwargs)
+        fileInfoWidth = max(2, self.appState.realmaxX - fileInfoColumn)
+        #infoStringList = textwrap.wrap(infoString, width=fileInfoWidth)
+
         # eventually show a pop-up window with editable sauce info
         fileName = self.appState.curOpenFileName
         author = self.appState.sauce.author
@@ -974,6 +1005,8 @@ class UserInterface():  # Separate view (curses) from this controller
         year = self.appState.sauce.year
         month = self.appState.sauce.month
         day = self.appState.sauce.day
+        sixteenc_year = self.appState.sixteenc_year
+        sixteenc_pack = self.appState.sixteenc_pack
         colorMode = self.appState.colorMode
 
         infoString = ''
@@ -981,24 +1014,31 @@ class UserInterface():  # Separate view (curses) from this controller
         #self.stdscr.nodelay(0) # wait for input when calling getch
 
         if fileName:
-            infoStringList.append(f"File: {fileName}")
+            #infoStringList.append(f"File: {fileName}", width=fileInfoWidth)
+            infoStringList += textwrap.wrap(f"File: {fileName}", width=fileInfoWidth, subsequent_indent='  ')
 
         if self.appState.fileShortPath:
             # extract folder name from full path
             folderName = self.appState.fileShortPath
-            infoStringList.append(f"Folder: {folderName}")
+            #infoStringList.append(f"Folder: {folderName}")
+            infoStringList += textwrap.wrap(f"Location: {folderName}", width=fileInfoWidth, subsequent_indent='  ')
 
         if title:
-            infoStringList.append(f"Title: {title}")
+            infoStringList += textwrap.wrap(f"Title: {title}", width=fileInfoWidth, subsequent_indent='  ')
 
         if author:
-            infoStringList.append(f"Artist: {author}")
+            infoStringList += textwrap.wrap(f"Artist: {author}", width=fileInfoWidth, subsequent_indent='  ')
 
         if group:
-            infoStringList.append(f"Group: {group}")
+            infoStringList += textwrap.wrap(f"Group: {group}", width=fileInfoWidth, subsequent_indent='  ')
 
         if date:
-            infoStringList.append(f"Date: {year}/{month}/{day}")
+            infoStringList += textwrap.wrap(f"Date: {year}/{month}/{day}", width=fileInfoWidth, subsequent_indent='  ')
+
+        # 16c 
+        if self.appState.sixteenc_browsing:
+            infoStringList += textwrap.wrap(f"16c Pack: {sixteenc_pack}", width=fileInfoWidth, subsequent_indent='  ')
+            infoStringList += textwrap.wrap(f"16c Year: {sixteenc_year}",width=fileInfoWidth, subsequent_indent='  ')
 
         infoStringList.append(f"Width: {self.mov.sizeX}")
         infoStringList.append(f"Height: {self.mov.sizeY}")
@@ -1006,13 +1046,13 @@ class UserInterface():  # Separate view (curses) from this controller
         infoStringList.append(f"Color mode: {colorMode}")
         if self.appState.fileColorMode:
             infoStringList.append(f"File color mode: {self.appState.fileColorMode}")
-        infoStringList.append(f"Playing: {self.playing} ")
+        infoStringList += textwrap.wrap(f"Playing: {self.playing} ", width=fileInfoWidth, subsequent_indent='  ')
 
         if len(infoStringList) > 0:
-            infoString = ', '.join(infoStringList)
-
-
+            infoString = '\n '.join(infoStringList)
             wideViwer = False
+
+
         if notify:
             notifyString = f"file: {fileName}, title: {title}, author: {author}, group: {group}, width: {self.mov.sizeX}, height: {self.mov.sizeY}"
             self.notify(notifyString, pause=True)
@@ -1022,7 +1062,7 @@ class UserInterface():  # Separate view (curses) from this controller
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             if realmaxX + self.appState.firstCol >= self.mov.sizeX + self.appState.sideInfo_minimum_width:
                 wideViewer = True
-            fileInfoColumn = self.mov.sizeX + 2
+            #fileInfoColumn = self.mov.sizeX + 2
             #fileInfoColumn = self.mov.sizeX + 4
             #fileInfoColumn = realmaxX - self.appState.sideBar_minimum_width - 1
             # show me the sauce
@@ -1149,10 +1189,10 @@ class UserInterface():  # Separate view (curses) from this controller
         new_time = time.time()
         helpMov = self.appState.helpMov
         #if page == 1:
-        #    sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #    self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         #elif page == 2:
-        #    sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
-        sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+        #    self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
+        self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
@@ -1227,7 +1267,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if frame_delay > 0:
                 realDelayTime = frame_delay
             else:
-                realDelayTime = sleep_time
+                realDelayTime = self.appState.sleep_time
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
@@ -1273,9 +1313,9 @@ class UserInterface():  # Separate view (curses) from this controller
         else:
             helpMov = self.appState.helpMov
         if page == 1:
-            sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
         elif page == 2:
-            sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
+            self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts_2.framerate) / 1000.0
         helpMov.gotoFrame(1)
         self.stdscr.clear()
         self.clearStatusLine()
@@ -1300,7 +1340,7 @@ class UserInterface():  # Separate view (curses) from this controller
             if frame_delay > 0:
                 realDelayTime = frame_delay
             else:
-                realDelayTime = sleep_time
+                realDelayTime = self.appState.sleep_time
             if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
                 last_time = new_time
                 # draw animation
@@ -1322,10 +1362,56 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.firstCol = oldFirstCol
         self.appState.drawBorders = True
 
+
+    def showDurViewHelp(self):
+        helpLines = [
+                "Up, k, mouse wheel - Scroll up",
+                "Down, j, mouse wheel - Scroll down",
+                "Left, h - Scroll left",
+                "Right, l - Scroll right",
+                "PgUp, u - Scroll up one page",
+                "PgDown, d - Scroll down one page",
+                "Home - Scroll to top",
+                "End - Scroll to bottom",
+                "+, = - Increase animation speed",
+                "- - Decrease animation speed",
+                "i - Show file information",
+                "v - Set VGA Terminal Colors",
+                "Enter, Esc - Back to file list",
+                "?, h, F1 - Help",
+                "q - Exit Viewer"
+            ]
+        popup = self.popupNotification(pop_items = helpLines)
+
+    def popupNotification(self, pop_items = ["Just a notification."]):
+        width = len(max(pop_items, key=len))
+        height = len(pop_items)
+        realmaxY,realmaxX = self.realstdscr.getmaxyx()
+        topLine = realmaxY - height
+        #self.notify(f"topLine: {topLine}, realmaxY: {realmaxY}, height: {height}, width: {width}", pause=True)
+        # draw top border
+        for col in range(0, width + 1):
+            self.addstr(topLine - 1, col, ".", curses.color_pair(self.appState.theme['borderColor']))
+        self.addstr(topLine - 1, col + 1, " ", curses.color_pair(self.appState.theme['borderColor']))
+        for line in range(0, height):
+            self.addstr(topLine + line, 0, " " * width, curses.color_pair(self.appState.theme['menuItemColor']))
+            self.addstr(topLine + line, 0, pop_items[line], curses.color_pair(self.appState.theme['menuItemColor']))
+            self.addstr(topLine + line, width, ": ", curses.color_pair(self.appState.theme['borderColor']))
+        self.stdscr.refresh()
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        c = self.stdscr.getch()
+        self.stdscr.nodelay(1) # do not wait for input when calling getch
+        self.clearStatusLine()
+
+    def justPass(self):
+        """ Dummy callback for menu item repurposing """
+        pass
+
     def showViewerHelp(self):
         """ Show the help screen for the player/viewer mode """
-        helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
-        self.notify(helpString, pause=True)
+        #helpString = "Up/down Pgup/Pgdown Home/end - Scroll, i - File Info. -/+ - Speed. q - Exit Viewer"
+        #self.notify(helpString, pause=True)
+        self.showDurViewHelp()
         self.cursorOff()
 
     def apply_neofetch_keys(self):
@@ -1346,6 +1432,112 @@ class UserInterface():  # Separate view (curses) from this controller
         for key in neofetcher.neo_keys:
             dur_key = '{' + key + '}'
             self.mov.search_and_replace(self, dur_key, self.appState.fetchData[key])
+
+    def handlePlayOnlyModeInput(self, c):
+        mouseState = False
+        if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
+            try:
+                _, mouseX, mouseY, _, mouseState = curses.getmouse()
+            except:
+                pass
+            realmaxY,realmaxX = self.realstdscr.getmaxyx()
+
+            if mouseState == curses.BUTTON1_CLICKED:
+                pass
+                #self.showFileInformation()
+
+            elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
+            # It's as if we'd pressed enter to exit the viewer mode.
+                self.playing = False
+                self.appState.topLine = 0
+
+            if not self.appState.hasMouseScroll:
+                curses.BUTTON5_PRESSED = 0
+                curses.BUTTON4_PRESSED = 0
+            try:
+                curses.BUTTON5_PRESSED
+            except:
+                curses.BUTTON5_PRESSED = 0
+            try:
+                curses.BUTTON4_PRESSED
+            except:
+                curses.BUTTON4_PRESSED = 0
+            if mouseState & curses.BUTTON4_PRESSED:   # wheel up
+                if self.appState.topLine > 0:
+                    self.appState.topLine = self.appState.topLine - 1
+            elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
+                if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+                    self.appState.topLine += 1
+
+        elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
+            self.appState.topLine = self.appState.topLine - self.realmaxY + 3
+            if self.appState.topLine < 0:
+                self.appState.topLine = 0
+        elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
+            if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
+                self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
+                if self.appState.topLine > self.mov.sizeY - self.realmaxY:
+                    self.appState.topLine = self.mov.sizeY - self.realmaxY 
+                    # prevent a ghost image on any blank lines at the bottom:
+                    #self.stdscr.clear()
+                    #self.refresh()
+        elif c in [339, curses.KEY_HOME]:  # 339 = home
+            self.appState.topLine = 0
+        elif c in [338, curses.KEY_END]:   # 338 = end
+            self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
+        elif c in [curses.KEY_LEFT, ord('h')]:      # left - scroll left
+            self.scroll_viewer_left()
+        elif c in [curses.KEY_RIGHT, ord('l')]:      # right - scroll right
+            self.scroll_viewer_right()
+        elif c in [ord('v')]:      # v - enable VGA colors
+            self.enableTrueVGAColors()
+        #elif c in [ord('H')]:  # H = scroll all the way left (like home in editor)
+        #    self.xy[1]
+        #elif c in [ord('L')]:  # L = scroll all the way right (like end in editor)
+        #    self.xy[1] = self.mov.sizeX
+        if c in [61, 43]: # = and + - fps up
+            self.increaseFPS()
+            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+        elif c in [45]: # - (minus) - fps down
+            self.decreaseFPS()
+            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+
+        if c in [ord('q'), ord('Q')]:
+            self.playing = False
+            self.appState.topLine = 0
+            if not self.appState.editorRunning:
+                self.verySafeQuit()
+
+        elif c in [27, 10, 13, curses.KEY_ENTER]:   # 27 = esc, 10 = LF, 13 = CR
+            self.playing = False
+            self.appState.topLine = 0
+
+        elif c in [ord('?')]:
+            self.showViewerHelp()
+
+        elif c in [ord('i'), ord('I')]:
+            # toggle showing info. True/false swap:
+            self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
+
+            if self.appState.viewModeShowInfo:
+                self.showFileInformation()
+            else:
+                self.stdscr.clear()
+                self.hardRefresh()
+            self.refresh()
+
+            #self.showFileInformation()
+
+        elif c in [curses.KEY_DOWN, ord('j')]:
+            if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
+                self.appState.topLine += 1
+        elif c in [curses.KEY_UP, ord('k')]:
+            if self.appState.topLine > 0:
+                self.appState.topLine = self.appState.topLine - 1
+        elif c == 12:               # ctrl-l - harder refresh
+            self.stdscr.clear()
+            self.hardRefresh()
+            c = None
 
     def startPlaying(self, mov=None, opts=None):
         """ Start playing the animation - start a "game" style loop, make FPS
@@ -1393,11 +1585,11 @@ class UserInterface():  # Separate view (curses) from this controller
         new_time = time.time()
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
-        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+        self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
         self.mov.gotoFrame(self.appState.playbackRange[0])
         mouseX, mouseY = 0, 0
         while self.playing:
-            # catch keyboard input - to change framerate or stop playing animation
+            # catch keyboard input - to change framerate or stop pnlaying animation
             # get keyboard input, returns -1 if none available
             self.move(self.xy[0], self.xy[1])
             # Here refreshScreen=False because we will self.stdscr.refresh() below, after drawing the status bar (to avoid flicker)
@@ -1426,10 +1618,15 @@ class UserInterface():  # Separate view (curses) from this controller
 
             #debugstring = f"self.appState.realmaxY: {self.appState.realmaxY}, self.appState.realmaxX: {self.appState.realmaxX}, topLine: {self.appState.topLine}, firstCol: {self.appState.firstCol}"
             #self.addstr(self.statusBarLineNum - 1, 0, debugstring)
-
             self.stdscr.refresh()
 
             if c == 27:
+                if self.appState.durview_running and self.appState.playOnlyMode:
+                    # This block captures Esc before the "UI for Play Only mode"
+                    # part below, so I'm putting this here.
+                    self.playing = False
+                    self.appState.topLine = 0
+                    return True
                 self.metaKey = 1
                 self.pressingButton = False
                 if self.pushingToClip:
@@ -1437,6 +1634,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.disableMouseReporting()
                 self.commandMode = True
                 c = self.stdscr.getch() # normal esc
+
                 # Clear out any canvas state as needed for command mode. For example...
                 # If we think the mouse button is pressed.. stop thinking that.
                 # In other words, un-stick the mouse button in case it's stuck:
@@ -1452,10 +1650,10 @@ class UserInterface():  # Separate view (curses) from this controller
                 if c == 91: c = self.stdscr.getch() # alt-arrow does this in this mrxvt 5.x build
                 if c in [61, 43]: # esc-= and esc-+ - fps up
                     self.increaseFPS()
-                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [45]: # esc-- (alt minus) - fps down
                     self.decreaseFPS()
-                    sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                    self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                 elif c in [98, curses.KEY_LEFT]:      # alt-left - prev bg color (in 16)
                     if self.appState.colorMode == "16":
                         self.prevBgColor()
@@ -1493,9 +1691,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol(frange=self.appState.playbackRange)
-                elif c == 47:      # alt-/ - insert line
+                elif c == 39:      # alt-' - insert line
                     self.addLine(frange=self.appState.playbackRange)
-                elif c == 39:        # alt-' - erase line
+                elif c == 59:        # alt-; - erase line
                     self.delLine(frange=self.appState.playbackRange)
                 elif c == 105:      # alt-i - File/Canvas Information
                     self.clickedInfoButton()
@@ -1529,9 +1727,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.showHelp()
                     c = None
                 elif c == 113:                 # alt-q - quit
-                    self.safeQuit()
-                    self.stdscr.nodelay(1)
-                    c = None
+                    if self.appState.durview_running:
+                        self.stopPlaying()
+                        self.appState.editorRunning = False
+                        return
+                    else:
+                        self.safeQuit()
+                        self.stdscr.nodelay(1)
+                        c = None
                 elif c in [ord('1')]:    # esc-1 copy of F1 - insert extended character
                     self.insertChar(self.chMap['f1'], fg=self.colorfg, bg=self.colorbg,
                             frange=self.appState.playbackRange)
@@ -1590,101 +1793,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None 
             elif c != -1:   # -1 means no keys are pressed.
                 # up or down to change framerate, otherwise stop playing
+                #if self.appState.durview_running:   # Extra UI for DurView
+                #    if c in [ord('e')]:     # e - open file in editor
+                #        self.openEditorFromDurview()
+                #        c = None
                 if self.appState.playOnlyMode:  # UI for Play-only mode
-                    mouseState = False
-                    if c == curses.KEY_MOUSE: # to support mouse wheel scrolling
-                        try:
-                            _, mouseX, mouseY, _, mouseState = curses.getmouse()
-                        except:
-                            pass
-                        realmaxY,realmaxX = self.realstdscr.getmaxyx()
-
-                        if mouseState == curses.BUTTON1_CLICKED:
-                            pass
-                            #self.showFileInformation()
-
-                        elif mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                        # It's as if we'd pressed enter to exit the viewer mode.
-                            self.playing = False
-                            self.appState.topLine = 0
-
-                        if not self.appState.hasMouseScroll:
-                            curses.BUTTON5_PRESSED = 0
-                            curses.BUTTON4_PRESSED = 0
-                        try:
-                            curses.BUTTON5_PRESSED
-                        except:
-                            curses.BUTTON5_PRESSED = 0
-                        try:
-                            curses.BUTTON4_PRESSED
-                        except:
-                            curses.BUTTON4_PRESSED = 0
-                        if mouseState & curses.BUTTON4_PRESSED:   # wheel up
-                            if self.appState.topLine > 0:
-                                self.appState.topLine = self.appState.topLine - 1
-                        elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
-                            if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
-                                self.appState.topLine += 1
-
-                    elif c in [339, curses.KEY_PPAGE, ord('u'), ord('b')]:  # page up, and vim keys
-                        self.appState.topLine = self.appState.topLine - self.realmaxY + 3
-                        if self.appState.topLine < 0:
-                            self.appState.topLine = 0
-                    elif c in [338, curses.KEY_NPAGE, ord(' '), ord('d'), ord('f')]:  # page down, and vi keys
-                        if self.mov.sizeY > self.realmaxY - 3:  # if the ansi is larger than a page...
-                            self.appState.topLine += self.realmaxY - 3  # go down 25 lines or whatever
-                            if self.appState.topLine > self.mov.sizeY - self.realmaxY:
-                                self.appState.topLine = self.mov.sizeY - self.realmaxY 
-                                # prevent a ghost image on any blank lines at the bottom:
-                                #self.stdscr.clear()
-                                #self.refresh()
-                    elif c in [339, curses.KEY_HOME]:  # 339 = home
-                        self.appState.topLine = 0
-                    elif c in [338, curses.KEY_END]:   # 338 = end
-                        self.appState.topLine = self.mov.sizeY - self.realmaxY + 2
-                    elif c == curses.KEY_LEFT:      # left - scroll left
-                        self.scroll_viewer_left()
-                    elif c == curses.KEY_RIGHT:      # right - scroll right
-                        self.scroll_viewer_right()
-                    if c in [61, 43]: # esc-= and esc-+ - fps up
-                        self.increaseFPS()
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-                    elif c in [45]: # esc-- (alt minus) - fps down
-                        self.decreaseFPS()
-                        sleep_time = (1000.0 / self.opts.framerate) / 1000.0
-
-                    if c in [ord('q'), ord('Q')]:
-                        self.playing = False
-                        self.appState.topLine = 0
-                        if not self.appState.editorRunning:
-                            self.verySafeQuit()
-
-                    elif c in [10, 13, curses.KEY_ENTER, 27]:   # 27 = esc
-                        self.playing = False
-                        self.appState.topLine = 0
-
-
-                    elif c in [ord('?'), ord('h')]:
-                        self.showViewerHelp()
-
-                    elif c in [ord('i'), ord('I')]:
-                        # toggle showing info. True/false swap:
-                        self.appState.viewModeShowInfo = not self.appState.viewModeShowInfo 
-                        self.stdscr.clear()
-                        self.refresh()
-
-                        #self.showFileInformation()
-
-                    elif c in [curses.KEY_DOWN, ord('j')]:
-                        if self.appState.topLine + self.realmaxY < self.mov.sizeY:  # wtf?
-                            self.appState.topLine += 1
-                    elif c in [curses.KEY_UP, ord('k')]:
-                        if self.appState.topLine > 0:
-                            self.appState.topLine = self.appState.topLine - 1
-                    elif c == 12:               # ctrl-l - harder refresh
-                        self.stdscr.clear()
-                        self.hardRefresh()
-                        c = None
+                    self.handlePlayOnlyModeInput(c)
                 else:
                     if c == curses.KEY_MOUSE: # Remember, we are playing here
                         try:
@@ -1765,11 +1879,11 @@ class UserInterface():  # Separate view (curses) from this controller
                                         elif mouseX == 12 + offset:    # clicked FPS down
                                             self.clickHighlight(12 + offset, "<")
                                             self.decreaseFPS()
-                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                                         elif mouseX == 16 + offset:    # clicked FPS up
                                             self.clickHighlight(16 + offset, ">")
                                             self.increaseFPS()
-                                            sleep_time = (1000.0 / self.opts.framerate) / 1000.0
+                                            self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
                                 elif mouseY == self.statusBarLineNum+1:    # clicked bottom bar
                                     if not self.appState.narrowWindow:
                                         if mouseX in range(4,20): 
@@ -1865,13 +1979,28 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif c != None and c <= 128 and c >= 32:      # normal printable character
                         self.insertChar(c, fg=self.colorfg, bg=self.colorbg, frange=self.appState.playbackRange)
 
-            new_time = time.time()
-            frame_delay = self.mov.currentFrame.delay
-            if frame_delay > 0:
-                realDelayTime = frame_delay
-            else:
-                realDelayTime = sleep_time  # sleep_time == (1000.0 / self.opts.framerate) / 1000.0
-            if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+            shouldDraw = False
+            while True:
+                if self.appState.playOnlyMode:
+                    self.handlePlayOnlyModeInput(self.stdscr.getch())
+
+                new_time = time.time()
+                frame_delay = self.mov.currentFrame.delay
+                if frame_delay > 0:
+                    realDelayTime = frame_delay
+                else:
+                    realDelayTime = self.appState.sleep_time  # self.appState.sleep_time == (1000.0 / self.opts.framerate) / 1000.0
+                time.sleep(0.009) # to keep from sucking up cpu
+
+                if new_time >= (last_time + realDelayTime): # Time to update the frame? If so...
+                    shouldDraw = True
+                    break
+                if not self.appState.playOnlyMode:
+                    break
+                if not self.playing:
+                    break
+
+            if shouldDraw:
                 last_time = new_time
                 # draw animation
                 if not self.appState.playOnlyMode:
@@ -1892,8 +2021,6 @@ class UserInterface():  # Separate view (curses) from this controller
                                 playedTimes += 1
                             else:   # we've played the desired number of times.
                                 self.playing = False
-                #self.refresh()
-            else: time.sleep(0.005) # to keep from sucking up cpu
 
 
         if tempMovie != None:   # Need to switch back to main movie
@@ -1986,6 +2113,18 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.drawChar = self.appState.UTF8_BLOCK
         self.refreshCharMap()
 
+    def loadCharsetFile(self, file_path: str):
+        fullCharMap = durchar.load_charmap_file(file_path, self.appState, setting=True)
+        if not fullCharMap:
+            self.notify(f"Error loading charmap file: {file_path}")
+            return False
+
+        self.fullCharMap = fullCharMap
+        self.charMapNumber = 0
+        self.chMap = self.fullCharMap[self.charMapNumber]
+        self.refreshCharMap()
+        
+
     def setCharacterSet(self, set_name):
         """ Set a Durdraw character set (not a Unicode block name) """
         self.appState.characterSet = set_name
@@ -2039,9 +2178,13 @@ class UserInterface():  # Separate view (curses) from this controller
             except: # If character can't encode, eg: in cp437 mode, make it blank
                 keyChar = ' '
             self.chMapString += f"{keyString}{keyChar}" 
-        self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
-                (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
-                self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        try:
+            self.chMapString = "F1%cF2%cF3%cF4%cF5%cF6%cF7%cF8%cF9%cF10%c" % \
+                    (self.chMap['f1'], self.chMap['f2'], self.chMap['f3'], self.chMap['f4'], self.chMap['f5'], \
+                    self.chMap['f6'], self.chMap['f7'], self.chMap['f8'], self.chMap['f9'], self.chMap['f10'] )
+        except Exception as E:
+            print(f"Exception: {E}")
+            pdb.set_trace()
         #self.chMapString = self.chMapStringncoding=self.appState.charEncoding)
 
     def clearStatusLine(self):
@@ -2468,6 +2611,7 @@ class UserInterface():  # Separate view (curses) from this controller
 
         if resized:
             self.refresh()
+            self.showFileInformation()
             self.hardRefresh()
 
     def window_big_enough_for_colors(self):
@@ -2523,13 +2667,13 @@ class UserInterface():  # Separate view (curses) from this controller
         mouseX, mouseY = 0, 0
         self.pressingButton = False
         self.drawStatusBar()    # to make sure the inital state looks correct
-
+        mouseState = None
         intense_burning = ['idkfa']
         sumbitch = []
         sumbitch_len = 25
 
         curses.noecho()
-        while 1:    # Real "main loop" - get user input, aka "edit mode"
+        while self.appState.editorRunning:    # Real "main loop" - get user input, aka "edit mode"
             self.testWindowSize()
             # print statusbar stuff
             self.drawStatusBar()
@@ -2553,17 +2697,16 @@ class UserInterface():  # Separate view (curses) from this controller
                     curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                 if c == 111:                # alt-o - open
                     self.openFromMenu()     # as if we clicked menu->open
-                    #load_filename = self.openFilePicker()
-                    #if load_filename:   # if not False
-                    #    self.clearCanvas(prompting=False)
-                    #    self.loadFromFile(load_filename, 'dur')
-                    #    self.move_cursor_topleft()
                 elif c == 115:                 # alt-s - save
                     self.save()
                     c = None
                 elif c == 113:                 # alt-q - quit
-                    self.safeQuit()
-                    c = None
+                    if self.appState.durview_running:
+                        self.appState.editorRunning = False
+                        c = None
+                        #return
+                    else:
+                        self.safeQuit()
                 elif c in [104, 63]:                # alt-h - help
                     self.showHelp()
                     c = None
@@ -2611,9 +2754,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addLineToCanvas()
                 elif c == 58:       # alt-: - erase line from canvas
                     self.delLineFromCanvas()
-                elif c == 47:       # alt-/ - insert line
+                elif c == 39:       # alt-' - insert line
                     self.addLine()
-                elif c == 39:       # alt-' - erase line
+                elif c == 59:       # alt-; - erase line
                     self.delLine()
                 elif c == 121 or c == ord('u'):      # alt-y - Eyedrop, alt-u is what Aciddraw used
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
@@ -2829,11 +2972,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 c = None
             if c == 24: self.safeQuit()     # ctrl-x
             elif c == 15:               # ctrl-o - open # holy crap, this is still in here? lol
-                load_filename = self.openFilePicker()
-                if load_filename:   # if not False
-                    self.clearCanvas(prompting=False)
-                    self.loadFromFile(load_filename, 'dur')
-                    self.move_cursor_topleft()
+                self.openFromMenu()     # as if we clicked menu->open
                 c = None
             elif c == 23:               # ctrl-w - save
                 self.save()
@@ -2918,45 +3057,47 @@ class UserInterface():  # Separate view (curses) from this controller
             elif c == curses.KEY_MOUSE: # We are not playing
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()
-                    b1_press = mouseState & curses.BUTTON1_PRESSED
-                    b1_release = mouseState & curses.BUTTON1_RELEASED
-                    b1_click = mouseState & curses.BUTTON1_CLICKED
-                    b1_dclick = mouseState & curses.BUTTON1_DOUBLE_CLICKED
-                    self.appState.mouse_col = mouseX
-                    self.appState.mouse_line = mouseY
-                    self.appState.renderMouseCursor = True
-                    if mouseState > 2:  # probably click-dragging. We want an instant response, so...
-                        pass
-                        #self.pressingButton = True
-                        #print('\033[?1003h') # enable mouse tracking with the XTERM API
-                        #print('\033[?1003l') # disable mouse reporting
-                        #curses.mousemask(1)
-                        #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
-                    if mouseState == 1:
-                        self.pressingButton = False
+                except:
+                    mouseState = 0
+                b1_press = mouseState & curses.BUTTON1_PRESSED
+                b1_release = mouseState & curses.BUTTON1_RELEASED
+                b1_click = mouseState & curses.BUTTON1_CLICKED
+                b1_dclick = mouseState & curses.BUTTON1_DOUBLE_CLICKED
+                self.appState.mouse_col = mouseX
+                self.appState.mouse_line = mouseY
+                self.appState.renderMouseCursor = True
+                if mouseState > 2:  # probably click-dragging. We want an instant response, so...
+                    pass
+                    #self.pressingButton = True
+                    #print('\033[?1003h') # enable mouse tracking with the XTERM API
+                    #print('\033[?1003l') # disable mouse reporting
+                    #curses.mousemask(1)
+                    #curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
+                if mouseState == 1:
+                    self.pressingButton = False
+                    if self.pushingToClip:
+                        self.pushingToClip = False
+                    cursorMode = self.appState.cursorMode
+                    if cursorMode != "Draw" and cursorMode != "Paint":
+                        print('\033[?1003l') # disable mouse reporting
+                        self.hardRefresh()
+                        curses.mousemask(1)
+                        curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
                         if self.pushingToClip:
                             self.pushingToClip = False
-                        cursorMode = self.appState.cursorMode
-                        if cursorMode != "Draw" and cursorMode != "Paint":
-                            print('\033[?1003l') # disable mouse reporting
-                            self.hardRefresh()
-                            curses.mousemask(1)
-                            curses.mousemask(curses.REPORT_MOUSE_POSITION | curses.ALL_MOUSE_EVENTS)
-                            if self.pushingToClip:
-                                self.pushingToClip = False
-                        #self.notify("Released from drag, hopefully.")
-                    if self.appState.debug:
-                        # clear mouse state lines
-                        winHeight,winWidth = self.realstdscr.getmaxyx()
-                        blank_line = " " * winWidth
-                        self.addstr(self.statusBarLineNum-3, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
-                        self.addstr(self.statusBarLineNum-4, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
-                        # print mouse state
-                        mouseDebugString = f"mX: {mouseX}, mY: {mouseY}, mState: {mouseState}, press:{b1_press} rel:{b1_release} clk:{b1_click} dclk: {b1_dclick}"
-                        self.addstr(self.statusBarLineNum-4, 0, mouseDebugString, curses.color_pair(3) | curses.A_BOLD)
-                        #self.addstr(self.statusBarLineNum-5, 0, mouseDebugStates, curses.color_pair(2) | curses.A_BOLD)
-                except:
-                    pass
+                    #self.notify("Released from drag, hopefully.")
+                if self.appState.debug:
+                    # clear mouse state lines
+                    winHeight,winWidth = self.realstdscr.getmaxyx()
+                    blank_line = " " * winWidth
+                    self.addstr(self.statusBarLineNum-3, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
+                    self.addstr(self.statusBarLineNum-4, 0, blank_line, curses.color_pair(3) | curses.A_BOLD)
+                    # print mouse state
+                    mouseDebugString = f"mX: {mouseX}, mY: {mouseY}, mState: {mouseState}, press:{b1_press} rel:{b1_release} clk:{b1_click} dclk: {b1_dclick}"
+                    self.addstr(self.statusBarLineNum-4, 0, mouseDebugString, curses.color_pair(3) | curses.A_BOLD)
+                    #self.addstr(self.statusBarLineNum-5, 0, mouseDebugStates, curses.color_pair(2) | curses.A_BOLD
+                #except:
+                #    pass
                 #if mouseY < self.mov.sizeY and mouseX < self.mov.sizeX \
                 #    and mouseY + self.appState.topLine < self.appState.topLine + self.statusBarLineNum:
                 if mouseY + self.appState.topLine < self.mov.sizeY and mouseX + self.appState.firstCol < self.mov.sizeX:
@@ -3272,10 +3413,11 @@ class UserInterface():  # Separate view (curses) from this controller
         #if self.appState.colorMode == "256":
         self.appState.colorPickerSelected = True
         #self.statusBar.colorPicker.handler.showColorPicker()
-        self.statusBar.colorPicker.showFgPicker(message=message)
+        color = self.statusBar.colorPicker.showFgPicker(message=message)
         #if self.appState.colorMode == "16":
         #    self.statusBar.colorPicker_bg_16.showFgPicker()
         self.appState.colorPickerSelected = False
+        return color
 
     def replaceColorUnderCursor(self):
         self.commandMode = False
@@ -3297,8 +3439,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.refresh()
         # Use color picker to pick new destination color (pair)
         #self.selectColorPicker(message=printMessage)
-        self.selectColorPicker()
+        picker_color = self.selectColorPicker()    # picker_color is False if user hits Esc in color picker.
         self.clearStatusLine()
+        if picker_color == False:
+            self.notify("Replace color canceled.")
+            return False
         new_fg = self.colorfg
         new_bg = self.colorbg
         newCharColor = [new_fg, new_bg]
@@ -3554,6 +3699,14 @@ class UserInterface():  # Separate view (curses) from this controller
                 return False
             time.sleep(0.01)
 
+    def killAllHumans(self):    # actually, kill all threads.
+        #for thread in threading.enumerate():
+        #    if thread.is_alive():
+        #        thread.set()
+        if self.appState.pool_executor != None:
+            # Preview Exeutor thread dispatch running. Kill em
+            self.appState.pool_executor.shutdown(wait=True, cancel_futures=True)
+
     def safeQuit(self):
         self.stdscr.nodelay(0) # wait for input when calling getch
         self.clearStatusLine()
@@ -3598,6 +3751,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.stdscr.keypad(0)
         curses.echo()
         curses.endwin()
+        #print("Waiting for threads to die...")
+        self.killAllHumans()
+        #print("Done.")
         exit(0)
 
     def promptPrint(self, promptText):
@@ -3621,6 +3777,13 @@ class UserInterface():  # Separate view (curses) from this controller
         self.statusBar.mainMenu.handler.panel.show()
         response = self.statusBar.settingsMenu.showHide()
         self.statusBar.mainMenu.handler.panel.hide()
+
+    def openEditMenu(self):
+        """ Show the Edit menu """
+        self.statusBar.mainMenu.handler.panel.show()
+        response = self.statusBar.editMenu.showHide()
+        self.statusBar.mainMenu.handler.panel.hide()
+
 
     def openDrawCharPicker(self):
         self.stdscr.nodelay(0)
@@ -3721,17 +3884,56 @@ class UserInterface():  # Separate view (curses) from this controller
                     prompting = False
                 elif c == 110 or c == 27: # 110 == n, 27 == esc
                     prompting = False
-                    return None
+                    return False
                 time.sleep(0.01)
             self.clearStatusLine()
 
-        load_filename = self.openFilePicker()
-        if load_filename:   # if not False
+        load_filename, uri_type = self.openFilePicker()
+        if uri_type == "remote":   # Remote URL, from 16colo.rs
+            url = load_filename
+            #self.notify(f"url: {url}")
+            file_data = b"There was an error downloading the file."
+            # Download remote file
+            try:
+                with urllib.request.urlopen(url) as response:
+                    file_data = response.read()
+                    #f = open(filename, 'r', encoding='cp437')
+            except urllib.request.HTTPError as E:
+                self.notify(f"There was an error downloading the file: {E.code}")
+            # save it to a temporary file
+            #with tempfile.NamedTemporaryFile() as fp:
+            with tempfile.TemporaryDirectory() as temp_path:
+                # write file to temp directory, but with original name
+                filename = pathlib.Path(url).name
+                load_filename = temp_path + '/' + filename
+                #self.notify(f"Full load path: {load_filename}")
+                with open(load_filename, mode='wb') as fp:
+                    fp.write(file_data)
+
+                #fp.write(file_data)
+                #self.notify(f"Length: {len(file_data)}")
+                # Clear the canvas and Open it 
+                load_filename = fp.name
+                self.clearCanvas(prompting=False)
+                #if not self.loadFromFile(load_filename, 'dur'):
+                self.loadFromFile(load_filename, 'dur')
+                self.appState.curOpenFileName = pathlib.Path(url).name
+                self.move_cursor_topleft()
+                self.stdscr.clear()
+                self.hardRefresh()
+                self.appState.fileShortPath = url
+                fp.close()
+                
+
+        elif uri_type == "local" and load_filename != False:   # if not False lol
             self.clearCanvas(prompting=False)
             self.loadFromFile(load_filename, 'dur')
             self.move_cursor_topleft()
             self.stdscr.clear()
             self.hardRefresh()
+
+        elif load_filename == False:    # User hit Esc out of the file picker
+            return False
 
     def toggleColorScrolling(self):
         self.appState.scrollColors = not self.appState.scrollColors
@@ -3751,7 +3953,7 @@ class UserInterface():  # Separate view (curses) from this controller
         
 
     def showCharSetPicker(self):
-        set_list = ["Durdraw Default"]
+        set_list = self.appState.userCharSets + ["Durdraw Default"]
         block_list = self.appState.unicodeBlockList.copy()
 
         for set_name in set_list:
@@ -3767,8 +3969,9 @@ class UserInterface():  # Separate view (curses) from this controller
         # Turn on keyboard buffer waiting here, if necessary..
         self.stdscr.nodelay(0)
         self.stdscr.clear()
+        self.cursorOff()
         while prompting:
-            # draw list of files from top of the window to bottomk
+            # draw list of files from top of the window to bottom
             realmaxY,realmaxX = self.realstdscr.getmaxyx()
             page_size = realmaxY - 4
             current_line_number = 0
@@ -3858,7 +4061,24 @@ class UserInterface():  # Separate view (curses) from this controller
             errorLoadingBlock = False
             if block_list[selected_item_number] in set_list:    # not a unicode block
                 errorLoadingBlock = False
-                self.addstr(realmaxY - 1, 0, f"Character set: {block_list[selected_item_number]}")
+                name = block_list[selected_item_number]
+                self.addstr(realmaxY - 1, 0, f"Character set: {name}")
+                if name != "Durdraw Default":
+                    # Load charater map and draw preview
+                    previewCharMap = durchar.load_charmap_file(self.appState.userCharSetFiles[name], self.appState)
+                    previewChars = "Preview: "
+                    maxChars = 100
+                    totalChars = 0
+                    for miniMap in previewCharMap:  # for all characters in this block...
+                        for key in miniMap:
+                            if totalChars <= maxChars:  # If we're within range,
+                                previewChars += chr(miniMap[key])   # add to the preview string
+                            totalChars += 1 
+                    try:
+                        self.addstr(realmaxY - 4, 0, previewChars)
+                        errorLoadingBlock = False
+                    except Exception as E:
+                        errorLoadingBlock = True
             else:
                 previewCharMap = durchar.load_unicode_block(block_list[selected_item_number])
                 self.addstr(realmaxY - 1, 0, f"Unicode block: {block_list[selected_item_number]}")
@@ -3933,10 +4153,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     pass
                 elif block_list[selected_item_number] in set_list:
                     # Durdraw character set selected. Set it
-                    self.setCharacterSet(block_list[selected_item_number])
-                    #self.appState.characterSet = block_list[selected_item_number]
+                    name = block_list[selected_item_number]
                     self.charMapNumber = 0
-                    self.initCharSet()
+                    if name in self.appState.userCharSets:
+                        self.loadCharsetFile(self.appState.userCharSetFiles[name])
+                    else:   # Not a custom file. Probably DurDraw Default.
+                        self.setCharacterSet(block_list[selected_item_number])
+                        #self.appState.characterSet = block_list[selected_item_number]
+                        self.initCharSet()
                     self.stdscr.clear()
                     prompting = False
                 else:
@@ -3958,6 +4182,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     prompting = False
                     if self.playing:
                         self.stdscr.nodelay(1)
+                    self.cursorOn()
                     return False
             elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
                 if search_string != "":
@@ -3982,13 +4207,21 @@ class UserInterface():  # Separate view (curses) from this controller
                             if mouseCol < len(block_list[top_line+mouseLine]): # clicked within item width
                                 selected_item_number = top_line+mouseLine
                                 if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                    if block_list[selected_item_number] in set_list:    # clicked set, not block
-                                        # holy fuck this is deep
-                                        self.appState.characterSet = block_list[selected_item_number]
+
+                                    if block_list[selected_item_number] in set_list:
+                                        # Durdraw character set selected. Set it
+                                        name = block_list[selected_item_number]
                                         self.charMapNumber = 0
-                                        self.initCharSet()
+                                        if name in self.appState.userCharSets:
+                                            self.loadCharsetFile(self.appState.userCharSetFiles[name])
+                                        else:   # Not a custom file. Probably DurDraw Default.
+                                            self.setCharacterSet(block_list[selected_item_number])
+                                            #self.appState.characterSet = block_list[selected_item_number]
+                                            self.initCharSet()
                                         self.stdscr.clear()
                                         prompting = False
+
+
                                     else:   # clicked a unicode block
                                         self.appState.characterSet = "Unicode Block"
                                         self.charMapNumber = 0
@@ -4046,35 +4279,119 @@ class UserInterface():  # Separate view (curses) from this controller
                     elif search_string in blockname.lower():
                         selected_item_number = block_list.index(blockname)
                         break   # stop at the first match
+        self.cursorOn()
 
-    def openFilePicker(self):
-        """ Draw UI for selecting a file to load, return the filename """
-        # get file list
-        folders =  ["../"]
-        default_masks = ['*.dur', '*.durf', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
-        masks = default_masks
-        if self.appState.workingLoadDirectory: 
-            if os.path.exists(self.appState.workingLoadDirectory):
-                current_directory = self.appState.workingLoadDirectory
+    def sixteenc_update_diz_cache_start_thread(self, year):
+        #if self.diz_caching_thread == None:
+        #    self.diz_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,))
+        #if self.diz_caching_thread.is_alive():
+        if year in self.appState.sixteenc_cached_years:
+            # Thread already ran or running
+            return False
+        new_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,), daemon = True)
+        new_caching_thread.start()
+
+    def sixteenc_cache_diz_for_pack(self, pack):
+        self.thread_update_user("Downloading previews... 1")
+        pack_files = self.sixteenc_api.list_files_for_pack(pack)
+        #self.notify(f"pack: {pack}, pack_files: {pack_files}")
+        if pack_files != False:
+            preview_filename=None
+            for name in pack_files:
+                if name.lower() == "file_id.ans":
+                    preview_filename = name
+                elif name.lower() == "file_id.diz" and preview_filename == None:
+                    preview_filename = name
+            if preview_filename == None:
+                url = None
             else:
-                current_directory = os.getcwd()
+                url = self.sixteenc_api.get_url_for_file(pack, preview_filename)
+            #pdb.set_trace()
+        if url != None and url != '':   # success
+            #self.notify(f"preview URL: {url}")
+            try:
+                with urllib.request.urlopen(url) as response:
+                    file_data = response.read()
+            except urllib.request.HTTPError:
+                #self.notify(f"There was an error downloading: {url}")a
+                pass
+                #return False
         else:
-            current_directory = os.getcwd()
-        #folders += sorted(glob.glob(f"{current_directory}/*/"))
+            pass
+        if file_data != None:
+            decoded_data = file_data.decode('cp437')
+            load_width = 44     # file_id.diz width
 
-        #folders += sorted(glob.glob("*/", root_dir=current_directory)) # python 3.10+
-        # python 3.9 compatible block instead:
-        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-        # remove leading paths
-        new_folders = []
-        for path_string in folders:
-            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
-        folders = new_folders
-            
+            ## Figure out if width/height is in sauce. If so, use that
+            file_sauce = dursauce.SauceParser()    # empty sauce
+            file_sauce.parse_blob(file_data)
+            #self.notify(f"Sauce, pack: {pack}, filename: {preview_filename}, width: {file_sauce.width}", wait_time=100)
+            if file_sauce.width != None:
+                if file_sauce.width > 0 and file_sauce.width < load_width:
+                    load_width = file_sauce.width
+                elif file_sauce.width > load_width:
+                    load_width = file_sauce.width
 
-        matched_files = []
-        file_list = []
-        for file in os.listdir(current_directory):
+            diz_frame = dur_ansiparse.parse_ansi_escape_codes(file_data, filename = None, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=load_width)
+            self.appState.sixteenc_dizcache[pack] = diz_frame
+    #time.sleep(0.50)    # sleep for 1/2 second betwewen each pack, to prevent throttling
+
+    def thread_update_user(self, message):
+        # print status update
+        progress_string = message
+        progress_column = self.appState.realmaxX - len(progress_string)   # anchor right
+        progress_line = self.appState.realmaxY  # bottom
+        #self.addstr(progress_line, progress_column, progress_string, curses.color_pair(self.appState.theme['menuItemColor']))
+        #self.notify(progress_string, wait_time=0)
+        #self.stdscr.refresh()
+
+    def sixteenc_update_diz_cache(self, year):
+        """ cache file_id.diz files for the packs in a given year.
+          Populate self.appState.sixteenc_dizcache with {"packname": diz_data_frame}
+          diz_data_frame is type Dur Frame
+        """
+
+        # print status update
+        #self.thread_update_user("Downloading previews... 2")
+
+        url = None
+        file_data = None
+        preview_mov = None
+        packs = []  #packs to cache
+
+        if year in self.appState.sixteenc_cached_years:
+            return False
+        else:
+            self.appState.sixteenc_cached_years.append(year)
+
+        # Get list of packs for given year from 16c
+        year_packs = self.sixteenc_api.list_packs_for_year(year)
+        if year_packs == False:
+            # There was a problem getting the packs. HTTP error
+            return False
+        # For each pack in the returned list, see if self.appState.sixteenc_dizcache has
+        # the pack as a key.
+        # If not, download the file_id.diz and populate self.appState.sixteenc_dizcache.
+        for pack in year_packs:
+            if pack not in self.appState.sixteenc_dizcache:
+                packs.append(pack)
+
+        # Launch concurrent threads for downloading diz files in parallel
+        max_threads = 10
+        with ThreadPoolExecutor(max_workers=max_threads) as self.appState.pool_executor:
+            res = self.appState.pool_executor.map(self.sixteenc_cache_diz_for_pack, packs, timeout=15)
+            #for r in res:
+            #    print(r.status_code)
+
+    def findLocalFiles(self, current_directory, folders, masks):
+        # update file list
+        self.log.debug('finding local files!!!', {'current_directory': current_directory, 'folders': folders, 'masks': masks})
+        file_list, matched_files = [], []
+        if self.appState.sixteenc_browsing:
+            search_files_list = []
+        else:
+            search_files_list = os.listdir(current_directory)
+        for file in search_files_list:
             for mask in masks:
                 if fnmatch.fnmatch(file.lower(), mask.lower()):
                     matched_files.append(file)
@@ -4082,25 +4399,149 @@ class UserInterface():  # Separate view (curses) from this controller
         for dirname in folders:
             file_list.append(dirname)
         file_list += sorted(matched_files)
+        self.log.debug('repopulated file list', {'file_list': file_list})
+        return file_list
+
+    def openFilePicker(self):
+        """ Draw UI for selecting a file to load, return the filename """
+        # get file list
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.cursorOff()
+        folders =  ["../"]
+        default_masks = ['*.dur', '*.durf', '*.asc', '*.ans', '*.txt', '*.diz', '*.nfo', '*.ice', '*.ansi']
+        masks = default_masks
+        matched_files = []
+        file_list = []
+        preview_mov = None
+        old_color_mode = self.appState.colorMode    # in case we switch while file picker is open
+        #self.selected_item_number = 0
+        self.sixteenc_api = None
+
+        # set correct color mode for initial picker opening
+        if self.appState.sixteenc_browsing:
+            if self.appState.colorMode != "16":
+                self.switchTo16ColorMode()
+        elif not self.appState.sixteenc_browsing:
+            # IF we aren't in the original mode, switch back
+            if old_color_mode != self.appState.colorMode:
+                if old_color_mode == "256":
+                    self.switchTo256ColorMode()
+
+        # Set the directory listing for local files
+        if self.appState.workingLoadDirectory: 
+            if os.path.exists(self.appState.workingLoadDirectory):
+                current_directory = self.appState.workingLoadDirectory
+            else:
+                current_directory = os.getcwd()
+        else:
+            current_directory = os.getcwd()
+
+        if not self.appState.sixteenc_browsing:
+            file_list = []
+            #folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+            # remove leading paths
+            new_folders = []
+            for path_string in folders:
+                new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+            folders = new_folders
+
+            for file in os.listdir(current_directory):
+                for mask in masks:
+                    if fnmatch.fnmatch(file.lower(), mask.lower()):
+                        matched_files.append(file)
+                        break
+        elif self.appState.sixteenc_browsing:
+            self.sixteenc_api = SixteenColorsAPI()
+            if self.sixteenc_years == None:
+                self.sixteenc_years = self.sixteenc_api.list_years()
+            # Set the initial listing/UI for 16colo.rs browsing
+            if self.sixteenc_levels[self.sixteenc_level] == "root":
+                self.appState.sixteenc_year = None
+                sixteenc_packs = None
+                folders = self.sixteenc_years
+                file_list = []
+                full_file_list = file_list
+                search_files_list = file_list
+                matched_files = search_files_list
+
+            elif self.sixteenc_levels[self.sixteenc_level] == "year":
+                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
+                folders = ['../'] + sixteenc_packs
+                #file_list = folders
+                file_list = []
+                full_file_list = file_list
+                search_files_list = file_list
+
+            elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
+                folders = ['../']
+                #file_list = folders
+                file_list = folders + sixteenc_files
+                full_file_list = file_list
+                search_files_list = file_list
+                #file_list = sorted(file_list)
+
+
+
+        if not self.appState.sixteenc_browsing:
+            for dirname in folders:
+                file_list.append(dirname)
+
+        file_list += sorted(matched_files)
+
         # stash away file list so we can use it for search, and pop it back
         # in when user hits esc
         full_file_list = file_list
+        black_frame = durmovie.Frame(80, 25)  # easy way to clear parts of the screen?
 
         # draw ui
-        selected_item_number = 0
+        #self.selected_item_number = 0
         current_line_number = 0
         search_string = ''
         mask_all = False
-        tabbed = False
+        #tabbed = False
+        #sections = ["main", "showall", "sixteenc"]  # Different sections of the UI we can tab through
+        sections = ["main", "showall"]
+        if self.appState.sixteenc_available:
+            sections.append("sixteenc")
+        current_section = 0
         show_modtime = True     # show a column for file modified times
         top_line = 0    # topmost viewable line, for scrolling
+        showall_column = 0  # column for [X] Show All Files checkbox
+        sixteen_column = 21 # Column for [X] 16colo.rs Archive
         prompting = True
         # Turn on keyboard buffer waiting here, if necessary..
         self.stdscr.nodelay(0)
         self.stdscr.clear()
+
+        # stuff for 16colo.rs - caches to avoid hitting API repeatedly
+        sixteenc_packs = []
+        sixteenc_files = [] # cache for current file listing
+        sixteenc_current_file = None
+
         while prompting:
+
+            #file_list = []
+            #full_file_list = []
+            # If we need to cache 16c years, make it so.
+            if self.appState.sixteenc_browsing:
+                show_modtime = False
+                # If there's no 16c cache, make a new API object and cache the years
+                if self.sixteenc_api == None:
+                    self.sixteenc_api = SixteenColorsAPI()
+                if self.sixteenc_years == None:
+                    self.sixteenc_years = self.sixteenc_api.list_years()
+                # If we aren't in a year, then populate the directory list with years
+                if self.appState.sixteenc_year == None:
+                    # We are at the top level, so list the years.
+                    folders = ["../"]
+                    folders += self.sixteenc_years
+                    file_list = self.sixteenc_years
+                    full_file_list = file_list
+
             # Set search matching
-            filtered_list = [item for item in full_file_list if search_string.lower() in item.lower()]
+            #filtered_list = [item for item in full_file_list if search_string.lower() in item.lower()]
             if search_string != '':
                 file_list = [item for item in full_file_list if search_string.lower() in item.lower()]
                 if len(file_list) == 0:
@@ -4115,57 +4556,103 @@ class UserInterface():  # Separate view (curses) from this controller
             file_column_number = 0
             if show_modtime:
                 file_column_number = 20
-            if selected_item_number > top_line + page_size-1 or selected_item_number < top_line: # item is off the screen
-                top_line = selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            if self.selected_item_number > top_line + page_size-1 or self.selected_item_number < top_line: # item is off the screen
+                top_line = self.selected_item_number - int(page_size-3) # scroll so it's at the bottom
+            # remove any files we can't open
+            if not self.appState.sixteenc_browsing:
+                for filename in file_list:
+                    full_path = f"{current_directory}/{filename}"
+                    try:
+                        file_modtime_string = durfile.get_file_mod_date_time(full_path)
+                    except FileNotFoundError:   # Probably a dead symlink.
+                        # Access problems. Remove from list.
+                        file_list = [item for item in file_list if filename not in item]
+
             for filename in file_list:
                 if current_line_number >= top_line and current_line_number - top_line < page_size:  # If we're within screen size
-                    if  selected_item_number == current_line_number and not tabbed:    # if file is selected
+                    if  self.selected_item_number == current_line_number and sections[current_section] == "main":    # if file is selected
                         if file_list[current_line_number] in folders:
                             self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.A_REVERSE)
                         else:
                             # not a folder, print modified column
-                            if show_modtime:
+                            if show_modtime and not self.appState.sixteenc_browsing:
                                 full_path = f"{current_directory}/{file_list[current_line_number]}"
                                 file_modtime_string = durfile.get_file_mod_date_time(full_path)
                                 self.addstr(current_line_number - top_line, 0, file_modtime_string, curses.color_pair(self.appState.theme['menuItemColor']))
                             self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.A_REVERSE)
                     else:
                         if file_list[current_line_number] in folders:
-                            self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
+                            if file_list[current_line_number] in self.appState.sixteenc_dizcache and self.appState.sixteenc_browsing:
+                                # file_id has been downloaded, so draw in bold
+                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']) | curses.A_BOLD)
+                            else:
+                                self.addstr(current_line_number - top_line, 0, file_list[current_line_number], curses.color_pair(self.appState.theme['menuTitleColor']))
                         else:
-                            if show_modtime:
+                            if show_modtime and self.appState.sixteenc_browsing == False:
                                 full_path = f"{current_directory}/{file_list[current_line_number]}"
                                 file_modtime_string = durfile.get_file_mod_date_time(full_path)
                                 self.addstr(current_line_number - top_line, 0, file_modtime_string, curses.color_pair(self.appState.theme['menuItemColor']))
                             self.addstr(current_line_number - top_line, file_column_number, file_list[current_line_number], curses.color_pair(self.appState.theme['promptColor']))
                 current_line_number += 1
 
-            if mask_all:
-                if tabbed:
-                    self.addstr(realmaxY - 4, 0, f"[X]", curses.A_REVERSE)
+            if self.appState.sixteenc_browsing == False:
+                if mask_all:
+                    if sections[current_section] == "showall":
+                        self.addstr(realmaxY - 4, showall_column, f"[X]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, showall_column, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
                 else:
-                    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
-            else:
-                if tabbed:
-                    self.addstr(realmaxY - 4, 0, f"[ ]", curses.A_REVERSE)
+                    if sections[current_section] == "showall":
+                        self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, showall_column, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+                self.addstr(realmaxY - 4, showall_column + 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
+
+            if self.appState.sixteenc_available:
+                if self.appState.sixteenc_browsing:
+                    if sections[current_section] == "sixteenc":
+                        self.addstr(realmaxY - 4, sixteen_column, f"[X]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, sixteen_column, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
                 else:
-                    self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
-            self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
+                    if sections[current_section] == "sixteenc":
+                        self.addstr(realmaxY - 4, sixteen_column, f"[ ]", curses.A_REVERSE)
+                    else:
+                        self.addstr(realmaxY - 4, sixteen_column, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
+                self.addstr(realmaxY - 4, sixteen_column + 4, f"16colo.rs Archive", curses.color_pair(self.appState.theme['menuItemColor']))
+
             #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
             #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
             #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
             #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
-            self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
+            if self.appState.sixteenc_browsing:
+                self.addstr(realmaxY - 3, 0, f"Year: {self.appState.sixteenc_year}, Pack: {self.appState.sixteenc_pack}, Level: {self.sixteenc_levels[self.sixteenc_level]}", curses.color_pair(self.appState.theme['menuTitleColor']))
+            else:
+                self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
             if search_string != "":
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
 
-            if selected_item_number > len(file_list) - 1:
-                selected_item_number = 0
-            filename = file_list[selected_item_number]
-            full_path = f"{current_directory}/{file_list[selected_item_number]}"
+            if self.selected_item_number > len(file_list) - 1:
+                self.selected_item_number = 0
+
+            self.log.debug('selected item number', {'selected_item_number': self.selected_item_number, 'n_files': len(file_list)})
+
+            #if not self.appState.sixteenc_browsing:
+            #    try:
+            #        filename = file_list[self.selected_item_number]
+            #    except:
+            #        pdb.set_trace()
+            filename = None
+            if len(file_list) > 0:
+                filename = file_list[self.selected_item_number]
+
+            if self.appState.sixteenc_browsing or filename is None:
+                full_path = ''
+            else:
+                full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
                 
-            if filename not in folders:
+            if filename not in folders and filename is not None :
                 # read sauce, if available
                 #file_sauce = dursauce.SauceParser(full_path)
                 file_sauce = dursauce.SauceParser()
@@ -4187,8 +4674,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 #sauce_width = file_sauce.width
                 #sauce_height = file_sauce.height
 
-            file_size = os.path.getsize(full_path)
-            file_modtime_string = durfile.get_file_mod_date_time(full_path)
+            if self.appState.sixteenc_browsing or filename is None:
+                file_size = None
+                file_modtime_string = ""
+            else:
+                file_size = os.path.getsize(full_path)
+                file_modtime_string = durfile.get_file_mod_date_time(full_path)
 
             # display file info - format data
             file_info = f"File: {filename}, Size: {file_size}, Modified: {file_modtime_string}"
@@ -4197,6 +4688,32 @@ class UserInterface():  # Separate view (curses) from this controller
             # show it on screen
             self.addstr(realmaxY - 1, 0, f"{file_info}")
 
+            if self.appState.thread_update_string != None:
+                self.thread_update_user(thread_update_string)
+
+
+            # If there is a preview to load, load it
+            if self.appState.sixteenc_browsing:
+                selected_item = file_list[self.selected_item_number]
+                if self.sixteenc_levels[self.sixteenc_level] == "year":
+                    # If a pack is selected, download the file_id.diz and preview it
+                    if selected_item != '../':
+                        if selected_item not in self.appState.sixteenc_dizcache:
+                            self.drawFrame(frame=black_frame, col_offset=40, preview=True)
+                            #pass
+                            #self.stdscr.clear()
+                            #self.stdscr.refresh()
+                            #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
+                        if selected_item in self.appState.sixteenc_dizcache:
+                            preview_frame = self.appState.sixteenc_dizcache[selected_item]
+                            left_diz_column = max(40, realmaxX - preview_frame.sizeX - 3)  # anchor right
+                            self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
+                elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                    if self.appState.sixteenc_pack in self.appState.sixteenc_dizcache:
+                        preview_frame = self.appState.sixteenc_dizcache[self.appState.sixteenc_pack]
+                        left_diz_column = max(40, realmaxX - preview_frame.sizeX - 3)  # anchor right
+                        self.drawFrame(frame=preview_frame, col_offset=left_diz_column, preview=True)
+
 
 
             #self.stdscr.refresh()
@@ -4204,233 +4721,173 @@ class UserInterface():  # Separate view (curses) from this controller
             # Read keyboard input
             c = self.stdscr.getch()
 
-            if tabbed:
-                # Change focus from files to other elements, ie: Show All Files checkbox
-                #c = self.stdscr.getch()
-                if c in [9, curses.KEY_UP, curses.KEY_DOWN]:       # 9 = Tab    
-                    # Change focus away, back to file lister
-                    tabbed = False
-                elif c in [ord(' '), 13, curses.KEY_ENTER]:     # 13 = enter
-                    # Check or uncheck Show All Files
-                    mask_all = not mask_all
-                    if mask_all:
-                        masks = ['*.*']
-                    else:
-                        masks = default_masks
 
-                    # update file list
-                    matched_files = []
-                    file_list = []
-                    for file in os.listdir(current_directory):
-                        for mask in masks:
-                            if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                matched_files.append(file)
-                                break
-                    for dirname in folders:
-                        file_list.append(dirname)
-                    file_list += sorted(matched_files)
-                    # reset ui
-                    selected_item_number = 0
-                    search_string = ""
-                    full_file_list = file_list
-                elif c in [27]:     # esc
-                    tabbed = False
-                    prompting = False
-                c = None
-
-            self.stdscr.clear()
-
-            if c == curses.KEY_LEFT:
-                pass
-            elif c == curses.KEY_RIGHT:
-                pass
-            elif c in [9]:  # 9 == tab key
-                tabbed = not tabbed
-
-            elif c == curses.KEY_UP:
-                # move cursor up
-                if selected_item_number > 0:
-                    if selected_item_number == top_line and top_line != 0:
-                        top_line -= 1
-                    selected_item_number -= 1
-                pass
-            elif c == curses.KEY_DOWN:
-                if selected_item_number < len(file_list) - 1:
-                    # move cursor down
-                    selected_item_number += 1
-                    # if we're at the bottom of the screen...
-                    if selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
-                        top_line += 1
-            elif c in [339, curses.KEY_PPAGE]:  # page up
-                if selected_item_number - top_line > 0:  # first go to the top of the page
-                    selected_item_number = top_line
-                else:   # if already there, go up a full page
-                    selected_item_number -= page_size
-                    top_line -= page_size 
-                # correct any overflow
-                if selected_item_number < 0:
-                    selected_item_number = 0
-                if top_line < 0:
-                    top_line = 0
-            elif c in [338, curses.KEY_NPAGE]:  # page down
-                if selected_item_number - top_line < page_size - 1: # first go to bottom of the page
-                    selected_item_number = page_size + top_line - 1
-                else:   # if already there, go down afull page
-                    selected_item_number += page_size
-                    top_line += page_size
-                # correct any overflow
-                if selected_item_number >= len(file_list):
-                    selected_item_number = len(file_list) - 1
-                if top_line >= len(file_list):
-                    top_line = len(file_list) - page_size
-            elif c in [339, curses.KEY_HOME]:  # 339 = home
-                selected_item_number = 0
-                top_line = 0
-            elif c in [338, curses.KEY_END]:   # 338 = end
-                selected_item_number = len(file_list) - 1
-                top_line = selected_item_number - page_size + 1
-                if top_line < 0:    # for small file lists
-                    top_line = 0
-            elif c in [13, curses.KEY_ENTER]:
-                if file_list[selected_item_number] in folders:
-                    # change directories
-                    if file_list[selected_item_number] == "../":
-                        # "cd .."
-                        current_directory = os.path.split(current_directory)[0]
-                    else:
-                        current_directory = f"{current_directory}/{file_list[selected_item_number]}"
-                        if current_directory[-1] == "/":
-                            current_directory = current_directory[:-1]
-                    # get file list
-                    folders =  ["../"]
-                    #folders += sorted(glob.glob("*/", root_dir=current_directory))
-                    folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                    # remove leading paths
-                    new_folders = []
-                    for path_string in folders:
-                        new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
-                    folders = new_folders
-
-                    if mask_all:
-                        masks = ['*.*']
-                    else:
-                        masks = default_masks
-                    matched_files = []
-                    file_list = []
-                    for file in os.listdir(current_directory):
-                        for mask in masks:
-                            if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                matched_files.append(file)
-                                break
-                    for dirname in folders:
-                        file_list.append(dirname)
-                    file_list += sorted(matched_files)
-                    # reset ui
-                    top_line = 0
-                    selected_item_number = 0
-                    search_string = ""
-                    full_file_list = file_list
-
-                else:
-                    # return the selected file
-                    self.stdscr.clear()
-                    prompting = False
-                    full_path = f"{current_directory}/{file_list[selected_item_number]}"
-                    self.appState.workingLoadDirectory = current_directory
-                    return full_path
-            elif c == 9:    # 9 == tab
-                pass
-                #self.filePickerOptionsPicker()
-            elif c == 21:   # ^U or ctrl-u
-                # clear the search field
-                if search_string != "":
-                    search_string = ""
-            elif c == 27:   # esc key
-                if search_string != "":
-                    search_string = ""
-                else:
-                    self.stdscr.clear()
-                    prompting = False
-                    if self.playing:
-                        self.stdscr.nodelay(1)
-                    return False
-            elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
-                if search_string != "":
-                    # if string is not empty, remove last character
-                    search_string = search_string[:len(search_string)-1]
-            elif c == curses.KEY_MOUSE:
+            if c == curses.KEY_MOUSE:
                 try:
                     _, mouseCol, mouseLine, _, mouseState = curses.getmouse()
                 except:
                     pass
                 if mouseState == curses.BUTTON1_CLICKED or mouseState == curses.BUTTON1_DOUBLE_CLICKED:
                     if mouseLine < realmaxY - 4:     # above the 'status bar,' in the file list
+                        current_section = 0 # switch to "main" section
                         if mouseLine < len(file_list) - top_line:   # clicked item line
                             if mouseCol < len(file_list[top_line+mouseLine] + file_modtime_string): # clicked within item width
-                                selected_item_number = top_line+mouseLine
+                                self.selected_item_number = top_line+mouseLine
                                 if mouseState == curses.BUTTON1_DOUBLE_CLICKED:
-                                    if file_list[selected_item_number] in folders:  # clicked directory
-                                        # change directories. holy fuck this is deep
-                                        if file_list[selected_item_number] == "../":
-                                            # "cd .."
-                                            current_directory = os.path.split(current_directory)[0]
-                                        else:
-                                            current_directory = f"{current_directory}/{file_list[selected_item_number]}"
-                                            if current_directory[-1] == "/":
-                                                current_directory = current_directory[:-1]
-                                        # get file list
-                                        folders =  ["../"]
-                                        #folders += glob.glob("*/", root_dir=current_directory)
-                                        folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                                        # remove leading paths
-                                        new_folders = []
-                                        for path_string in folders:
-                                            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
-                                        folders = new_folders
+                                    #self.notify("Double Clicked on item")
+                                    if file_list[self.selected_item_number] in folders:  # clicked directory
+                                        if not self.appState.sixteenc_browsing:
+                                            # change directories. holy fuck this is deep
+                                            if file_list[self.selected_item_number] == "../":
+                                                # "cd .."
+                                                if self.appState.sixteenc_browsing:
+                                                    if self.sixteenc_level > 0:
+                                                        self.sixteenc_level = self.sixteenc_level - 1
+                                                else:
+                                                    current_directory = os.path.split(current_directory)[0]
+                                            else:
+                                                current_directory = f"{current_directory}/{file_list[self.selected_item_number]}"
+                                                if current_directory[-1] == "/":
+                                                    current_directory = current_directory[:-1]
+                                            # get file list
+                                            folders =  ["../"]
+                                            #folders += glob.glob("*/", root_dir=current_directory)
+                                            if not self.appState.sixteenc_browsing: 
+                                                folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                                # remove leading paths
+                                                new_folders = []
+                                                for path_string in folders:
+                                                    new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                                                folders = new_folders
 
-                                        if mask_all:
-                                            masks = ['*.*']
-                                        else:
-                                            masks = default_masks
-                                        matched_files = []
-                                        file_list = []
-                                        for file in os.listdir(current_directory):
-                                            for mask in masks:
-                                                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                                    matched_files.append(file)
-                                                    break
-                                        for dirname in folders:
-                                            file_list.append(dirname)
-                                        file_list += sorted(matched_files)
-                                        # reset ui
-                                        selected_item_number = 0
-                                        search_string = ""
+                                            if mask_all:
+                                                masks = ['*.*']
+                                            else:
+                                                masks = default_masks
+                                            matched_files = []
+                                            file_list = []
+                                            for file in os.listdir(current_directory):
+                                                for mask in masks:
+                                                    if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                                        matched_files.append(file)
+                                                        break
+                                            for dirname in folders:
+                                                file_list.append(dirname)
+                                            file_list += sorted(matched_files)
+                                            # reset ui
+                                            self.selected_item_number = 0
+                                            search_string = ""
+                                        elif self.appState.sixteenc_browsing:
+                                            #self.notify("Double Clicked on 16c item")
+                                            search_string = ""
+                                            # Clicked a year or pack name in 16c, so navigate in.
+                                            if self.sixteenc_levels[self.sixteenc_level] == "root":
+                                                # Enter into a year
+                                                #if file_list[current_line_number] != '../':
+                                                try:
+                                                    self.appState.sixteenc_year = file_list[self.selected_item_number]
+                                                except:
+                                                    pdb.set_trace()
+                                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
+                                                try:
+                                                    folders = ['../'] + sixteenc_packs
+                                                except:
+                                                    pdb.set_trace()
+                                                file_list = folders
+                                                full_file_list = file_list
+                                                search_files_list = file_list
+                                                self.sixteenc_level += 1    # from "root" to "year"
+                                                self.selected_item_number = 0
+                                                top_line = 0
+                                                c = None
+
+                                            elif self.sixteenc_levels[self.sixteenc_level] == "year":
+                                                if file_list[self.selected_item_number] == '../':
+                                                    # Navigate back down into root
+                                                    self.sixteenc_level = 0    # from "year" to "root"
+                                                    self.selected_item_number = 0
+                                                    #self.selected_item_number = 0
+                                                    self.appState.sixteenc_year = None
+                                                    sixteenc_packs = None
+                                                    #folders = ['../'] + self.sixteenc_years
+                                                    folders = self.sixteenc_years
+                                                    file_list = []
+                                                    full_file_list = file_list
+                                                    search_files_list = file_list
+                                                    top_line = 0
+                                                    c = None
+                                                else:    
+                                                    # Navigate from year into the pack
+                                                    self.appState.sixteenc_pack = file_list[self.selected_item_number]
+                                                    try:
+                                                        sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
+                                                    except:
+                                                        pdb.set_trace()
+                                                    self.selected_item_number = 0
+                                                    folders = ['../']
+                                                    file_list = folders
+                                                    file_list += sixteenc_files
+                                                    full_file_list = file_list
+                                                    search_files_list = file_list
+                                                    #for dirname in folders:
+                                                    #    file_list.append(dirname)
+                                                    file_list = sorted(file_list)
+                                                    self.sixteenc_level += 1    # from "year" to "pack"
+                                                    top_line = 0
+                                                    search_string = ""
+                                            # Because 16c files are being added to the directory list, for some reason:
+                                            elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                                                # Picked a file, so download and load it 
+                                                filename = file_list[self.selected_item_number]
+                                                url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
+                                                self.cursorOn()
+                                                return url, "remote"
+
                                     else:   # clicked a file, try to load it
-                                        full_path = f"{current_directory}/{file_list[selected_item_number]}"
-                                        return full_path
+                                        if self.appState.sixteenc_browsing:
+                                            # Picked a file, so download and load it 
+                                            filename = file_list[self.selected_item_number]
+                                            url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
+                                            self.cursorOn()
+                                            return url, "remote"
+                                        else:
+                                            full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
+                                            self.cursorOn()
+                                            return full_path, "local"
                     if mouseLine == realmaxY - 4:    # on the button bar
-                        if mouseCol in range(0,3):  # clicked [X] All
-                            if mask_all:
-                                mask_all = False
-                                masks = default_masks
-                            else:
-                                mask_all = True
-                                masks = ['*.*']
-                        # update file list
+                        if mouseCol in range(showall_column,showall_column+3):  # clicked [X] All
+                            if self.appState.sixteenc_browsing == False:
+                                if mask_all:
+                                    mask_all = False
+                                    masks = default_masks
+                                else:
+                                    mask_all = True
+                                    masks = ['*.*']
+                        elif self.appState.sixteenc_available and mouseCol in range(sixteen_column,sixteen_column+3):  # clicked [X] 16c
+                            self.appState.sixteenc_browsing = not self.appState.sixteenc_browsing
+                            folders =  ["../"]
+                            #folders += glob.glob("*/", root_dir=current_directory)
+                            if not self.appState.sixteenc_browsing: 
+                                if mask_all:
+                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                        sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                else:
+                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                # remove leading paths
+                                new_folders = []
+                                for path_string in folders:
+                                    new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                                folders = new_folders
+
+
                         matched_files = []
                         file_list = []
-                        for file in os.listdir(current_directory):
-                            for mask in masks:
-                                if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                    matched_files.append(file)
-                                    break
-                        for dirname in folders:
-                            file_list.append(dirname)
-                        file_list += sorted(matched_files)
+                        file_list = self.findLocalFiles(current_directory, folders, masks)
                         # reset ui
-                        selected_item_number = 0
+                        self.selected_item_number = 0
                         search_string = ""
                         full_file_list = file_list
+                        self.log.debug('repopulated file list', {'file_list': file_list})
 
                 if not self.appState.hasMouseScroll:
                     curses.BUTTON5_PRESSED = 0
@@ -4446,27 +4903,425 @@ class UserInterface():  # Separate view (curses) from this controller
                 if mouseState & curses.BUTTON4_PRESSED:   # wheel up
                     # scroll up
                     # if the item isn't at the top of teh screen, move it up
-                    if selected_item_number > top_line:
-                        selected_item_number -= 1
+                    current_section = 0
+                    if self.selected_item_number > top_line:
+                        self.selected_item_number -= 1
                     elif top_line > 0:
                         top_line -= 1
                 elif mouseState & curses.BUTTON5_PRESSED:   # wheel down
                     # scroll down 
-                    if selected_item_number < len(file_list) - 1:
-                        selected_item_number += 1
-                        if selected_item_number == len(file_list) - top_line:
+                    current_section = 0
+                    if self.selected_item_number < len(file_list) - 1:
+                        self.selected_item_number += 1
+                        if self.selected_item_number == len(file_list) - top_line:
                             top_line += 1
-            elif c == None:
-                pass
-            else: # add to search string
-                search_string += chr(c)
-                selected_item_number = 0
-                current_line_number = 0
-                top_line = 0
-                for filename in file_list:  # search list for search_string
-                    if filename not in folders and filename.startswith(search_string):
-                        #selected_item_number = file_list.index(filename)
-                        break   # stop at the first match
+                
+            elif sections[current_section] == "showall":  # show all files checkbox
+                # Change focus from files to other elements, ie: Show All Files checkbox
+                #c = self.stdscr.getch()
+                if c in [9]:       # 9 = Tab 
+                    current_section += 1
+                    if current_section > len(sections) - 1: # If we've tabbed through all sections,
+                        current_section = 0     # circle back to 0 (main file selector)
+                if c in [curses.KEY_UP, curses.KEY_DOWN]:       # 9 = Tab    
+                    # Change focus away, back to file lister
+                    current_section = 0
+                elif c in [ord(' '), 13, curses.KEY_ENTER]:     # 13 = enter
+                    # Check or uncheck Show All Files
+                    mask_all = not mask_all
+                    if mask_all:
+                        masks = ['*.*']
+                    else:
+                        masks = default_masks
+
+
+
+                    # update file list
+                    matched_files = []
+                    file_list = []
+                    full_file_list = []
+                    search_files_list = []
+                    if self.appState.sixteenc_browsing: 
+                        if self.sixteenc_levels[self.sixteenc_level] == "pack":
+                            search_files_list = sixteenc_files
+                    else:
+                        search_files_list = os.listdir(current_directory)
+                    for file in search_files_list:
+                        for mask in masks:
+                            if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                matched_files.append(file)
+                                break
+                    for dirname in folders:
+                        file_list.append(dirname)
+                    file_list += sorted(matched_files)
+                    # reset ui
+                    self.selected_item_number = 0
+                    search_string = ""
+                    full_file_list = file_list
+                elif c in [ord('|')]:     # debug
+                    pdb.set_trace()
+                elif c in [27]:     # esc
+                    prompting = False
+                c = None
+
+            elif sections[current_section] == "sixteenc":  # show all files checkbox
+                if c in [9]:       # 9 = Tab 
+                    current_section += 1
+                    if current_section > len(sections) - 1: # If we've tabbed through all sections,
+                        current_section = 0     # circle back to 0 (main file selector)
+                if c in [curses.KEY_UP, curses.KEY_DOWN]:       # 9 = Tab    
+                    current_section = 0
+                elif c in [ord(' '), 13, curses.KEY_ENTER]:     # 13 = enter
+                    self.appState.sixteenc_browsing = not self.appState.sixteenc_browsing
+
+                    # set correct color mode
+                    if self.appState.sixteenc_browsing:
+                        if self.appState.colorMode != "16":
+                            self.switchTo16ColorMode()
+                    elif not self.appState.sixteenc_browsing:
+                        # IF we aren't in the original mode, switch back
+                        if old_color_mode != self.appState.colorMode:
+                            if old_color_mode == "256":
+                                self.switchTo256ColorMode()
+
+
+                    # update file list
+                    matched_files = []
+                    file_list = []
+                    full_file_list = []
+                    if self.appState.sixteenc_browsing:
+                        # Just turned on sixteenc browsing
+                        self.sixteenc_level = 0
+                        self.selected_item_number = 0
+
+                        # If there's no 16c cache, make a new API object and cache the years
+                        if self.sixteenc_api == None:
+                            self.sixteenc_api = SixteenColorsAPI()
+                        if self.sixteenc_years == None:
+                            self.sixteenc_years = self.sixteenc_api.list_years()
+
+                        # If we're at the root, navigate into the selected year
+                        if self.sixteenc_levels[self.sixteenc_level] == "root":
+                            #self.notify("Root of all 16colors evil")
+                            # Update the file or directory listing
+                            #if file_list[current_line_number] != '../':
+                            self.appState.sixteenc_year = None
+                            sixteenc_packs = None
+                            #folders = ['../'] + self.sixteenc_years
+                            folders = self.sixteenc_years
+                            file_list = []
+                            full_file_list = file_list
+                            search_files_list = file_list
+                        elif self.sixteenc_levels[self.sixteenc_level] == "year":
+                            pass
+                        elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                            pass
+
+
+                    else:   # update with files, not 16c
+
+                        # update file list
+                        matched_files = []
+                        file_list = []
+                        full_file_list = []
+
+                        if mask_all:
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        else:
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                        
+                        # remove leading paths
+                        new_folders = []
+                        for path_string in folders:
+                            new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                        folders = new_folders
+
+                        matched_files = self.findLocalFiles(current_directory, folders, masks)
+                        self.log.debug('found', {'matched_files': matched_files, 'folders': folders, 'current_directory': current_directory, 'masks': masks})
+                        file_list += matched_files
+                        # reset ui
+                        self.selected_item_number = 0
+                        search_string = ""
+                        full_file_list = file_list
+
+                         # file_list = folders
+                        full_file_list = file_list
+                        search_files_list = file_list
+
+                if c in [27]:     # esc
+                    prompting = False
+                c = None
+
+
+
+            elif sections[current_section] == "main":  # show all files checkbox
+                if c == curses.KEY_LEFT:
+                    pass
+                elif c == curses.KEY_RIGHT:
+                    pass
+                elif c in [9]:  # 9 == tab key
+                    current_section += 1
+                    if self.appState.sixteenc_browsing: # skip hidden Show All button in 16c mode
+                        if sections[current_section] == "showall":
+                            current_section += 1
+                    if current_section > len(sections) - 1: # If we've tabbed through all sections,
+                        current_section = 0     # circle back to 0 (main file selector)
+
+                elif c == curses.KEY_UP:
+                    # move cursor up
+                    if self.selected_item_number > 0:
+                        if self.selected_item_number == top_line and top_line != 0:
+                            top_line -= 1
+                        self.selected_item_number -= 1
+                    pass
+                elif c == curses.KEY_DOWN:
+                    if self.selected_item_number < len(file_list) - 1:
+                        # move cursor down
+                        self.selected_item_number += 1
+                        # if we're at the bottom of the screen...
+                        if self.selected_item_number - top_line == page_size and top_line < len(file_list) - page_size:
+                            top_line += 1
+                elif c in [339, curses.KEY_PPAGE]:  # page up
+                    if self.selected_item_number - top_line > 0:  # first go to the top of the page
+                        self.selected_item_number = top_line
+                    else:   # if already there, go up a full page
+                        self.selected_item_number -= page_size
+                        top_line -= page_size 
+                    # correct any overflow
+                    if self.selected_item_number < 0:
+                        self.selected_item_number = 0
+                    if top_line < 0:
+                        top_line = 0
+                elif c in [338, curses.KEY_NPAGE]:  # page down
+                    if self.selected_item_number - top_line < page_size - 1: # first go to bottom of the page
+                        self.selected_item_number = page_size + top_line - 1
+                    else:   # if already there, go down afull page
+                        self.selected_item_number += page_size
+                        top_line += page_size
+                    # correct any overflow
+                    if self.selected_item_number >= len(file_list):
+                        self.selected_item_number = len(file_list) - 1
+                    if top_line >= len(file_list):
+                        top_line = len(file_list) - page_size
+                elif c in [339, curses.KEY_HOME]:  # 339 = home
+                    self.selected_item_number = 0
+                    top_line = 0
+                elif c in [338, curses.KEY_END]:   # 338 = end
+                    self.selected_item_number = len(file_list) - 1
+                    top_line = self.selected_item_number - page_size + 1
+                    if top_line < 0:    # for small file lists
+                        top_line = 0
+                elif c in [13, curses.KEY_ENTER]:
+                    # Pressed enter on a file or directory.
+                    if self.appState.sixteenc_browsing:
+                        # If we're at the root, navigate into the selected year
+                        if self.sixteenc_levels[self.sixteenc_level] == "root":
+                            # Enter into a year
+                            #if file_list[current_line_number] != '../':
+                            try:
+                                self.appState.sixteenc_year = file_list[self.selected_item_number]
+                            except:
+                                pdb.set_trace()
+                            sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
+                            try:
+                                folders = ['../'] + sixteenc_packs
+                            except:
+                                pdb.set_trace()
+                            file_list = folders
+                            full_file_list = file_list
+                            search_files_list = file_list
+                            self.sixteenc_level += 1    # from "root" to "year"
+                            self.selected_item_number = 0
+                            top_line = 0
+                            search_string = ""
+                            # run caching thread to update file_id.diz's for the selected year
+                            if self.appState.sixteenc_year not in self.appState.sixteenc_cached_years:
+                                self.sixteenc_update_diz_cache_start_thread(self.appState.sixteenc_year)
+                            #self.sixteenc_update_diz_cache(self.appState.sixteenc_year)
+                            c = None
+                        elif self.sixteenc_levels[self.sixteenc_level] == "year":
+                            if file_list[self.selected_item_number] == '../':
+                                # Navigate back down into root
+                                self.sixteenc_level = 0    # from "year" to "root"
+                                self.selected_item_number = 0
+                                #self.selected_item_number = 0
+                                self.appState.sixteenc_year = None
+                                sixteenc_packs = None
+                                #folders = ['../'] + self.sixteenc_years
+                                folders = self.sixteenc_years
+                                file_list = []
+                                full_file_list = file_list
+                                search_files_list = file_list
+                                top_line = 0
+                                search_string = ""
+                                c = None
+                            else:
+                                # Navigate from year into the pack
+                                self.appState.sixteenc_pack = file_list[self.selected_item_number]
+                                try:
+                                    sixteenc_files = self.sixteenc_api.list_files_for_pack(self.appState.sixteenc_pack)
+                                except:
+                                    pdb.set_trace()
+                                self.selected_item_number = 0
+                                folders = ['../']
+                                file_list = folders
+                                file_list += sixteenc_files
+                                full_file_list = file_list
+                                search_files_list = file_list
+                                #for dirname in folders:
+                                #    file_list.append(dirname)
+                                file_list = sorted(file_list)
+                                self.sixteenc_level += 1    # from "year" to "pack"
+                                top_line = 0
+                                search_string = ""
+                            c = None
+                        elif self.sixteenc_levels[self.sixteenc_level] == "pack":
+                            if file_list[self.selected_item_number] == '../':
+                                # Navigating back down from pack into year
+                                self.selected_item_number = 0
+                                sixteenc_packs = self.sixteenc_api.list_packs_for_year(self.appState.sixteenc_year)
+                                try:
+                                    folders = ['../'] + sixteenc_packs
+                                except:
+                                    pdb.set_trace()
+                                file_list = folders
+                                full_file_list = file_list
+                                search_files_list = file_list
+                                self.sixteenc_level = 1    # from "root" to "year"
+                                top_line = 0
+                                search_string = ""
+                            else:
+                                # Picked a file, so download and load it :)
+                                filename = file_list[self.selected_item_number]
+                                #pdb.set_trace()
+                                url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
+                                self.cursorOn()
+                                return url, "remote"
+                            c = None
+
+
+                    elif file_list[self.selected_item_number] in folders:
+                        # change directories
+                        if file_list[self.selected_item_number] == "../":
+                            # "cd .."
+                            if self.appState.sixteenc_browsing:
+                                # Navigate "up" in 16c land...
+                                pass
+                            else:
+                                current_directory = os.path.split(current_directory)[0]
+                        else:
+                            if not self.appState.sixteenc_browsing:
+                                current_directory = f"{current_directory}/{file_list[self.selected_item_number]}"
+                                if current_directory[-1] == "/":
+                                    current_directory = current_directory[:-1]
+                        # get file list
+                        folders =  ["../"]
+                        #folders += sorted(glob.glob("*/", root_dir=current_directory))
+                        if self.appState.sixteenc_browsing:
+                            pass
+                        else:
+                            if mask_all:
+                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                    sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                            else:
+                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                            # remove leading paths
+                        if not self.appState.sixteenc_browsing:
+                            new_folders = []
+                            for path_string in folders:
+                                new_folders.append(os.path.sep.join(path_string.split(os.path.sep)[-2:]))
+                            folders = new_folders
+
+                        if mask_all:
+                            masks = ['*.*']
+                        else:
+                            masks = default_masks
+                        matched_files = []
+                        file_list = []
+                        if self.appState.sixteenc_browsing:
+                            if self.appState.sixteenc_pack:
+                                search_files_list = sixteenc_files
+                            elif self.appState.sixteenc_year:
+                                search_files_list = sixteenc_packs
+                            else:
+                                search_files_list = self.sixteenc_years
+                        else:
+                            search_files_list = os.listdir(current_directory)
+                        for file in search_files_list:
+                            for mask in masks:
+                                if fnmatch.fnmatch(file.lower(), mask.lower()):
+                                    matched_files.append(file)
+                                    break
+                        for dirname in folders:
+                            file_list.append(dirname)
+                        file_list += sorted(matched_files)
+                        # reset ui
+                        top_line = 0
+                        self.selected_item_number = 0
+                        search_string = ""
+                        full_file_list = file_list
+
+                    else:
+                        # return the selected file
+                        self.stdscr.clear()
+                        prompting = False
+                        full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
+                        self.appState.workingLoadDirectory = current_directory
+                        self.cursorOn()
+                        return full_path, "local"
+                    #self.filePickerOptionsPicker()
+                elif c == 21:   # ^U or ctrl-u
+                    # clear the search field
+                    if search_string != "":
+                        search_string = ""
+                elif c == 27:   # esc key
+                    if search_string != "":
+                        search_string = ""
+                    else:
+                        # switch back to old color mode
+                        if old_color_mode != self.appState.colorMode:
+                            if old_color_mode == "256":
+                                self.switchTo256ColorMode()
+
+                        self.stdscr.clear()
+                        prompting = False
+                        if self.playing:
+                            self.stdscr.nodelay(1)
+                        self.cursorOn()
+                        return False, "local"
+                elif c in [' curses.KEY_BACKSPACE', 263, 127]: # backspace
+                    if search_string != "":
+                        # if string is not empty, remove last character
+                        search_string = search_string[:len(search_string)-1]
+                elif c == None:
+                    pass
+                elif c == 0x019A:    # getch() gets this when resizing window, for some reason.
+                    # unicode Latin Small Letter L with Bar.
+                    pass
+                else: # add to search string
+                    try:
+                        search_string += chr(c)
+                    except ValueError:  # unprintable characters inserted by terminal when resizing,
+                        # so don't add to search string.
+                        pass
+                    self.selected_item_number = 0
+                    current_line_number = 0
+                    top_line = 0
+                    for filename in file_list:  # search list for search_string
+                        if filename not in folders and filename.startswith(search_string):
+                            #self.selected_item_number = file_list.index(filename)
+                            break   # stop at the first match
+
+            self.stdscr.clear()
+        self.cursorOn()
+
+        # switch back to old color mode
+        if old_color_mode != self.appState.colorMode:
+            if old_color_mode == "256":
+                self.switchTo256ColorMode()
+
+        return False, False
 
     def open(self):
         self.clearStatusLine()
@@ -5188,7 +6043,7 @@ class UserInterface():  # Separate view (curses) from this controller
         except:
             self.notify("Could not open file for writing. (Press any key to continue)", pause=True)
             return False
-        string = ''
+        string = []
         if not lastLineNum: # if we weren't told what lastLineNum is...
             # find it (last line we should save)
             lastLineNum = self.findFrameLastLine(self.mov.currentFrame)
@@ -5201,6 +6056,11 @@ class UserInterface():  # Separate view (curses) from this controller
             firstLineNum = 0    # also don't crop leading blank lines. rude
         error_encoding = False
         for lineNum in range(firstLineNum, lastLineNum):  # y == lines
+            if lineNum % 1000 == 0 or lineNum == lastLineNum-1:
+                self.log.debug(
+                    'writing ansi',
+                    {'lineNum': lineNum+1, 'total': lastLineNum, 'pct': round(((lineNum+1)/lastLineNum)*100, 2), 'colorMode': self.appState.colorMode}
+                )
             for colNum in range(firstColNum, lastColNum):
                 char = self.mov.currentFrame.content[lineNum][colNum]
                 color = self.mov.currentFrame.newColorMap[lineNum][colNum]
@@ -5234,15 +6094,14 @@ class UserInterface():  # Separate view (curses) from this controller
                     break
                 # If we don't have extended ncurses 6 color pairs,
                 # we don't have background colors.. so write the background as black/0
-                string = string + colorCode + char
+                string.append(colorCode + char)
             if ircColors:
-                string = string + '\n'
+                string.append('\n')
             else:
-                #string = string + '\r\n'
-                string = string + '\n'
+                string.append('\n')
         if not error_encoding:
             try:
-                f.write(string)
+                f.write(''.join(string))
                 saved = True
             except UnicodeEncodeError as encodeError:
                 self.notify("Error: Some characters were not compatible with this encoding. File not saved.", pause=True)
@@ -5250,11 +6109,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 saved = False
                 #f.close()
                 #return False
-        if ircColors:
-            string2 = string + '\n'
-        else:
-            f.write('\033[0m') # color attributes off
-            string2 = string + '\r\n'   # final CR+LF (DOS style newlines)
+        f.write('\033[0m') # color attributes off
         f.close()
         #return True
         return saved
@@ -5333,13 +6188,13 @@ class UserInterface():  # Separate view (curses) from this controller
         # start at the last column, work back until we find a character.
         #for colNum in reversed(list(range(0, frame.sizeX))):
         #    for lineNum in reversed(list(range(0, frame.sizeY))):
-        for colNum in reversed(range(0, frame.sizeX)):
-            for lineNum in reversed(range(0, frame.sizeY)):
+        for colNum in reversed(range(0, self.mov.sizeX)):
+            for lineNum in reversed(range(0, self.mov.sizeY)):
                 try:
                     if not frame.content[lineNum][colNum] in [' ', '']:
                         return colNum + 1  # we found a non-empty character
                 except Exception as E:
-                    pdb.set_trace()
+                    return colNum - 1
         #pdb.set_trace()
         return 1 # blank frame, only save the first line.
 
@@ -5347,8 +6202,8 @@ class UserInterface():  # Separate view (curses) from this controller
         """ For the given frame, figure out the first non-blank column, return
             that # (aka, first used column of the frame) """
         # start at the first column, work forward until we find a character.
-        for colNum in range(0, frame.sizeX):
-            for lineNum in range(0, frame.sizeY):
+        for colNum in range(0, self.mov.sizeX):
+            for lineNum in range(0, self.mov.sizeY):
                 if not frame.content[lineNum][colNum] in [' ', '']:
                     return colNum  # we found a non-empty character
         return 1 # blank frame, only save the first line.
@@ -5449,8 +6304,8 @@ class UserInterface():  # Separate view (curses) from this controller
         # open all the pngs so we can save them to gif
         from PIL import Image
         pngImages = [Image.open(fn) for fn in tmpPngNames]
-        sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
-        self.pngsToGif(filename, pngImages, sleep_time)
+        self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0    # or 0.1 == good, too
+        self.pngsToGif(filename, pngImages, self.appState.sleep_time)
         for rmFile in tmpPngNames:
             os.remove(rmFile)
         return True
@@ -5467,6 +6322,7 @@ class UserInterface():  # Separate view (curses) from this controller
                duration=sleeptime * 1000, loop=0)
 
     def showHelp(self):
+        self.stdscr.clear()
         if self.appState.hasHelpFile:
             #self.showAnimatedHelpScreen()
             #self.showAnimatedHelpScreen(page=2)
@@ -5526,17 +6382,70 @@ Can use ESC or META instead of ALT
     def hardRefresh(self):
         #self.stdscr.clear()
         self.stdscr.redrawwin()
-        #self.refresh()
+        self.refresh()
 
-    def refresh(self, refreshScreen=True):          # rename to redraw()?
+    def drawFrame(self, refreshScreen=True, frame=None, topLine = 0, col_offset = 0, line_offset = 0, preview=False):          # rename to redraw()?
+        """ Like refresh() below, but only draws the frame passed in, not a whole movie. """
+        #topLine = self.appState.topLine
+        topLine = 0
+        # Figure out the last line to draw
+        lastLineToDraw = topLine + self.appState.realmaxY - 3 # right above the status line
+        if lastLineToDraw > frame.sizeY:
+            lastLineToDraw = frame.sizeY
+        screenLineNum = 0
+        firstCol = self.appState.firstCol
+        lastCol = min(frame.sizeX, self.appState.realmaxX + firstCol)
+        # Draw each character
+        for linenum in range(topLine, lastLineToDraw):
+            line = frame.content[linenum]
+            for colnum in range(firstCol, lastCol):
+                charColor = frame.newColorMap[linenum][colnum]
+                charContent = str(line[colnum])
+                try:
+                    # set ncurss color pair
+                    cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
+                except: # Or if we can't, fail to the terminal's default color
+                    cursesColorPair = 0
+                if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
+                # then print with defualt charaacters instead. This should prevent the cursor from
+                # disappearing, as well as let you preview "invisible" text under the cursor.
+                else:
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
+            # draw border on right edge of line
+            if not preview and self.appState.drawBorders and screenLineNum + topLine < self.frame.sizeY:
+                self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+            screenLineNum += 1
+        # draw bottom border
+        #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
+        if not preview and self.appState.drawBorders and screenLineNum + topLine == frame.sizeY:
+            if screenLineNum < self.statusBarLineNum:
+                borderWidth = min(frame.sizeX, self.realmaxX)
+                self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum, frame.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+        screenLineNum += 1
+        #spaceMultiplier = mov.sizeX + 1
+        spaceMultiplier = self.realmaxY
+        #for x in range(screenLineNum, self.realmaxY - 2):
+        #    self.addstr(x, 0, " " * spaceMultiplier)
+        #curses.panel.update_panels()
+        if refreshScreen:
+            self.stdscr.refresh()
+
+    def refresh(self, refreshScreen=True, mov=None, col_offset = 0, line_offset = 0, preview=False, topLine=None):          # rename to redraw()?
         """Refresh the screen"""
-        topLine = self.appState.topLine
+        if topLine == None:
+            topLine = self.appState.topLine
         if self.appState.playingHelpScreen_2:
             mov = self.appState.helpMov_2
         elif self.appState.playingHelpScreen:
             mov = self.appState.helpMov
         else:
-            mov = self.mov
+            if mov == None:
+                mov = self.mov
         # Figure out the last line to draw
         lastLineToDraw = topLine + self.appState.realmaxY - 2 # right above the status line
         if self.appState.playOnlyMode:
@@ -5556,10 +6465,10 @@ Can use ESC or META instead of ALT
                     if self.appState.brush != None:
                         # draw brush preview
                         # If we're drawing within the brush area:
-                        if linenum in range(self.appState.mouse_line + self.appState.topLine, self.appState.mouse_line + self.appState.brush.sizeX + self.appState.topLine):
+                        if linenum in range(self.appState.mouse_line + topLine, self.appState.mouse_line + self.appState.brush.sizeX + topLine):
                             if colnum in range(self.appState.mouse_col + self.appState.firstCol, self.appState.mouse_col + self.appState.brush.sizeY + self.appState.firstCol):
                                 #brush_line = linenum - self.appState.mouse_line
-                                brush_line = linenum - self.appState.mouse_line - self.appState.topLine
+                                brush_line = linenum - self.appState.mouse_line - topLine
                                 brush_col = colnum - self.appState.mouse_col - self.appState.firstCol
                                 try:
                                     brushChar = self.appState.brush.content[brush_col][brush_line]
@@ -5575,7 +6484,7 @@ Can use ESC or META instead of ALT
                                     if self.appState.renderMouseCursor:
                                         charContent = brushChar
                                         charColor = self.appState.brush.newColorMap[brush_col][brush_line]
-                if linenum == self.appState.mouse_line + self.appState.topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
+                if linenum == self.appState.mouse_line + topLine and colnum == self.appState.mouse_col + self.appState.firstCol:
                     if self.appState.cursorMode == "Draw" and not self.playing and not self.appState.playingHelpScreen:  # Drawing preview instead
                         if self.appState.renderMouseCursor:
                             charContent = self.appState.drawChar
@@ -5589,7 +6498,7 @@ Can use ESC or META instead of ALT
                 if self.appState.can_inject and self.appState.colorMode == "256":
                     injecting = True
                 if charColor[0] > 8 and charColor[0] <= 16 and self.appState.colorMode == "16":    # bright color
-                    self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                    self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 elif charColor[0] > 7 and charColor[0] <= 15 and self.appState.colorMode == "256":    # bright color
                     # Let's try injecting!
                     if injecting:
@@ -5601,7 +6510,7 @@ Can use ESC or META instead of ALT
                         pass
                         #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
                     else:
-                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
+                        self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair) | curses.A_BOLD)
                 # If the mouse cursor is over Fg: 1 Bg:1 in 16 color mode, aka Black on Black
                 # then print with defualt charaacters instead. This should prevent the cursor from
                 # disappearing, as well as let you preview "invisible" text under the cursor.
@@ -5640,24 +6549,27 @@ Can use ESC or META instead of ALT
                         pass
                         #self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent)
                     else:
-                        self.addstr(screenLineNum, colnum - self.appState.firstCol, charContent, curses.color_pair(cursesColorPair))
+                        self.addstr(screenLineNum + line_offset, colnum - self.appState.firstCol + col_offset, charContent, curses.color_pair(cursesColorPair))
             # draw border on right edge of line
-            if self.appState.drawBorders and screenLineNum + self.appState.topLine < self.mov.sizeY:
+            if not preview and self.appState.drawBorders and screenLineNum + topLine < self.mov.sizeY:
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
             screenLineNum += 1
         # draw bottom border
         #if self.appState.drawBorders and screenLineNum < self.realmaxY - 3 :
-        if self.appState.drawBorders and screenLineNum + self.appState.topLine == self.mov.sizeY:
+        if not preview and self.appState.drawBorders and screenLineNum + topLine == self.mov.sizeY:
             if screenLineNum < self.statusBarLineNum:
                 borderWidth = min(mov.sizeX, self.realmaxX)
                 self.addstr(screenLineNum, 0, "." * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
                 self.addstr(screenLineNum, mov.sizeX, ": ", curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum + 1, 0, " " * borderWidth, curses.color_pair(self.appState.theme['borderColor']))
+                self.addstr(screenLineNum + 1, mov.sizeX, "  ", curses.color_pair(self.appState.theme['borderColor']))
         screenLineNum += 1
         #spaceMultiplier = mov.sizeX + 1
         spaceMultiplier = self.realmaxY
         for x in range(screenLineNum, self.realmaxY - 2):
             self.addstr(x, 0, " " * spaceMultiplier)
-        curses.panel.update_panels()
+        if not preview:
+            curses.panel.update_panels()
         if self.appState.playingHelpScreen:
             self.addstr(self.statusBarLineNum + 1, 0, "Up/Down, Pgup/Pgdown, Home/End or Mouse Wheel to scroll. Enter or Esc to exit.", curses.color_pair(self.appState.theme['promptColor']))
         if refreshScreen:
@@ -5697,8 +6609,8 @@ Can use ESC or META instead of ALT
         fg = self.appState.defaultFgColor
         bg = self.appState.defaultBgColor
         for frameNum in range(0, len(self.mov.frames)):
-            self.mov.frames[frameNum].content.insert(self.xy[0] + 1, list(' ' * self.mov.sizeX))
-            self.mov.frames[frameNum].newColorMap.insert(self.xy[0] + 1, [[fg,bg]] * self.mov.sizeX)
+            self.mov.frames[frameNum].content.insert(self.xy[0], list(' ' * self.mov.sizeX))
+            self.mov.frames[frameNum].newColorMap.insert(self.xy[0], [[fg,bg]] * self.mov.sizeX)
             self.mov.frames[frameNum].sizeY += 1
         self.mov.sizeY += 1
         #self.mov.currentFrame.sizeY += 1
@@ -5835,7 +6747,13 @@ Can use ESC or META instead of ALT
                 for colnum in range(firstColNum - 1, lastColNum):
                     #if colnum == self.mov.sizeX - 1:   # prevent overflow on last line
                     #    colnum -= 1
-                    charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                    try:
+                        charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                    except Exception as E:
+                        self.notify(f"Exception E: {E}")
+                        linenum = linenum - 1
+                        charColor = mov.currentFrame.newColorMap[linenum][colnum]
+                        #pdb.set_trace()
                     try: # set ncurss color pair
                         cursesColorPair = self.ansi.colorPairMap[tuple(charColor)] 
                     except: # Or if we can't, fail to the terminal's default color
@@ -6070,6 +6988,10 @@ Can use ESC or META instead of ALT
         else:
             self.stdscr.nodelay(0)
 
+    def pasteFromMenu(self):
+        if self.clipBoard:  # If there is something in the clipboard
+            self.askHowToPaste()
+
     def askHowToPaste(self):
         self.clearStatusBar()
         if self.mov.hasMultipleFrames():
@@ -6273,4 +7195,47 @@ Can use ESC or META instead of ALT
     def parseArgs(self):
         """ do argparse stuff, get filename from user """
         pass
+
+    def openEditorFromDurview(self):
+        # get ready to open editor
+        self.appState.playOnlyMode = False
+        #self.appState.topLine = 0
+        self.appState.firstCol = 0
+        self.xy = [self.appState.topLine, 1]
+        self.statusBar.show()
+        self.appState.drawBorders = True
+        self.cursorOn()
+        #self.stdscr.clear()
+        self.stopPlaying()
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        self.statusBar.setCursorModeMove()
+        self.hardRefresh()
+
+        # open editor
+        self.mainLoop()
+
+        # get back to viewer
+        self.statusBar.hide()
+        self.appState.drawBorders = True
+
+    def runDurView(self):
+        """ Launch the UI for the DurView app """
+        # While there are files to read from the openFilePicker(), put them into view mode
+        #
+        #if self.appState.curOpenFileName != "":
+        #    # We already opened a file from the command-line, so play it.
+        #    self.enterViewMode()
+        for movie in self.appState.play_queue:
+            self.loadFromFile(movie, 'dur') # this loads ansi files, too. win
+            self.enterViewMode()
+        while self.appState.durview_running:
+            #file = self.openFilePicker()
+            opened = self.openFromMenu()
+            if opened == False:
+                # User exited file picker with esc, so exit DurView
+                self.appState.durview_running = False
+            else:
+                self.enterViewMode()
+
+
 

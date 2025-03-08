@@ -2,16 +2,17 @@
 # main() entry point
 
 import argparse
-import configparser
 import curses
 import os
 import sys
 import time
 import pathlib
 
+from durdraw import log
 from durdraw.durdraw_appstate import AppState
 from durdraw.durdraw_ui_curses import UserInterface as UI_Curses
 from durdraw.durdraw_options import Options
+from durdraw.durdraw_version import DUR_VER
 import durdraw.help
 import durdraw.neofetcher as neofetcher
 
@@ -26,8 +27,8 @@ class ArgumentChecker:
         else:
             raise argparse.ArgumentTypeError("Undo size must be between 1 and 1000.")
 
+@log.log_on_crash
 def main(fetch_args=None):
-    DUR_VER = '0.28.0'
     DUR_FILE_VER = 7
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = 'Durdraw'
@@ -146,6 +147,16 @@ def main(fetch_args=None):
             app.loadThemeFromConfig("Theme-256")
         else:
             app.loadThemeFromConfig("Theme-16")
+
+    if 'Logging' in app.configFile:
+        logging_config = dict(app.configFile['Logging'])
+
+        if 'local-tz' in logging_config:
+            logging_config['local_tz'] = app.configFile['Logging'].getboolean('local-tz')
+            del logging_config['local-tz']
+
+        app.setLogger(**logging_config)
+
     if args.theme:
         if app.colorMode == "256":
             app.loadThemeFile(args.theme[0], "Theme-256")
@@ -257,12 +268,10 @@ def main(fetch_args=None):
         ui.verySafeQuit()
     if args.export_ansi:
         # Export ansi and exit
-        ui.saveAnsiFile(os.path.splitext(args.filename)[0] + ".ansi")
+        ui.saveAnsiFile(os.path.splitext(args.filename)[0] + ".ansi", encoding=app.charEncoding)
         ui.verySafeQuit()
     ui.refresh()
     ui.mainLoop()
 
 if __name__ == "__main__":
     main()
-
-

@@ -1,7 +1,8 @@
 # Load character sets from files, initialize them 
 
+import configparser
 import pdb
-
+import os
 import pathlib
 import xml.etree.ElementTree as ET
 
@@ -95,10 +96,86 @@ def get_unicode_blocks_list():
     block_list = block_list[1:] # cut off Basic Latin, or 0000-007F, as 0000 is a null character
     return block_list
 
+
+def scan_charmap_folders(appState):
+    """ Scans ~/.durdraw/charmap and $durdraw/config """
+    internal_charsets_path = pathlib.Path(__file__).parent.joinpath("charsets")
+    charmap_dirs = ["~/.durdraw/charsets", internal_charsets_path]
+    for directory in charmap_dirs:
+        directory = os.path.expanduser(directory)
+        if os.path.isdir(directory) and os.access(directory, os.R_OK):
+            for filename in os.listdir(directory):
+                if filename.endswith(".ini"):
+                    file_path = os.path.join(directory, filename)
+                    load_charmap_file(file_path, appState)
+
+
+def load_charmap_file(file_path: str, appState, setting=False):
+    """ returns a fullCharMap. setting=True if switching to the character set """
+    # Open file from path with configparser
+    file_path = os.path.expanduser(file_path)
+    configFileLocations = [file_path]
+    configFile = configparser.ConfigParser()
+    readConfigPaths = configFile.read(configFileLocations)
+
+    if configFile == []:
+        #self.configFileLoaded = False
+        return False
+
+    name = 'custom set'
+    encoding = 'utf-8'
+    if 'Character Set' in configFile:
+        charSetConfig = configFile['Character Set']
+        if 'name' in charSetConfig:
+            name = charSetConfig['name']    # character set name
+        if 'encoding' in charSetConfig:
+            encoding = charSetConfig['encoding']
+
+    charMap = []
+    fKeyList = {'f1':'', 'f2':'', 'f3':'', 'f4':'', 'f5':'', 'f6':'', 'f7':'', 'f8':'', 'f9':'', 'f10':''}
+
+    # Look for [block 1] [block 2] etc. in file. eg:
+    # [block 1]
+    # f1: '🭨'
+    blockNum = 1
+    scanning = True
+    while scanning:
+        blockName = f'block {blockNum}'
+        if blockName in configFile:
+            blockConfig = configFile[blockName]
+            # put fkeys into fkeylist
+            fKeyNum = 1
+            while fKeyNum < 11:
+                fKeyString = f'f{fKeyNum}'
+                if fKeyString in blockConfig:
+                    try:
+                        fKeyList[fKeyString] = ord(blockConfig[fKeyString][0])
+                    except: # empty value
+                        fKeyList[fKeyString] = ord(' ')
+                    #fKeyList[fKeyString] = blockConfig[fKeyString]
+                    #fKeyList[fKeyString] = ord('x')
+                fKeyNum += 1
+
+            charMap.append(fKeyList.copy())
+
+            blockNum += 1
+        else:   
+            # ran out of blocks. Stop searching.
+            scanning = False
+
+    if len(charMap) == 0:
+        return False
+    else:
+        # Loaded, so add to appState.
+        # If the name isn't already taken, add it to the appState character set list.
+        if name not in appState.userCharSets:
+            appState.userCharSets.append(name)
+            appState.userCharSetFiles.update({name: file_path})
+        if setting:
+            appState.characterSet = name
+        return charMap
+
+
 if __name__ == "__main__":
-    #charMap = load_unicode_block("Chess Symbols")
-    #charMap = load_unicode_block("Symbols for Legacy Computing")
-    #charMap = load_unicode_block("Emoticons")
-    #print(str(charMap))
     unicodeBlocksList = get_unicode_blocks_list()
     print(str(unicodeBlocksList))

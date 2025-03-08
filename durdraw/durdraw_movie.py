@@ -1,7 +1,9 @@
 from copy import deepcopy
 from durdraw.durdraw_options import Options
+import durdraw.log as log
 import json
 import pdb
+import re
 
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
@@ -76,6 +78,9 @@ class Frame():
         #self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
         self.setDelayValue(0)
 
+        self.log = log.getLogger('frame')
+        self.log.info('frame initialized', {'width': width, 'height': height})
+
     def flip_horizontal(self):
         #pdb.set_trace()
         self.content = self.content[::-1]
@@ -140,6 +145,9 @@ class Movie():
         self.addEmptyFrame()
         self.currentFrameNumber = self.frameCount
         self.currentFrame = self.frames[self.currentFrameNumber - 1]
+
+        self.log = log.getLogger('movie')
+        self.log.info('movie initialized', {'sizeX': self.sizeX, 'sizeY': self.sizeY})
 
     def addFrame(self, frame):
         """ takes a Frame object, adds it into the movie """
@@ -285,12 +293,23 @@ class Movie():
             for line in frame.content:
                 line_str = ''.join(line)
                 if search_str in line_str:
-                    if len(search_str) < len(replace_str):
-                        line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
+                    # do regexp way, to keep justification
+                    match = re.search(f"{search_str}\\s*", line_str)
+                    if match:
+                        # Calculate the exact width to replace
+                        width = match.end() - match.start()
+                        # Trim or pad replace_str to fit in the calculated width
+                        replace_with = replace_str[:width].ljust(width)
+                        # Substitute in the line
+                        line_str = line_str[:match.start()] + replace_with + line_str[match.end():]
+
                     else:
-                        line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
-                    #caller.notify(f"found {search_str} in line:")
-                    #caller.notify(f"{line_str}")
+                        # if that fails, do old way
+                        if len(search_str) < len(replace_str):
+                            #line_str = line_str.replace(search_str.ljust(len(replace_str)), replace_str)
+                            line_str = line_str.replace(search_str, replace_str)
+                        else:
+                            line_str = line_str.replace(search_str, replace_str.ljust(len(search_str)))
                     # inject modified line back into frame
                     line = list(line_str)
                     frame.content[line_num] = line

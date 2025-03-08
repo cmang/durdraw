@@ -288,15 +288,15 @@ class MenuHandler:
                         else:
                             #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                             prompting = False
-                            self.menu.gui.got_click("Click", mouseX, mouseY)
                             self.hide()
+                            self.menu.gui.got_click("Click", mouseX, mouseY)
                             #curses_notify(self.window, f"This should never happen. mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                                 
                     else:
                         #curses_notify(self.window, f"Debug: mouseX: {mouseX}, mouseY: {mouseY}, self.x: {self.x}, self.menuOriginLine: {self.menuOriginLine}")
                         prompting = False
-                        self.menu.gui.got_click("Click", mouseX, mouseY)
                         self.hide()
+                        self.menu.gui.got_click("Click", mouseX, mouseY)
             #jif c in [104, 63]:  # h H Help
             #    self.hide()
             #    self.items["Help"]["on_click"]()
@@ -330,6 +330,7 @@ class DrawCharPickerHandler:
         self.window = window
 
     def pickChar(self):
+        self.window.nodelay(0) # wait for input when calling getch
         maxLines, maxCol = self.window.getmaxyx()
         #pdb.set_trace()
         self.window.addstr(maxLines - 3, 0, "Enter a character to use for drawing: ")
@@ -344,7 +345,7 @@ class DrawCharPickerHandler:
                 prompting = False
             elif c in [curses.KEY_F2]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f2'])
-                prompting = False
+                PROMPting = False
             elif c in [curses.KEY_F3]:
                 self.caller.appState.drawChar = chr(self.caller.caller.caller.chMap['f3'])
                 prompting = False
@@ -387,6 +388,8 @@ class DrawCharPickerHandler:
         #self.caller.caller.drawCharPickerButton.label = self.caller.appState.drawChar
         self.caller.caller.drawCharPickerButton.set_label(self.caller.appState.drawChar)
         self.window.addstr(maxLines - 3, 0, "                                          ")
+        if self.caller.caller.caller.playing:
+            self.window.nodelay(1) # don't wait for input when calling getch
         self.caller.caller.caller.refresh()
 
 class ColorPickerHandler:
@@ -451,7 +454,7 @@ class ColorPickerHandler:
         self.panel.top()
         #self.move(0,self.x - 6)
         self.panel.show()
-        #oldColor = self.colorPicker.caller.colorfg
+        #oldFgColor = self.colorPicker.caller.colorfg
         #color = self.colorPicker.caller.colorfg
         #if self.appState.colorPickerSelected:
         #    prompting = True
@@ -632,7 +635,7 @@ class ColorPickerHandler:
 
     def showFgPicker(self, message=None):
         #self.colorPicker.caller.notify(f"showFgPicker")
-        self.showColorPicker(type="fg", message=message)
+        return self.showColorPicker(type="fg", message=message)
 
     def move_up_256(self):
         if self.colorMode == "256":
@@ -673,7 +676,8 @@ class ColorPickerHandler:
         self.panel.top()
         #self.move(0,self.x - 6)
         self.panel.show()
-        oldColor = self.colorPicker.caller.colorfg
+        oldFgColor = self.colorPicker.caller.colorfg
+        oldBgColor = self.colorPicker.caller.colorbg
         color = self.colorPicker.caller.colorfg
         if self.appState.colorPickerSelected:
             prompting = True
@@ -748,9 +752,9 @@ class ColorPickerHandler:
                 color = 1
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
-                elf.colorPicker.caller.drawStatusBar()
+                self.colorPicker.caller.drawStatusBar()
             elif c == curses.KEY_END:
-                #color = 255
+                #COLOr = 255
                 color = self.totalColors
                 self.colorPicker.caller.setFgColor(color)
                 self.updateFgPicker()
@@ -760,15 +764,17 @@ class ColorPickerHandler:
                 if not self.appState.sideBarShowing:
                     self.hide()
                 prompting = False
-                if c == 27: # esc, cancel
-                    self.colorPicker.caller.colorfg = oldColor
                 self.appState.colorPickerSelected = False
-                c = None
                 self.updateFgPicker()
                 self.hideBorder()
                 #self.colorPicker.caller.notify(f"{c=}, {prompting=}")
                 if not self.colorPicker.caller.playing:    # caller.caller is the main UI thing
                     self.window.nodelay(0)  # wait
+                if c == 27: # esc, cancel
+                    self.colorPicker.caller.setFgColor(oldFgColor)
+                    self.colorPicker.caller.setBgColor(oldBgColor)
+                    return False
+                c = None
                 #return color
             elif c == curses.KEY_MOUSE:
                 try:
@@ -822,7 +828,8 @@ class ColorPickerHandler:
                 c = self.window.getch()
                 if c == curses.ERR: # Just esc was hit, no other escape sequence
                     self.hideBorder()
-                    self.colorPicker.caller.setFgColor(oldColor)
+                    self.colorPicker.caller.setFgColor(oldFgColor)
+                    self.colorPicker.caller.setBgColor(oldBgColor)
                     self.updateFgPicker()
                     if not self.appState.sideBarShowing:
                         self.hide()

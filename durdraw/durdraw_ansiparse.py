@@ -9,19 +9,23 @@
 # A code looks like this: ^[1;32m for bold color 32. ^[0m for reset.
 # ^[0;4;3;42m for reset (0), underline (4), italic (3), background color (42).
 # We have a state machine that has attributes. Color, bold, underline, italic, etc.
-# 
-# References: 
+#
+# References:
 # Escape code bible: https://en.wikipedia.org/wiki/ANSI_escape_code
 # ANSI Sauce (metadata) spec: https://www.acid.org/info/sauce/sauce.htm
 
 
 import sys
 import struct
-import re
+from itertools import count
 import pdb
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_sauce as dursauce
+import durdraw.plugins.convert_charset as durchar
+import durdraw.log as log
+
+LOGGER = log.getLogger('ansiparse', level='DEBUG', override=True)
 
 def ansi_color_to_durcolor(ansiColor):
     colorName = ansi_color_to_durcolor_table[ansiColor]
@@ -69,6 +73,12 @@ color_name_to_durcolor_table = {
     'White': 00
 }
 
+def find_next_alpha(text, i):
+    for j in count(i):
+        if text[j].isalpha():
+            return j
+    return None
+
 
 def get_width_and_height_of_ansi_blob(text, width=80):
     i = 0   # index into the file blob
@@ -76,10 +86,15 @@ def get_width_and_height_of_ansi_blob(text, width=80):
     line_num = 0
     max_col = 0
     while i < len(text):
+        if i % 10_000 == 0 or i+1 == len(text):
+            LOGGER.debug('scanning', {'i': i+1, 'total': len(text), 'pct': round((i+1)/len(text)*100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[
-            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
-            end_index = match.start() + i   # where the code ends
+            match = find_next_alpha(text, i+1)
+            if not match:
+                i += 1 # move on to next byte
+                continue
+            end_index = match   # where the code ends
             if text[end_index] == 'A':      # Move the cursor up X spaces
                 escape_sequence = text[i + 2:end_index]
                 if len(escape_sequence) == 0:
@@ -167,14 +182,18 @@ def get_width_and_height_of_ansi_blob(text, width=80):
             character = text[i]
             col_num += 1
         i += 1
-    print("")
+    #print("")
     width = max_col
     height = line_num
     return width, height
 
-def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, maxWidth=80):
+def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, console=False, debug=False, convert_control_codes=True, maxWidth=80):
     """ Take an ANSI file blob, load it into a DUR frame object, return 
         frame """
+    sauce = None
+
+    if type(text) is bytes:
+        text = text.decode('cp437')
     if filename:
         # If we can just pull it from the Sauce, cool
         sauce = dursauce.SauceParser()
@@ -191,21 +210,34 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             width = sauce.width
             height = sauce.height
             #caller.notify(f"Sauce pulled: author: {sauce.author}, title: {sauce.title}, width {width}, height {height}")
-    if not sauce.height:
+    if sauce != None:
+        if not sauce.height:
+            width, height = get_width_and_height_of_ansi_blob(text)
+            width = sauce.width
+        if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
+            width, height = get_width_and_height_of_ansi_blob(text)
+    else:
         width, height = get_width_and_height_of_ansi_blob(text)
-        width = sauce.width
-    if not sauce.sauce_found or width > 200 or height > 1200:   # let the dodgy function guess
-        width, height = get_width_and_height_of_ansi_blob(text)
+
     width = max(width, maxWidth)
     #width = max(width, 80)
     height += 1
-    if appState.debug:
-        caller.notify(f"Guessed width: {width}, height: {height}")
+    #if appState.debug:
+    #    caller.notify(f"Guessed width: {width}, height: {height}")
     #width = min(width, maxWidth)
     height = max(height, 25)
+
+    if appState.wrapWidth == 80 and width > 750:
+        # I think something is probably wrong. Bad width and/or height.
+        # But, allow --wrap to override this check.
+        width = 80
+    if height > 8500:
+        height = 1000
+        #print(f"Bad height or width. Width: {width}, height: {height}")
+        #pdb.set_trace()
     new_frame = durmovie.Frame(width, height + 1)
-    if appState.debug:
-        caller.notify(f"debug: maxWidth = {maxWidth}")
+    #if appState.debug:
+    #    caller.notify(f"debug: maxWidth = {maxWidth}")
     #parsed_text = ''
     #color_codes = ''
     i = 0   # index into the file blob
@@ -214,18 +246,23 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     max_col = 0
     default_fg_color = appState.defaultFgColor
     default_bg_color = appState.defaultBgColor
-    fg_color = default_fg_color 
-    bg_color = default_bg_color 
+    fg_color = default_fg_color
+    bg_color = default_bg_color
     bold = False
     saved_col_num = 0
     saved_line_num = 0
     saved_byte_location = 0
     parse_error = False
     while i < len(text):
+        if i % 10_000 == 0 or i+1 == len(text):
+            LOGGER.debug('parsing', {'i': i+1, 'total': len(text), 'pct': round((i+1)/len(text)*100, 2)})
         # If there's an escape code, extract data from it
         if text[i:i + 2] == '\x1B[':    # Match ^[[
-            match = re.search('[a-zA-Z]', text[i:]) # match any control code 
-            end_index = match.start() + i   # where the code ends
+            match = find_next_alpha(text, i+1)
+            if not match:
+                i += 1 # move on to next byte
+                continue
+            end_index = match   # where the code ends
             if text[end_index] == 'm':      # Color/SGR control code
                 escape_sequence = text[i + 2:end_index]
                 escape_codes = escape_sequence.split(';')
@@ -304,8 +341,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                         else:
                             fg_color = 1
                     # 256 Colors
-                if console:    
-                    print(str(escape_codes), end="")
+                #if console:    
+                #    print(str(escape_codes), end="")
 
                 # Add color to color map
                 try:
@@ -422,7 +459,13 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 line_num += 1
             character = text[i]
             try:
+                # Convert CP437 control codes
+                if ord(character) < 0x19:
+                    character = chr(durchar.cp437_control_codes_to_utf8[ord(character)])
                 new_frame.content[line_num][col_num] = character
+            except TypeError as E:
+                print(f"Type error, likely on text: {E}")
+                pdb.set_trace()
             except IndexError:
                 parse_error = True
                 if debug:
@@ -433,14 +476,14 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 parse_error = True
                 if debug:
                     caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, pos: {i}")
-            if console:    
-                print(character, end='')
+           # if console:    
+           #     print(character, end='')
             col_num += 1
         i += 1
     if console:    
         print("")
         print(f"Lines: {line_num}, Columns: {max_col}")
-    if parse_error:
+    if parse_error and appState.debug:
         caller.notify(f"Possible errors detected while loading this file. It may not display correctly.")
     height = line_num
     width = max_col

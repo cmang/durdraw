@@ -6,9 +6,10 @@ import os
 import pathlib
 import random
 
+from durdraw import log
 import durdraw.main as durdraw_main
 import durdraw.neofetcher as neofetcher
-
+from durdraw.durdraw_version import DUR_VER
 
 def all_durf_files():
     return all_internal_durf_files()
@@ -66,6 +67,7 @@ def auto_load_file(neofetch_data, rand=False, fake_os=None):
         files = ['linux-fire.durf', 'linux-tux.durf']
     return random.choice(files)
 
+@log.log_on_crash
 def main():
 
     epilog_text = make_epilog()
@@ -81,12 +83,23 @@ def main():
     parser_fake_os_mutex = parser.add_mutually_exclusive_group()
     parser_fake_os_mutex.add_argument("--linux", help="Show a Linux animation", action="store_true")
     parser_fake_os_mutex.add_argument("--bsd", help="Show a BSD animation", action="store_true")
+    parser.add_argument("-V", "--version", help="Show Version information and quit", action="store_true")
     #parser.add_argument("-l", nargs="?", default="list")
     args = parser.parse_args()
-    neofetch_data = neofetcher.run()
+    use_fetcher = "neofetch"
+    if neofetcher.fetcher_available(name=use_fetcher):
+        print("Pulling data from neofetch.")
+        neofetch_data = neofetcher.run()
+        print("done.")
+    else:
+        print(f"Error: Durfetch requires {use_fetcher}. Please make sure \"{use_fetcher}\" is installed and in the PATH.")
+        exit(1)
     #print(args.filename, args.list, args.l, neofetch_data)
     #if args.filename == None:   # no file name passed, so pick an appropriate one.
     faked = None
+    if args.version:
+        print(DUR_VER)
+        exit(0)
     if args.linux:
         faked = "linux"
     if args.bsd:
@@ -97,7 +110,10 @@ def main():
             print(f"Error: Could not find an animation by that name at {filename[0]}")
             exit(1)
     elif args.filename == []:   # no file name passed, so pick an appropriate one.
-        filename = [get_internal_durf_path() + "/" + auto_load_file(neofetch_data, rand=args.rand, fake_os=faked)]
+        if args.rand:   # don't prefix path, cuz all_dur_files() already did it
+            filename = [auto_load_file(neofetch_data, rand=args.rand, fake_os=faked)]
+        else:
+            filename = [get_internal_durf_path() + "/" + auto_load_file(neofetch_data, fake_os=faked)]
     else:
         filename = args.filename
     #print(filename)
