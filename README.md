@@ -61,7 +61,7 @@ You can install `durdraw` via several methods:
 
 After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for [command-line options](#command-line-usage).
 
-_If you just want to run it without installing, see [Running Without Installing](#running-without-installing)_
+_If you just want to run it without installing, see [Running Without Installing](#running-without-installing). You can also install via the included Dockerfile._
 
 ### Via OS Repositories
 
