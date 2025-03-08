@@ -467,6 +467,8 @@ class StatusBar():
         editMenu.add_item("Mark/Select", caller.startSelecting, "k", shortcut="esc-K")
         editMenu.add_item("Paste", caller.pasteFromMenu, "p", shortcut="esc-v")
         editMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
+        editMenu.add_item("Insert Line", caller.addLine, "i", shortcut="esc-'")
+        editMenu.add_item("Delete Line", caller.delLine, "d", shortcut="esc-;")
         editMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         editMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
         editMenu.is_submenu = True
