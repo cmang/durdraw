@@ -288,7 +288,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 ### Configuration
 
 - [Example Themes](#example-themes)
-- [Colour Options](#colour-options)
+- [Color Options](#color-options)
 - [Theme Options](#theme-options)
 - [Custom Character Sets](#custom-character-sets)
 
@@ -380,7 +380,7 @@ menuBorderColor: 24
 </tr>
 </table>
 
-#### Colour Options
+#### Color Options
 
 > (_for 16-color mode - color codes numbers for 256-color mode can be found in Durdraw's 256-color selector._)
 
