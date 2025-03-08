@@ -411,7 +411,7 @@ menuBorderColor: 24
 
 #### Custom Character Sets
 
-You can create custom character set files and place them in the ~/.durdraw/charsets folder. Durdraw will automatically scan for these files and include them in the list of character sets (esc-S).
+You can create custom character set files and place them in the ~/.durdraw/charsets folder. Character set files must have the file nme extension .ini. Durdraw will automatically scan for these files and include them in the list of character sets (esc-S).
 
 An example character set file is provided in example-charset.ini:
 
