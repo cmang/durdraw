@@ -462,12 +462,12 @@ class StatusBar():
         # Make the Edit menu
         editMenuColumn = 22 # Try to place to the right of the main menu
         editMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
-        editMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         editMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
         editMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
         editMenu.add_item("Mark/Select", caller.startSelecting, "k", shortcut="esc-K")
         editMenu.add_item("Paste", caller.pasteFromMenu, "p", shortcut="esc-v")
         editMenu.add_item("Find /", caller.searchForStringPrompt, "/", shortcut="esc-F")
+        editMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         editMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
         editMenu.is_submenu = True
         editMenu.set_x(self.x - 1)
