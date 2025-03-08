@@ -6382,7 +6382,7 @@ Can use ESC or META instead of ALT
     def hardRefresh(self):
         #self.stdscr.clear()
         self.stdscr.redrawwin()
-        #self.refresh()
+        self.refresh()
 
     def drawFrame(self, refreshScreen=True, frame=None, topLine = 0, col_offset = 0, line_offset = 0, preview=False):          # rename to redraw()?
         """ Like refresh() below, but only draws the frame passed in, not a whole movie. """
