@@ -1691,9 +1691,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addCol(frange=self.appState.playbackRange)
                 elif c == 44:      # alt-, - erase/pop current column
                     self.delCol(frange=self.appState.playbackRange)
-                elif c == 47:      # alt-/ - insert line
+                elif c == 39:      # alt-' - insert line
                     self.addLine(frange=self.appState.playbackRange)
-                elif c == 39:        # alt-' - erase line
+                elif c == 59:        # alt-; - erase line
                     self.delLine(frange=self.appState.playbackRange)
                 elif c == 105:      # alt-i - File/Canvas Information
                     self.clickedInfoButton()
@@ -2754,9 +2754,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.addLineToCanvas()
                 elif c == 58:       # alt-: - erase line from canvas
                     self.delLineFromCanvas()
-                elif c == 47:       # alt-/ - insert line
+                elif c == 39:       # alt-' - insert line
                     self.addLine()
-                elif c == 39:       # alt-' - erase line
+                elif c == 59:       # alt-; - erase line
                     self.delLine()
                 elif c == 121 or c == ord('u'):      # alt-y - Eyedrop, alt-u is what Aciddraw used
                     self.eyeDrop(self.xy[1] - 1, self.xy[0])    # cursor position
