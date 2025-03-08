@@ -1512,7 +1512,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.playing = False
             self.appState.topLine = 0
 
-        elif c in [ord('?'), ord('h')]:
+        elif c in [ord('?')]:
             self.showViewerHelp()
 
         elif c in [ord('i'), ord('I')]:
