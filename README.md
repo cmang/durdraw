@@ -636,7 +636,7 @@ Durdraw is what it is thanks to the following people:
 
 ### Legal
 
-Durdraw is Copyright (c) 2009-2024 Sam Foster <samfoster@gmail.com>. All rights reserved.
+Durdraw is Copyright (c) 2009-2025 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
 The BSD Daemon is Copyright 1988 by Marshall Kirk McKusick.
 
