@@ -1,0 +1,55 @@
+{"file": "durdraw/durdraw_undo.py", "matches": {"func": {"idx": 10, "line": "def __init__(self, ui, appState = None):"}, "match": {"idx": 19, "line": "self.push() # push initial state"}}}
+{"file": "durdraw/durdraw_undo.py", "matches": {"func": {"idx": 42, "line": "def undo(self):"}, "match": {"idx": 54, "line": "self.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 764, "line": "def backspace(self):"}, "match": {"idx": 766, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 774, "line": "def deleteKeyPop(self, frange=None):"}, "match": {"idx": 777, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 790, "line": "def reverseDelete(self, frange=None):"}, "match": {"idx": 793, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 807, "line": "def insertColor(self, fg=1, bg=0, frange=None, x=None, y=None, pushUndo=True):"}, "match": {"idx": 811, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 823, "line": "def insertChar(self, c, fg=1, bg=0, frange=None, x=None, y=None, moveCursor = False, pushUndo=True):"}, "match": {"idx": 826, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 878, "line": "def clearCanvas(self, prompting = False):"}, "match": {"idx": 895, "line": "#self.undo.push() # so we can undo this operation"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1097, "line": "def transform_bounce(self):"}, "match": {"idx": 1099, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1107, "line": "def transform_repeat(self):"}, "match": {"idx": 1109, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1117, "line": "def transform_reverse(self):"}, "match": {"idx": 1119, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1126, "line": "def moveCurrentFrame(self):"}, "match": {"idx": 1127, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 1386, "line": "def apply_neofetch_keys(self):"}, "match": {"idx": 1390, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 2614, "line": "def mainLoop(self):"}, "match": {"idx": 3065, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 2614, "line": "def mainLoop(self):"}, "match": {"idx": 3318, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3372, "line": "def replaceColorUnderCursor(self):"}, "match": {"idx": 3404, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3372, "line": "def replaceColorUnderCursor(self):"}, "match": {"idx": 3410, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3372, "line": "def replaceColorUnderCursor(self):"}, "match": {"idx": 3414, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3427, "line": "def cloneToNewFrame(self):"}, "match": {"idx": 3429, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3437, "line": "def appendEmptyFrame(self):"}, "match": {"idx": 3438, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3611, "line": "def getDelayValue(self):"}, "match": {"idx": 3625, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 3630, "line": "def deleteCurrentFramePrompt(self):"}, "match": {"idx": 3639, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 5314, "line": "def loadFromFile(self, shortfile, loadFormat):  # shortfile = non full path filename"}, "match": {"idx": 5332, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6446, "line": "def addColToCanvas(self):"}, "match": {"idx": 6447, "line": "self.undo.push()    # window is big enough"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6459, "line": "def delColFromCanvas(self):"}, "match": {"idx": 6461, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6475, "line": "def addLineToCanvas(self):"}, "match": {"idx": 6476, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6487, "line": "def delLineFromCanvas(self):"}, "match": {"idx": 6489, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6501, "line": "def addCol(self, frange=None):"}, "match": {"idx": 6504, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6524, "line": "def delCol(self, frange=None):"}, "match": {"idx": 6526, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6543, "line": "def delLine(self, frange=None):"}, "match": {"idx": 6545, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6564, "line": "def addLine(self, frange=None):"}, "match": {"idx": 6567, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6587, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6671, "line": "#    self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6680, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6687, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6692, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6704, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6710, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6714, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6726, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6732, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6736, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6784, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6790, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6582, "line": "def startSelecting(self, firstkey=None, mouse=False):   # firstkey is the key the user was"}, "match": {"idx": 6794, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6853, "line": "def askHowToPaste(self):"}, "match": {"idx": 6859, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6853, "line": "def askHowToPaste(self):"}, "match": {"idx": 6865, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6853, "line": "def askHowToPaste(self):"}, "match": {"idx": 6869, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6876, "line": "def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):"}, "match": {"idx": 6882, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6927, "line": "def copySegmentToAllFrames(self, startPoint, height, width, frange=None):"}, "match": {"idx": 6928, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6972, "line": "def flipSegmentVertical(self, startPoint, height, width, frange=None):"}, "match": {"idx": 6974, "line": "#self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6984, "line": "def flipSegmentHorizontal(self, startPoint, height, width, frange=None):"}, "match": {"idx": 6986, "line": "#self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 6995, "line": "def deleteSegment(self, startPoint, height, width, frange=None):"}, "match": {"idx": 6997, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 7011, "line": "def fillSegment(self, startPoint, height, width, frange=None, fillChar=\"X\"):"}, "match": {"idx": 7013, "line": "self.undo.push()"}}}
+{"file": "durdraw/durdraw_ui_curses.py", "matches": {"func": {"idx": 7027, "line": "def colorSegment(self, startPoint, height, width, frange=None):"}, "match": {"idx": 7029, "line": "self.undo.push()"}}}

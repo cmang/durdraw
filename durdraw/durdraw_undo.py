@@ -1,6 +1,8 @@
+from collections import deque
 import os
 import pickle
 import tempfile
+import durdraw.log as log
 
 class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         # when to switch to another saved movie state.
@@ -8,6 +10,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             in a list. Takes a UserInterface object for syntax. methods for
             push, undo and redo """
         def __init__(self, ui, appState = None):
+            self.log = log.getLogger('undo')
             self.ui = ui
             self.undoIndex = 0 # will be 0 when populated with 1 state.
             self.modifications = 0 #
@@ -24,6 +27,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                 if self.appState.modified == False:
                     self.appState.modified = True
             self.modifications += 1
+            self.log.debug('push', {'modifications': self.modifications, 'list size': len(self.undoList), 'idx': self.undoIndex})
             if len(self.undoList) >= self.historySize:   # How far back our undo history can
                 # go. Make this configurable.
                 # if undo stack == full, dequeue from the bottom
@@ -38,6 +42,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             self.undoIndex = len(self.undoList) # point index to last item
 
         def undo(self):
+            self.log.debug('undo', {'modifications': self.modifications, 'list size': len(self.undoList), 'idx': self.undoIndex})
             if self.modifications > 1:
                 self.modifications = self.modifications - 1
             if self.modifications == 2:
@@ -57,6 +62,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
             return True # succeeded
 
         def redo(self):
+            self.log.debug('redo', {'modifications': self.modifications, 'list size': len(self.undoList), 'idx': self.undoIndex})
             if self.undoIndex < (len(self.undoList) -1): # we can redo
                 self.undoIndex += 1 # go to next redo state
                 self.modifications += 1
@@ -67,6 +73,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
                     self.appState.modified = True
             else:
                 self.ui.notify("Nothing to redo.")
+
         def setHistorySize(self, historySize):
             """ Defines the max number of undo states we will save """
             self.historySize = historySize
@@ -74,6 +81,7 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         def _append_state(self, obj):
             '''Stores undo state by pickling it into a temporary file, which is kept open
             and appended to the state buffer'''
+            self.log.debug('_append_state')
             if os.environ.get('ENABLE_UNDO_TEMPFILES', '0') == '1':
                 f = tempfile.TemporaryFile()
                 pickle.dump(obj, f)
@@ -85,10 +93,57 @@ class UndoManager():  # pass it a UserInterface object so Undo can tell UI
         def _read_state(self, idx):
             '''Reads a state from the undo buffer by unpickling it from the temporary file at position idx.
             Rewinds the file to the beginning for future reads before returning the object'''
+            self.log.debug('_read_state', {'idx': idx})
             if os.environ.get('ENABLE_UNDO_TEMPFILES', '0') == '1':
                 obj = pickle.load(self.undoList[idx])
                 self.undoList[idx].seek(0)
                 return obj
             else:
                 return pickle.loads(self.undoList[idx])
+
+
+class UndoRegister:
+    __slots__ = ['undoBuf', 'redoBuf', 'logger']
+
+    def __init__(self, initial_state=None):
+        self.logger = log.getLogger('undo_register')
+        self.undoBuf, self.redoBuf = deque(), deque()
+        if initial_state:
+            self.undoBuf.append(initial_state)
+
+    def push(self, el):
+        if self.redoBuf:
+            self.redoBuf.clear()
+        self.undoBuf.append(el)
+        self.logger.debug('push', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+
+    def undo(self):
+        if len(self.undoBuf) <= 1:
+            return None
+        self.redoBuf.appendleft(self.undoBuf.pop())
+        self.logger.debug('undo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+        return self.redoBuf[0]
+
+    def redo(self):
+        if not self.redoBuf:
+            return None
+        self.undoBuf.append(self.redoBuf.popleft())
+        self.logger.debug('redo', {'undoBuf': self.undoBuf, 'redoBuf': self.redoBuf})
+        return self.undoBuf[-1]
+
+    @property
+    def can_undo(self):
+        return len(self.undoBuf) > 1
+
+    @property
+    def can_redo(self):
+        return bool(self.redoBuf)
+
+    @property
+    def state(self):
+        return self.undoBuf[-1]
+
+    @property
+    def buffers(self):
+        return self.undoBuf, self.redoBuf
 
