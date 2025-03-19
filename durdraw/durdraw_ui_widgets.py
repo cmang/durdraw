@@ -459,6 +459,16 @@ class StatusBar():
         transformMenu.is_submenu = True
         self.transformMenu = transformMenu
 
+        # Animation Plugins Menu
+        animPluginsMenuColumn = 35 # Try to place to the right of the Animation menu
+        animPluginsMenu = Menu(self.window, x = self.x - 2, y = animPluginsMenuColumn, caller=self, appState=self.appState, statusBar=self)
+        animPluginsMenu.set_title("Animation Plugins:")
+        #animPluginsMenu.add_item("Apply NeoFetch Keys", caller.apply_neofetch_keys, "n")
+        animPluginsMenu.set_x(self.x - 1)
+        animPluginsMenu.set_y(animPluginsMenuColumn)
+        animPluginsMenu.is_submenu = True
+        self.animPluginsMenu = animPluginsMenu
+
         # Make the Edit menu
         editMenuColumn = 22 # Try to place to the right of the main menu
         editMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)

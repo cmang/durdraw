@@ -136,6 +136,7 @@ class MenuHandler:
             self.panel.move(self.menuOriginLine, self.menu.y)
             self.panel.show()
         except: # The window was probably too short, so panel.move() returns ERR.
+            pdb.set_trace()
             curses_cursorOn()
             self.menu.hide()
             response = "Close"  # default thing to do when done, returned to menu wrapper
@@ -185,7 +186,8 @@ class MenuHandler:
                 line += 1
                 curses.panel.update_panels()
                 self.window.refresh()
-                if c == ord(self.menu.items[item]["hotkey"]):    # hotkey pressed
+                #try:
+                if c != -1 and len(self.menu.items[item]["hotkey"]) > 0 and c == ord(self.menu.items[item]["hotkey"]):    # hotkey pressed
                     if self.menu.items[item]["has_submenu"]:    # If it opens a sub-menu..
                         # Keep it on the screen.
                         # Redraw previously selected as normal:
@@ -205,6 +207,9 @@ class MenuHandler:
                         self.window.nodelay(0)
                     self.menu.items[item]["on_click"]()
                     prompting = False
+                #except Exception as E:
+                #    print(f"Exception {E}")
+                #    pdb.set_trace()
             if c == curses.KEY_UP:
                 current_option = max(0, current_option - 1)
                 #pdb.set_trace()
@@ -775,7 +780,7 @@ class ColorPickerHandler:
                     self.colorPicker.caller.setBgColor(oldBgColor)
                     return False
                 c = None
-                #return color
+                #preturn color
             elif c == curses.KEY_MOUSE:
                 try:
                     _, mouseX, mouseY, _, mouseState = curses.getmouse()

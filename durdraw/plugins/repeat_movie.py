@@ -13,7 +13,7 @@ durdraw_plugin = {
     "name": "Repeat",
     "author": "Sam Foster, samfoster@gmail.com",
     "version":  1,   # Plugin verison, if applicable
-    "type": "transform_movie",
+    "provides": ["transform_movie"],
     "desc": "Duplicate all frames and append them to the end. |> -> |>|>"
 }
 

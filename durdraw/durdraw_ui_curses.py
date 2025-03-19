@@ -38,6 +38,7 @@ import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_ansiparse as dur_ansiparse
 import durdraw.durdraw_sauce as dursauce
 import durdraw.durdraw_charsets as durchar
+import durdraw.durdraw_plugin as durplug
 import durdraw.plugins.reverse_movie as reverse_plugin # transform_movie
 import durdraw.plugins.repeat_movie as repeat_plugin # transform_movie
 import durdraw.plugins.bounce_movie as bounce_plugin # transform_movie
@@ -159,9 +160,38 @@ class UserInterface():  # Separate view (curses) from this controller
 
         self.statusBarLineNum = self.realmaxY - 2
 
+        # Load custom character map files
         durchar.scan_charmap_folders(self.appState)
+
+        self.plugin_system = None
+        self.init_plugins()
+
         #self.loadCharsetFile("~/src/durdraw/coolset.ini")
         self.setCharacterSet("Durdraw Default")
+
+    def init_plugins(self):
+        self.plugin_system = durplug.DurPlugin()
+        plugin_number = 1
+        found_plugins = False
+        for plugin_name, plugin in self.plugin_system.loaded_plugins.items():
+            found_plugins = True
+            if 'transform_movie' in plugin["meta"]["provides"]:
+                if plugin_number < 10:
+                    self.statusBar.animPluginsMenu.add_item(
+                        str(plugin_number) + " " + plugin["meta"]["name"],
+                        #lambda: self.plugin_system.run_plugin_transform_mov(plugin_name, self.mov, ui=self),
+                        lambda pn=plugin_name: self.plugin_system.run_plugin_transform_mov(pn, self.mov, ui=self),
+                        str(plugin_number))
+                    plugin_number += 1
+                else:
+                    self.statusBar.animPluginsMenu.add_item(plugin["meta"]["name"], \
+                        #lambda: self.plugin_system.run_plugin_transform_mov(plugin_name, self.mov, ui=self),
+                        lambda pn=plugin_name: self.plugin_system.run_plugin_transform_mov(pn, self.mov, ui=self),
+                        "")
+                    plugin_number += 1
+            if found_plugins:
+                self.statusBar.animMenu.add_item("Plugins", self.openAnimPluginsMenu, "p", has_submenu=True)
+            self.statusBar.animPluginsMenu.handler.rebuild()
 
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
@@ -3760,9 +3790,19 @@ class UserInterface():  # Separate view (curses) from this controller
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
 
+    def do_nothing(self):
+        pass
+
+    def openAnimPluginsMenu(self):
+        """ Show the Edit menu """
+        try:
+            self.statusBar.animPluginsMenu.handler.panel.show()
+        except AttributeError:
+            pdb.set_trace()
+        response = self.statusBar.animPluginsMenu.showHide()
+        self.statusBar.animPluginsMenu.handler.panel.hide()
 
     def openTransformMenu(self):
-        """ Show the status bar's menu for settings """
         #self.statusBar.mainMenu.handler.panel.show()
         self.statusBar.animMenu.handler.panel.show()
         #response = self.statusBar.transformMenu.showHide()
