@@ -7038,14 +7038,12 @@ Can use ESC or META instead of ALT
             self.promptPrint("Paste across all frames in playback range (Y/N)? ")
             askingAboutRange = True
         else:   # only one frame
-            self.undo.push()
-            self.pasteFromClipboard()
             askingAboutRange = False
         while askingAboutRange:
             prompt_ch = self.stdscr.getch()
             if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
-                self.undo.push()
-                self.pasteFromClipboard(frange=self.appState.playbackRange)
+                frange=self.appState.playbackRange
+                ranged = True
                 askingAboutRange = False
             if chr(prompt_ch) in ['n', 'N']:    # no, single frame only
                 self.undo.push()
@@ -7053,7 +7051,25 @@ Can use ESC or META instead of ALT
                 askingAboutRange = False
             elif prompt_ch == 27:  # esc, cancel
                 askingAboutRange = False
-        prompting = False
+                return False
+
+        self.clearStatusBar()
+        self.promptPrint("Transparent background paste (Y/N)? ")
+        prompting = True
+        transparent = True
+        while prompting:
+            prompt_ch = self.stdscr.getch()
+            if chr(prompt_ch) in ['y', 'Y']:
+                frange=self.appState.playbackRange
+                prompting = False
+            if chr(prompt_ch) in ['n', 'N']:
+                transparent = False
+                prompting = False
+            elif prompt_ch == 27:  # esc, cancel
+                return False
+
+        self.undo.push()
+        self.pasteFromClipboard(frange=frange, transparent=transparent)
 
     def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):
         if not clipBuffer:
