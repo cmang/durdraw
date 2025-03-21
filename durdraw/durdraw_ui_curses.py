@@ -7035,6 +7035,8 @@ Can use ESC or META instead of ALT
 
     def askHowToPaste(self):
         self.clearStatusBar()
+        transparent = False
+        frange=None
         if self.mov.hasMultipleFrames():
             self.promptPrint("Paste across all frames in playback range (Y/N)? ")
             askingAboutRange = True
@@ -7048,7 +7050,6 @@ Can use ESC or META instead of ALT
                 askingAboutRange = False
             if chr(prompt_ch) in ['n', 'N']:    # no, single frame only
                 self.undo.push()
-                self.pasteFromClipboard()
                 askingAboutRange = False
             elif prompt_ch == 27:  # esc, cancel
                 askingAboutRange = False
