@@ -22,6 +22,8 @@ class AppState():
         #self.neofetch = self.isAppAvail("neofetch")
         #self.PIL = self.checkForPIL()
 
+        self.ui = None  # handy reference to App UI
+
         self.ansiLove = None
         self.neofetch = None
         self.PIL = None
