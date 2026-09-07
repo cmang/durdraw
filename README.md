@@ -32,6 +32,8 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
   - [Themes](#themes)
 - [Durfetch](#durfetch)
 - [Durview](#durview)
+- [Dur File Format](#dur-file-format)
+- [Plugins](#plugins)
 - [FAQ](#faq)
 - [Other](#other)
 
@@ -563,7 +565,23 @@ Here are some `durfetch` examples:
 
 `durview` is an ANSI artpack viewer somewhat reminiscent of AcidView.  By default it connects to https://16colo.rs and lets you browse archived ANSI art scene art packs by year.  It can also view local ANSI, ASCII, DIZ, NFO and DUR files.
 
+## Dur File Format
+
+Durdraw uses a .dur file format to support color, Unicode and animation, which is a gzip compressed JSON file. File format specifications can be found in durformat.md.
+
+## Plugins
+
+Durdraw 0.30.0 and higher allows users to create and share custom features using a Python extensions API. More information can be found in plugin-format.md.
+
 ## Development
+
+### Development Branch
+
+New development should always be done in the Devleopment branch. This is also where users can beta test new features.
+
+https://github.com/durdraw/durdraw/tree/dev
+
+Development guidelines can be found in CONTRIBUTING.md.
 
 ### Testing
 
