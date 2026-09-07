@@ -19,7 +19,7 @@ class DurPlugin:
     def __init__(self):
         #self.plugin_dirs = ["./plugins", "~/.durdraw/plugins"]
         self.internal_plugins_path = pathlib.Path(__file__).parent.joinpath("plugins/")
-        self.plugin_dirs = [self.internal_plugins_path, "~/.durdraw/plugins"]
+        self.plugin_dirs = [self.internal_plugins_path, "/etc/durdraw/plugins", "~/.durdraw/plugins"]
         self.loaded_plugins = self.load_plugins(self.plugin_dirs)
 
     def load_plugins(self, directories):
@@ -75,17 +75,7 @@ class DurPlugin:
                 print(f"isdir: {os.path.isdir(directory)},  access: {os.access(directory, os.R_OK)}")
         return plugins
 
-    def run_plugin_transform_frame(self, plugin_name, frame, ui=None):
-        if plugin_name in self.loaded_plugins:
-            self.reload_plugin(plugin_name)
-            plugin = self.loaded_plugins[plugin_name]
-            if "transform_frame" in plugin["meta"]["provides"]:
-                if ui:
-                    ui.undo.push()
-                return plugin["module"].transform_frame(frame, appState=ui.appState)
-        raise ValueError(f"Plugin '{plugin_name}' not found or doesn't provide transform_frame")
-
-    def run_plugin_transform_mov(self, plugin_name, mov, ui=None):
+    def run_plugin(self, plugin_name, mov, ui=None):
         if plugin_name in self.loaded_plugins:
             self.reload_plugin(plugin_name)
             plugin = self.loaded_plugins[plugin_name]
