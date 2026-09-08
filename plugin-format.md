@@ -1,5 +1,7 @@
 Durdraw Plugin Format Specification, Durdraw Extension API: draft 0.2
 
+THIS IS A BETA API.  It is subject to change.
+
 Durdraw 0.30.0 and higher allows users to add their own features and extensions through a Plugins API.
 
 Users can create these plug-in types:
