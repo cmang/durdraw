@@ -11,7 +11,7 @@ durdraw_plugin_version = 1
 
 # Plugin information
 durdraw_plugin = {
-    "name": "Fire Behind 2",
+    "name": "Fire Behind",
     "author": "Grok (inspired by Asciimatics & Sam Foster)",
     "version": 1,
     "provides": ["transform_movie"],
