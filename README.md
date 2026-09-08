@@ -664,7 +664,7 @@ If you need assistance or have questions about Durdraw, feel free to reach out t
 
 ### Community
 
-There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/durdraw/durdraw/discussions
+There are community discussions on Github, where people post art made with Durdraw, as well as support channels. Check it out: https://github.com/durdraw/durdraw/discussions
 
 ### Credits
 
