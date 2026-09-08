@@ -43,7 +43,9 @@ def curses_addstr(window, y, x, text, attr=None): # addstr(y, x, str[, attr]) an
         try:
             window.addstr(y, x, text)
         except curses.error as e:
-            curses_notify(window, f"Debug: Curses error in addstr(): {e.args[0]}")
+            pass
+            #curses_notify(window, f"Debug: Curses error in addstr(): {e.args[0]}")
+            #pdb.set_trace()
             #self.testWindowSize()
     else:
         try:
@@ -136,7 +138,8 @@ class MenuHandler:
             #self.panel.move(self.menuOriginLine, self.menu.x)
             self.panel.move(self.menuOriginLine, self.menu.y)
             self.panel.show()
-        except: # The window was probably too short, so panel.move() returns ERR.
+        except Exception as E: # The window was probably too short, so panel.move() returns ERR.
+            print(f"Exception: {E}")
             #pdb.set_trace()
             curses_notify(self.window, f"Window too small to show the menu")
             curses_cursorOn()
@@ -445,7 +448,10 @@ class ColorPickerHandler:
         y = self.y - 1
         width = self.width + 1
         borderColor = curses.color_pair(self.appState.theme['menuBorderColor'])
-        curses_addstr(self.parentWindow, y, x, (" " * (width)))
+        try:
+            curses_addstr(self.parentWindow, y, x, (" " * (width)))
+        except:
+            pass
         for line in range(1, self.height + 1):
             curses_addstr(self.parentWindow, y + line, x, (" "))
 
