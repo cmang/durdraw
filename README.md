@@ -33,7 +33,6 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 - [Durfetch](#durfetch)
 - [Durview](#durview)
 - [Dur File Format](#dur-file-format)
-- [Plugins](#plugins)
 - [FAQ](#faq)
 - [Other](#other)
 
@@ -568,10 +567,6 @@ Here are some `durfetch` examples:
 ## Dur File Format
 
 Durdraw uses a .dur file format to support color, Unicode and animation, which is a gzip compressed JSON file. File format specifications can be found in durformat.md.
-
-## Plugins
-
-Durdraw 0.30.0 and higher allows users to create and share custom features using a Python extensions API. More information can be found in plugin-format.md.
 
 ## Development
 
