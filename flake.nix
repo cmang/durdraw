@@ -25,7 +25,7 @@
           pythonPackages.wheel
         ];
         buildInputs = [
-          pkgs.neofetch
+          pkgs.fastfetch
           pkgs.ansilove
         ];
         doCheck = false;
@@ -38,7 +38,7 @@
           pythonPackages.setuptools
           pythonPackages.wheel
           pythonPackages.pytest
-          pkgs.neofetch
+          pkgs.fastfetch
           pkgs.ansilove
           self.packages.${system}.default
         ];

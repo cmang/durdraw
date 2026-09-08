@@ -22,7 +22,7 @@ import pdb
 import durdraw.durdraw_movie as durmovie
 import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_sauce as dursauce
-import durdraw.plugins.convert_charset as durchar
+import durdraw.convert_charset as durchar
 import durdraw.log as log
 
 LOGGER = log.getLogger('ansiparse', level='DEBUG', override=True)
@@ -182,7 +182,6 @@ def get_width_and_height_of_ansi_blob(text, width=80):
             character = text[i]
             col_num += 1
         i += 1
-    #print("")
     width = max_col
     height = line_num
     return width, height
@@ -200,11 +199,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         sauce.parse_file(filename)
         if sauce.sauce_found:
             appState.sauce = sauce
-            #if sauce.height > 0 and sauce.width > 0:
-            #if sauce.height == None:
-            #    sauce.height = 25
             if sauce.width == None:
-                #sauce.width = 80
                 sauce.width = maxWidth
             maxWidth = sauce.width
             width = sauce.width
@@ -220,11 +215,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         width, height = get_width_and_height_of_ansi_blob(text)
 
     width = max(width, maxWidth)
-    #width = max(width, 80)
     height += 1
-    #if appState.debug:
-    #    caller.notify(f"Guessed width: {width}, height: {height}")
-    #width = min(width, maxWidth)
     height = max(height, 25)
 
     if appState.wrapWidth == 80 and width > 750:
@@ -233,13 +224,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
         width = 80
     if height > 8500:
         height = 1000
-        #print(f"Bad height or width. Width: {width}, height: {height}")
-        #pdb.set_trace()
     new_frame = durmovie.Frame(width, height + 1)
-    #if appState.debug:
-    #    caller.notify(f"debug: maxWidth = {maxWidth}")
-    #parsed_text = ''
-    #color_codes = ''
     i = 0   # index into the file blob
     col_num = 0
     line_num = 0
@@ -249,6 +234,8 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     fg_color = default_fg_color
     bg_color = default_bg_color
     bold = False
+    hi_color_codes_found = False # 256 color codes found
+    current_code_high_color = False
     saved_col_num = 0
     saved_line_num = 0
     saved_byte_location = 0
@@ -263,6 +250,7 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 i += 1 # move on to next byte
                 continue
             end_index = match   # where the code ends
+            current_code_high_color = False
             if text[end_index] == 'm':      # Color/SGR control code
                 escape_sequence = text[i + 2:end_index]
                 escape_codes = escape_sequence.split(';')
@@ -273,78 +261,64 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                     except:
                         if caller:
                             pass
-                            #caller.notify(f"Error in byte {i}, char: {code}, line: {line_num}, col: {col_num}")
-                if len(codeList) > 1 and appState.colorMode == "256":
-                    # 256 foreground color
-                    bg_color = default_bg_color
-                    if codeList[0] == 38 and codeList[1] == 5 and len(codeList) == 3:
-                        fg_color = codeList.pop()
-                        codeList = [fg_color]
-                    # 256 background color
-                    elif codeList[0] == 48 and codeList[1] == 5 and len(codeList) == 3:
-                        bg_color = codeList.pop()
-                        codeList = [fg_color]
-                # Not a 256 color code - treat as 16 color
-                for code in codeList:
-                    if code == 0:   # reset
-                        fg_color = default_fg_color
-                        bg_color = default_bg_color
-                        bold = False
-                    if code == 1:   # bold
-                        bold = True
-                    # In case we're still using a previous color with new attributes
-                    if fg_color < 9:  # sledgehammer
-                        if bold:
-                            fg_color += 8
-                    # 16 Colors
-                    if code > 29 and code < 38: # FG colors 0-8, or 30-37
-                        if bold:
-                            code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
-                            #bold = False
-                        if appState.colorMode == "256":
-                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
+                if len(codeList) > 2:
+                    codeList_iter = iter(range(len(codeList)))
+                    new_codes = []
+                    for idx in codeList_iter:
+                        code = codeList[idx]
+                        if code in (38, 48) and idx + 2 < len(codeList) and codeList[idx+1] == 5:
+                            hi_color_codes_found = True
+                            current_code_high_color = True
+                            color_256 = codeList[idx+2]
+                            if code == 38:
+                                fg_color = color_256
+                            else:
+                                bg_color = color_256
+                            next(codeList_iter, None)  # skip the 5
+                            next(codeList_iter, None)  # skip the color value
                         else:
-                            #if bold:
-                            #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
-                            fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
-                            #if bold:
-                            #    fg_color += 8
-                        # fix for durdraw color pair stupidity
+                            new_codes.append(code)
+
+                # Not a 256 color code - treat as 16 color  
+                if not current_code_high_color:
+                    for code in codeList:
+                        if code == 0:   # reset
+                            fg_color = default_fg_color
+                            bg_color = default_bg_color
+                            bold = False
+                        if code == 1:   # bold
+                            bold = True
+                        # In case we're still using a previous color with new attributes
+                        if fg_color < 9:  # sledgehammer
+                            if bold:
+                                fg_color += 8
+                        # 16 Colors
+                        if code > 29 and code < 38: # FG colors 0-8, or 30-37
+                            if bold:
+                                code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
+                                #bold = False
+                            if appState.colorMode == "256":
+                                fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
+                            else:
+                                fg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] 
+                            # fix for durdraw color pair stupidity
+                            if fg_color == -1 or fg_color == 0: # black fg and bright black fg fix
+                                if bold:
+                                    fg_color = 9
+                                else:
+                                    fg_color = 1
+                            if fg_color < 9:  # sledgehammer
+                                if bold:
+                                    fg_color += 8
+                        elif code > 39 and code < 48: # BG colors 0-8, or 40-47
+                            bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
+                            if bg_color == -1:
+                                bg_color = 0
                         if fg_color == -1 or fg_color == 0: # black fg and bright black fg fix
                             if bold:
                                 fg_color = 9
                             else:
                                 fg_color = 1
-                        #if fg_color == 8:   # bright white fix
-                        #    if bold:
-                        #        fg_color = 16
-                        #bold = False
-                        if fg_color < 9:  # sledgehammer
-                            if bold:
-                                fg_color += 8
-                    elif code > 39 and code < 48: # BG colors 0-8, or 40-47
-                        if appState.colorMode == "256":
-                            #bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
-                            #bg_color = 0
-                            bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
-                            if bg_color == -1:
-                                bg_color = 0
-                        else:
-                            #if bold:
-                            #    code += 60  # 30 -> 90, etc, for DOS-style bright colors that use bold
-                            bg_color = dur_ansilib.ansi_code_to_dur_16_color[str(code)] - 1
-                            if bg_color == -1:
-                                bg_color = 0
-                    if fg_color == -1 or fg_color == 0: # black fg and bright black fg fix
-                        if bold:
-                            fg_color = 9
-                        else:
-                            fg_color = 1
-                    # 256 Colors
-                #if console:    
-                #    print(str(escape_codes), end="")
-
-                # Add color to color map
                 try:
                     new_frame.newColorMap[line_num][col_num] = [fg_color, bg_color]
                 except Exception as E:
@@ -417,17 +391,10 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 i = end_index + 1   # move on to next byte
                 continue
             elif text[end_index] == 's':    # save current position/state
-                #saved_col_num = col_num
-                #saved_line_num = line_num
                 i = end_index + 1   # move on to next byte
-                #saved_byte_location = i
                 continue
             elif text[end_index] == 'u':    # restore saved position/state
-                #col_num = saved_col_num
-                #line_num = saved_line_num
-                #i = saved_byte_location
                 i = end_index + 1   # move on to next byte
-                #pdb.set_trace()
                 continue
             else:   # Some other escape code, who cares for now
                 if appState.debug:
@@ -446,11 +413,6 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
             pass
         elif text[i] == '\x1a': # ctl-z code, EOF, just before the SAUCE
             pass
-        #elif text[i] == '\x01': # CTRL-A, SOH (start header).
-        #    # Q: Why is this in some ANSIs? A: Because it's a smiley face in CP437
-        #    pass
-        #elif text[i] == '\x02': # CTRL-B, STX (start text)
-        #    pass
         elif text[i:i + 5] == 'SAUCE' and len(text) - i == 128:   # SAUCE record found
             i += 128
         else:   # printable character (hopefully)
@@ -476,8 +438,6 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
                 parse_error = True
                 if debug:
                     caller.notify(f"Error writing color. Width: {width}, Height: {height}, line: {line_num}, col: {col_num}, pos: {i}")
-           # if console:    
-           #     print(character, end='')
             col_num += 1
         i += 1
     if console:    
@@ -491,13 +451,14 @@ def parse_ansi_escape_codes(text, filename = None, appState=None, caller=None, c
     line_num = 0
     col_num = 0
     # maybe usethis for the color: dur_ansilib.ansi_code_to_dur_16_color[fg_ansi]
+    if hi_color_codes_found and appState.colorMode == "16":
+        appState.ui.switchTo256ColorMode()
+    elif not hi_color_codes_found and appState.colorMode == "256":
+        appState.ui.switchTo16ColorMode()
     return new_frame
 
 
 if __name__ == "__main__":
-    # Example usage
-    #file_path = 'kali.ans'
-    #file_path = '11.ANS'
     file_path = '../rainbow.ans'
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
@@ -510,12 +471,9 @@ if __name__ == "__main__":
             file = open(file_path, "r", encoding="cp437")
             #file = open(file_path, "r", encoding="big5")
             text_with_escape_codes = file.read()
-        #parsed_text, fg, bg = parse_ansi_escape_codes(text_with_escape_codes)
         newFrame = parse_ansi_escape_codes(text_with_escape_codes,  console=True)
         print(str(newFrame.newColorMap))
         print(str(newFrame.content))
         print(str(newFrame))
-        #print(parsed_text)
-        #print(f"Fg: {fg}, bg: {bg}")
 
 

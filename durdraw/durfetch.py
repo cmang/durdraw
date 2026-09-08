@@ -20,8 +20,17 @@ def all_internal_durf_files():
     internal_durf_path = pathlib.Path(__file__).parent.joinpath("durf/")
     internal_durf_files = glob.glob(f"{internal_durf_path}/*.durf")
     all_files = internal_durf_files
-    #all_files = ['bsd.durf', 'linux-tux.durf', 'linux-fire.durf', 'unixbox.durf', 'cm-eye.durf']
     return all_files
+
+def all_internal_durf_linux_files():
+    # Return a list of all files from every location everywhere, throughout the universe
+    # .. or at least the fetch animations built-in to durdraw (in the durdraw/durf/ path).
+    internal_durf_path = pathlib.Path(__file__).parent.joinpath("durf/")
+    internal_durf_files = glob.glob(f"{internal_durf_path}/linux*.durf")
+    all_files = internal_durf_files
+    filenames = [pathlib.Path(path).name for path in all_files]
+    return filenames
+
 
 def get_internal_durf_path():
     return str(pathlib.Path(__file__).parent.joinpath("durf/"))
@@ -64,7 +73,8 @@ def auto_load_file(neofetch_data, rand=False, fake_os=None):
         files = ['bsd.durf']
         # list of BSD 
     else:
-        files = ['linux-fire.durf', 'linux-tux.durf']
+        #files = ['linux-tux-fire.durf', 'linux-fire.durf', 'linux-tab.durf', 'linux-tux.durf']
+        files = all_internal_durf_linux_files()
     return random.choice(files)
 
 @log.log_on_crash
@@ -83,16 +93,23 @@ def main():
     parser_fake_os_mutex = parser.add_mutually_exclusive_group()
     parser_fake_os_mutex.add_argument("--linux", help="Show a Linux animation", action="store_true")
     parser_fake_os_mutex.add_argument("--bsd", help="Show a BSD animation", action="store_true")
+    parser_fake_os_mutex.add_argument("-a", "--all", help="Play all internal animations", action="store_true")
+    parser.add_argument("--list", help="List all available built-in animations and quit", action="store_true")
     parser.add_argument("-V", "--version", help="Show Version information and quit", action="store_true")
     #parser.add_argument("-l", nargs="?", default="list")
     args = parser.parse_args()
-    use_fetcher = "neofetch"
-    if neofetcher.fetcher_available(name=use_fetcher):
-        print("Pulling data from neofetch.")
-        neofetch_data = neofetcher.run()
+    if args.list:
+        print(epilog_text[:-2]) # slice out 2 of 3 trailing newlines
+        exit(0)
+    if (fetcher := neofetcher.find_available_fetcher()):
+        print(f"Pulling data from {fetcher}.")
+        fetch_data = neofetcher.run(fetcher)
         print("done.")
     else:
-        print(f"Error: Durfetch requires {use_fetcher}. Please make sure \"{use_fetcher}\" is installed and in the PATH.")
+        print("Error: Durfetch requires one of the following fetchers:")
+        for fetcher in neofetcher.od_fetchers.keys():
+            print(f"   -> {fetcher}")
+        print("Please make sure one of the above is installed and in the PATH.")
         exit(1)
     #print(args.filename, args.list, args.l, neofetch_data)
     #if args.filename == None:   # no file name passed, so pick an appropriate one.
@@ -111,11 +128,14 @@ def main():
             exit(1)
     elif args.filename == []:   # no file name passed, so pick an appropriate one.
         if args.rand:   # don't prefix path, cuz all_dur_files() already did it
-            filename = [auto_load_file(neofetch_data, rand=args.rand, fake_os=faked)]
+            filename = [auto_load_file(fetch_data, rand=args.rand, fake_os=faked)]
         else:
-            filename = [get_internal_durf_path() + "/" + auto_load_file(neofetch_data, fake_os=faked)]
+            filename = [get_internal_durf_path() + "/" + auto_load_file(fetch_data, fake_os=faked)]
     else:
         filename = args.filename
+    if args.all:
+        #filename = [get_internal_durf_path() + "/" + args.load[0] + ".durf"]
+        filename = all_internal_durf_files()
     #print(filename)
 
     durdraw_args = ["--fetch", "--play"] + filename # filename is alist

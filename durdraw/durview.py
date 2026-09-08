@@ -18,7 +18,7 @@ import durdraw.help
 
 @log.log_on_crash
 def main(fetch_args=None):
-    DUR_FILE_VER = 7
+    DUR_FILE_VER = 8
 
     # Get command-line arguments
     parser = argparse.ArgumentParser()

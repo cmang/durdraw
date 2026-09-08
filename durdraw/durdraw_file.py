@@ -114,10 +114,7 @@ def write_frame_to_html_file(mov, appState, frame, file_path, gzipped=False):
         #colNum = 0
         newColorMap = []
         for posY in range(0, mov.sizeY):
-            #newColorMap.append(list())
             for posX in range(0, mov.sizeX):
-                #newColorMap[posX].append(list(frame.colorMap[posY, posX]))
-                #newColorMap[posX].append(frame.newColorMap[posY][posX])
                 durDolor = frame.newColorMap[posY][posX]
                 fgColor = frame.newColorMap[posY][posX][0]
                 bgColor = frame.newColorMap[posY][posX][1]
@@ -125,8 +122,6 @@ def write_frame_to_html_file(mov, appState, frame, file_path, gzipped=False):
         #for line in frame.content:
         #    for c in line: 
                 try:
-                    #fgColor = frame.newColorMap[colNum][lineNum][0]
-                    #bgColor = frame.newColorMap[colNum][lineNum][1]
                     if appState.colorMode == "16":
                         bgColor += 1
                         if bgColor == 9:    # black duplicate
@@ -171,19 +166,34 @@ def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
     else:
         opener = open
     with opener(file_path, 'wt') as f:
-        movieDataHeader = {
-            'formatVersion': opts.saveFileFormat,
-            'colorFormat': colorMode, # 16, 256
-            'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
-            'encoding': appState.charEncoding,
-            'name': '',
-            'artist': '',
-            'framerate': opts.framerate,
-            'sizeX': movie.sizeX,
-            'sizeY': movie.sizeY,
-            'extra': None,
-            'frames': None,
-            }
+        if opts.saveFileFormat < 8:
+            movieDataHeader = {
+                'formatVersion': opts.saveFileFormat,
+                'colorFormat': colorMode, # 16, 256
+                'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
+                'encoding': appState.charEncoding,
+                'name': '',
+                'artist': '',
+                'framerate': opts.framerate,
+                'sizeX': movie.sizeX,
+                'sizeY': movie.sizeY,
+                'extra': None,
+                'frames': None,
+                }
+        elif opts.saveFileFormat >= 8:
+            movieDataHeader = {
+                'formatVersion': opts.saveFileFormat,
+                'colorFormat': colorMode, # 16, 256
+                'preferredFont': 'fixed',   # fixed, vga, amiga, etc.
+                'encoding': appState.charEncoding,
+                'name': '',
+                'artist': '',
+                'framerate': opts.framerate,
+                'columns': movie.sizeX,
+                'lines': movie.sizeY,
+                'extra': None,
+                'frames': None,
+                }
         frameNumber = 1
         fullMovie = {'DurMovie': movieDataHeader}
         fullMovieFrames = []
@@ -191,15 +201,28 @@ def serialize_to_json_file(opts, appState, movie, file_path, gzipped=True):
             content = ''
             newFrame = []
             newColorMap = []
-            for posX in range(0, movie.sizeX):
-                newColorMap.append(list())
+
+            if opts.saveFileFormat < 8:
+                # old v7 saver:
+                for posX in range(0, movie.sizeX):
+                    newColorMap.append(list())
+                    for posY in range(0, movie.sizeY):
+                        try:
+                            newColorMap[posX].append(frame.newColorMap[posY][posX])
+                        except Exception as E:
+                            print(E)
+                            pdb.set_trace()
+            elif opts.saveFileFormat >= 8:
+                # new v8 saver fixes colorMap orientation to match contents:
                 for posY in range(0, movie.sizeY):
-                    #newColorMap[posX].append(list(frame.colorMap[posY, posX]))
-                    try:
-                        newColorMap[posX].append(frame.newColorMap[posY][posX])
-                    except Exception as E:
-                        print(E)
-                        pdb.set_trace()
+                    newColorMap.append(list())
+                    for posX in range(0, movie.sizeX):
+                        try:
+                            newColorMap[posY].append(frame.newColorMap[posY][posX])
+                        except Exception as E:
+                            print(E)
+                            pdb.set_trace()
+    
             for line in frame.content:
                 content = ''.join(line)
                 newFrame.append(content)
@@ -268,8 +291,17 @@ def open_json_dur_file(f, appState):
     except Exception as e:
         return False
 
-    width = loadedMovieData['DurMovie']['sizeX']
-    height = loadedMovieData['DurMovie']['sizeY']
+
+    if "DurMovie" in loadedMovieData and "sizeX" in loadedMovieData["DurMovie"]:
+        width = loadedMovieData['DurMovie']['sizeX']
+    elif "DurMovie" in loadedMovieData and "columns" in loadedMovieData["DurMovie"]:
+        width = loadedMovieData['DurMovie']['columns']
+    else: return False
+    if "DurMovie" in loadedMovieData and "sizeX" in loadedMovieData["DurMovie"]:
+        height = loadedMovieData['DurMovie']['sizeY']
+    elif "DurMovie" in loadedMovieData and "lines" in loadedMovieData["DurMovie"]:
+        height = loadedMovieData['DurMovie']['lines']
+    else: return False
     colorMode = loadedMovieData['DurMovie']['colorFormat']
     newOpts = Options(width=width, height=height)
     newOpts.framerate = loadedMovieData['DurMovie']['framerate']
@@ -296,7 +328,10 @@ def open_json_dur_file(f, appState):
         for x in range(0, width):
             for y in range(0, height):
                 #pdb.set_trace()
-                colorPair = frame['colorMap'][x][y]
+                if newOpts.saveFileFormat < 8:  # broken file format v7 colormap
+                    colorPair = frame['colorMap'][x][y]
+                elif newOpts.saveFileFormat >= 8:
+                    colorPair = frame['colorMap'][y][x]
                 if appState.colorMode == '16' and colorMode == '256':
                     # set a default color when down-converting color modes:
                     if colorPair[0] > 16:
@@ -305,7 +340,7 @@ def open_json_dur_file(f, appState):
                 #    colorPair = convert_old_color_to_new(oldColorPair)
                 #    if colorPair == None:
                 #        pdb.set_trace()
-                newMov.frames[currentFrame].colorMap[y, x] = tuple(colorPair)
+                #newMov.frames[currentFrame].colorMap[y, x] = tuple(colorPair)
                 newMov.frames[currentFrame].newColorMap[y][x] = colorPair
         # Add delay for the frame
         newMov.frames[currentFrame].delay = frame['delay']
@@ -339,6 +374,27 @@ def convert_old_color_to_new(oldPair, colorMode="16"):
     #pdb.set_trace()
     return [newFg, newBg]
 
+def is_pickle_file(file_path):
+    try:
+        with gzip.open(file_path, 'rb') as f:
+            header = f.read(2)
+            if not header:
+                return False
+            
+            # Common pickle opcodes / magic numbers
+            # Proto 0: b'(' or b'cc'
+            # Proto 1: b'}'
+            # Proto 2: b'\x80\x02'
+            # Proto 3: b'\x80\x03'
+            # Proto 4: b'\x80\x04'
+            # Proto 5: b'\x80\x05'
+            if header[0:1] == b'\x80' and header[1:2] in (b'\x02', b'\x03', b'\x04', b'\x05'):
+                return True
+            if header[0:1] in (b'(', b'}', b'c'):
+                return True
+    except IOError:
+        return False
+    return False
 
 class DurUnpickler(pickle.Unpickler):
     """" Custom Unpickler to remove serialized module names (like __main__) from

@@ -29,7 +29,7 @@ class ArgumentChecker:
 
 @log.log_on_crash
 def main(fetch_args=None):
-    DUR_FILE_VER = 7
+    DUR_FILE_VER = 8
     DEBUG_MODE = False # debug = makes debug_write available, sends verbose notifications
     durlogo = 'Durdraw'
     argChecker = ArgumentChecker()
@@ -89,10 +89,10 @@ def main(fetch_args=None):
     if args.undosize: 
         app.undoHistorySize = int(args.undosize[0])
     #if args.width and args.width[0] > 80 and args.width[0] < term_size[0]:
-    if args.width and args.width[0] > 1 and args.width[0] < term_size[0]:
+    if args.width and args.width[0] > 1:
         app.width = args.width[0]
     #if args.height and args.height[0] > 24 and args.height[0] < term_size[1]:
-    if args.height and args.height[0] > 1 and args.height[0] < term_size[1]:
+    if args.height and args.height[0] > 1:
         app.height = args.height[0]
     if args.max:
         app.maximize_canvas()

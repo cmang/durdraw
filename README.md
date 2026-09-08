@@ -5,7 +5,7 @@ Durdraw
                 _|  |__ __ _____ __|  |_____ _____ __ __ __
                / _  |  |  |   __|  _  |   __|  _  |  |  |  |\
               /_____|_____|__|__|_____|__|___\____|________| | 
-              \_____________________________________________\|  v 0.29.0
+              \_____________________________________________\|  v 0.30.0
 
 ![durdraw-0 28-demo](https://github.com/user-attachments/assets/3bdb0c46-7f21-4514-9b48-ac00ca62e68e)
 
@@ -29,7 +29,10 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
   - [Command Line](#command-line)
   - [Interactive Usage/Editing](#interactive-usageediting)
   - [Configuration](#configuration)
+  - [Themes](#themes)
 - [Durfetch](#durfetch)
+- [Durview](#durview)
+- [Dur File Format](#dur-file-format)
 - [FAQ](#faq)
 - [Other](#other)
 
@@ -37,7 +40,7 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
 
 ## Requirements
 
-* Python 3 (3.10+ recommended)
+* Python >= 3.10 (3.13.1-3.13.8 not recommended)
 * Linux, macOS, or other Unix-like System
 
 **Optional Requirements**
@@ -47,9 +50,9 @@ Windows, such as TheDraw, Aciddraw and Pablodraw, but with a modern Unix twist.
     For PNG and animated GIF export, please install `ansilove` (https://ansilove.org/) and make sure it is is in your path.   
     _PNG and GIF export only works in 16-color mode for now, and only with CP437 compatible characters._
 
-2. `neofetch`
+2. `fastfetch` or `neofetch`
 
-    For [durfetch](#durfetch) support, please install `neofetch` and place it in your path.
+    For [durfetch](#durfetch) support, please install `fastfetch` or `neofetch` and place it in your path.
 
 ## Installation
 
@@ -58,6 +61,7 @@ You can install `durdraw` via several methods:
 - [Via OS Repositories](#via-os-repositories)
 - [Via Source Repository](#via-source-repository)
 - [Via pip](#via-pip)
+- [Via Nix Flakes](#via-nix-flakes)
 
 After installing, you should be able to run `durdraw`. Press `esc-h` for help, or try `durdraw --help` for [command-line options](#command-line-usage).
 
@@ -72,7 +76,7 @@ _If you just want to run it without installing, see [Running Without Installing]
 1. Download and extract, or use git to download:
 
     ```shell
-    git clone https://github.com/cmang/durdraw.git
+    git clone https://github.com/durdraw/durdraw.git
     cd durdraw
     ```
 
@@ -82,27 +86,19 @@ _If you just want to run it without installing, see [Running Without Installing]
     python3 -m pip install --upgrade .
     ```
 
-3. Optionally, install some themes and a sample configuration file for your local user into `~/.durdraw/`:
-
-    ```shell
-    ./installconf.sh
-    ```
-    This will place durdraw.ini into `~/.durdraw/` and the themes into `~/.durdraw/themes/`.
-
-
 ### Via pip
 
 Alternatively, you can install the pip package pip directly (_Please note that this installation method does not include everything, i.e. the example dur files under `examples/`_, or the entrypoint scripts in the section below)
 
 ```shell
 # install `master` branch version:
-python3 -m pip install 'git+https://github.com/cmang/durdraw'
+python3 -m pip install 'git+https://github.com/durdraw/durdraw'
 
 # install specific version:
-python3 -m pip install 'git+https://github.com/cmang/durdraw@0.28.0'
+python3 -m pip install 'git+https://github.com/durdraw/durdraw@0.28.0'
 
 # install `dev` branch version:
-python3 -m pip install 'git+https://github.com/cmang/durdraw@dev'
+python3 -m pip install 'git+https://github.com/durdraw/durdraw@dev'
 ```
 
 ### Via Nix Flakes
@@ -112,7 +108,7 @@ If you're using Nix with flakes enabled, you can install Durdraw in several ways
 1. Run directly using `nix run`:
 
 ```shell
-nix run github:cmang/durdraw
+nix run github:durdraw/durdraw
 ```
 
 2. Add to your NixOS configuration:
@@ -120,7 +116,7 @@ nix run github:cmang/durdraw
 ```nix
 {
   inputs = {
-    durdraw.url = "github:cmang/durdraw";
+    durdraw.url = "github:durdraw/durdraw";
   };
 
   outputs = { self, durdraw, ... }: {
@@ -140,7 +136,7 @@ nix run github:cmang/durdraw
 3. For development, you can enter a development shell with:
 
 ```shell
-nix develop github:cmang/durdraw
+nix develop github:durdraw/durdraw
 ```
 
 The Nix package includes all required dependencies including `neofetch` and `ansilove` for full functionality.
@@ -332,7 +328,7 @@ FG:██              (1/21)  [Dur..] <F1░F2▒F3▓F4█F5▀F6▄F7▌F8▐
 - [Theme Options](#theme-options)
 - [Custom Character Sets](#custom-character-sets)
 
-You can create a custom startup file where you can set a theme and other options.
+You can create a custom startup file in ~/.durdraw/durdraw.ini where you can set a theme and other options.
 
 > If you did not already do so during installation, you can install a sample configuration (_See step 3 under[Installation via Source Repository](#via-source-repository)_)
 
@@ -360,8 +356,8 @@ Here is an example `durdraw.ini` file, showing the available options:
 ;scroll-colors: True
 
 [Theme]
-theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
-theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+;theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
+;theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 
 [Logging]
 ; filepath is the path to the log file. Default is ./durdraw.log
@@ -374,9 +370,23 @@ theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
 ;local-tz: False
 ```
 
+#### Themes
+
+You can switch to different themes in the Menu -> Settings -> Themes and User Themes menus. Durdraw will remember your last used theme and try to load it on restart.
+
+To use custom themes, you can place theme files in ~/.durdraw/themes/ and they will appear in the Settings -> User Themes menu.
+
+To set a default theme, you can place the following in your ~/.durdraw/durdraw.ini file. This will override the remembered "last used" theme.
+
+```ini
+[Theme]
+theme-16: ~/.durdraw/themes/mutedchill-16.dtheme.ini
+theme-256: ~/.durdraw/themes/mutedform-256.dtheme.ini
+```
+
 The option `'theme-16'` sets the path to the theme file used in 16-color mode, and `'theme-256'` sets the theme file used for 256-color mode.
 
-You can also load a custom theme file using the `--theme` command-line argument and passing it the path to a theme file, or disable themes entirely with the `--notheme` command line option.
+You can also load a custom theme file using the `--theme` command-line argument and passing it the path to a theme file.
 
 #### Example Themes
 
@@ -490,11 +500,13 @@ f10:
 
 ## Durfetch
 
-`durfetch` is a program which acts like a fetcher. It uses Neofetch to obtain system statistics and requires that Neofetch be found in the path. You can put keys in your `.dur` files which `durfetch` will replace with values from Neofetch. You can also use built-in example animations.
+`durfetch` is a program which acts like a fetcher. It uses Fastfetch or Neofetch to obtain system statistics and requires that Fastfetch or Neofetch be found in the path. You can put keys in your `.dur` files which `durfetch` will replace with values from Neofetch. You can also use built-in example animations.
 
-Note that this feature is in beta, and is far from perfect, but it can be fun to play with. If anyone wants to improve `durfetch`, please feel free.
+To see all of the example Durfetch screens without installing, you can run:
 
-Keys will only be replaced if there is enough room in the art for the replacement value.
+```shell
+./durfetch durdraw/durf/*.durf
+```
 
 The following values can be used in your art and automatically interpreted by `durfetch`:
 
@@ -548,21 +560,23 @@ Here are some `durfetch` examples:
 |-|-|
 | ![tux-fetch-colors](https://github.com/user-attachments/assets/4010d18a-1b79-4594-a9cd-17234584f3c8) | ![unixy3](https://github.com/user-attachments/assets/812514d4-0216-4f41-8384-84563fa664b7) |
 
-## Experimental Features
+## Durview
 
-To enable an external feature, use an ENV var listed below in front of a `durdraw` command, e.g.
+`durview` is an ANSI artpack viewer somewhat reminiscent of AcidView.  By default it connects to https://16colo.rs and lets you browse archived ANSI art scene art packs by year.  It can also view local ANSI, ASCII, DIZ, NFO and DUR files.
 
-```shell
-ENABLE_UNDO_TEMPFILES=1 durdraw animation.dur
-```
+## Dur File Format
 
-The following list of features are experimental and may not work as expected:
-
-```shell
-ENABLE_UNDO_TEMPFILES=1 # store undo history using python the `tmpfile` lib instead of memory
-```
+Durdraw uses a .dur file format to support color, Unicode and animation, which is a gzip compressed JSON file. File format specifications can be found in durformat.md.
 
 ## Development
+
+### Development Branch
+
+New development should always be done in the Devleopment branch. This is also where users can beta test new features.
+
+https://github.com/durdraw/durdraw/tree/dev
+
+Development guidelines can be found in CONTRIBUTING.md.
 
 ### Testing
 
@@ -581,13 +595,13 @@ pytest -vv test/
 ## FAQ
 
 #### Q: Durdraw crashed! What do I do?
-A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash and post it as a bug report at https://github.com/cmang/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. I will do my best to try to fix it ASAP. Your terminal will probably start acting weird if Durdraw crashed. You can usually fix it by typing "reset" and pressing enter.
+A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash and post it as a bug report at https://github.com/durdraw/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. I will do my best to try to fix it ASAP. Your terminal will probably start acting weird if Durdraw crashed. You can usually fix it by typing "reset" and pressing enter.
 
 #### Q: Don't TheDraw and some other programs already do ANSI animation?
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to govern the playback speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
 #### Q: Can I run Durdraw in Windows?
-A: Short answer: It's not supported, but it seems to work fine in the Windows Subsystem for Linux (WSL), and in Docker using the provided Dockerfile. Long answer: Some versions run fine in Windows Command Prompt, Windows Terminal, etc, without WSL, but it's not tested or supported. If you want to help make Durdraw work better in Windows, please help by testing, submitting bug reports and submitting patches.
+A: Yes, in WSL or Docker.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, Atari ST, etc?
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See `durformat.md` for more details on the `.dur` file format.
@@ -650,31 +664,36 @@ If you need assistance or have questions about Durdraw, feel free to reach out t
 
 ### Community
 
-There are community discussions on Github, where people post art made with Durdraw. Check it out: https://github.com/cmang/durdraw/discussions
+There are community discussions on Github, where people post art made with Durdraw, as well as support channels. Check it out: https://github.com/durdraw/durdraw/discussions
 
 ### Credits
 
 - Home page: http://durdraw.org
-- Development: https://github.com/cmang/durdraw
+- Development: https://github.com/durdraw/durdraw
 
 Durdraw is what it is thanks to the following people:
 
 - Sam Foster - Creator, primary developer
-- Tom McKeesick - Performnace enhancements, documentation formatting
-- Alex Myczko - Man page, Debian ambassador
+- Tom McKeesick - Performance enhancements, documentation formatting
+- Alex Myczko - Man page, Debian ambassador, other bits and pieces
 - sigurdo - Cursor shapes, command-line ANSI export
 - yumpyy - Dockerfile
+- Elijah Lovold - Fastfetch Support
 - Zhenrong Wang - Documentation updates
 - Frederick Cambus - Documentation update
 - eyooooo - Filename conventions, useful feedback
 - HK - Beta testing, useful feedback
-- ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`
+- ANSI and ASCII artists: `cmang`, `H7`, `LDA`, `HK`, `LnLcFlx`
 
 ### Legal
 
 Durdraw is Copyright (c) 2009-2025 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
 The BSD Daemon is Copyright 1988 by Marshall Kirk McKusick.
+
+The file arch-fire.durf contains Unicode art depicting the Arch Linux logo by Leon Haag-Fank (LnLcFlx).  The original work is available on GitHub Gist and is licensed under CC BY 4.0:
+https://gist.github.com/LnLcFlx/18eb10bc74ed9e497d0fedc69468f933
+https://creativecommons.org/licenses/by/4.0/deed.en
 
 This software is distributed under the BSD 3-Clause License. See LICENSE file for details.
 

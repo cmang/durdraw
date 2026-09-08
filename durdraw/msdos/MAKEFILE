@@ -1,0 +1,19 @@
+#  Usage:   make -B         # 
+#           make -B -DDEBUG # with debug info
+#
+
+!if $d(DEBUG)
+TASMDEBUG=/zi
+LINKDEBUG=/v
+!else
+TASMDEBUG=
+LINKDEBUG=
+!endif
+
+dur-com2.com:
+      tasm  $(TASMDEBUG) dur-com2.asm
+      tlink /t $(LINKDEBUG) dur-com2.obj 
+
+clean:
+      del dur-com2.com
+      del dur-com2.obj

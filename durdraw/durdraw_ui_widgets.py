@@ -70,7 +70,6 @@ class Button():
 
     def hide(self):
         self.hidden = True
-        #self.handler.hidden = True
         for label in self.sub_buttons:
             self.sub_buttons[label].hide()
         self.handler.hide()
@@ -110,9 +109,7 @@ class Button():
         self.selected = False
 
     def on_click(self):
-        #result = self.do_nothing()
         result = None
-        #if self.hidden == False:
         if self.enabled and not self.hidden:
             self.selected = True
             self.handler.draw()
@@ -127,9 +124,10 @@ class Button():
         return self.handler.handle_event(event)
 
 class Menu():
-    def __init__(self, window, x=0, y=0, caller=None, appState=None, statusBar=None):
+    def __init__(self, window, x=0, y=0, caller=None, appState=None, statusBar=None, name=None):
         """ init menu items """ 
         self.window = window
+        self.name = name
         self.caller = caller
         self.appState=appState
         self.items = {}
@@ -155,12 +153,11 @@ class Menu():
         self.title = title
         self.handler.title = self.title
 
-    def add_item(self, label, on_click, hotkey, shortcut=None, has_submenu=False):
+    def add_item(self, label, on_click, hotkey, shortcut=None, has_submenu=False, plugin=False):
         props = {"on_click": on_click, "hotkey": hotkey, "shortcut": shortcut, "has_submenu": has_submenu}
         item = {label: props}
         self.items.update(item)
         # add button
-        #itemButton = Button(label, 0, 0, on_click, self.window)
         if shortcut:
             long_label = f"{label} {shortcut}"
         else:
@@ -168,16 +165,11 @@ class Menu():
         itemButton = Button(long_label, 0, self.x, on_click, self.window, appState=self.appState)
         itemButton.make_invisible()
         self.buttons.append(itemButton)
-        #self.handler.rebuild()
-        #itemButton.update_real_xy(x=self.caller.x)
 
     def show(self):
         for button in self.buttons:
-            #button.x = self.x
-            #button.update_real_xy(x=self.x)
             self.gui.add_button(button)
             button.show()
-            #pdb.set_trace()
         self.hidden = False
         response = self.handler.show()
         return response
@@ -226,7 +218,6 @@ class ColorPicker:
     def __init__(self, window, x=0, y=0, caller=None, colorMode="256", type="fg"):
         self.hidden = True
         self.window = window
-        self.colorMap = {}
         self.colorMode = colorMode
         self.type = type    # "fg" or "bg," or maybe "fgbg"
         self.x = x
@@ -238,18 +229,9 @@ class ColorPicker:
             self.width = 38
             self.totalColors = 255
         elif colorMode == "16":
-            #self.height = 1
-            #self.width = 16
-
-            # short and wide - good
             self.height = 2
             self.width = 10
 
-            # tall and thin - good, but color order
-            # is wrong
-         #self.height = 10
-            #self.width = 4
-            
             self.totalColors = 16
             if self.appState.iceColors:
                 self.totalColors = 15
@@ -257,7 +239,6 @@ class ColorPicker:
         self.handler = ColorPickerHandler(self, window, width=self.width, height=self.height)
 
     def showHide(self):
-        #pdb.set_trace()
         if self.hidden == True:
             self.hidden = False
             self.caller.appState.colorPickerSelected = True
@@ -275,7 +256,6 @@ class ColorPicker:
 
     def show(self):
         self.hidden = False
-        #self.showFgPicker()
         self.handler.show()
 
     def showFgPicker(self, message=None):
@@ -310,12 +290,10 @@ class ColorSwatch():
         self.window = window
         self.handler = ColorSwatchHandler(self, self.window)
         self.bank = []
-        self.colorMap = {}
         self.x = x
         self.y = y
         for color in range(0,24):
             self.bank.append(color)
-        #swatch = [1] * 24   # color 1
 
     def draw(self):
         self.handler.draw()
@@ -392,6 +370,7 @@ class StatusBar():
         self.gui = caller.gui   # top level gui handler thing
         self.handler = StatusBarHandler(self, window)
         self.items = []
+        self.menus = {}     # name: object, eg: "Menu": statusBar.mainMenu
         self.buttons = []
         self.colorPickerEnabled = False
         self.hidden = False
@@ -421,15 +400,19 @@ class StatusBar():
             colorPicker_tooltip.alwaysHidden = True
 
         # Settings menu
-        #settingsMenuColumn = mainMenu.handler.width # Try to place to the right of the main menu
         settingsMenuColumn = 22 # Try to place to the right of the main menu
-        settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self)
+        settingsMenu = Menu(self.window, x = self.x - 2, y = settingsMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Settings")
+        self.menus["Settings"] = settingsMenu
+        settingsMenu.set_title("Settings:")
         settingsMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
         settingsMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
         settingsMenu.add_item("VGA Colors", caller.enableTrueVGAColors, "v")
         settingsMenu.add_item("ZX Spectrum Colors", caller.enableTrueSpeccyColors, "z")
         settingsMenu.add_item("C64 Colors", caller.enableTrueC64Colors, "c")
         #settingsMenu.add_item("Deafult Colors", caller.resetColorsToDefault, "d")
+        settingsMenu.add_item("Cursor Style", caller.openCursorMenu, "r", has_submenu=True)
+        settingsMenu.add_item("Themes", caller.openThemesMenu, "t", has_submenu=True)
+        settingsMenu.add_item("User Themes", caller.openUserThemesMenu, "u", has_submenu=True)
         settingsMenu.add_item("Toggle Mouse", caller.toggleMouse, "m")
         settingsMenu.add_item("Toggle Color Scroll", caller.toggleColorScrolling, "s")
         settingsMenu.add_item("Toggle Wide Wrapping", caller.toggleWideWrapping, "w")
@@ -438,30 +421,61 @@ class StatusBar():
             settingsMenu.add_item("Toggle Injecting (MENTAL)", caller.toggleInjecting, "j")
         if self.appState.debug:
             settingsMenu.add_item("Toggle Debug", caller.toggleDebug, "d")
-            settingsMenu.add_item("Python Console", caller.jumpToPythonConsole, "p")
+            settingsMenu.add_item("Python Console", caller.set_trace, "p")
         settingsMenu.is_submenu = True
         #settingsMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
         settingsMenu.set_x(self.x - 1)
         settingsMenu.set_y(settingsMenuColumn)
         self.settingsMenu = settingsMenu
 
+
+        cursorMenuColumn = 45 # Try to place to the right of the main menu
+        cursorMenu = Menu(self.window, x = self.x - 2, y = cursorMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Cursor")
+        cursorMenu.set_title("Cursor:")
+        cursorMenu.add_item("Block", caller.setCursorStyleBlock, "b")
+        cursorMenu.add_item("Pipe", caller.setCursorStylePipe, "p")
+        cursorMenu.add_item("Underscore", caller.setCursorStyleUnderscore, "u")
+        cursorMenu.is_submenu = True
+        #cursorMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        cursorMenu.set_x(self.x - 1)
+        cursorMenu.set_y(cursorMenuColumn)
+        self.cursorMenu = cursorMenu
+
+
+        self.initThemesMenu()
+
         # Transforms menu
-        #transformMenuColumn = 24 # Try to place to the right of the main menu
         transformMenuColumn = 35 # Try to place to the right of the Animation menu
-        transformMenu = Menu(self.window, x = self.x - 2, y = transformMenuColumn, caller=self, appState=self.appState, statusBar=self)
-        transformMenu.add_item("Bounce", caller.transform_bounce, "b")
-        transformMenu.add_item("Repeat", caller.transform_repeat, "r")
-        transformMenu.add_item("Reverse", caller.transform_reverse, "v")
-        transformMenu.add_item("Apply NeoFetch Keys", caller.apply_neofetch_keys, "n")
-        #transformMenu.add_item("Show/Hide Sidebar", caller.toggleSideBar, "s")
+        transformMenu = Menu(self.window, x = self.x - 2, y = transformMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Effects")
+        transformMenu.set_title("Effects:")
         transformMenu.set_x(self.x - 1)
         transformMenu.set_y(transformMenuColumn)
         transformMenu.is_submenu = True
         self.transformMenu = transformMenu
 
+        # Animation Plugins Menu
+        animPluginsMenuColumn = 35 # Try to place to the right of the Animation menu
+        animPluginsMenu = Menu(self.window, x = self.x - 2, y = animPluginsMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Anim")
+        animPluginsMenu.set_title("User Plugins:")
+        animPluginsMenu.set_x(self.x - 1)
+        animPluginsMenu.set_y(animPluginsMenuColumn)
+        animPluginsMenu.is_submenu = True
+        self.animPluginsMenu = animPluginsMenu
+
+
+        # Export Plugins Menu
+        exportPluginsMenuColumn = 22 # Try to place to the right of the Animation menu
+        exportPluginsMenu = Menu(self.window, x = self.x - 2, y = exportPluginsMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Export")
+        exportPluginsMenu.set_title("File Export:")
+        exportPluginsMenu.set_x(self.x - 1)
+        exportPluginsMenu.set_y(exportPluginsMenuColumn)
+        exportPluginsMenu.is_submenu = True
+        self.exportPluginsMenu = exportPluginsMenu
+
         # Make the Edit menu
         editMenuColumn = 22 # Try to place to the right of the main menu
-        editMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
+        editMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self, name="Edit")
+        self.menus["Edit"] = editMenu
         editMenu.add_item("Undo", caller.clickedUndo, "u", shortcut="esc-z")
         editMenu.add_item("Redo", caller.clickedRedo, "r", shortcut="esc-r")
         editMenu.add_item("Mark/Select", caller.startSelecting, "k", shortcut="esc-K")
@@ -471,6 +485,7 @@ class StatusBar():
         editMenu.add_item("Delete Line", caller.delLine, "d", shortcut="esc-;")
         editMenu.add_item("Character Sets", caller.showCharSetPicker, "c", shortcut="esc-S")
         editMenu.add_item("Replace Color", caller.replaceColorUnderCursor, "e", shortcut="esc-L")
+        editMenu.add_item("Replace Character", caller.replaceCharUnderCursor, "h", shortcut="")
         editMenu.is_submenu = True
         editMenu.set_x(self.x - 1)
         editMenu.set_y(editMenuColumn)
@@ -479,24 +494,19 @@ class StatusBar():
         # main menu items 
         self.menuButton = None
         # Create a menu list item, add menu items to it
-        mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self)
-        #mainMenu.gui = self.gui
+        mainMenu = Menu(self.window, x = self.x - 1, y = self.y, caller=self, appState=self.appState, statusBar=self, name="Menu")
+        self.menus["Menu"] = mainMenu
         mainMenu.add_item("New/Clear", caller.clearCanvasPrompt, "n", shortcut="esc-C")
         mainMenu.add_item("Open", caller.openFromMenu, "o", shortcut="esc-o")
+        mainMenu.add_item("Open Examples", caller.openExamples, "")
         mainMenu.add_item("Save", caller.save, "s", shortcut="esc-s")
-        #mainMenu.add_item("16 Color Mode", caller.switchTo16ColorMode, "1")
-        #mainMenu.add_item("256 Color Mode", caller.switchTo256ColorMode, "2")
-        #mainMenu.add_item("Settings", settingsMenu.showHide, "t", has_submenu=True)
-        #mainMenu.add_item("Transform", caller.showTransformer, "a", has_submenu=True)
+        mainMenu.add_item("Export", caller.openExportMenu, "x", has_submenu=True)
         mainMenu.add_item("Info/Sauce", caller.clickedInfoButton, "i", shortcut="esc-i")
         mainMenu.add_item("Color Picker", caller.selectColorPicker, "l", shortcut="tab")
         mainMenu.add_item("Viewer Mode", caller.enterViewMode, "v", shortcut="esc-V")
         mainMenu.add_item("Edit", caller.openEditMenu, "e", has_submenu=True)
         mainMenu.add_item("Settings", caller.openSettingsMenu, "t", has_submenu=True)
-        mainMenu.add_item("Help", caller.showHelp, "h", shortcut="esc-h")
-        mainMenu.add_item("Quit", caller.safeQuit, "q", shortcut="esc-q")
-        #menuButton = Button("?", 0, 0, mainMenu.showHide, self.window)
-        #menuButton = Button("Menu", 0, 0, mainMenu.showHide, self.window, appState=self.appState)
+        # Help and Quit are added after plugins are loaded.
         menuButton = Button("Menu", 0, 0, caller.openMainMenu, self.window, appState=self.appState)
         menuButton.set_tooltip_command('m')
         self.menuButton = menuButton
@@ -504,8 +514,6 @@ class StatusBar():
         menuButton.realY = self.y + menuButton.y
         menuButton.show()
         self.menuButton = menuButton
-        #mainMenu.x = menuButton.realX - 1
-        #mainMenu.y = menuButton.realY
         mainMenu.set_x(menuButton.realX - 1)
         mainMenu.set_y(menuButton.realY)
         self.mainMenu = mainMenu
@@ -513,10 +521,10 @@ class StatusBar():
 
         # Animation menu
         self.animButton = None
-        #animButton_offset = 18
         animButton_offset = 7
         # Create a menu list item, add menu items to it
-        animMenu = Menu(self.window, x = animButton_offset, y = self.y, caller=self, appState=self.appState, statusBar=self)
+        animMenu = Menu(self.window, x = animButton_offset, y = self.y, caller=self, appState=self.appState, statusBar=self, name="Anim")
+        self.menus["Anim"] = animMenu
         animMenu.set_title("Animation:")
         animMenu.add_item("Clone Frame", caller.cloneToNewFrame, "n", shortcut="esc-n")
         animMenu.add_item("Append Empty Frame", caller.appendEmptyFrame, "a", shortcut="esc-N")
@@ -527,7 +535,7 @@ class StatusBar():
         animMenu.add_item("Move Frame", caller.moveCurrentFrame, "m", shortcut="esc-M")
         animMenu.add_item("Shift Frames Right", caller.shiftMovieRight, "}", shortcut="esc-}")
         animMenu.add_item("Shift Frames Left", caller.shiftMovieLeft, "{", shortcut="esc-{")
-        animMenu.add_item("Transform", caller.openTransformMenu, "t", has_submenu=True)
+        animMenu.add_item("Effects", caller.openTransformMenu, "f", has_submenu=True)
         animButton = Button("Anim", 0, animButton_offset, caller.openAnimMenu, self.window, appState=self.appState)
         animButton.set_tooltip_command('a')
         self.animButton = animButton
@@ -541,11 +549,10 @@ class StatusBar():
 
 
         # Mouse tools menu
-        toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self)
+        toolMenu = Menu(self.window, x=45, y=self.y, caller=self, appState=self.appState, statusBar=self, name="Menu")
+        self.menus["Mouse"] = toolMenu
         toolMenu.set_title("Mouse Tools:")
-        #toolMenu = Menu(self.window, x=5, y=self.y, caller=self)
         toolMenu.add_item("Move", self.setCursorModeMove, "m")
-        #toolMenu.add_item("Select", self.setCursorModeSelect, "s")
         toolMenu.add_item("Draw", self.setCursorModeDraw, "d")
         toolMenu.add_item("Paint", caller.setCursorModePaint, "p")
         toolMenu.add_item("Color", self.setCursorModeCol, "c")
@@ -556,13 +563,8 @@ class StatusBar():
 
         # Make cursor tool selector button
         # offset is how far right to put the button in the statusbar:
-        #toolButton_offset = 45  
-        #toolButton_offset = 7
         toolButton_offset = 14
-        #toolButton = Button("Tool", 0, toolButton_offset, toolMenu.showHide, self.window, appState=self.appState)
         toolButton = Button("Tool", 0, toolButton_offset, caller.openMouseToolsMenu, self.window, appState=self.appState)
-        #toolButton = Button("Tool", 0, 5, toolMenu.showHide, self.window)
-        #toolButton.label = self.caller.appState.cursorMode
         toolButton.set_label(self.caller.appState.cursorMode)
         toolButton.set_tooltip_command('t')
         toolButton.picker = True
@@ -600,7 +602,6 @@ class StatusBar():
         drawCharPickerButton.realX = self.x + drawCharPickerButton.x    # toolbar shit
         drawCharPickerButton.realY = self.y + drawCharPickerButton.y
         drawCharPickerButton.show() 
-        #drawCharPickerButton.hide() 
         self.drawCharPickerButton = drawCharPickerButton
         self.drawCharPicker = drawCharPicker
 
@@ -609,12 +610,10 @@ class StatusBar():
         self.toolButton.add_sub_button("Draw", drawCharPickerButton)
 
 
-        #colorPicker = ColorPicker(self.window, x=self.x - 2, y = self.y + 2, caller=caller)
         colorPicker = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller)
         self.colorPicker_256 = colorPicker
         self.colorPicker = self.colorPicker_256
 
-        #self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.showHide, self.window, appState=self.appState)
         self.colorPickerButton = Button("FG:  ", 1, 0, colorPicker.switchTo, self.window, appState=self.appState)
         self.colorPickerButton.invisible = True
         self.colorPickerButton.persistant_tooltip = True
@@ -624,30 +623,12 @@ class StatusBar():
         self.items.append(self.colorPickerButton)
         self.buttons.append(self.colorPickerButton)
         self.colorPickerButton.show()
-        #if self.caller.appState.colorMode == "256":
-        #    self.colorPickerButton.show()
-        #else:
-        #    self.colorPickerButton.hide()
 
         colorPicker_16 = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller, colorMode="16")
         self.colorPicker_16 = colorPicker_16
 
-        #colorPicker_bg_16 = ColorPicker(self.window, x=self.x - 7, y = self.y + 2, caller=caller, colorMode="16", type="bg")
-        #self.colorPicker_bg_16 = colorPicker_bg_16
-
-        #pdb.set_trace()
-        #colorPicker.show()  # for testing
-
-        #self.swatch = ColorSwatch(self, x=3, y=self.y)
-        #self.swatch.colorMap = caller.ansi.colorPairMap
-        
-        # Figure out where in the status bar to put it
         newX = len(str(self.items))
         newY = self.y
-        #fgBgColors = FgBgColorPicker(self.window, x=newX, y=newY)
-        #menuButton.addItem(label="Help!", type="link", callback=None)
-        # Initialize individual buttons and items
-        #startButton = Button(label="!", callback=self.draw_start_menu)
         self.items.append(menuButton)
         self.items.append(toolButton)
         self.items.append(drawCharPickerButton)
@@ -655,8 +636,6 @@ class StatusBar():
         if self.appState.colorMode != '16': # in 16 color mode, don't cover up the bg color picker
             if self.caller.appState.showCharSetButton:
                 self.items.append(charSetButton)
-        #self.items.append(fgBgColors)
-        #self.items.append(self.swatch)
         self.buttons.append(menuButton)
         self.buttons.append(toolButton)
         self.buttons.append(drawCharPickerButton)
@@ -664,6 +643,25 @@ class StatusBar():
         if self.caller.appState.showCharSetButton:
             self.buttons.append(charSetButton)
         # Add them to the items
+
+    def initThemesMenu(self):
+        # system themes
+        themesMenuColumn = 45
+        themesMenu = Menu(self.window, x = self.x - 2, y = themesMenuColumn, caller=self, appState=self.appState, statusBar=self, name="Themes")
+        themesMenu.set_title("Themes:")
+        themesMenu.is_submenu = True
+        themesMenu.set_x(self.x - 1)
+        themesMenu.set_y(themesMenuColumn)
+        self.themesMenu = themesMenu
+        # user themes
+        userThemesMenuColumn = 45
+        userThemesMenu = Menu(self.window, x = self.x - 2, y = userThemesMenuColumn, caller=self, appState=self.appState, statusBar=self, name="User Themes")
+        userThemesMenu.set_title("User Themes:")
+        userThemesMenu.is_submenu = True
+        userThemesMenu.set_x(self.x - 1)
+        userThemesMenu.set_y(userThemesMenuColumn)
+        self.userThemesMenu = userThemesMenu
+
 
     def hide(self):
         self.hidden = True
@@ -701,19 +699,16 @@ class StatusBar():
         self.caller.appState.setCursorModeMove()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        #self.drawCharPickerButton.hide()
 
     def setCursorModeSelect(self):
         self.caller.appState.setCursorModeSelect()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        #self.drawCharPickerButton.hide()
 
     def setCursorModeDraw(self):
         self.caller.appState.setCursorModeDraw()
         self.caller.enableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        #self.drawCharPickerButton.show()
 
     def setCursorModePaint(self):
         self.caller.appState.setCursorModePaint()
@@ -724,20 +719,16 @@ class StatusBar():
         self.caller.appState.setCursorModeCol()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        #self.drawCharPickerButton.hide()
 
     def setCursorModeErase(self):
         self.caller.appState.setCursorModeErase()
         self.caller.disableMouseReporting()
         self.toolButton.set_label(self.caller.appState.cursorMode)
-        #self.drawCharPickerButton.hide()
 
     def setCursorModeEyedrop(self):
         self.caller.appState.setCursorModeEyedrop()
         self.caller.disableMouseReporting()
-        #self.toolButton.set_label(self.caller.appState.cursorMode)
         self.toolButton.set_label("Eye")
-        #self.drawCharPickerButton.hide()
 
     def updateLocation(self, x, y):
         self.x = x

@@ -13,12 +13,15 @@ import pathlib
 import pdb
 import pickle
 import shutil
-import sys
+import signal
 import subprocess
+import sys
 import tempfile
 import textwrap
 import threading
+import traceback
 import time
+import unicodedata
 import urllib
 
 from concurrent.futures import ThreadPoolExecutor
@@ -38,6 +41,7 @@ import durdraw.durdraw_color_curses as dur_ansilib
 import durdraw.durdraw_ansiparse as dur_ansiparse
 import durdraw.durdraw_sauce as dursauce
 import durdraw.durdraw_charsets as durchar
+import durdraw.durdraw_plugin as durplug
 import durdraw.plugins.reverse_movie as reverse_plugin # transform_movie
 import durdraw.plugins.repeat_movie as repeat_plugin # transform_movie
 import durdraw.plugins.bounce_movie as bounce_plugin # transform_movie
@@ -48,8 +52,10 @@ class UserInterface():  # Separate view (curses) from this controller
     """ Draws user interface, has main UI loop. """
     #def __init__(self, stdscr, app):
     def __init__(self, app):
+        signal.signal(signal.SIGINT, self.sigint_handler)
         self.opts = Options(width=app.width, height=app.height)
         self.appState = app # will be filled in by main() .. run-time app state stuff
+        self.appState.ui = self
         self.log = self.appState.getLogger('ui_curses')
         self.log.info('UserInterface created')
         self.initCursorMode()
@@ -159,9 +165,164 @@ class UserInterface():  # Separate view (curses) from this controller
 
         self.statusBarLineNum = self.realmaxY - 2
 
+        # Load custom character map files
         durchar.scan_charmap_folders(self.appState)
+
+        self.plugin_system = None
+        self.init_plugins()
+        self.statusBar.mainMenu.add_item("Help", self.showHelp, "h", shortcut="esc-h")
+        self.statusBar.mainMenu.add_item("Quit", self.safeQuit, "q", shortcut="esc-q")
+
         #self.loadCharsetFile("~/src/durdraw/coolset.ini")
         self.setCharacterSet("Durdraw Default")
+
+    def init_plugins(self):
+        self.plugin_system = durplug.DurPlugin()
+        # Init user plugins
+        plugin_number = 1
+        found_plugins = False
+        for plugin_name, plugin in self.plugin_system.loaded_plugins.items():
+            if "type" in plugin["meta"]:
+                if 'export' in plugin["meta"]["type"]:
+                    self.statusBar.exportPluginsMenu.add_item(plugin["meta"]["name"], \
+                        lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                        "", plugin=True)
+                if 'menu_item' in plugin["meta"]["type"]:
+                    if 'location' in plugin["meta"]:
+                        shortcut = ''
+                        if 'shortcut' in plugin['meta']:
+                            shortcut = plugin["meta"]["shortcut"]
+                        location = plugin["meta"]["location"]
+                        itemName = plugin["meta"]["name"]
+                        self.statusBar.menus[location].add_item(itemName, \
+                            lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                            shortcut, plugin=True)
+                        # If adding to main menu, move new item above Exit, so
+                        # make sure Exit is the last item in the menu.
+                        #self.statusBar.menus[location].move_item_up(itemName)
+
+                if 'effect' in plugin["meta"]["type"] and not plugin["meta"]["internal"]:
+                    found_plugins = True
+                    if plugin_number < 10:
+                        self.statusBar.animPluginsMenu.add_item(
+                            str(plugin_number) + " " + plugin["meta"]["name"],
+                            lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                            str(plugin_number),
+                            plugin = True)
+                        plugin_number += 1
+                    else:
+                        self.statusBar.animPluginsMenu.add_item(plugin["meta"]["name"], \
+                            lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                            "",
+                            plugin = True)
+                        plugin_number += 1
+            if found_plugins:
+                self.statusBar.animMenu.add_item("Plugins", self.openAnimPluginsMenu, "p", has_submenu=True)
+                self.statusBar.animPluginsMenu.handler.rebuild()
+        # Init internal plugins
+        plugin_number = 1
+        found_plugins = False
+        for plugin_name, plugin in self.plugin_system.loaded_plugins.items():
+            if "type" in plugin["meta"]:
+                if 'export' in plugin["meta"]["type"]:
+                    self.statusBar.exportPluginsMenu.add_item(plugin["meta"]["name"], \
+                        lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                        "", plugin = True)
+                if 'effect' in plugin["meta"]["type"] and plugin["meta"]["internal"]:
+                    found_plugins = True
+                    if plugin_number < 10:
+                        self.statusBar.transformMenu.add_item(
+                            str(plugin_number) + " " + plugin["meta"]["name"],
+                            #lambda: self.plugin_system.run_plugin(plugin_name, self.mov, ui=self),
+                            lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                            str(plugin_number), plugin=True)
+                        plugin_number += 1
+                    else:
+                        self.statusBar.transformMenu.add_item(plugin["meta"]["name"], \
+                            #lambda: self.plugin_system.run_plugin(plugin_name, self.mov, ui=self),
+                            lambda pn=plugin_name: self.plugin_system.run_plugin(pn, self.mov, ui=self),
+                            "", plugin=True)
+                        plugin_number += 1
+        try:
+            self.statusBar.transformMenu.handler.rebuild()
+        except ValueError:
+            pdb.set_trace()
+
+    def pluginOptionsPrompt(self, opts):
+        """ takes opts, a dict containing "key": value, pairs. Key is what the
+            user should be prompted for, value is a default value.
+            Ask th euser to fill out the values. Returns a new dict with 
+            any changed values. """
+        self.clearStatusLine()
+        self.move(self.mov.sizeY, 0)
+        self.stdscr.nodelay(0) # wait for input when calling getch
+        for item in opts:
+            # valid option types are probably 'int' 'float' and 'str':
+            inputType = type(opts[item]).__name__
+            validInputTypes = ['int', 'float', 'str', 'bool']
+            if inputType in validInputTypes:
+                validInput = False
+                while validInput == False:
+                    self.clearStatusLine()
+                    self.promptPrint(f"Plugin option {inputType}: {item} [{opts[item]}] ")
+                    curses.echo()
+                    if inputType == 'bool':
+                        result = chr(self.stdscr.getch())
+                    else:
+                        result = self.stdscr.getstr()
+                    if result.strip() == b'' or result.strip() == '':
+                        # leave default - use presesd enter.
+                        validInput = True
+                        pass
+                    elif inputType == 'bool':
+                        if result.lower() == 'y':
+                            result = True
+                            opts[item] = result
+                            validInput = True
+                        elif result.lower() == 'n':
+                            result = False
+                            opts[item] = result
+                            validInput = True
+                    # If plugin template expects a float, see if it's a float.
+                    elif inputType == 'float':
+                        try:
+                            result = float(result)
+                            opts[item] = result
+                            validInput = True
+                        except ValueError:
+                            self.clearStatusLine()
+                            resultType = type(result).__name__
+                            self.notify(f"Error: exepcted {inputType}, got {resultType}.")
+                    elif inputType == 'int':
+                        try:
+                            result = int(result)
+                            opts[item] = result
+                            validInput = True
+                        except ValueError:
+                            self.clearStatusLine()
+                            resultType = type(result).__name__
+                            self.notify(f"Error: exepcted {inputType}, got {resultType}.")
+                            pdb.set_trace()
+                    elif inputType == 'str':
+                        if result.strip() == '':
+                            # blank, so go default
+                            validInput = True
+                        else:
+                            # If plugin is expecting a string, just pass it in.
+                            #opts[item] = str(result)
+                            opts[item] = result.decode()
+                            validInput = True
+                    else:
+                        self.clearStatusLine()
+                        self.notify(f"Plugin Error: {item} is {inputType}, but must be int, float or string. Canceled!")
+                        curses.noecho()
+                        return None
+        curses.noecho()
+        if self.playing:
+            self.stdscr.nodelay(1) # don't wait for input when calling getch
+        return opts
+
+
 
     def init_256_colors_misc(self):
         self.appState.theme = self.appState.theme_256
@@ -239,6 +400,18 @@ class UserInterface():  # Separate view (curses) from this controller
         elif self.appState.screenCursorMode == "pipe":
             sys.stdout.write(f"\x1b[5 q")
         sys.stdout.write("\n")
+
+    def setCursorStyleBlock(self):
+        self.appState.screenCursorMode = "block"
+        self.initCursorMode()
+
+    def setCursorStylePipe(self):
+        self.appState.screenCursorMode = "pipe"
+        self.initCursorMode()
+
+    def setCursorStyleUnderscore(self):
+        self.appState.screenCursorMode = "underscore"
+        self.initCursorMode()
 
     def enableMouseReporting(self):
         # Use xterm API to report location of mouse cursor
@@ -515,7 +688,9 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.colorMode = "16"
             self.ansi.initColorPairs_cga()
             self.init_16_colors_misc()
-            self.mov.change_palette_256_to_16()
+            #self.mov.change_palette_256_to_16()
+            if self.clipBoard and isinstance(self.clipBoard, durmovie.Frame):
+                self.mov.change_palette_256_to_16(frame=self.clipBoard)
             self.appState.loadThemeFromConfig("Theme-16")
             self.statusBar.colorPickerButton.hide()
             #self.statusBar.charSetButton.hide()
@@ -557,13 +732,15 @@ class UserInterface():  # Separate view (curses) from this controller
                 self.appState.sideBarShowing = True
                 #self.notify("Wide. Showing color picker.")
                 #if self.appState.colorMode == "256":
-                self.statusBar.colorPicker.show()
+                if not self.appState.fetchMode:
+                    self.statusBar.colorPicker.show()
                 #if self.appState.colorMode == "16":
                 #    self.statusBar.colorPicker_bg_16.show()
             # Window is too narrow, but tall enough to show more stuff on the bottom.
         elif realmaxY - self.appState.bottomBar_minimum_height > self.mov.sizeY:
             #if self.appState.colorMode == "256":
-            self.statusBar.colorPicker.show()
+            if not self.appState.fetchMode:
+                self.statusBar.colorPicker.show()
             #if self.appState.colorMode == "16":
             #    self.statusBar.colorPicker_bg_16.show()
 
@@ -733,6 +910,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.cursorOn()
         self.stdscr.refresh()
 
+    def get_terminal_size():
+        """ Return 2 integers, lines/Y and columns/X, like curses' stdscr.getmaxyx() """
+        size = os.get_terminal_size()
+        return size.lines, size.columns
+
     def testWindowSize(self):
         """Test to see if window == too small for program to operate, and
         go into small window mode if necessary"""
@@ -839,8 +1021,6 @@ class UserInterface():  # Separate view (curses) from this controller
             for fn in range(frange[0] - 1, frange[1]):
                 try:
                     self.mov.frames[fn].content[y][x - 1] = chr(c)
-                    #self.mov.frames[fn].colorMap.update(
-                    #        {(y,x - 1):(fg,bg)} )
                     self.mov.frames[fn].newColorMap[y][x - 1] = [fg, bg]
                 except Exception as E:
                     self.notify(f"There was an internal error: {E}", pause=True)
@@ -849,15 +1029,11 @@ class UserInterface():  # Separate view (curses) from this controller
                     break
             if x < self.mov.sizeX and moveCursor:
                 self.move_cursor_right()
-                #self.xy[1] = self.xy[1] + 1 
         else:
             self.mov.currentFrame.content[y][x - 1] = chr(c)
-            #self.mov.currentFrame.colorMap.update(
-            #        {(y,x - 1):(fg,bg)} )
             self.mov.currentFrame.newColorMap[y][x - 1] = [fg, bg]
             if x < self.mov.sizeX and moveCursor:
                 self.move_cursor_right()
-                #self.xy[1] = self.xy[1] + 1 
 
     def pickUpDrawingChar(self, col, line):
         # Sets the drawing chaaracter to the character under teh cusror.
@@ -899,6 +1075,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.clearStatusLine()
         if clearing:
             #self.undo.push() # so we can undo this operation
+            self.opts = Options(width=self.appState.width, height=self.appState.height)   # re-initialize canvas size, fps, etc.
             self.mov = Movie(self.opts) # initialize a new movie
             self.setPlaybackRange(1, self.mov.frameCount)
             self.undo = UndoManager(self, appState = self.appState) # reset undo system
@@ -936,6 +1113,7 @@ class UserInterface():  # Separate view (curses) from this controller
         fg = self.mov.currentFrame.newColorMap[line][col][0]
         bg = self.mov.currentFrame.newColorMap[line][col][1]
         charType = self.appState.charEncoding
+        charName = unicodedata.name(character)
         if charType == "utf-8":
             charValue = "U+" + str(hex(ord(character)))[2:]    # aye chihuahua
         else:
@@ -946,6 +1124,7 @@ class UserInterface():  # Separate view (curses) from this controller
             inspectorString = inspectorString + f", cp437 value: {ibmpc_value}"
         except:
             pass
+        inspectorString = inspectorString + f", name: {charName}"
         self.notify(inspectorString, pause=True)
 
     def clickedChMap(self, mouseX, mouseY):
@@ -1159,7 +1338,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 prompting = False
 
     def increaseFPS(self):
-        if self.opts.framerate != 50: # max 50fps
+        if self.opts.framerate != 240: # max 240fps
             self.opts.framerate += 1
 
     def decreaseFPS(self):
@@ -1182,11 +1361,11 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.firstCol = 0
         self.playing = False
         self.stdscr.nodelay(1) # do not wait for input when calling getch
-        last_time = time.time()
+        last_time = time.perf_counter()
         self.cursorOff()
         self.playingHelpScreen = True
         self.appState.playingHelpScreen = True
-        new_time = time.time()
+        new_time = time.perf_counter()
         helpMov = self.appState.helpMov
         #if page == 1:
         #    self.appState.sleep_time = (1000.0 / self.appState.helpMovOpts.framerate) / 1000.0
@@ -1262,7 +1441,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     if self.appState.topLine + self.realmaxY < helpMov.sizeY:  # wtf?
                         self.appState.topLine += 1
 
-            new_time = time.time()
+            new_time = time.perf_counter()
             frame_delay = helpMov.currentFrame.delay
             if frame_delay > 0:
                 realDelayTime = frame_delay
@@ -1299,7 +1478,7 @@ class UserInterface():  # Separate view (curses) from this controller
         self.appState.firstCol = 0
         self.playing = False
         self.stdscr.nodelay(1) # do not wait for input when calling getch
-        last_time = time.time()
+        last_time = time.perf_counter()
         self.cursorOff()
         self.playingHelpScreen = True
         self.appState.playingHelpScreen = True
@@ -1307,7 +1486,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.appState.playingHelpScreen_2 = True
         else:
             self.appState.playingHelpScreen_2 = False
-        new_time = time.time()
+        new_time = time.perf_counter()
         if page == 2:
             helpMov = self.appState.helpMov_2
         else:
@@ -1335,7 +1514,7 @@ class UserInterface():  # Separate view (curses) from this controller
             c = self.stdscr.getch()
             if c != -1:   # -1 means no keys are pressed.
                 self.playingHelpScreen = False
-            new_time = time.time()
+            new_time = time.perf_counter()
             frame_delay = helpMov.currentFrame.delay
             if frame_delay > 0:
                 realDelayTime = frame_delay
@@ -1565,7 +1744,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.statusBar.animButton.hide()
         self.drawStatusBar()
         self.stdscr.nodelay(1) # do not wait for input when calling getch
-        last_time = time.time()
+        last_time = time.perf_counter()
         #self.statusBar.drawCharPickerButton.hide()
         if self.appState.playOnlyMode:
             self.statusBar.colorPicker.hide()
@@ -1582,7 +1761,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # mode, show extra stuff.
             self.drawStatusBar()
         playedTimes = 1
-        new_time = time.time()
+        new_time = time.perf_counter()
         # see how many milliseconds we have to sleep for
         # then divide by 1000.0 since time.sleep() uses seconds
         self.appState.sleep_time = (1000.0 / self.opts.framerate) / 1000.0
@@ -1928,6 +2107,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         #if self.appState.colorMode == "256":
                         #    self.statusBar.colorPickerButton.on_click()
                         self.statusBar.colorPickerButton.on_click()
+                        self.cursorOn()
                     elif c in [330]:              # delete
                         self.deleteKeyPop(frange=self.appState.playbackRange)
                     elif c in [383]:              # shift-delete - delete from opposite direction
@@ -1984,7 +2164,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 if self.appState.playOnlyMode:
                     self.handlePlayOnlyModeInput(self.stdscr.getch())
 
-                new_time = time.time()
+                new_time = time.perf_counter()
                 frame_delay = self.mov.currentFrame.delay
                 if frame_delay > 0:
                     realDelayTime = frame_delay
@@ -2904,7 +3084,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     c = None
                 elif c == 27:   # 2nd esc byte - possibly alt-arrow.
                     # eg: alt-down: 27 27 91 66 or  \x1b\x1b\x5b\x42
+                    self.stdscr.nodelay(True)   # non-block input in case the user actually pressed Esc
                     c = self.stdscr.getch()
+                    self.stdscr.nodelay(False)
                     if c == 91:     # 3rd byte (\x5b) in arrow key sequence
                         c = self.stdscr.getch()
                         if c == 65: # real alt-up, not esc-up
@@ -2950,7 +3132,7 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.pushingToClip = False
                     if self.appState.debug:
                         if c == ord('X'):   # esc-X - drop into pdb debugger
-                            self.jumpToPythonConsole()
+                            self.set_trace()
                         else:
                             self.notify("keystroke: %d" % c) # alt-unknown
                 self.commandMode = False
@@ -2994,6 +3176,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     #self.statusBar.colorPickerButton.on_click()
                     #self.selectColorPicker()
                 self.selectColorPicker()
+                self.cursorOn()
             elif c in [339, curses.KEY_PPAGE]:  # page up
                 self.move_cursor_pgup()
             elif c in [338, curses.KEY_NPAGE]:  # page down
@@ -3217,7 +3400,7 @@ class UserInterface():  # Separate view (curses) from this controller
                             self.xy[0] = mouseY + self.appState.topLine
                             color_fg = self.appState.defaultFgColor 
                             color_bg = self.appState.defaultBgColor 
-                            self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=mouseX + self.appState.firstCol, y=mouseY + self.appState.topLine, pushUndo=False)
+                            self.insertChar(ord(' '), fg=color_fg, bg=color_bg, x=self.xy[1], y=self.xy[0], pushUndo=False)
                     elif self.appState.cursorMode == "Eyedrop":   # Change the color under the cursor
                         self.eyeDrop(mouseX + self.appState.firstCol, mouseY + self.appState.topLine)
                         self.statusBar.setCursorModeMove()
@@ -3476,6 +3659,44 @@ class UserInterface():  # Separate view (curses) from this controller
         self.setBgColor(ui_bg)
         self.stdscr.refresh()
 
+    def replaceCharUnderCursor(self):
+        self.commandMode = False
+		# get the old character from under the cursor
+        old_char = self.mov.currentFrame.content[self.xy[0]][self.xy[1]-1]
+        # Print a message for the user to pick a new character
+        #self.clearStatusLine()
+        self.addstr(self.statusBarLineNum, 0, " " * 50 , curses.color_pair(self.appState.theme['notificationColor']))
+        printMessage = "Replce with what character? Type or use F1-F10: "
+        self.addstr(self.statusBarLineNum, 0, printMessage, curses.color_pair(self.appState.theme['notificationColor']))
+        self.stdscr.refresh()
+        new_char = self.askForCharacter()
+        if new_char == '\0':
+            self.notify("Replace character canceled.")
+            return False
+
+        if self.mov.hasMultipleFrames():
+            self.promptPrint("Apply to all frames in playback range (Y/N)? ")
+            askingAboutRange = True
+
+        else:   # only 1 frame in movie, so just apply to akk without asking
+            self.undo.push()
+            self.mov.search_and_replace_char(old_char, new_char)
+            askingAboutRange = False
+        while askingAboutRange:
+            prompt_ch = self.stdscr.getch()
+            if chr(prompt_ch) in ['y', 'Y']:    # yes, all in range
+                self.undo.push()
+                self.mov.search_and_replace_char(old_char, new_char, frange=self.appState.playbackRange)
+                askingAboutRange = False
+            if chr(prompt_ch) in ['n', 'N']:    # No, only current frame
+                self.undo.push()
+                self.mov.search_and_replace_char(old_char, new_char)
+                askingAboutRange = False
+            elif prompt_ch == 27:  # esc, cancel
+                askingAboutRange = False
+
+        self.notify(f"old char: {old_char}, new char: {new_char}")
+        self.stdscr.refresh()
 
     def cloneToNewFrame(self):
         """ Take current frame, clone it to a new one, insert it immediately after current frame """
@@ -3729,24 +3950,23 @@ class UserInterface():  # Separate view (curses) from this controller
         if exiting:
             self.verySafeQuit()
 
-    def jumpToPythonConsole(self):
+    def set_trace(self):
         self.getReadyToSuspend()
         pdb.set_trace()
         self.resumeFromSuspend()
 
     def getReadyToSuspend(self):
-        # Get the terminal ready for fun times
-        curses.nocbreak()
-        self.stdscr.keypad(0)
-        curses.echo()
+        # save and suspend ncurses/terminal state
+        curses.def_prog_mode()     # save current tty modes
+        curses.endwin()
 
     def resumeFromSuspend(self):
-        # Get the terminal ready for fun times
-        curses.cbreak()
-        self.stdscr.keypad(1)
-        curses.noecho()
+        # resume ncurses/terminal state
+        curses.reset_prog_mode()
 
-    def verySafeQuit(self): # non-interactive part.. close out curses screen and exit.
+    def verySafeQuit(self):
+        # non-interactive part.. close out curses screen and exit.
+        self.disableMouseReporting()
         curses.nocbreak()
         self.stdscr.keypad(0)
         curses.echo()
@@ -3756,24 +3976,62 @@ class UserInterface():  # Separate view (curses) from this controller
         #print("Done.")
         exit(0)
 
+    def sigint_handler(self, signum, frame): # when the user inevitably presess ctrl-c
+        self.disableMouseReporting()
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.echo()
+        curses.endwin()
+        #print("Waiting for threads to die...")
+        self.killAllHumans()
+        print("User pressed ctrl-c. Exiting. Here is the execution stack:\n")
+        traceback.print_stack()
+        #print("Done.")
+        exit(0)
+
     def promptPrint(self, promptText):
         """ Prints prompting text in a consistent manner """
         self.addstr(self.statusBarLineNum, 0, promptText, curses.color_pair(self.appState.theme['promptColor']))
 
+    def do_nothing(self):
+        pass
+
+
+    def openExportMenu(self):
+        """ Show the Export menu """
+        response = self.statusBar.exportPluginsMenu.showHide()
+        self.statusBar.exportPluginsMenu.handler.panel.hide()
+
+    def openAnimPluginsMenu(self):
+        """ Show the Animation Plugins menu """
+        response = self.statusBar.animPluginsMenu.showHide()
+        self.statusBar.animPluginsMenu.handler.panel.hide()
 
     def openTransformMenu(self):
-        """ Show the status bar's menu for settings """
-        #self.statusBar.mainMenu.handler.panel.show()
-        self.statusBar.animMenu.handler.panel.show()
-        #response = self.statusBar.transformMenu.showHide()
-        response = self.statusBar.transformMenu.show()
-        if response == "Pop":
-            pass
-        else:
-            self.statusBar.animMenu.handler.panel.hide()
+        response = self.statusBar.transformMenu.showHide()
+        self.statusBar.transformMenu.handler.panel.hide()
+
+    def openCursorMenu(self):
+        response = self.statusBar.cursorMenu.showHide()
+
+    def openThemesMenu(self):
+        self.statusBar.themesMenu.handler.panel.show()
+        response = self.statusBar.themesMenu.showHide()
+        self.statusBar.settingsMenu.handler.panel.hide()
+
+    def openUserThemesMenu(self):
+        self.statusBar.userThemesMenu.handler.panel.show()
+        response = self.statusBar.userThemesMenu.showHide()
+        self.statusBar.settingsMenu.handler.panel.hide()
 
     def openSettingsMenu(self):
         """ Show the status bar's menu for settings """
+        # Rebuild the theme list
+        self.statusBar.initThemesMenu()
+        self.appState.loadThemeList(menu=self.statusBar.themesMenu)
+        self.appState.loadThemeList(menu=self.statusBar.userThemesMenu,
+                                    path="~/.durdraw/")
+
         self.statusBar.mainMenu.handler.panel.show()
         response = self.statusBar.settingsMenu.showHide()
         self.statusBar.mainMenu.handler.panel.hide()
@@ -3784,6 +4042,66 @@ class UserInterface():  # Separate view (curses) from this controller
         response = self.statusBar.editMenu.showHide()
         self.statusBar.mainMenu.handler.panel.hide()
 
+    def askForCharacter(self):
+        self.window.nodelay(0) # wait for input when calling getch
+        maxLines, maxCol = self.window.getmaxyx()
+        #pdb.set_trace()
+        prompting = True
+        curses.flushinp()
+        newChar = '\0'
+        while prompting:
+            #c = self.window.getch()
+            c = self.window.get_wch()
+            time.sleep(0.01)
+            if c in [curses.KEY_F1]:
+                newChar = chr(self.chMap['f1'])
+                prompting = False
+            elif c in [curses.KEY_F2]:
+                newChar = chr(self.chMap['f2'])
+                PROMPting = False
+            elif c in [curses.KEY_F3]:
+                newChar = chr(self.chMap['f3'])
+                prompting = False
+            elif c in [curses.KEY_F4]:
+                newChar = chr(self.chMap['f4'])
+                prompting = False
+            elif c in [curses.KEY_F5]:
+                newChar = chr(self.chMap['f5'])
+                prompting = False
+            elif c in [curses.KEY_F6]:
+                newChar = chr(self.chMap['f6'])
+                prompting = False
+            elif c in [curses.KEY_F7]:
+                newChar = chr(self.chMap['f7'])
+                prompting = False
+            elif c in [curses.KEY_F8]:
+                newChar = chr(self.chMap['f8'])
+                prompting = False
+            elif c in [curses.KEY_F9]:
+                newChar = chr(self.chMap['f9'])
+                prompting = False
+            elif c in [curses.KEY_F10]:
+                newChar = chr(self.chMap['f10'])
+                prompting = False
+            elif c in [27, 13, curses.KEY_ENTER]:   # 27 = esc, 13 = enter, cancel
+                prompting = False
+            elif type(c) == str:    # Is a printable/unicode character
+                if c.isprintable():
+                    newChar = c
+                prompting = False
+            else:   # is an integer, but probably still a printable character
+                try:
+                    if chr(c).isprintable():
+                        newChar = chr(c)
+                        prompting = False
+                except:
+                    pass
+                pass
+        self.window.addstr(maxLines - 3, 0, "                                               ")
+        self.refresh()
+        if self.playing:
+            self.stdscr.nodelay(1)
+        return newChar
 
     def openDrawCharPicker(self):
         self.stdscr.nodelay(0)
@@ -3871,7 +4189,10 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.playing:
             self.stdscr.nodelay(1)
 
-    def openFromMenu(self):
+    def openExamples(self):
+        self.openFromMenu(examples=True)
+
+    def openFromMenu(self, examples=False):
         #self.stdscr.nodelay(0) # wait for input when calling getch
         self.clearStatusLine()
         if self.appState.modified:
@@ -3888,7 +4209,12 @@ class UserInterface():  # Separate view (curses) from this controller
                 time.sleep(0.01)
             self.clearStatusLine()
 
-        load_filename, uri_type = self.openFilePicker()
+        self.promptPrint("Loading...")
+        self.refresh()
+        if examples:
+            load_filename, uri_type = self.openFilePicker(examples=True)
+        else:
+            load_filename, uri_type = self.openFilePicker()
         if uri_type == "remote":   # Remote URL, from 16colo.rs
             url = load_filename
             #self.notify(f"url: {url}")
@@ -4043,17 +4369,6 @@ class UserInterface():  # Separate view (curses) from this controller
 
                 current_line_number += 1
 
-
-            #if mask_all:
-            #    self.addstr(realmaxY - 4, 0, f"[X]", curses.color_pair(self.appState.theme['clickColor']))
-            #else:
-            #    self.addstr(realmaxY - 4, 0, f"[ ]", curses.color_pair(self.appState.theme['clickColor']))
-            #self.addstr(realmaxY - 4, 4, f"Show All Files", curses.color_pair(self.appState.theme['menuItemColor']))
-            #self.addstr(realmaxY - 4, 20, f"[PGUP]", curses.color_pair(self.appState.theme['clickColor']))
-            #self.addstr(realmaxY - 4, 27, f"[PGDOWN]", curses.color_pair(self.appState.theme['clickColor']))
-            #self.addstr(realmaxY - 4, 36, f"[OK]", curses.color_pair(self.appState.theme['clickColor']))
-            #self.addstr(realmaxY - 4, 41, f"[CANCEL]", curses.color_pair(self.appState.theme['clickColor']))
-            #self.addstr(realmaxY - 3, 0, f"Folder: {current_directory}", curses.color_pair(self.appState.theme['menuTitleColor']))
             if search_string != "":
                 self.addstr(realmaxY - 2, 0, f"search: ")
                 self.addstr(realmaxY - 2, 8, f"{search_string}", curses.color_pair(self.appState.theme['menuItemColor']))
@@ -4289,6 +4604,7 @@ class UserInterface():  # Separate view (curses) from this controller
             # Thread already ran or running
             return False
         new_caching_thread = threading.Thread(target=self.sixteenc_update_diz_cache, args=(year,), daemon = True)
+        new_caching_thread.daemon = True
         new_caching_thread.start()
 
     def sixteenc_cache_diz_for_pack(self, pack):
@@ -4394,15 +4710,17 @@ class UserInterface():  # Separate view (curses) from this controller
         for file in search_files_list:
             for mask in masks:
                 if fnmatch.fnmatch(file.lower(), mask.lower()):
-                    matched_files.append(file)
-                    break
+                    if os.path.isfile(os.path.join(current_directory, file)):
+                    #if os.access(pathlib.Path(file), os.R_OK):
+                        matched_files.append(file)
+                        break
         for dirname in folders:
             file_list.append(dirname)
         file_list += sorted(matched_files)
         self.log.debug('repopulated file list', {'file_list': file_list})
         return file_list
 
-    def openFilePicker(self):
+    def openFilePicker(self, examples=False):
         """ Draw UI for selecting a file to load, return the filename """
         # get file list
         self.stdscr.nodelay(0) # wait for input when calling getch
@@ -4418,6 +4736,9 @@ class UserInterface():  # Separate view (curses) from this controller
         self.sixteenc_api = None
 
         # set correct color mode for initial picker opening
+        if examples:
+            self.appState.sixteenc_browsing = False
+            self.selected_item_number = 0
         if self.appState.sixteenc_browsing:
             if self.appState.colorMode != "16":
                 self.switchTo16ColorMode()
@@ -4428,18 +4749,26 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.switchTo256ColorMode()
 
         # Set the directory listing for local files
-        if self.appState.workingLoadDirectory: 
-            if os.path.exists(self.appState.workingLoadDirectory):
-                current_directory = self.appState.workingLoadDirectory
+        examples_path = pathlib.Path(__file__).parent.joinpath("examples/")
+        if examples:
+            current_directory = examples_path
+        else:
+            if self.appState.workingLoadDirectory: 
+                if os.path.exists(self.appState.workingLoadDirectory):
+                    current_directory = self.appState.workingLoadDirectory
+                else:
+                    current_directory = os.getcwd()
             else:
                 current_directory = os.getcwd()
-        else:
-            current_directory = os.getcwd()
 
         if not self.appState.sixteenc_browsing:
             file_list = []
             #folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+            if current_directory == examples_path:
+                folders = []
+            else:
+                folders = ['../']
+            folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/")))) + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/"))))
             # remove leading paths
             new_folders = []
             for path_string in folders:
@@ -4470,6 +4799,7 @@ class UserInterface():  # Separate view (curses) from this controller
                 folders = ['../'] + sixteenc_packs
                 #file_list = folders
                 file_list = []
+                file_list += folders
                 full_file_list = file_list
                 search_files_list = file_list
 
@@ -4753,7 +5083,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                             folders =  ["../"]
                                             #folders += glob.glob("*/", root_dir=current_directory)
                                             if not self.appState.sixteenc_browsing: 
-                                                folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                                folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/")))) 
+                                                folders += sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/"))))
                                                 # remove leading paths
                                                 new_folders = []
                                                 for path_string in folders:
@@ -4761,7 +5092,7 @@ class UserInterface():  # Separate view (curses) from this controller
                                                 folders = new_folders
 
                                             if mask_all:
-                                                masks = ['*.*']
+                                                masks = ['*']
                                             else:
                                                 masks = default_masks
                                             matched_files = []
@@ -4837,7 +5168,9 @@ class UserInterface():  # Separate view (curses) from this controller
                                                     search_string = ""
                                             # Because 16c files are being added to the directory list, for some reason:
                                             elif self.sixteenc_levels[self.sixteenc_level] == "pack":
-                                                # Picked a file, so download and load it 
+                                                # Picked a file, so download and load it
+                                                self.promptPrint("Loading...")
+                                                self.refresh()
                                                 filename = file_list[self.selected_item_number]
                                                 url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
                                                 self.cursorOn()
@@ -4846,6 +5179,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                     else:   # clicked a file, try to load it
                                         if self.appState.sixteenc_browsing:
                                             # Picked a file, so download and load it 
+                                            self.promptPrint("Loading...")
+                                            self.refresh()
                                             filename = file_list[self.selected_item_number]
                                             url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
                                             self.cursorOn()
@@ -4862,17 +5197,14 @@ class UserInterface():  # Separate view (curses) from this controller
                                     masks = default_masks
                                 else:
                                     mask_all = True
-                                    masks = ['*.*']
+                                    masks = ['*']
                         elif self.appState.sixteenc_available and mouseCol in range(sixteen_column,sixteen_column+3):  # clicked [X] 16c
                             self.appState.sixteenc_browsing = not self.appState.sixteenc_browsing
                             folders =  ["../"]
                             #folders += glob.glob("*/", root_dir=current_directory)
                             if not self.appState.sixteenc_browsing: 
-                                if mask_all:
-                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
-                                        sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                                else:
-                                    folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
+                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                                    sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                                 # remove leading paths
                                 new_folders = []
                                 for path_string in folders:
@@ -4930,7 +5262,7 @@ class UserInterface():  # Separate view (curses) from this controller
                     # Check or uncheck Show All Files
                     mask_all = not mask_all
                     if mask_all:
-                        masks = ['*.*']
+                        masks = ['*']
                     else:
                         masks = default_masks
 
@@ -4949,8 +5281,9 @@ class UserInterface():  # Separate view (curses) from this controller
                     for file in search_files_list:
                         for mask in masks:
                             if fnmatch.fnmatch(file.lower(), mask.lower()):
-                                matched_files.append(file)
-                                break
+                                if os.path.isfile(os.path.join(current_directory, file)):
+                                    matched_files.append(file)
+                                    break
                     for dirname in folders:
                         file_list.append(dirname)
                     file_list += sorted(matched_files)
@@ -5025,11 +5358,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         file_list = []
                         full_file_list = []
 
-                        if mask_all:
-                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                        folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
                                 sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                        else:
-                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                         
                         # remove leading paths
                         new_folders = []
@@ -5193,6 +5523,8 @@ class UserInterface():  # Separate view (curses) from this controller
                                 search_string = ""
                             else:
                                 # Picked a file, so download and load it :)
+                                self.promptPrint("Loading...")
+                                self.refresh()
                                 filename = file_list[self.selected_item_number]
                                 #pdb.set_trace()
                                 url = self.sixteenc_api.get_url_for_file(self.appState.sixteenc_pack, filename)
@@ -5221,11 +5553,8 @@ class UserInterface():  # Separate view (curses) from this controller
                         if self.appState.sixteenc_browsing:
                             pass
                         else:
-                            if mask_all:
-                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
+                            folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, ".*/")))) + \
                                     sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
-                            else:
-                                folders = ['../'] + sorted(filter(os.path.isdir, glob.glob(os.path.join(current_directory, "*/"))))
                             # remove leading paths
                         if not self.appState.sixteenc_browsing:
                             new_folders = []
@@ -5267,7 +5596,10 @@ class UserInterface():  # Separate view (curses) from this controller
                         self.stdscr.clear()
                         prompting = False
                         full_path = f"{current_directory}/{file_list[self.selected_item_number]}"
-                        self.appState.workingLoadDirectory = current_directory
+                        if not examples:
+                            self.appState.workingLoadDirectory = current_directory
+                        if examples:
+                            self.selected_item_number = 0
                         self.cursorOn()
                         return full_path, "local"
                     #self.filePickerOptionsPicker()
@@ -5400,11 +5732,8 @@ class UserInterface():  # Separate view (curses) from this controller
         if self.opts.saveFileFormat < 6:
             if self.appState.debug: self.notify(f"Upgrading to format 6. Making new color map.")
             for frame in self.mov.frames:
-                try:
-                    frame.height    # for really old pickle files
-                except:
-                    frame.height = frame.sizeY
-                    frame.width = frame.sizeY
+                frame.height = frame.sizeY
+                frame.width = frame.sizeY
                 for line in range(0, frame.height):
                     for col in range(0, frame.width):
                         oldPair = frame.newColorMap[line][col]
@@ -5426,10 +5755,12 @@ class UserInterface():  # Separate view (curses) from this controller
                     self.ansi.convert_colormap(self.mov, dur_ansilib.legacy_16_to_256)
                     convertedColorMap = True
             self.opts.saveFileFormat = 7
+        if self.opts.saveFileFormat < 8:
+            self.opts.saveFileFormat = 8
         if fileColorMode == "16" and self.appState.colorMode == "256" and convertedColorMap == False:
             for frame in self.mov.frames:   # conert from 16 to 256 pallette
-                for line in range(0, frame.height):
-                    for col in range(0, frame.width):
+                for line in range(0, frame.height()):
+                    for col in range(0, frame.width()):
                         if frame.newColorMap[line][col][0] == 1:   # convert black color
                             frame.newColorMap[line][col][0] = 16
                         frame.newColorMap[line][col][0] = frame.newColorMap[line][col][0] - 1   # convert rest of colors
@@ -5483,7 +5814,7 @@ class UserInterface():  # Separate view (curses) from this controller
             newFrame = dur_ansiparse.parse_ansi_escape_codes(raw_text, filename = filename, appState=self.appState, caller=self, debug=self.appState.debug, maxWidth=self.appState.wrapWidth)
             self.appState.topLine = 0
             self.appState.firstCol = 0
-            newMovieOpts = Options(width=newFrame.width, height=newFrame.height)
+            newMovieOpts = Options(width=newFrame.width(), height=newFrame.height())
             newMovie = Movie(newMovieOpts)
             # add the frame with the loaded ANSI file to the movie
             newMovie.addFrame(newFrame)
@@ -5492,25 +5823,7 @@ class UserInterface():  # Separate view (curses) from this controller
             self.mov = newMovie
 
             f.close()
-            #self.notify(f"From color map at 1, 1: {self.mov.currentFrame.newColorMap[1][1]}")
-            #for x in range(lineNum, self.mov.sizeY):   # clear out rest of contents.
-            #    self.mov.currentFrame.content[x] = list(" " * self.mov.sizeX)
 
-            # If we're in the wrong color mode, switch modes and reload file.
-            if self.appState.colorMode == "256":
-                if not self.mov.contains_high_colors(): # if not using 256 colors
-                    #self.notify("Does not contain extended colors.")
-                    if self.mov.contains_background_colors():   # but using background colors...
-                        #self.notify("Contains background colors.")
-                        # Must be a 16 color ANSI. Switch since 256 can't do background colors.
-                        if self.appState.debug:
-                            self.notify(f"16 color file. Switching to 16 color mode and reloading file.")
-                        self.switchTo16ColorMode()
-                        self.loadFromFile(shortfile, 'ascii')
-                # If drawing does contain high colors, and backgrounds... remove the backgrounds until 256 bg colors works.
-                if self.mov.contains_high_colors():
-                    if self.mov.contains_background_colors():
-                        self.mov.strip_backgrounds()
             self.hardRefresh()
 
         elif loadFormat == 'dur':
@@ -5541,7 +5854,16 @@ class UserInterface():  # Separate view (curses) from this controller
             #if (f.read(16) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x64\x72\x61\x77\x20\x4d\x6f\x76'): # {.  "Durdraw Mov
             if self.appState.debug2: self.notify(f"Checking for JSON file.")
             f.seek(0)
-            if f.read(12) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x4d\x6f\x76\x69': # {.  "DurMov
+            #if f.read(12) == b'\x7b\x0a\x20\x20\x22\x44\x75\x72\x4d\x6f\x76\x69': # {.  "DurMov
+            isValidJSONDur = False
+            try:
+                import json
+                json_data = json.load(f)
+                if "DurMovie" in json_data:
+                    isValidJSONDur = True
+            except (ValueError, json.JSONDecodeError):
+                pass
+            if isValidJSONDur:
                 if self.appState.debug2: self.notify(f"JSON found. Loading JSON dur file.")
                 f.seek(0)
                 fileColorMode, fileCharEncoding = durfile.get_dur_file_colorMode_and_charMode(f)
@@ -5598,39 +5920,57 @@ class UserInterface():  # Separate view (curses) from this controller
                 
                 return True
 
-            try:    # Maybe it's a really old Pickle file...
-                if self.appState.debug2: self.notify(f"Unpickling..")
-                pickle_fail = False
-                f.seek(0)
-                unpickler = durfile.DurUnpickler(f)
-                if self.appState.debug2: self.notify(f"self.opts = unpickler.load()")
-                self.opts = unpickler.load()
-                if self.appState.debug2: self.notify(f"self.mov = unpickler.load()")
-                self.mov = unpickler.load()
-                if self.appState.debug2: self.notify(f"self.appState.curOpenFileName = os.path.basename(filename)")
-                self.appState.curOpenFileName = os.path.basename(filename)
-                if self.appState.debug2: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
-                self.appState.playbackRange = (1,self.mov.frameCount)
-            except Exception as e:
-                pickle_fail = True
-                if self.appState.debug2:
-                    self.notify(f"Exception in unpickling: {type(e)}: {e}")
-            # If the first unpickling fails, try looking for another pickle format
-            if pickle_fail:
-                try:
-                    f.seek(0)
-                    if self.appState.debug2: self.notify(f"self.opts = pickle.load(f ")
-                    self.opts = pickle.load(f)
-                    if self.appState.debug2: self.notify(f"self.mov = pickle.load(f ")
-                    self.mov = pickle.load(f)
-                    self.appState.playbackRange = (1,self.mov.frameCount)
-                    pickle_fail = False
-                except Exception as e:
-                    if self.appState.debug2:
-                        self.notify(f"Exception in unpickling other format: {type(e)}: {e}")
-                    pickle_fail = True
 
-            if pickle_fail: # pickle is still failing
+            pickle_fail = True
+            if durfile.is_pickle_file(filename):
+                self.promptPrint("WARNING: This is a pickle file which can execute code, and may be from an old version of Durdraw. Only open if you trust the file! Proceed? (Y/N)")
+                self.stdscr.nodelay(0) # do not wait for input when calling getch
+                prompting = True
+                pickle_proceed = False
+                while prompting:
+                    c = self.stdscr.getch()
+                    time.sleep(0.01)
+                    if c in [ord('y'), ord('Y')]:
+                        pickle_proceed = True
+                        prompting = False
+                    elif c in [ord('n'), ord('N')]:
+                        pickle_proceed = False
+                        prompting = False
+                        return None
+                if pickle_proceed:
+                    try:    # Maybe it's a really old Pickle file...
+                        pickle_fail = False
+                        if self.appState.debug2: self.notify(f"Unpickling..")
+                        f.seek(0)
+                        unpickler = durfile.DurUnpickler(f)
+                        if self.appState.debug2: self.notify(f"self.opts = unpickler.load()")
+                        self.opts = unpickler.load()
+                        if self.appState.debug2: self.notify(f"self.mov = unpickler.load()")
+                        self.mov = unpickler.load()
+                        if self.appState.debug2: self.notify(f"self.appState.curOpenFileName = os.path.basename(filename)")
+                        self.appState.curOpenFileName = os.path.basename(filename)
+                        if self.appState.debug2: self.notify(f"self.appState.playbackRange = (1,self.mov.frameCount)")
+                        self.appState.playbackRange = (1,self.mov.frameCount)
+                    except Exception as e:
+                        pickle_fail = True
+                        if self.appState.debug2:
+                            self.notify(f"Exception in unpickling: {type(e)}: {e}")
+                    # If the first unpickling fails, try looking for another pickle format
+                    if pickle_fail:
+                        try:
+                            f.seek(0)
+                            if self.appState.debug2: self.notify(f"self.opts = pickle.load(f ")
+                            self.opts = pickle.load(f)
+                            if self.appState.debug2: self.notify(f"self.mov = pickle.load(f ")
+                            self.mov = pickle.load(f)
+                            self.appState.playbackRange = (1,self.mov.frameCount)
+                            pickle_fail = False
+                        except Exception as e:
+                            if self.appState.debug2:
+                                self.notify(f"Exception in unpickling other format: {type(e)}: {e}")
+                            pickle_fail = True
+
+            if pickle_fail: # pickle loading failed, or file is not pickle
                 loadFormat = 'ascii'    # loading .dur format failed, so assume it's ascii instead.
                 # change this to ANSI once ANSI file loading works, stripping out ^M in newlines
                 # change this whole method to call loadDurFile(), loadAnsiFile(),
@@ -6787,11 +7127,14 @@ Can use ESC or META instead of ALT
                 # copy, cut, fill, or copy into all frames :)
                 prompting = True
                 self.clearStatusBar()
-                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, Flip [X/Y], New [B]rush, copy to [A]ll Frames in range? " )
+                self.promptPrint("[C]opy, Cu[t], [D]elete, [F]ill, Co[l]or, Flip [X/Y], Make [B]rush, Copy Ani[m]ation, copy to [A]ll Frames in range? " )
                 while prompting:
                     prompt_ch = self.stdscr.getch()
                     if chr(prompt_ch) in ['c', 'C']:    # Copy
                         self.copySegmentToClipboard([firstLineNum, firstColNum], height, width)
+                        prompting = False
+                    if chr(prompt_ch) in ['m', 'M']:    # Copy Animation
+                        self.copyAnimToClipboard([firstLineNum, firstColNum], height, width)
                         prompting = False
                     if chr(prompt_ch) in ['b', 'B']:    # Make Brush
                         self.copySegmentToBrush([firstLineNum, firstColNum], height, width)
@@ -6994,32 +7337,97 @@ Can use ESC or META instead of ALT
 
     def askHowToPaste(self):
         self.clearStatusBar()
-        if self.mov.hasMultipleFrames():
-            self.promptPrint("Paste across all frames in playback range (Y/N)? ")
-            askingAboutRange = True
-        else:   # only one frame
-            self.undo.push()
-            self.pasteFromClipboard()
-            askingAboutRange = False
-        while askingAboutRange:
-            prompt_ch = self.stdscr.getch()
-            if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
-                self.undo.push()
-                self.pasteFromClipboard(frange=self.appState.playbackRange)
-                askingAboutRange = False
-            if chr(prompt_ch) in ['n', 'N']:    # no, single frame only
-                self.undo.push()
-                self.pasteFromClipboard()
-                askingAboutRange = False
-            elif prompt_ch == 27:  # esc, cancel
-                askingAboutRange = False
-        prompting = False
+        if isinstance(self.clipBoard, durmovie.Movie):
+            transparent = False
+            self.clearStatusBar()
+            self.promptPrint("Transparent background paste (Y/N)? ")
+            prompting = True
+            transparent = True
+            while prompting:
+                prompt_ch = self.stdscr.getch()
+                try:
+                    if chr(prompt_ch) in ['y', 'Y']:
+                        frange=self.appState.playbackRange
+                        prompting = False
+                    if chr(prompt_ch) in ['n', 'N']:
+                        transparent = False
+                        prompting = False
+                    elif prompt_ch == 27:  # esc, cancel
+                        return False
+                except ValueError:
+                    pass    # dgaf crash prevention on weird inputs
 
-    def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):
+            self.pasteMovFromClipboard(transparent=transparent)
+        elif isinstance(self.clipBoard, durmovie.Frame):
+            transparent = False
+            frange=None
+            if self.mov.hasMultipleFrames():
+                self.promptPrint("Paste across all frames in playback range (Y/N)? ")
+                askingAboutRange = True
+            else:   # only one frame
+                askingAboutRange = False
+            while askingAboutRange:
+                prompt_ch = self.stdscr.getch()
+                if chr(prompt_ch) in ['y', 'Y']:    # yes, all range
+                    frange=self.appState.playbackRange
+                    ranged = True
+                    askingAboutRange = False
+                if chr(prompt_ch) in ['n', 'N']:    # no, single frame only
+                    self.undo.push()
+                    askingAboutRange = False
+                elif prompt_ch == 27:  # esc, cancel
+                    askingAboutRange = False
+                    return False
+
+            self.clearStatusBar()
+            self.promptPrint("Transparent background paste (Y/N)? ")
+            prompting = True
+            transparent = True
+            while prompting:
+                prompt_ch = self.stdscr.getch()
+                try:
+                    if chr(prompt_ch) in ['y', 'Y']:
+                        frange=self.appState.playbackRange
+                        prompting = False
+                    if chr(prompt_ch) in ['n', 'N']:
+                        transparent = False
+                        prompting = False
+                    elif prompt_ch == 27:  # esc, cancel
+                        return False
+                except ValueError:
+                    pass    # dgaf crash prevention on weird inputs
+
+            self.undo.push()
+            self.pasteFromClipboard(frange=frange, transparent=transparent)
+
+    def pasteMovFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):
+        # Reject if clipboard is empty or not a movie
         if not clipBuffer:
             clipBuffer = self.clipBoard
-        if not clipBuffer:  # clipboard is empty, and no buffer provided
+        if not clipBuffer:
             return False
+        if not isinstance(self.clipBoard, durmovie.Movie):
+            return False
+
+        if pushUndo:
+            self.undo.push()
+
+        # For each frame in the clipboard,
+        # paste it into the next frame of self.mov
+        origFrame = self.mov.currentFrameNumber
+        for frame in clipBuffer.frames:
+            self.pasteFromClipboard(clipBuffer=frame, transparent=transparent, pushUndo=False)
+            self.mov.nextFrame()
+        #self.mov.gotoFrame(origFrame)   
+    
+    def pasteFromClipboard(self, startPoint=None, clipBuffer=None, frange=None, transparent=False, pushUndo=True):
+        """ Pastes a frame object into the canvas """
+        # Reject if clipboard is empty or not a frame
+        if not clipBuffer:
+            clipBuffer = self.clipBoard
+        if not clipBuffer:
+            return False
+
         if pushUndo:
             self.undo.push()
         if not startPoint:
@@ -7071,6 +7479,31 @@ Can use ESC or META instead of ALT
         tempFrame = self.copySegmentToBuffer(startPoint, height, width)
         # paste into each frame in range, at startPoint
         self.pasteFromClipboard(clipBuffer=tempFrame, startPoint=startPoint, frange=frange)
+
+    def copyAnimToClipboard(self, startPoint, height, width):
+        """ startPoint is [line, column] """
+        animClipBoard = self.copyAnimToBuffer(startPoint, height, width)
+        self.clipBoard = animClipBoard 
+
+    def copyAnimToBuffer(self, startPoint, height, width):
+        """ Copies the selected area from all frames in the current playback range into a movie object """
+        opts = Options(width=width, height=height)
+        first = self.appState.playbackRange[0]
+        last = self.appState.playbackRange[1]
+        # Copy animation into a new Movie object
+        clip_mov = Movie(opts)
+        currentFrameNumber = self.mov.currentFrameNumber
+        for frameNum in range(first, last + 1):
+            # For reach frame in the range..
+            self.mov.gotoFrame(frameNum)
+            frame = self.copySegmentToBuffer(startPoint, height, width)
+            # add it to the clipboard movie.
+            clip_mov.addFrame(frame)
+        self.mov.gotoFrame(currentFrameNumber)
+        # Delete initial blank frame from buffer
+        clip_mov.gotoFrame(0)
+        clip_mov.deleteCurrentFrame()
+        return clip_mov
 
     def copySegmentToBuffer(self, startPoint, height, width):
         # Return a buffer, aka a frame or movie object

@@ -10,11 +10,12 @@ durdraw_plugin = {
     "name": "Reverse",
     "author": "Sam Foster, samfoster@gmail.com",
     "version":  1,   # Plugin verison, if applicable
-    "type": "transform_movie",
+    "provides": ["transform_movie"],
+    "type": ["effect"],
     "desc": "Reverses the order of the frames in a movie"
 }
 
-def transform_movie(mov):
+def transform_movie(mov, appState=None):
     # Use slicing trick to reverse frames
     mov.frames = mov.frames[::-1]
     return mov

@@ -1,7 +1,9 @@
 import configparser
 import curses
+import glob
 import gzip
 import os
+import pathlib
 import pdb
 import pickle
 import subprocess
@@ -21,6 +23,8 @@ class AppState():
         #self.ansiLove = self.isAppAvail("ansilove")
         #self.neofetch = self.isAppAvail("neofetch")
         #self.PIL = self.checkForPIL()
+
+        self.ui = None  # handy reference to App UI
 
         self.ansiLove = None
         self.neofetch = None
@@ -105,7 +109,7 @@ class AppState():
         self.playOnlyMode = False   # This means viewer mode now, actually..
         self.viewModeShowInfo = False   # show sauce etc in view mode
         self.playNumberOfTimes = 0  # 0 = loop forever, default
-        self.undoHistorySize = 100  # How far back our undo history can
+        self.undoHistorySize = 1000  # How far back our undo history can go
         self.playbackRange = (1,1)
         self.drawChar = '$'
         self.brush = None
@@ -200,6 +204,7 @@ class AppState():
 
     def check_dependencies(self):
         dependency_thread = threading.Thread(target=self.thread_check_dependencies)
+        dependency_thread.daemon = True
         dependency_thread.start()
 
     def thread_check_dependencies(self):
@@ -253,18 +258,48 @@ class AppState():
     def getLogger(self, name: str):
         return log.getLogger(name, level=self.log_level, filepath=self.log_filepath, local_tz=self.log_local_tz)
 
-    def loadThemeList(self):
+    def loadThemeList(self, menu=None, path=None):
         """ Look for theme files in internal durdraw directory """
-        # durhelp256_fullpath = pathlib.Path(__file__).parent.joinpath("help/durhelp-256-long.dur") 
         # Get a list of files from the themes paths
-        internal_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
-        self.internal_theme_file_list = glob.glob(f"{internal_theme_path}/*.dtheme.ini")
+        if not path:    # scan for internal themes if no path is specified
+            theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
+        else:
+            theme_path = os.path.expanduser("~/.durdraw/themes/")
+        self.internal_theme_file_list = glob.glob(f"{theme_path}/*.dtheme.ini")
+        if self.colorMode == '256':
+            themeMode = 'Theme-256'
+        else:
+            themeMode = 'Theme-16'
         #user_theme_path = pathlib.Path(__file__).parent.joinpath("themes/")
         #self.user_theme_file_list = glob.glob(f"{user_theme_path}/*.dtheme.ini")
         # Turn lists into an index of Theme name, Theme type, and Path to 
-        theme_files = []   # populate with a list of dicts containing name=, path=, type=
+        self.internal_themes = []
+        #self.internal_theme_file_list = []
         for filename in self.internal_theme_file_list:
-            theme_files += filename
+            themeFileConfig = configparser.ConfigParser()
+            themeConfigsLoaded = themeFileConfig.read(filename)
+            if themeConfigsLoaded == []:
+                pass # could not find or load the theme file
+            else:
+                if themeMode in themeFileConfig.sections():
+                    theme = themeFileConfig[themeMode]
+                    if 'name' in theme:
+                        themeName = str(theme['name'])
+                        self.internal_themes.append({
+                            'name': themeName,
+                            'path': filename,
+                            'type': themeMode,   # 16 or 256 color
+                            })
+        if menu:    # populate with themes
+            for theme in self.internal_themes:
+                menu.add_item(
+                        theme['name'],
+                        lambda tf=theme['path']:
+                            self.loadThemeFile(tf, themeMode),
+                        "")
+            if not self.internal_themes: # no theme files found/loaded
+                menu.add_item( "No themes found.", lambda: None, "")
+            menu.handler.rebuild()
 
     def loadConfigFile(self):
         # Load configuration filea
@@ -283,15 +318,37 @@ class AppState():
             return True
 
     def loadThemeFromConfig(self, themeMode):
-        #pdb.set_trace()
         if not self.themesEnabled:
             return False
+
+        # Load previously set theme from the GUI, if there is one
+        if themeMode == 'Theme-16':
+            fn = os.path.expanduser('~/.durdraw/theme-16')
+        elif themeMode == 'Theme-256':
+            fn = os.path.expanduser('~/.durdraw/theme-256')
+        try:
+            with open(fn, "r") as file:
+                themeFilePath = file.read()
+            try:
+                self.loadThemeFile(themeFilePath, themeMode)
+            except:
+                # should probably just rm the pointer file
+                # if the theme doesn't load.
+                pass
+        except FileNotFoundError:
+            pass
+
+        # If there is a theme in the user's config file, load that
         if 'Theme' in self.configFile:
             themeConfig = self.configFile['Theme']
             if 'theme-16' in themeConfig and themeMode == 'Theme-16':
                 self.loadThemeFile(themeConfig['theme-16'], themeMode)
             if 'theme-256' in themeConfig and themeMode == 'Theme-256':
                 self.loadThemeFile(themeConfig['theme-256'], themeMode)
+        else:
+            pass
+
+
 
     def getConfigOption(self, section: str, item: str):
         # section = something like [Main], item = something like color-mode:
@@ -335,6 +392,18 @@ class AppState():
                 self.theme['menuTitleColor'] = int(theme['menuTitleColor'])
             if 'menuBorderColor' in theme:
                 self.theme['menuBorderColor'] = int(theme['menuBorderColor'])
+
+            # Write theme file path to ~/.durdraw/theme-256 or theme-16
+            # so it can be auto re-loaded on startup.
+            if themeMode == 'Theme-16':
+                fn = '~/.durdraw/theme-16'
+            elif themeMode == 'Theme-256':
+                fn = '~/.durdraw/theme-256'
+            current_theme_file = os.path.expanduser(fn)
+            with open(current_theme_file, "w") as file:
+                file.write(themeFilePath)
+                file.close()
+
             return True
 
     def checkForPIL(self):
@@ -384,6 +453,7 @@ class AppState():
 
     def loadHelpFileThread(self, helpFileName):
         help_loading_thread = threading.Thread(target=self.loadHelpFile, args=(helpFileName,))
+        help_loading_thread.daemon = True
         help_loading_thread.start()
 
     def loadHelpFile(self, helpFileName, page=1):

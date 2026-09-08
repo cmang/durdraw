@@ -5,15 +5,16 @@ import json
 import pdb
 import re
 
+import curses
+
 def init_list_colorMap(width, height):
     """ Builds a color map consisting of a list of lists """
     #return [[list([1,0]) * width] * height]
     colorMap = []
-    dummyColor = [8, 0]
     for h in range(0, height):
         colorMap.append([])
         for w in range(0, width):
-            colorMap[h].append(dummyColor)
+            colorMap[h].append([8, 0])
     return colorMap
 
 def convert_dict_colorMap(oldMap, width, height):
@@ -54,32 +55,45 @@ def convert_movie_16_to_256_color_palette(mov):
 class Frame():
     """Frame class - single canvas size frame of animation. a traditional drawing.
     """
-    def __init__(self, width, height):
+    def __init__(self, columns, lines):
         """ Initialize frame, content[x][y] grid """
         # it's a bunch of rows of ' 'characters.
         self.content = []
-        self.colorMap = {}
-        self.newColorMap = init_list_colorMap(width, height)   # [[1,0], [3, 1], ...]
-        self.sizeX = width
-        self.width = width
-        self.sizeY = height
-        self.height = height
+        #self.colorMap = {}
+        #pdb.set_trace()
+        self.sizeX = columns
+        self.sizeY = lines 
+        if isinstance(self.sizeY, int):
+            self.newColorMap = init_list_colorMap(self.sizeX, self.sizeY)   # [[1,0], [3, 1], ...]
+        else:
+            curses.def_prog_mode() 
+            curses.endwin()
+            pdb.set_trace()
+            curses.reset_prog_mode() 
         self.delay = 0  # delay == # of sec to wait at this frame.
 
         # Generate character arrays for frame contents, fill it
         # with ' ' (space) characters
-        for x in range(0, height):
+        for x in range(0, lines):
             self.content.append([])
-            for y in range(0, width):
+            for y in range(0, columns):
                 self.content[x].append(' ')
 
-        self.initOldColorMap()
+        #self.initOldColorMap()
         #self.initColorMap()
         #self.newColorMap = convert_dict_colorMap(self.colorMap, width, height)
         self.setDelayValue(0)
 
         self.log = log.getLogger('frame')
-        self.log.info('frame initialized', {'width': width, 'height': height})
+        self.log.info('frame initialized', {'width': columns, 'height': lines})
+
+    @property
+    def colorMap(self):
+        return self.newColorMap
+
+    @colorMap.setter
+    def colorMap(self, value):
+        self.newColorMap = value
 
     def flip_horizontal(self):
         #pdb.set_trace()
@@ -106,27 +120,25 @@ class Frame():
     #        self.content[x].reverse()
     #        self.newColorMap[x].reverse()
 
+    def width(self):
+        """ Returns the number of columns in the frame """
+        return self.sizeX
 
-    def setWidth(self, width):
-        self.sizeX = width
-        self.width = width
+    def height(self):
+        """ Returns the number of lines in the frame """
+        return self.sizeY
+
+    def setWidth(self, columns):
+        self.sizeX = columns 
         return true
 
-    def setHeight(self, height):
-        self.sizeY = height
-        self.height = height
+    def setHeight(self, lines):
+        self.sizeY = lines 
         return true
 
 
     def setDelayValue(self, delayValue):
         self.delay = delayValue
-
-    def initOldColorMap(self):
-        """ Builds a dictionary mapping X/Y to a FG/BG color pair """
-        self.colorMap = {}
-        for x in range(0, self.sizeY):
-            for y in range(0, self.sizeX):
-                self.colorMap.update( {(x,y):(1,0)} )  # tuple keypair (xy), tuple value (fg and bg)
 
     def initColorMap(self, fg=7, bg=0):
         """ Builds a list of lists """
@@ -149,9 +161,23 @@ class Movie():
         self.log = log.getLogger('movie')
         self.log.info('movie initialized', {'sizeX': self.sizeX, 'sizeY': self.sizeY})
 
+    def width(self):
+        """ Returns the number of columns in the movie """
+        return self.sizeX
+
+    def height(self):
+        """ Returns the number of lines in the movie """
+        return self.sizeY
+
     def addFrame(self, frame):
         """ takes a Frame object, adds it into the movie """
         self.frames.append(frame)
+        self.frameCount += 1
+        return True
+
+    def insertFrame(self, frame):
+        """ takes a Frame object, inserts it after current frame """
+        self.frames.insert(self.currentFrameNumber, frame)
         self.frameCount += 1
         return True
 
@@ -166,7 +192,7 @@ class Movie():
         newFrame = Frame(self.sizeX, self.sizeY)
         self.frames.insert(self.currentFrameNumber, newFrame)
         newFrame.content = deepcopy(self.currentFrame.content)
-        newFrame.colorMap = deepcopy(self.currentFrame.colorMap)
+        #newFrame.colorMap = deepcopy(self.currentFrame.colorMap)
         newFrame.newColorMap = deepcopy(self.currentFrame.newColorMap)
         self.frameCount += 1
         return True
@@ -226,12 +252,10 @@ class Movie():
     def growCanvasWidth(self, growth):
         self.sizeX += growth
         self.opts.sizeX += growth
-        #self.width += growth
 
     def shrinkCanvasWidth(self, shrinkage):
         self.sizeY = self.sizeY - shrinkage
         self.opts.sizeY = self.opts.sizeY - shrinkage 
-        #self.width = self.width - shrinkage
 
     def search_and_replace_color_pair(self, old_color, new_color, frange=None):
         if frange != None:  # apply to all frames in range
@@ -281,6 +305,44 @@ class Movie():
                         frame.newColorMap[line_num][1] = new_color
                         found = True
                 line_num += 1
+
+    def search_and_replace_char(self, old_char: str, new_char: str, frange = None):
+        for frame in self.frames:
+            line_num = 0
+            while line_num < frame.sizeY:
+                col_num  = 0
+                #for col in line:
+                while col_num < frame.sizeX:
+                    if frame.content[line_num][col_num] == old_char:
+                        frame.content[line_num][col_num] = new_char
+                    col_num += 1
+                line_num += 1
+
+        if frange != None:  # apply to all frames in range
+            for frameNum in range(frange[0] - 1, frange[1]):
+            #for frame in self.frames:
+                frame = self.frames[frameNum]
+                line_num = 0
+                col_num = 0
+                while line_num < frame.sizeY:
+                    while col_num < frame.sizeX:
+                        if frame.content[line_num][col_num] == old_char:
+                            frame.content[line_num][col_num] = new_char
+                        col_num += 1
+                    line_num += 1
+                    col_num = 0
+        else:   # only apply to current frame
+            frame = self.currentFrame
+            line_num = 0
+            col_num = 0
+            while line_num < frame.sizeY:
+                while col_num < frame.sizeX:
+                    if frame.content[line_num][col_num] == old_char:
+                        frame.content[line_num][col_num] = new_char
+                    col_num += 1
+                line_num += 1
+                col_num = 0
+
 
     def search_and_replace(self, caller, search_str: str, replace_str: str):
         #search_list = list(search)
@@ -338,50 +400,96 @@ class Movie():
         return found    # should be false if execution reaches this point
 
 
-    def change_palette_16_to_256(self):
+    def change_palette_16_to_256(self, frame=None):
         # Convert from blue to bright white by reducing their value by 1
-        for frame in self.frames:
+        if frame:   # run it on just a frame.
             line_num = 0
             col_num = 0
             for line in frame.newColorMap:
                 for pair in line:
                     if pair[0] == 1:    # black
-                        pair[0] = 16
+                        frame.newColorMap[line_num][col_num][0] = 16
                     elif pair[0] == 16:    # bright white
-                        pair[0] = 15
+                        frame.newColorMap[line_num][col_num][0] = 15
                     elif pair[0] == 15:    # bright yellow
-                        pair[0] = 14
+                        frame.newColorMap[line_num][col_num][0] = 14
                     elif pair[0] == 14:    # bright purple
-                        pair[0] = 13
+                        frame.newColorMap[line_num][col_num][0] = 13
                     elif pair[0] == 13:    # bright red
-                        pair[0] = 12
+                        frame.newColorMap[line_num][col_num][0] = 12
                     elif pair[0] == 12:    # bright cyan
-                        pair[0] = 11
+                        frame.newColorMap[line_num][col_num][0] = 11
                     elif pair[0] == 11:    # bright green
-                        pair[0] = 10
+                        frame.newColorMap[line_num][col_num][0] = 10
                     elif pair[0] == 10:    # bright blue
-                        pair[0] = 9
+                        frame.newColorMap[line_num][col_num][0] = 9
                     elif pair[0] == 9:    # bright black
-                        pair[0] = 8
+                        frame.newColorMap[line_num][col_num][0] = 8
                     elif pair[0] == 8:    # grey
-                        pair[0] = 7
+                        frame.newColorMap[line_num][col_num][0] = 7
                     elif pair[0] == 7:    # brown
-                        pair[0] = 6
+                        frame.newColorMap[line_num][col_num][0] = 6
                     elif pair[0] == 6:    # purple
-                        pair[0] = 5
+                        frame.newColorMap[line_num][col_num][0] = 5
                     elif pair[0] == 5:    # red
-                        pair[0] = 4
+                        frame.newColorMap[line_num][col_num][0] = 4
                     elif pair[0] == 4:    # cyan
-                        pair[0] = 3
+                        frame.newColorMap[line_num][col_num][0] = 3
                     elif pair[0] == 3:    # green
-                        pair[0] = 2
+                        frame.newColorMap[line_num][col_num][0] = 2
                     elif pair[0] == 2:    # blue
-                        pair[0] = 1
+                        frame.newColorMap[line_num][col_num][0] = 1
+                    # eliminate all BG colors for now. 0 = black in 256 color mode.
+                    # bg 8 = black in 16 color mode. We do this because things get
+                    # weird in 256 color mode with non-0 BG colors.
+                    pair[1] = 0         
                     col_num += 1
+        else:   # run it on whole movie
+            for frame in self.frames:
+                line_num = 0
+                col_num = 0
+                for line in frame.newColorMap:
+                    for pair in line:
+                        if pair[0] == 1:    # black
+                            pair[0] = 16
+                        elif pair[0] == 16:    # bright white
+                            pair[0] = 15
+                        elif pair[0] == 15:    # bright yellow
+                            pair[0] = 14
+                        elif pair[0] == 14:    # bright purple
+                            pair[0] = 13
+                        elif pair[0] == 13:    # bright red
+                            pair[0] = 12
+                        elif pair[0] == 12:    # bright cyan
+                            pair[0] = 11
+                        elif pair[0] == 11:    # bright green
+                            pair[0] = 10
+                        elif pair[0] == 10:    # bright blue
+                            pair[0] = 9
+                        elif pair[0] == 9:    # bright black
+                            pair[0] = 8
+                        elif pair[0] == 8:    # grey
+                            pair[0] = 7
+                        elif pair[0] == 7:    # brown
+                            pair[0] = 6
+                        elif pair[0] == 6:    # purple
+                            pair[0] = 5
+                        elif pair[0] == 5:    # red
+                            pair[0] = 4
+                        elif pair[0] == 4:    # cyan
+                            pair[0] = 3
+                        elif pair[0] == 3:    # green
+                            pair[0] = 2
+                        elif pair[0] == 2:    # blue
+                            pair[0] = 1
+                        # eliminate all BG colors for now. 0 = black in 256 color mode.
+                        # bg 8 = black in 16 color mode. We do this because things get
+                        # weird in 256 color mode with non-0 BG colors.
+                        pair[1] = 0         
+                        col_num += 1
 
-    def change_palette_256_to_16(self):
-        # Convert from blue to bright white by reducing their value by 1
-        for frame in self.frames:
+    def change_palette_256_to_16(self, frame=None):
+        if frame:
             line_num = 0
             col_num = 0
             for line in frame.newColorMap:
@@ -419,6 +527,46 @@ class Movie():
                     elif pair[0] == 1:    # blue
                         pair[0] = 2
                     col_num += 1
+        else:
+            # Convert from blue to bright white by reducing their value by 1
+            for frame in self.frames:
+                line_num = 0
+                col_num = 0
+                for line in frame.newColorMap:
+                    for pair in line:
+                        if pair[0] == 16:    # black
+                            pair[0] = 1
+                        elif pair[0] == 15:    # bright white
+                            pair[0] = 16
+                        elif pair[0] == 14:    # bright yellow
+                            pair[0] = 15
+                        elif pair[0] == 13:    # bright purple
+                            pair[0] = 14
+                        elif pair[0] == 12:    # bright red
+                            pair[0] = 13
+                        elif pair[0] == 11:    # bright cyan
+                            pair[0] = 12
+                        elif pair[0] == 10:    # bright green
+                            pair[0] = 11
+                        elif pair[0] == 9:    # bright blue
+                            pair[0] = 10
+                        elif pair[0] == 8:    # bright black
+                            pair[0] = 9
+                        elif pair[0] == 7:    # grey
+                            pair[0] = 8
+                        elif pair[0] == 6:    # brown
+                            pair[0] = 7
+                        elif pair[0] == 5:    # purple
+                            pair[0] = 6
+                        elif pair[0] == 4:    # red
+                            pair[0] = 5
+                        elif pair[0] == 3:    # cyan
+                            pair[0] = 4
+                        elif pair[0] == 2:    # green
+                            pair[0] = 3
+                        elif pair[0] == 1:    # blue
+                            pair[0] = 2
+                        col_num += 1
 
 
     def contains_high_colors(self):

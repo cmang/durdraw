@@ -1,4 +1,4 @@
-Durdraw File Format version 7 (draft) - May 2023
+## Durdraw File Format version 8 - August 2026
 
 Durdraw is an ANSI art editor that handles animation, Unicode and 256 color. This document describes its primary file format, "dur."
 
@@ -32,7 +32,172 @@ Here is the full list of JSON keys stored in a DurMovie object, and their purpos
 "colorMap" - An array of arrays containing the foreground and background colors for a given line and column in the canvas
 ```
 
+In 256 color mode, the first 16 colors are as follows:
+
+```
+0 black
+1 blue
+2 green
+3 cyan
+4 red
+5 purple
+6 yellow/brown
+7 white
+8 grey/bright black
+9 bright blue
+10 bright green
+11 bright cyan
+12 bright red
+13 bright purple
+14 bright yellow
+15 bright white
+```
+
+Colors 16-255 use the standard Xterm-256color palette index.
+
+In 16 color mode, the first 16 colors begin at index 1 instead of 0:
+
+```
+1 black
+2 blue
+3 green
+4 cyan
+5 red
+6 purple
+7 yellow/brown
+8 white
+9 grey/bright black
+10 bright blue
+11 bright green
+12 bright cyan
+13 bright red
+14 bright purple
+15 bright yellow
+16 bright white
+```
+
 Here is an example Durdraw file, containing an animation with 3 lines, 10 columns and 6 frames:
+
+```
+{
+  "DurMovie": {
+    "formatVersion": 8,
+    "colorFormat": "256",
+    "preferredFont": "fixed",
+    "encoding": "utf-8",
+    "name": "",
+    "artist": "",
+    "framerate": 6.0,
+    "columns": 10,
+    "lines": 3,
+    "extra": null,
+    "frames": [
+      {
+        "frameNumber": 1,
+        "delay": 0,
+        "contents": [
+          "O         ",
+          "          ",
+          "          "
+        ],
+        "colorMap": [
+          [[12, 0],[1, 0],[7, 0],[7, 0],[7, 0],[7, 0],[7, 0],[7, 0],[7, 0],[1, 0]],
+          [[1, 0],[7, 0],[7, 0],[7, 0],[7, 0],[7, 0],[7, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[1, 0],[1, 0],[7, 0],[7, 0],[7, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      },
+      {
+        "frameNumber": 2,
+        "delay": 0,
+        "contents": [
+          "          ",
+          " O        ",
+          "          "
+        ],
+        "colorMap": [
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[12, 0],[7, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      },
+      {
+        "frameNumber": 3,
+        "delay": 0,
+        "contents": [
+          "          ",
+          "          ",
+          "  O       "
+        ],
+        "colorMap": [
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[7, 0],[7, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      },
+      {
+        "frameNumber": 4,
+        "delay": 0,
+        "contents": [
+          "          ",
+          "          ",
+          "  o       "
+        ],
+        "colorMap": [
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[7, 0],[7, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      },
+      {
+        "frameNumber": 5,
+        "delay": 0,
+        "contents": [
+          "          ",
+          "   O      ",
+          "          "
+        ],
+        "colorMap": [
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[7, 0],[7, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[7, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      },
+      {
+        "frameNumber": 6,
+        "delay": 0,
+        "contents": [
+          "     O    ",
+          "          ",
+          "          "
+        ],
+        "colorMap": [
+          [[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[7, 0],[7, 0],[1, 0],[12, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]],
+          [[1, 0],[1, 0],[7, 0],[7, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0],[1, 0]
+          ]
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Changes from Version 7
+
+Version 7 is exactly the same, except for the following changes:
+
+* The key 'lines' is called 'sizeY'
+
+* The key 'columns' is called 'sizeX'
+
+* The 'colorMap' lines/columns index are in reverse orientation from 'contents,' so contents[line][column] maps to the color at colorMap[column][line].
+
+Here is the same example file in version 7 format:
 
 ```
 {
@@ -184,3 +349,11 @@ Here is an example Durdraw file, containing an animation with 3 lines, 10 column
   }
 }
 ```
+
+
+History:
+
+Version 8 - Durdraw 0.30.0 - August 2026 - Fixed colorMap x/y vs y/x issue, and lines/columns vs sizeY/sizeX
+
+Version 7 - May 2023 - First public JSON/GZIP version
+
