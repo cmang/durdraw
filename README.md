@@ -645,8 +645,9 @@ Special thanks to the following individuals and organizations for featuring Durd
 - Korben - https://korben.info/editeur-ansi-ascii-unicode-durdraw-creer-art-terminal.html
 - Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
 - LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
+- Bread on Penguins - https://www.youtube.com/watch?v=3BxIpVk_xZI
 - Harald Markus Wirth (hmw) has made a Web `.dur` Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
-- Ly display manager supports using Durdraw .dur files as wallpaper. https://codeberg.org/fairyglade/ly
+- Ly display manager supports using Durdraw .dur files as login screen wallpaper! https://codeberg.org/fairyglade/ly
 
 ### Support
 
