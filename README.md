@@ -594,14 +594,17 @@ pytest -vv test/
 
 ## FAQ
 
-#### Q: Durdraw crashed! What do I do?
-A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash and post it as a bug report at https://github.com/durdraw/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. I will do my best to try to fix it ASAP. Your terminal will probably start acting weird if Durdraw crashed. You can usually fix it by typing "reset" and pressing enter.
+#### Q: Can I run Durdraw in Windows?
+A: Yes, in WSL or Docker.
+
+#### Q: How can I load an animated .GIF into Durdraw?
+A: You can use the terminal graphics viewer [Gifterm](https://github.com/cmang/gifterm/) to export animated .GIF files as .dur files, which can then be loaded into Durdraw.
 
 #### Q: Don't TheDraw and some other programs already do ANSI animation?
 A: Yes, but traditional ANSI animation does not provide any control over timing, instead relying on terminal baud rate to govern the playback speed. This does not work well on modern systems without baud rate emulation. Durdraw gives the artist fine control over frame rate, and delays per frame. Traditional ANSI animation also updates the animation one character at a time, while Durdraw updates the animation a full frame at a time. This makes it less vulnerable to visual corruption from things like errant terminal characters, resized windows, line noise, etc. Finally, unlike TheDraw, which requires MS-DOS, Durdraw runs in modern Unicode terminals.
 
-#### Q: Can I run Durdraw in Windows?
-A: Yes, in WSL or Docker.
+#### Q: Durdraw crashed! What do I do?
+A: Oh no! I am sorry and hope nothing important was lost. But you can help fix it. Please take a screenshot of the crash (and/or include a copy of durdraw.log) and post it as a bug report at https://github.com/durdraw/durdraw/issues/. Please try to describe what you were trying to do when it happened, and if possible, include the name of your terminal, OS and Python version. If your terminal acts weird after a crash, you should be able to fix it by typing "reset" and pressing enter.
 
 #### Q: Can I run Durdraw on Amiga, MS-DOS, Classic MacOS, iOS, Android, Atari ST, etc?
 A: Probably not easily. Durdraw requires Python 3 and Ncurses. If your platform can support these, it will probably run. However, the file format for Durdraw movies is a plain text JSON format. It should be possible to support this format in different operating systems and in different applications. See `durformat.md` for more details on the `.dur` file format.
@@ -643,8 +646,7 @@ Special thanks to the following individuals and organizations for featuring Durd
 - Jill Bryant and Venn Stone at Linux Game Cast - https://www.youtube.com/watch?v=HvZXkqg2vec&t=568s
 - LinuxLinks - https://www.linuxlinks.com/durdraw-ascii-unicode-ansi-art-editor/
 - Harald Markus Wirth (hmw) has made a Web `.dur` Player in JavaScript: https://harald.ist.org/stubs/webdurplayer/
-
-If you write, podcast, vlog, or create content about Durdraw, or if you simply enjoy using it, I'd love to hear from you! Please reach out to me via the GitHub project page or at samfoster@gmail.com.
+- Ly display manager supports using Durdraw .dur files as wallpaper. https://codeberg.org/fairyglade/ly
 
 ### Support
 
@@ -687,7 +689,7 @@ Durdraw is what it is thanks to the following people:
 
 ### Legal
 
-Durdraw is Copyright (c) 2009-2025 Sam Foster <samfoster@gmail.com>. All rights reserved.
+Durdraw is Copyright (c) 2009 Sam Foster <samfoster@gmail.com>. All rights reserved.
 
 The BSD Daemon is Copyright 1988 by Marshall Kirk McKusick.
 
