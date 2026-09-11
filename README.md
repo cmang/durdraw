@@ -60,7 +60,7 @@ You can install `durdraw` via several methods:
 
 - [Via OS Repositories](#via-os-repositories)
 - [Via Source Repository](#via-source-repository)
-- [Via uv](#via-uv))
+- [Via uv](#via-uv)
 - [Via pip](#via-pip)
 - [Via Nix Flakes](#via-nix-flakes)
 
