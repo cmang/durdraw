@@ -60,6 +60,7 @@ You can install `durdraw` via several methods:
 
 - [Via OS Repositories](#via-os-repositories)
 - [Via Source Repository](#via-source-repository)
+- [Via uv](#via-uv))
 - [Via pip](#via-pip)
 - [Via Nix Flakes](#via-nix-flakes)
 
@@ -84,6 +85,26 @@ _If you just want to run it without installing, see [Running Without Installing]
 
     ```shell
     python3 -m pip install --upgrade .
+    ```
+
+### Via uv
+
+You can run the latest Durdraw directly from Pypi using uv:
+
+    ```shell
+    uv tool run -U durdraw
+    ```
+
+Or durfetch:
+
+    ```shell
+    uv tool run --from durdraw durfetch
+    ```
+
+Or install Durdraw, durfetch and durview with:
+
+    ```shell
+    uv tool install durdraw
     ```
 
 ### Via pip
