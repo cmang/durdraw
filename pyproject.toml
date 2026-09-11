@@ -7,9 +7,9 @@ build-backend = "setuptools.build_meta"
 name = "durdraw"
 description = "Versatile ASCII and ANSI Art terminal text editor"
 readme = "README.md"
-license = { text = "BSD-3-Clause" }
+license = "BSD-3-Clause"
 license-files = ["LICENSE"]
-version = "0.30.0"
+version = "0.30.1"
 classifiers = [
         'Environment :: Console :: Curses',
         'Topic :: Artistic Software',
@@ -62,5 +62,7 @@ durdraw = [
     "plugins/*",
     "neofetch/*",
     "durf/*",
+    "examples/*",
+    "msdos/*",
 ]
 
