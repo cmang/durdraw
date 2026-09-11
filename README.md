@@ -91,21 +91,21 @@ _If you just want to run it without installing, see [Running Without Installing]
 
 You can run the latest Durdraw directly from Pypi using uv:
 
-    ```shell
-    uv tool run -U durdraw
-    ```
+```shell
+uv tool run -U durdraw
+```
 
 Or durfetch:
 
-    ```shell
-    uv tool run --from durdraw durfetch
-    ```
+```shell
+uv tool run --from durdraw durfetch
+```
 
 Or install Durdraw, durfetch and durview with:
 
-    ```shell
-    uv tool install durdraw
-    ```
+```shell
+uv tool install durdraw
+```
 
 ### Via pip
 
