@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 name = "durdraw"
 description = "Versatile ASCII and ANSI Art terminal text editor"
 readme = "README.md"
-license = "BSD-3-Clause"
+license = { text = "BSD-3-Clause" }
 license-files = ["LICENSE"]
 version = "0.30.0"
 classifiers = [
@@ -15,30 +15,32 @@ classifiers = [
         'Topic :: Artistic Software',
         'Topic :: Text Editors',
         'Topic :: Terminals',
-        'License :: OSI Approved :: ISC License (ISCL)',
         'Intended Audience :: End Users/Desktop',
         'Natural Language :: English',
         'Operating System :: POSIX',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
+        'Programming Language :: Python :: 3.15',
         'Topic :: Utilities'
 ]
 authors = [
   {name = "Sam Foster", email = "samfoster@gmail.com"},
   {name = "Durdraw Contributors"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "windows-curses; platform_system == 'Windows'",
 ]
 
 [project.urls]
 Homepage = "https://durdraw.org"
-Documentation = "https://github.com/cmang/durdraw/blob/master/README.md"
-Source = "https://github.com/cmang/durdraw"
-#Changelog = "https://github.com/cmang/durdraw/releases"
+Documentation = "https://github.com/durdraw/durdraw/blob/master/README.md"
+Source = "https://github.com/durdraw/durdraw"
+Changelog = "https://github.com/durdraw/durdraw/releases"
 
 
 [project.optional-dependencies]
