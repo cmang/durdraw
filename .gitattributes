@@ -1,0 +1,10 @@
+# Force NASM/MASM-style .ASM files to be counted as Assembly by GitHub Linguist
+# Place this file at the repository root.
+
+# Treat .ASM and .asm as Assembly source
+*.ASM linguist-language=Assembly
+*.asm linguist-language=Assembly
+
+# Ensure these files are not marked as vendored/generated
+*.ASM linguist-vendored=false
+*.asm linguist-vendored=false
